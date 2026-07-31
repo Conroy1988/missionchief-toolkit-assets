@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.1.3
+// @version      9.2.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -25,6 +25,7 @@
 // @connect      discord.com
 // @connect      discordapp.com
 // @connect      raw.githubusercontent.com
+// @connect      tkb-gaming.scot
 // @run-at       document-start
 // @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
 // @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js
@@ -464,7 +465,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.1.3',
+        version: '9.2.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -492,6 +493,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         financeVaultCredentialState: 'mc_map_command_toolkit_finance_vault_credential_v450',
         financeRulesCacheState: 'mc_map_command_toolkit_finance_rules_v450',
         financePolicyCacheState: 'mc_map_command_toolkit_finance_policy_v460',
+        ukKnowledgeCacheState: 'mc_map_command_toolkit_uk_knowledge_v1',
         oldStorageKeys: [
         'mc_map_command_toolkit_state_v149',
         'mc_map_command_toolkit_state_v148',
@@ -892,7 +894,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.15.2',
+        guideVersion: '9.2.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1270,6 +1272,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let operationalSitrepBusy = false;
     let operationalSitrepStatus = 'Operational SITREP ready for manual posting.';
     let operationalSitrepStatusTone = 'neutral';
+    let ukKnowledgeLoadPromise = null;
+    let ukKnowledgeActiveRequirement = null;
+    let ukKnowledgeReturnFocus = null;
     const transportSweepRuntime = {
         running: false,
         stopRequested: false,
@@ -6699,7 +6704,228 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="warning"] > b { color:#ffd17a !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="critical"] {
             border-color:rgba(255,83,83,.45) !important;
             background:rgba(101,13,13,.22) !important;
-        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="critical"] > b { color:#ff9e9e !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-transport p,
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="critical"] > b { color:#ff9e9e !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-trigger {
+            min-height:24px !important;
+            margin-top:5px !important;
+            padding:3px 7px !important;
+            border:1px solid rgba(var(--mcms-pressure-accent-rgb),.45) !important;
+            border-radius:6px !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.10) !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:6.5px !important;
+            font-weight:950 !important;
+            letter-spacing:.35px !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel[hidden] {
+            display:none !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel {
+            position:absolute !important;
+            z-index:30 !important;
+            inset:8px !important;
+            display:flex !important;
+            flex-direction:column !important;
+            min-height:0 !important;
+            overflow:hidden !important;
+            border:1px solid rgba(var(--mcms-pressure-accent-rgb),.68) !important;
+            border-radius:12px !important;
+            background:var(--mcms-pressure-bg) !important;
+            box-shadow:0 18px 55px rgba(0,0,0,.76),inset 4px 0 var(--mcms-pressure-accent) !important;
+            color:var(--mcms-pressure-text) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:space-between !important;
+            gap:10px !important;
+            padding:10px 12px !important;
+            border-bottom:1px solid var(--mcms-pressure-line) !important;
+            background:rgba(0,0,0,.22) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header div { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header strong {
+            display:block !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:10px !important;
+            font-weight:950 !important;
+            letter-spacing:.5px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header span {
+            display:block !important;
+            margin-top:2px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:800 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header button {
+            flex:0 0 36px !important;
+            width:36px !important;
+            height:36px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            background:rgba(255,255,255,.06) !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:20px !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-body {
+            min-height:0 !important;
+            padding:10px !important;
+            overflow:auto !important;
+            overscroll-behavior:contain !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary {
+            padding:11px !important;
+            border:1px solid rgba(var(--mcms-pressure-accent-rgb),.38) !important;
+            border-radius:10px !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.075) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary > span {
+            color:var(--mcms-pressure-accent) !important;
+            font-size:6.5px !important;
+            font-weight:950 !important;
+            letter-spacing:.45px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary[data-known="false"] {
+            border-color:rgba(255,190,65,.55) !important;
+            background:rgba(112,69,8,.24) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary[data-known="false"] > span { color:#ffd17a !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary h3 {
+            margin:5px 0 4px !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:15px !important;
+            font-weight:950 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary p,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-unit p {
+            margin:0 !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:8px !important;
+            font-weight:750 !important;
+            line-height:1.45 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-summary > small {
+            display:block !important;
+            margin-top:7px !important;
+            color:rgba(255,255,255,.52) !important;
+            font-size:6.5px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-message {
+            margin-top:7px !important;
+            padding:7px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-message[data-tone="good"] { border-color:rgba(71,220,136,.48) !important; color:#96eab9 !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-message[data-tone="warning"] { border-color:rgba(255,191,64,.54) !important; color:#ffd17a !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-message[data-tone="bad"] { border-color:rgba(255,83,83,.52) !important; color:#ffaaaa !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-message[data-tone="busy"] { border-color:rgba(var(--mcms-pressure-accent-rgb),.52) !important; color:var(--mcms-pressure-accent) !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-section,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-roles {
+            margin-top:8px !important;
+            padding:9px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:rgba(0,0,0,.13) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-section-head {
+            display:flex !important;
+            align-items:baseline !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-bottom:7px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-section h4,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-roles h4 {
+            margin:0 !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:8px !important;
+            font-weight:950 !important;
+            text-transform:uppercase !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-section-head span {
+            color:var(--mcms-pressure-muted) !important;
+            font-size:6.5px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-units {
+            display:grid !important;
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+            gap:6px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit {
+            min-width:0 !important;
+            padding:8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            background:var(--mcms-pressure-panel) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit header {
+            display:flex !important;
+            align-items:flex-start !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-bottom:5px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit header span { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit header strong,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-roles a strong {
+            display:block !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:8px !important;
+            font-weight:950 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit header small,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-roles a small {
+            display:block !important;
+            margin-top:2px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:6.5px !important;
+            font-weight:800 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit header b {
+            color:var(--mcms-pressure-accent) !important;
+            font-size:6.5px !important;
+            font-weight:950 !important;
+            white-space:nowrap !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-training {
+            display:grid !important;
+            gap:3px !important;
+            margin:6px 0 !important;
+            padding:0 !important;
+            list-style:none !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-training li {
+            padding:5px 6px !important;
+            border-left:2px solid var(--mcms-pressure-accent) !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.07) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-training strong,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-training span,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-none {
+            display:block !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:6.5px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-training span,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-none { color:var(--mcms-pressure-muted) !important; font-weight:750 !important; }#${SCRIPT.pressureBoardId} .mcms-knowledge-unit > a,
+        #${SCRIPT.pressureBoardId} .mcms-knowledge-roles a {
+            display:block !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:6.5px !important;
+            font-weight:900 !important;
+            text-decoration:none !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-roles > div {
+            display:grid !important;
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+            gap:5px !important;
+            margin-top:7px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-roles a {
+            padding:7px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            background:var(--mcms-pressure-panel) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-empty {
+            padding:10px !important;
+            border:1px dashed var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7.5px !important;
+            font-weight:800 !important;
+            line-height:1.4 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-actions {
+            display:flex !important;
+            flex-wrap:wrap !important;
+            gap:6px !important;
+            margin-top:8px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-knowledge-actions :is(button,a) {
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            min-height:34px !important;
+            padding:6px 9px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            background:rgba(255,255,255,.06) !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:7px !important;
+            font-weight:900 !important;
+            text-decoration:none !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-transport p,
         #${SCRIPT.pressureBoardId} .mcms-pressure-empty {
             margin:0 !important;
             color:var(--mcms-pressure-muted) !important;
@@ -6759,11 +6985,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
                 max(10px,env(safe-area-inset-bottom))
             ) !important;
             padding:14px !important;
-        }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close),
+        }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close,.mcms-knowledge-trigger,.mcms-knowledge-panel button,.mcms-knowledge-actions a),
         html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
             min-width:44px !important;
             min-height:44px !important;
-        }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-sitrep { min-width:76px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading strong { font-size:17px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading span,
+        }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} :is(.mcms-knowledge-trigger,.mcms-knowledge-actions button,.mcms-knowledge-actions a) { font-size:10px !important; }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header strong { font-size:13px !important; }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} .mcms-knowledge-panel > header span,
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} .mcms-knowledge-summary > span,
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} .mcms-knowledge-summary > small { font-size:9px !important; }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} .mcms-knowledge-summary h3 { font-size:16px !important; }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} :is(.mcms-knowledge-summary p,.mcms-knowledge-unit p,.mcms-knowledge-message) { font-size:10px !important; }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} :is(.mcms-knowledge-section h4,.mcms-knowledge-roles h4,.mcms-knowledge-unit header strong,.mcms-knowledge-roles a strong) { font-size:10.5px !important; }html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.pressureBoardId} :is(.mcms-knowledge-section-head span,.mcms-knowledge-unit header small,.mcms-knowledge-unit header b,.mcms-knowledge-roles a small,.mcms-knowledge-training strong,.mcms-knowledge-training span,.mcms-knowledge-none,.mcms-knowledge-unit > a,.mcms-knowledge-empty) { font-size:9px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-sitrep { min-width:76px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading strong { font-size:17px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading span,
         html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-meta { font-size:10px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-title { font-size:11px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-action-meta,.mcms-pressure-action-reason,.mcms-pressure-section-head span,.mcms-pressure-capacity-row small,.mcms-pressure-transport p,.mcms-pressure-status,.mcms-pressure-foot) { font-size:9px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} {
             top:auto !important;
             right:0 !important;
@@ -6797,7 +7025,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls {
             display:grid !important;
             grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close),
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-knowledge-units,
+        html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-knowledge-roles > div { grid-template-columns:1fr !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-knowledge-panel { inset:5px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close,.mcms-knowledge-trigger,.mcms-knowledge-panel button,.mcms-knowledge-actions a),
         html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
             min-width:44px !important;
             min-height:44px !important;
@@ -14828,13 +15057,261 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     const UK_VEHICLE_REQUIREMENT_CATALOGUE = Object.freeze([["fire-engine",[0,1,16,17,26,37,38,47],["fire engine","fire engines"]],["fire-engine-or-riv",[0,1,16,17,26,37,38,47,76],["fire engine or riv","fire engines or rivs"]],["aerial-appliance-truck",[2,17],["aerial appliance truck","aerial appliance trucks"]],["aerial-appliance-truck-or-rescue-stairs",[2,17,78],["aerial appliance truck or rescue stairs","aerial appliance trucks or rescue stairs"]],["fire-officer",[3,15,44,77],["fire officer","fire officers","fire officer or airfield firefighting command vehicle","fire officers or airfield firefighting command vehicles"]],["rescue-support-unit-or-rescue-pump",[4,16,38,43],["rescue support unit or rescue pump","rescue support units or rescue pumps"]],["rescue-support-vehicle",[4,16,38,43],["rescue support vehicle","rescue support vehicles"]],["fire-engine-rescue-support-vehicle-or-aerial-appliance-truck",[0,1,2,4,16,17,26,37,38,43,47],["fire engine rescue support vehicle or aerial appliance truck","fire engines rescue support vehicles or aerial appliance trucks"]],["fire-engine-or-rescue-support-vehicle",[0,1,4,16,17,26,37,38,43,47],["fire engine or rescue support vehicle","fire engines or rescue support vehicles"]],["basu",[14,39,46,49],["basu","basus","breathing apparatus support unit","breathing apparatus support units"]],["water-carrier",[6,26,36,41,50],["water carrier","water carriers"]],["drone",[89,90,91],["drone","drones"]],["operational-support-van-trailer-or-personal-sar-vehicle",[86,87,92],["operational support van trailer or personal sar vehicle"]],["control-van",[85],["control van","control vans"]],["iccu-or-ambulance-control-unit",[15,31,44,77],["iccu or ambulance control unit","iccu or ambulance control units","iccu or ambulance control unit or airfield firefighting command vehicle","iccu or ambulance control units or airfield firefighting command vehicles"]],["hazmat-unit-or-cbrn-vehicle",[7,32,39,48,49],["hazmat unit or cbrn vehicle","hazmat units or cbrn vehicles"]],["ambulance",[5],["ambulance","ambulances"]],["police-car",[8,12,13,19,24,25,51,52,56,82,116],["police car","police cars"]],["police-car-or-armed-response-vehicle",[8,12,13,19,24,25,51,52,56,82,116],["police car or armed response vehicle arv","police cars or armed response vehicles arvs"]],["hems",[9],["hems"]],["policehelicopter",[11],["policehelicopter","policehelicopters","police helicopter","police helicopters"]],["armed-response",[13,25,52,56,82],["armed response","armed response vehicle arv","armed response vehicles arvs","arv","arvs"]],["dog-support-unit",[12,53],["dog support unit dsu","dog support units dsus"]],["operational-team-leader",[20,31,34],["operational team leader","operational team leaders"]],["traffic-car",[24,25],["traffic car","traffic cars"]],["atv-carrier",[30],["atv carrier","atv carriers"]],["primary-response-vehicle",[27],["primary response vehicle","primary response vehicles","prv","prvs"]],["secondary-response-vehicle",[28],["secondary response vehicle","secondary response vehicles","srv","srvs"]],["welfare-vehicle",[29,39,45,49,115],["welfare vehicle","welfare vehicles"]],["ambulance-officer",[34],["ambulance officer","ambulance officers"]],["foam-unit",[35,36,37,38,42,75],["foam unit","foam units"]],["mass-casualty-equipment",[33],["mass casualty equipment"]],["mounted-unit",[55],["mounted unit","mounted units"]],["4x4-vehicle",[66,73,93],["4x4 vehicle","4x4 vehicles"]],["coastguard-rope-rescue-unit",[59],["coastguard rope rescue unit","coastguard rope rescue units"]],["flood-rescue-unit",[61],["flood rescue unit","flood rescue units"]],["crv",[57,58,59],["crv","crvs"]],["coastguard-commander",[60],["coastguard commander","coastguard commanders"]],["boat-trailer-or-inland-rescue-boat",[67,74],["boat trailer or inland rescue boat","boat trailers or inland rescue boats","inland rescue boat trailer","inland rescue boats trailer","inland rescue boat trailers","inland rescue boats trailers"]],["ilb-or-alb",[68,69],["ilb or alb","ilbs or albs","seagoing vessel","seagoing vessels","alb or ilb","albs or ilbs"]],["ilb",[68,69],["ilb","ilbs"]],["coastguard-rescue-helicopter",[64,65],["coastguard rescue helicopter","coastguard rescue helicopters"]],["alb",[69],["alb","albs"]],["mud-decontamination-unit",[62],["mud decontamination unit","mud decontamination units"]],["support-unit",[63],["support unit","support units"]],["rescue-watercraft-trailer",[70],["rescue watercraft trailer","rescue watercraft trailers"]],["coastguard-mud-rescue-unit",[58],["coastguard mud rescue unit","coastguard mud rescue units"]],["hovercraft-trailer",[71],["hovercraft trailer","hovercrafts trailer"]],["major-foam-tender",[75],["major foam tender","major foam tenders"]],["rescue-stair",[78,2,17],["rescue stair","rescue stairs"]],["airfield-firefighting-command-vehicle",[77],["airfield firefighting command vehicle","airfield firefighting command vehicles"]],["airfield-operations-vehicle",[79,80],["airfield operations vehicle","airfield operations vehicles"]],["riv",[76],["riv","rivs"]],["medical-equipment-trailer",[81],["medical equipment trailer","medical equipment trailers"]],["airfield-operations-supervisor",[80],["airfield operations supervisor","airfield operations supervisors"]],["armed-cell-van",[82],["armed cell van","armed cell vans"]],["medical-cycle-responder",[83],["medical cycle responder","medical cycle responders"]],["community-midwife",[95],["community midwife","community midwifes"]],["specialist-paramedic-rrv",[96],["specialist paramedic rrv","specialist paramedic rrvs"]],["rescue-dog",[101,102],["rescue dog","rescue dogs"]],["mountain-rescue-4x4",[99],["mountain rescue 4x4"]],["car-recovery",[104,105],["car to tow","cars to tow"]],["road-rail-unit",[107],["road rail unit"]],["eiu",[108],["eiu"]],["eod-commander",[109],["eod commander","eod commanders"]],["eod-response-vehicle",[110],["eod response vehicle","eod response vehicles"]],["eod-medium-equipment-van",[111],["eod medium equipment van","eod medium equipment vans"]],["eod-heavy-equipment-vehicle",[112],["eod heavy equipment vehicle","eod heavy equipment vehicles"]],["marine-eod-response-vehicle",[113],["marine eod response vehicle","marine eod response vehicles"]],["marine-eod-equipment-van",[114],["marine eod equipment van","marine eod equipment vans"]],["police-helicopter-or-drone",[11,89,90,91],["police helicopter or drone","police helicopters or drones"]],["riv-or-major-foam-tender",[75,76],["riv or major foam tender","rivs or major foam tenders"]],["fire-engine-or-major-foam-tender",[0,1,16,17,26,37,38,47,75],["fire engine or major foam tender","fire engines or major foam tenders"]],["fire-engine-riv-or-major-foam-tender",[0,1,16,17,26,37,38,47,75,76],["fire engine riv or major foam tender","fire engines rivs or major foam tenders"]],["mountain-rescue-4x4-or-sar-4x4",[93,99],["mountain rescue 4x4 or sar 4x4","mountain rescue 4x4s or sar 4x4s"]],["rrv-or-specialist-paramedic-rrv",[10,94,96],["rrv or specialist paramedic rrv","rrvs or specialist paramedic rrvs"]]]);
     const UK_VEHICLE_REQUIREMENT_ALIAS_INDEX = new Map();
+    const UK_VEHICLE_REQUIREMENT_KEY_INDEX = new Map();
     for (const [key, typeIds, aliases] of UK_VEHICLE_REQUIREMENT_CATALOGUE) {
         const capability = Object.freeze({ key, typeIds: new Set(typeIds) });
+        UK_VEHICLE_REQUIREMENT_KEY_INDEX.set(key, capability);
         for (const alias of aliases) UK_VEHICLE_REQUIREMENT_ALIAS_INDEX.set(alias, capability);
     }
 
     function resolveUkVehicleRequirement(value) {
-        return UK_VEHICLE_REQUIREMENT_ALIAS_INDEX.get(normaliseSearchText(value)) || null;
+        const normalised = normaliseSearchText(value);
+        return UK_VEHICLE_REQUIREMENT_ALIAS_INDEX.get(normalised)
+            || UK_VEHICLE_REQUIREMENT_KEY_INDEX.get(normalised.replace(/\s+/g, '-'))
+            || null;
+    }
+
+    const UK_GUIDE_KNOWLEDGE = Object.freeze({
+        rootUrl: 'https://tkb-gaming.scot/games/missionchief/guides/',
+        apiBase: 'https://tkb-gaming.scot/games/missionchief/guides/api/v2/',
+        freshMs: 6 * 60 * 60 * 1000,
+        staleMs: 7 * 24 * 60 * 60 * 1000,
+        timeoutMs: 12000,
+        maxUnits: 256,
+        maxRoles: 128,
+        maxCapabilities: 256
+    });
+
+    function ukKnowledgeText(value, maximum = 240) {
+        return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maximum);
+    }
+
+    function ukKnowledgeStrings(values, maximumItems = 12, maximumLength = 160) {
+        const output = [];
+        const seen = new Set();
+        for (const value of Array.isArray(values) ? values : []) {
+        const clean = ukKnowledgeText(value, maximumLength);
+        const key = clean.toLowerCase();
+        if (!clean || seen.has(key)) continue;
+        seen.add(key);
+        output.push(clean);
+        if (output.length >= maximumItems) break;
+        }
+        return output;
+    }
+
+    function normaliseUkKnowledgeKey(value) {
+        return ukKnowledgeText(value, 120).toLowerCase().normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function validateUkKnowledgeUnit(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const typeId = Number(raw.game_vehicle_type_id);
+        const id = ukKnowledgeText(raw.id, 120);
+        const name = ukKnowledgeText(raw.name, 160);
+        if (!id || !name || !Number.isInteger(typeId) || typeId < 0 || typeId > 1000) return null;
+        const staffing = raw.staffing && typeof raw.staffing === 'object' ? {
+        minimum: Number.isFinite(Number(raw.staffing.minimum)) ? Math.max(0, Math.round(Number(raw.staffing.minimum))) : null,
+        maximum: Number.isFinite(Number(raw.staffing.maximum)) ? Math.max(0, Math.round(Number(raw.staffing.maximum))) : null
+        } : { minimum: null, maximum: null };
+        const training = (Array.isArray(raw.training_requirements) ? raw.training_requirements : []).slice(0, 12).map(item => ({
+        course: ukKnowledgeText(item?.course, 140),
+        academy: ukKnowledgeText(item?.academy, 140),
+        personnelRole: ukKnowledgeText(item?.personnel_role, 140),
+        durationDays: Number.isFinite(Number(item?.duration_days)) ? Math.max(0, Math.round(Number(item.duration_days))) : null,
+        minimumTrainedStaff: Number.isFinite(Number(item?.minimum_trained_staff)) ? Math.max(0, Math.round(Number(item.minimum_trained_staff))) : null,
+        appliesToAllStaff: item?.applies_to_all_staff === true
+        })).filter(item => item.course || item.personnelRole);
+        return {
+        id, typeId, name,
+        aliases: ukKnowledgeStrings(raw.aliases, 12, 120),
+        staffing,
+        training,
+        notes: ukKnowledgeStrings(raw.operational_notes, 4, 300),
+        capabilities: (Array.isArray(raw.capabilities) ? raw.capabilities : []).slice(0, 32).map(item => ({
+            requirementId: ukKnowledgeText(item?.requirement_id ?? item?.requirementId, 120),
+            matchType: ukKnowledgeText(item?.match_type ?? item?.matchType, 40)
+        })).filter(item => item.requirementId)
+        };
+    }
+
+    function validateUkKnowledgeRole(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const id = ukKnowledgeText(raw.id, 120);
+        const name = ukKnowledgeText(raw.name, 160);
+        if (!id || !name) return null;
+        return {
+        id, name,
+        aliases: ukKnowledgeStrings(raw.aliases, 12, 120),
+        qualificationType: ukKnowledgeText(raw.qualification_type, 80),
+        associatedTypeIds: (Array.isArray(raw.associated_vehicle_type_ids) ? raw.associated_vehicle_type_ids : [])
+            .map(Number).filter(value => Number.isInteger(value) && value >= 0 && value <= 1000).slice(0, 64),
+        courses: (Array.isArray(raw.courses) ? raw.courses : []).slice(0, 12).map(item => ({
+            name: ukKnowledgeText(item?.name, 140),
+            academy: ukKnowledgeText(item?.academy, 140),
+            durationDays: Number.isFinite(Number(item?.duration_days ?? item?.durationDays))
+                ? Math.max(0, Math.round(Number(item.duration_days ?? item.durationDays)))
+                : null
+        })).filter(item => item.name),
+        notes: ukKnowledgeStrings(raw.notes, 4, 300)
+        };
+    }
+
+    function validateUkKnowledgeCapability(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const id = ukKnowledgeText(raw.id, 120);
+        const name = ukKnowledgeText(raw.name, 160);
+        if (!id || !name) return null;
+        return {
+        id, name,
+        aliases: ukKnowledgeStrings(raw.aliases, 16, 120),
+        notes: ukKnowledgeStrings(raw.notes, 6, 320),
+        training: ukKnowledgeStrings(raw.training, 12, 140),
+        qualifyingUnits: (Array.isArray(raw.qualifying_units) ? raw.qualifying_units : Array.isArray(raw.qualifyingUnits) ? raw.qualifyingUnits : []).slice(0, 128).map(item => ({
+            id: ukKnowledgeText(item?.unit_id ?? item?.id, 120),
+            typeId: Number(item?.game_vehicle_type_id ?? item?.typeId),
+            name: ukKnowledgeText(item?.name, 160),
+            matchType: ukKnowledgeText(item?.match_type ?? item?.matchType, 40)
+        })).filter(item => item.id && item.name && Number.isInteger(item.typeId) && item.typeId >= 0 && item.typeId <= 1000),
+        verification: {
+            status: ukKnowledgeText(raw.verification?.status, 80),
+            checkedAt: ukKnowledgeText(raw.verification?.checked_at ?? raw.verification?.checkedAt, 40)
+        }
+        };
+    }
+
+    function validateUkKnowledgePayload(capabilitiesDocument, unitsDocument, personnelDocument, fetchedAt = Date.now()) {
+        if (!capabilitiesDocument || capabilitiesDocument.collection !== 'mission-capabilities' || !Array.isArray(capabilitiesDocument.records)) {
+        throw new Error('The UK Guide capability collection is invalid.');
+        }
+        if (!unitsDocument || !Array.isArray(unitsDocument.units) || !String(unitsDocument.schema_version || '').startsWith('2.')) {
+        throw new Error('The UK Guide unit collection is invalid.');
+        }
+        if (!personnelDocument || !Array.isArray(personnelDocument.roles) || !String(personnelDocument.schema_version || '').startsWith('1.')) {
+        throw new Error('The UK Guide personnel collection is invalid.');
+        }
+        if (capabilitiesDocument.records.length > UK_GUIDE_KNOWLEDGE.maxCapabilities
+            || unitsDocument.units.length > UK_GUIDE_KNOWLEDGE.maxUnits
+            || personnelDocument.roles.length > UK_GUIDE_KNOWLEDGE.maxRoles) {
+        throw new Error('The UK Guide collection exceeded its safety limit.');
+        }
+        const capabilities = capabilitiesDocument.records.map(validateUkKnowledgeCapability).filter(Boolean);
+        const units = unitsDocument.units.map(validateUkKnowledgeUnit).filter(Boolean);
+        const roles = personnelDocument.roles.map(validateUkKnowledgeRole).filter(Boolean);
+        if (!capabilities.length || !units.length || !roles.length) throw new Error('The UK Guide collections contain no usable intelligence.');
+        return {
+        schema: 1,
+        fetchedAt: Math.max(0, Number(fetchedAt) || Date.now()),
+        dataVersion: ukKnowledgeText(unitsDocument.data_version || personnelDocument.data_version || capabilitiesDocument.data_version, 80),
+        capabilitySchema: ukKnowledgeText(capabilitiesDocument.schema_version, 40),
+        capabilities, units, roles
+        };
+    }
+
+    function validateUkKnowledgeCache(value) {
+        let raw = value;
+        if (typeof raw === 'string') {
+        try { raw = JSON.parse(raw); } catch (err) { return null; }
+        }
+        if (!raw || Number(raw.schema) !== 1 || !Array.isArray(raw.capabilities) || !Array.isArray(raw.units) || !Array.isArray(raw.roles)) return null;
+        if (raw.capabilities.length > UK_GUIDE_KNOWLEDGE.maxCapabilities
+            || raw.units.length > UK_GUIDE_KNOWLEDGE.maxUnits
+            || raw.roles.length > UK_GUIDE_KNOWLEDGE.maxRoles) return null;
+        const fetchedAt = Number(raw.fetchedAt);
+        if (!Number.isFinite(fetchedAt) || fetchedAt <= 0 || fetchedAt > Date.now() + 300000) return null;
+        const capabilities = raw.capabilities.map(validateUkKnowledgeCapability).filter(Boolean);
+        const units = raw.units.map(item => validateUkKnowledgeUnit({
+        ...item,
+        game_vehicle_type_id: item.typeId,
+        training_requirements: (item.training || []).map(training => ({
+            course: training.course,
+            academy: training.academy,
+            personnel_role: training.personnelRole,
+            duration_days: training.durationDays,
+            minimum_trained_staff: training.minimumTrainedStaff,
+            applies_to_all_staff: training.appliesToAllStaff
+        })),
+        operational_notes: item.notes
+        })).filter(Boolean);
+        const roles = raw.roles.map(item => validateUkKnowledgeRole({
+        ...item,
+        qualification_type: item.qualificationType,
+        associated_vehicle_type_ids: item.associatedTypeIds,
+        courses: item.courses,
+        notes: item.notes
+        })).filter(Boolean);
+        if (!capabilities.length || !units.length || !roles.length) return null;
+        return {
+        schema: 1, fetchedAt,
+        dataVersion: ukKnowledgeText(raw.dataVersion, 80),
+        capabilitySchema: ukKnowledgeText(raw.capabilitySchema, 40),
+        capabilities, units, roles
+        };
+    }
+
+    function readUkKnowledgeCache(now = Date.now()) {
+        const payload = validateUkKnowledgeCache(gmGetValueSafe(SCRIPT.ukKnowledgeCacheState, null));
+        if (!payload) return { payload: null, freshness: 'none' };
+        const age = Math.max(0, Number(now) - payload.fetchedAt);
+        return {
+        payload: age <= UK_GUIDE_KNOWLEDGE.staleMs ? payload : null,
+        freshness: age <= UK_GUIDE_KNOWLEDGE.freshMs ? 'fresh' : age <= UK_GUIDE_KNOWLEDGE.staleMs ? 'stale' : 'expired'
+        };
+    }
+
+    function ukKnowledgeRequestJson(path) {
+        return new Promise((resolve, reject) => {
+        if (runtime.destroyed) { reject(new Error('Toolkit runtime stopped.')); return; }
+        if (typeof GM_xmlhttpRequest !== 'function') { reject(new Error('Tampermonkey cross-origin requests are unavailable.')); return; }
+        let request = null;
+        let settled = false;
+        const finish = (error, response = null) => {
+            if (settled) return;
+            settled = true;
+            if (request) runtime.requests.delete(request);
+            if (error) { reject(error); return; }
+            if (Number(response?.status) < 200 || Number(response?.status) >= 300) {
+            reject(new Error(`The UK Guide returned HTTP ${response?.status || 'error'}.`));
+            return;
+            }
+            try { resolve(JSON.parse(String(response?.responseText || ''))); }
+            catch (err) { reject(new Error('The UK Guide returned invalid JSON.')); }
+        };
+        try {
+            request = GM_xmlhttpRequest({
+            method: 'GET',
+            url: `${UK_GUIDE_KNOWLEDGE.apiBase}${path}`,
+            timeout: UK_GUIDE_KNOWLEDGE.timeoutMs,
+            responseType: 'text',
+            headers: { Accept: 'application/json' },
+            onload: response => finish(null, response),
+            onerror: () => finish(new Error('The UK Guide could not be reached.')),
+            ontimeout: () => finish(new Error('The UK Guide request timed out.')),
+            onabort: () => finish(new Error('The UK Guide request was cancelled.'))
+            });
+            if (!settled && request?.abort) runtime.requests.add(request);
+        } catch (err) {
+            finish(err instanceof Error ? err : new Error('The UK Guide request could not be created.'));
+        }
+        });
+    }
+
+    async function fetchUkKnowledgePayload() {
+        if (ukKnowledgeLoadPromise) return ukKnowledgeLoadPromise;
+        ukKnowledgeLoadPromise = (async () => {
+        const [capabilities, units, personnel] = await Promise.all([
+            ukKnowledgeRequestJson('capabilities.json'),
+            ukKnowledgeRequestJson('units.json'),
+            ukKnowledgeRequestJson('personnel.json')
+        ]);
+        const payload = validateUkKnowledgePayload(capabilities, units, personnel, Date.now());
+        gmSetValueSafe(SCRIPT.ukKnowledgeCacheState, payload);
+        return payload;
+        })().finally(() => { ukKnowledgeLoadPromise = null; });
+        return ukKnowledgeLoadPromise;
     }
 
     function resourceSearchToken(value) {
@@ -18143,6 +18620,228 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         </article>`;
     }
 
+    function ukKnowledgeLocalCapability(requirementName, requirementKey = '') {
+        const directKey = normaliseUkKnowledgeKey(requirementKey);
+        return UK_VEHICLE_REQUIREMENT_KEY_INDEX.get(directKey)
+            || resolveUkVehicleRequirement(requirementName)
+            || null;
+    }
+
+    function ukKnowledgeGuideHref(path = '') {
+        return new URL(String(path || '').replace(/^\/+/, ''), UK_GUIDE_KNOWLEDGE.rootUrl).toString();
+    }
+
+    function ukKnowledgeRequirementModel(requirementName, requirementKey = '', payload = null, source = 'local') {
+        const name = ukKnowledgeText(requirementName, 180) || 'Unknown requirement';
+        const localCapability = ukKnowledgeLocalCapability(name, requirementKey);
+        const localKey = localCapability?.key || normaliseUkKnowledgeKey(requirementKey || name);
+        const capabilities = Array.isArray(payload?.capabilities) ? payload.capabilities : [];
+        const remoteCapability = capabilities.find(item => {
+        const candidates = [item.id, item.name, ...(item.aliases || [])].map(normaliseUkKnowledgeKey);
+        return candidates.includes(localKey) || candidates.includes(normaliseUkKnowledgeKey(name));
+        }) || null;
+        const typeIds = new Set(localCapability ? Array.from(localCapability.typeIds) : []);
+        for (const unit of remoteCapability?.qualifyingUnits || []) typeIds.add(unit.typeId);
+        const qualifyingUnitIds = new Set((remoteCapability?.qualifyingUnits || []).map(item => item.id));
+        const units = (Array.isArray(payload?.units) ? payload.units : [])
+        .filter(unit => typeIds.has(unit.typeId) || qualifyingUnitIds.has(unit.id))
+        .sort((left, right) => left.typeId - right.typeId || left.name.localeCompare(right.name, 'en-GB'))
+        .slice(0, 32);
+        const roles = (Array.isArray(payload?.roles) ? payload.roles : [])
+        .filter(role => role.associatedTypeIds.some(typeId => typeIds.has(typeId)))
+        .sort((left, right) => left.name.localeCompare(right.name, 'en-GB'))
+        .slice(0, 24);
+        const known = Boolean(localCapability || remoteCapability);
+        const explanation = remoteCapability?.notes?.[0]
+            || (known
+            ? 'MissionChief accepts the verified unit types listed for this live requirement. Counts-as and alternative capability evidence are retained.'
+            : 'This live MissionChief label is not present in the current UK capability catalogue. It remains visible as catalogue drift and can be reported for review.');
+        const resourceId = remoteCapability?.id || '';
+        const guideHref = resourceId
+            ? ukKnowledgeGuideHref(`intelligence/resources/${encodeURIComponent(resourceId)}/`)
+            : ukKnowledgeGuideHref(`intelligence/units/?q=${encodeURIComponent(name)}`);
+        return {
+        name,
+        key: localKey,
+        known,
+        source,
+        explanation,
+        typeIds: Array.from(typeIds).sort((left, right) => left - right),
+        units,
+        roles,
+        guideHref,
+        dataVersion: ukKnowledgeText(payload?.dataVersion, 80),
+        checkedAt: ukKnowledgeText(remoteCapability?.verification?.checkedAt, 40),
+        verification: ukKnowledgeText(remoteCapability?.verification?.status, 80)
+        };
+    }
+
+    function ukKnowledgeTrainingHtml(unit) {
+        if (!unit.training.length) return '<small class="mcms-knowledge-none">No verified course is required for this unit.</small>';
+        return `<ul class="mcms-knowledge-training">${unit.training.map(training => {
+        const qualifiers = [
+            training.academy,
+            training.durationDays !== null ? `${training.durationDays} day${training.durationDays === 1 ? '' : 's'}` : '',
+            training.minimumTrainedStaff !== null ? `${training.minimumTrainedStaff} trained crew minimum` : '',
+            training.appliesToAllStaff ? 'all staff must qualify' : '',
+            training.personnelRole
+        ].filter(Boolean).join(' · ');
+        return `<li><strong>${escapeHtml(training.course || training.personnelRole)}</strong>${qualifiers ? `<span>${escapeHtml(qualifiers)}</span>` : ''}</li>`;
+        }).join('')}</ul>`;
+    }
+
+    function ukKnowledgeUnitsHtml(model) {
+        if (!model.units.length) {
+        const localTypes = model.typeIds.length
+            ? `Known MissionChief type IDs: ${model.typeIds.join(', ')}.`
+            : 'No compatible numeric vehicle type is currently mapped.';
+        return `<div class="mcms-knowledge-empty">${escapeHtml(localTypes)} ${model.source === 'local' ? 'Connect to the guide for unit, staffing and training details.' : ''}</div>`;
+        }
+        return `<div class="mcms-knowledge-units">${model.units.map(unit => {
+        const crew = unit.staffing.minimum !== null || unit.staffing.maximum !== null
+            ? `Crew ${unit.staffing.minimum ?? '?'}${unit.staffing.maximum !== null && unit.staffing.maximum !== unit.staffing.minimum ? `–${unit.staffing.maximum}` : ''}`
+            : 'Crew not published';
+        const match = unit.capabilities.find(item => normaliseUkKnowledgeKey(item.requirementId) === model.key)?.matchType
+            || (model.typeIds.includes(unit.typeId) ? 'verified type' : 'qualifying unit');
+        return `<article class="mcms-knowledge-unit">
+            <header><span><strong>${escapeHtml(unit.name)}</strong><small>MissionChief type ${unit.typeId} · ${escapeHtml(match.replace(/-/g, ' '))}</small></span><b>${escapeHtml(crew)}</b></header>
+            ${unit.notes[0] ? `<p>${escapeHtml(unit.notes[0])}</p>` : ''}
+            ${ukKnowledgeTrainingHtml(unit)}
+            <a href="${escapeHtml(ukKnowledgeGuideHref(`intelligence/units/${encodeURIComponent(unit.id)}/`))}" target="_blank" rel="noopener noreferrer">Full unit record ↗</a>
+        </article>`;
+        }).join('')}</div>`;
+    }
+
+    function ukKnowledgeRolesHtml(model) {
+        if (!model.roles.length) return '';
+        return `<section class="mcms-knowledge-roles"><h4>Associated personnel</h4><div>${model.roles.map(role => {
+        const courses = role.courses.map(course => {
+            const detail = [course.academy, course.durationDays !== null ? `${course.durationDays} days` : ''].filter(Boolean).join(' · ');
+            return `${course.name}${detail ? ` (${detail})` : ''}`;
+        }).join(' · ');
+        return `<a href="${escapeHtml(ukKnowledgeGuideHref(`intelligence/personnel/${encodeURIComponent(role.id)}/`))}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(role.name)}</strong><small>${escapeHtml(courses || role.qualificationType || 'Verified personnel role')}</small></a>`;
+        }).join('')}</div></section>`;
+    }
+
+    function ukKnowledgeRequirementReportUrl(model) {
+        const url = new URL('https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new');
+        url.searchParams.set('template', 'mission-info-missing.yml');
+        url.searchParams.set('title', `Mission requirements missing: ${model.name}`);
+        url.searchParams.set('labels', 'Mission Info Missing');
+        url.searchParams.set('diagnostic', [
+        `Toolkit version: ${SCRIPT.version}`,
+        `Live requirement label: ${model.name}`,
+        `Normalised catalogue key: ${model.key || 'unresolved'}`,
+        'Resolution state: Unknown UK Guide requirement / catalogue drift',
+        '',
+        'No account, alliance, mission-instance, vehicle, location, cookie, token or webhook data is included.'
+        ].join('\n'));
+        return url.toString();
+    }
+
+    function ukKnowledgeDossierHtml(model, status = {}) {
+        const sourceLabel = model.source === 'live' ? 'LIVE GUIDE'
+            : model.source === 'cache' ? 'CACHED GUIDE'
+            : model.source === 'stale' ? 'STALE GUIDE'
+            : 'OFFLINE CATALOGUE';
+        const evidence = [
+        sourceLabel,
+        model.dataVersion ? `data ${model.dataVersion}` : '',
+        model.verification ? model.verification : '',
+        model.checkedAt ? `checked ${model.checkedAt}` : ''
+        ].filter(Boolean).join(' · ');
+        const message = ukKnowledgeText(status.message, 240);
+        return `<div class="mcms-knowledge-summary" data-known="${model.known ? 'true' : 'false'}">
+                <span>${model.known ? 'VERIFIED UK CAPABILITY' : 'CATALOGUE DRIFT'}</span>
+                <h3>${escapeHtml(model.name)}</h3>
+                <p>${escapeHtml(model.explanation)}</p>
+                <small>${escapeHtml(evidence)}</small>
+            </div>
+            ${message ? `<div class="mcms-knowledge-message" data-tone="${escapeHtml(status.tone || 'neutral')}">${escapeHtml(message)}</div>` : ''}
+            <section class="mcms-knowledge-section">
+                <div class="mcms-knowledge-section-head"><h4>Qualifying units</h4><span>${model.units.length || model.typeIds.length} recognised</span></div>
+                ${ukKnowledgeUnitsHtml(model)}
+            </section>
+            ${ukKnowledgeRolesHtml(model)}
+            <footer class="mcms-knowledge-actions">
+                <button type="button" data-pressure-command="knowledge-refresh" ${status.loading ? 'disabled' : ''}>${status.loading ? 'Loading…' : 'Refresh Guide data'}</button>
+                ${model.known ? '' : '<button type="button" data-pressure-command="knowledge-report">Report requirement</button>'}
+                <a href="${escapeHtml(model.guideHref)}" target="_blank" rel="noopener noreferrer">Open UK Guide ↗</a>
+            </footer>`;
+    }
+
+    function renderUkKnowledgeDossier(model, status = {}) {
+        const panel = operationalPressureBoardElement()?.querySelector('[data-uk-knowledge-panel]');
+        const body = panel?.querySelector('[data-uk-knowledge-body]');
+        if (!panel || !body) return false;
+        setInnerHtmlIfChanged(body, ukKnowledgeDossierHtml(model, status), `uk-knowledge:${model.key}:${model.source}:${model.dataVersion}:${status.tone || ''}:${status.loading ? 1 : 0}`);
+        panel.hidden = false;
+        panel.classList.add('mcms-open');
+        panel.setAttribute('aria-hidden', 'false');
+        return true;
+    }
+
+    async function openUkKnowledgeDossier(requirementName, requirementKey = '', trigger = null, force = false) {
+        const name = ukKnowledgeText(requirementName, 180);
+        if (!name) return;
+        ukKnowledgeActiveRequirement = { name, key: normaliseUkKnowledgeKey(requirementKey || name) };
+        if (trigger?.isConnected) ukKnowledgeReturnFocus = trigger;
+        const cache = readUkKnowledgeCache();
+        const cachedModel = cache.payload
+            ? ukKnowledgeRequirementModel(name, requirementKey, cache.payload, cache.freshness === 'fresh' ? 'cache' : 'stale')
+            : null;
+        renderUkKnowledgeDossier(
+        cachedModel || ukKnowledgeRequirementModel(name, requirementKey, null, 'local'),
+        cache.freshness === 'fresh' && !force
+            ? { tone: 'good', message: 'Verified guide intelligence loaded from the update-stable cache.' }
+            : { tone: 'busy', message: cache.payload ? 'Showing cached intelligence while the UK Guide refreshes…' : 'Loading verified units, crew and training from the UK Guide…', loading: true }
+        );
+        operationalPressureBoardElement()?.querySelector('[data-pressure-command="knowledge-close"]')?.focus?.({ preventScroll: true });
+        if (cache.freshness === 'fresh' && !force) return;
+        try {
+        const payload = await fetchUkKnowledgePayload();
+        if (!ukKnowledgeActiveRequirement || ukKnowledgeActiveRequirement.name !== name) return;
+        renderUkKnowledgeDossier(
+            ukKnowledgeRequirementModel(name, requirementKey, payload, 'live'),
+            { tone: 'good', message: 'Verified UK Guide intelligence is current.' }
+        );
+        } catch (err) {
+        if (!ukKnowledgeActiveRequirement || ukKnowledgeActiveRequirement.name !== name) return;
+        renderUkKnowledgeDossier(
+            cachedModel || ukKnowledgeRequirementModel(name, requirementKey, null, 'local'),
+            { tone: cache.payload ? 'warning' : 'bad', message: `${err?.message || 'The UK Guide could not be reached.'} ${cache.payload ? 'The bounded cached copy remains in use.' : 'The bundled capability catalogue remains available.'}` }
+        );
+        }
+    }
+
+    function closeUkKnowledgeDossier({ restoreFocus = true } = {}) {
+        const panel = operationalPressureBoardElement()?.querySelector('[data-uk-knowledge-panel]');
+        if (!panel || panel.hidden) return false;
+        panel.classList.remove('mcms-open');
+        panel.setAttribute('aria-hidden', 'true');
+        panel.hidden = true;
+        ukKnowledgeActiveRequirement = null;
+        if (restoreFocus && ukKnowledgeReturnFocus?.isConnected) {
+        try { ukKnowledgeReturnFocus.focus({ preventScroll: true }); } catch (err) {}
+        }
+        ukKnowledgeReturnFocus = null;
+        return true;
+    }
+
+    function openUkKnowledgeRequirementReport() {
+        if (!ukKnowledgeActiveRequirement) return false;
+        const cache = readUkKnowledgeCache();
+        const model = ukKnowledgeRequirementModel(
+        ukKnowledgeActiveRequirement.name,
+        ukKnowledgeActiveRequirement.key,
+        cache.payload,
+        cache.payload ? 'cache' : 'local'
+        );
+        const opened = pageWindow.open(ukKnowledgeRequirementReportUrl(model), '_blank', 'noopener,noreferrer');
+        try { if (opened) opened.opener = null; } catch (err) {}
+        return Boolean(opened);
+    }
+
     function operationalPressureCapacityHtml(snapshot) {
         const rows = snapshot.resourcePressure.groups.slice(0, 8);
         if (!rows.length) return '<div class="mcms-pressure-empty">No current missing-vehicle requirements are exposed by MissionChief.</div>';
@@ -18158,8 +18857,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const locationEvidence = row.confirmedAvailable === row.available
                 ? `${row.available} recognised`
                 : `${row.available} recognised · ${row.confirmedAvailable} confirmed in radius${row.unlocated ? ` · ${row.unlocated} unlocated` : ''}${row.outsideRadius ? ` · ${row.outsideRadius} outside radius` : ''}`;
+            const catalogueKnown = Boolean(ukKnowledgeLocalCapability(row.name, row.key));
             return `<div class="mcms-pressure-capacity-row" data-tone="${tone}">
-                <span><strong>${escapeHtml(row.name)}</strong><small>${row.missionCount} mission${row.missionCount === 1 ? '' : 's'} · ${row.assigned}/${row.demand} confirmed · ${escapeHtml(locationEvidence)}${row.conflict ? ' · fleet conflict' : ''}</small></span>
+                <span><strong>${escapeHtml(row.name)}</strong><small>${row.missionCount} mission${row.missionCount === 1 ? '' : 's'} · ${row.assigned}/${row.demand} confirmed · ${escapeHtml(locationEvidence)}${row.conflict ? ' · fleet conflict' : ''}</small><button class="mcms-knowledge-trigger" type="button" data-pressure-command="knowledge" data-requirement-name="${escapeHtml(row.name)}" data-requirement-key="${escapeHtml(row.key)}" title="${catalogueKnown ? 'Open verified MissionChief UK units, crew and training' : 'Unknown UK requirement — open catalogue drift report'}">${catalogueKnown ? 'UK INTEL' : 'UNKNOWN · REPORT'}</button></span>
                 <b>${escapeHtml(label)}</b>
             </div>`;
         }).join('');
@@ -18213,8 +18913,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 <span><b data-pressure-transports>0</b>Transports</span>
             </div>
             <div class="mcms-pressure-body" data-pressure-body></div>
+            <section class="mcms-knowledge-panel" data-uk-knowledge-panel role="dialog" aria-modal="true" aria-label="MissionChief UK requirement intelligence" aria-hidden="true" hidden>
+                <header><div><strong>MISSIONCHIEF UK INTELLIGENCE</strong><span>Verified units, crew and training</span></div><button type="button" data-pressure-command="knowledge-close" aria-label="Close UK requirement intelligence">×</button></header>
+                <div class="mcms-knowledge-body" data-uk-knowledge-body aria-live="polite"></div>
+            </section>
             <div class="mcms-pressure-status" data-operational-sitrep-status data-tone="neutral">Operational SITREP ready for manual posting.</div>
-            <div class="mcms-pressure-foot">Read-only intelligence. Focus, Open and Pin never select or dispatch vehicles.</div>`, 'pressure-board-shell-v1');
+            <div class="mcms-pressure-foot">Read-only intelligence. Focus, Open, Pin and UK Intel never select or dispatch vehicles.</div>`, 'pressure-board-shell-v2');
         board.addEventListener('click', event => {
             event.stopPropagation();
             const command = closestEventTarget(event, '[data-pressure-command]');
@@ -18223,6 +18927,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (command.dataset.pressureCommand === 'close') closeOperationalPressureBoard();
                 else if (command.dataset.pressureCommand === 'refresh') refreshOperationalPressureBoard(true);
                 else if (command.dataset.pressureCommand === 'sitrep') postOperationalSitrep();
+                else if (command.dataset.pressureCommand === 'knowledge') openUkKnowledgeDossier(command.dataset.requirementName, command.dataset.requirementKey, command);
+                else if (command.dataset.pressureCommand === 'knowledge-close') closeUkKnowledgeDossier();
+                else if (command.dataset.pressureCommand === 'knowledge-refresh' && ukKnowledgeActiveRequirement) openUkKnowledgeDossier(ukKnowledgeActiveRequirement.name, ukKnowledgeActiveRequirement.key, null, true);
+                else if (command.dataset.pressureCommand === 'knowledge-report') openUkKnowledgeRequirementReport();
                 return;
             }
             const action = closestEventTarget(event, '[data-pressure-action][data-mission-id]');
@@ -18297,6 +19005,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function closeOperationalPressureBoard() {
         const board = operationalPressureBoardElement();
         if (!board) return;
+        closeUkKnowledgeDossier({ restoreFocus: false });
         board.classList.remove('mcms-open');
         board.setAttribute('aria-hidden', 'true');
         updateUI();

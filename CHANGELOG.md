@@ -1,5 +1,18 @@
 # Changelog
 
+## [9.2.0] - 2026-07-31
+
+### MissionChief UK Knowledge Link
+
+- Adds a compact **UK Intel** action to every live vehicle requirement on the Operational Pressure Board.
+- Opens an accessible requirement dossier with verified qualifying units, MissionChief numeric vehicle-type IDs, counts-as capability evidence, crew ranges, training courses, academies, durations and all-staff/minimum-trained-crew qualifiers.
+- Links directly to the matching MissionChief UK Guide capability, unit and personnel records under the TKB website.
+- Uses the Guide's versioned public capability, unit and personnel APIs only after an explicit user action; Toolkit startup and normal Pressure Board rendering remain network-independent.
+- Caches a schema-validated compact copy in update-stable Tampermonkey storage for six hours, retains a bounded seven-day stale fallback and keeps the bundled UK capability catalogue available offline.
+- Marks unknown live labels as **Catalogue Drift** and offers a review-before-submit `Report requirement` path without including account, alliance, mission-instance, vehicle, location, cookie, token or webhook data.
+- Preserves read-only behaviour, all eight themes, Desktop, Tablet and iOS layouts, 44×44 touch targets and deterministic request cancellation.
+- Adds executable schema, cache, sanitisation, capability, training, personnel, offline, unknown-reporting and responsive interaction contracts for Issue #610.
+
 ## [9.1.3] - 2026-07-30
 
 ### Tablet Pressure Board header clearance

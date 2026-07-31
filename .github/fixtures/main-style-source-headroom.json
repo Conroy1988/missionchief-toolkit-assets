@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 608,
-    "version": "9.1.3",
-    "sourceBytes": 1812589,
-    "sourceLines": 27899,
-    "sourceSha256": "404d955932adc34dac3102f5b4f98fbf6a9408a4f651f8079547357d5af0e475",
-    "templateBytes": 745212,
-    "templateLines": 9011,
-    "templateSha256": "d5a298995d7da37a5798af09643732efd9a8a59694061a23b1e1bcf01edf0cde",
-    "canonicalCssSha256": "4188ea81b0afd9a4740eb2ad9134846f302a5fa55421d6355c37c17c1820b4bc",
-    "maxSourceBytes": 1824589,
-    "maxSourceLines": 28019,
+    "issue": 610,
+    "version": "9.2.0",
+    "sourceBytes": 1855296,
+    "sourceLines": 28608,
+    "sourceSha256": "d37ca38639b9d9df656da926b7f0721cd8c9193f96f54e903c4e3939550e7379",
+    "templateBytes": 759589,
+    "templateLines": 9235,
+    "templateSha256": "6ad1625a388caa31d75a75fa0d77f1d19d09ec51375d2b9c29d344bed8c6e4bf",
+    "canonicalCssSha256": "1b7f9e28cd32bd6abcfbb6c84d1e15138eae8c7c913a2e7537762730000d2905",
+    "maxSourceBytes": 1870296,
+    "maxSourceLines": 28748,
     "minTemplateBytes": 500000,
-    "baseline": "9.1.2",
+    "baseline": "9.1.3",
     "approvedGrowth": {
-      "sourceBytes": 1684,
-      "sourceLines": 38,
-      "templateBytes": 411,
-      "templateLines": 9
+      "sourceBytes": 42707,
+      "sourceLines": 709,
+      "templateBytes": 14377,
+      "templateLines": 224
     },
-    "scope": "Issue #608 Tablet Pressure Board header clearance, visual-viewport recovery and bounded internal scrolling"
+    "scope": "Issue #610 user-triggered MissionChief UK Guide dossiers, schema-validated cache, offline catalogue fallback and privacy-safe drift reporting"
   }
 }

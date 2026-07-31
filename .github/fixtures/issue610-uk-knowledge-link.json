@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "fetchedAt": 1785456000000,
+  "capabilities": {
+    "schema_version": "2.0.0",
+    "collection": "mission-capabilities",
+    "count": 2,
+    "records": [
+      {
+        "id": "hazmat_unit_or_cbrn_vehicle",
+        "name": "HazMat Unit or CBRN Vehicle",
+        "aliases": ["HazMat"],
+        "notes": ["A verified hazardous-material capability requirement."],
+        "verification": {
+          "status": "verified",
+          "checked_at": "2026-07-30"
+        },
+        "qualifying_units": [
+          {
+            "unit_id": "7-hazmat-unit",
+            "game_vehicle_type_id": 7,
+            "name": "HazMat Unit",
+            "match_type": "exact"
+          },
+          {
+            "unit_id": "32-cbrn-vehicle",
+            "game_vehicle_type_id": 32,
+            "name": "CBRN Vehicle",
+            "match_type": "counts-as"
+          }
+        ]
+      },
+      {
+        "id": "fire_engine",
+        "name": "Fire Engine",
+        "aliases": ["Fire engines"],
+        "notes": ["A standard fire response capability."],
+        "verification": {
+          "status": "verified",
+          "checked_at": "2026-07-30"
+        },
+        "qualifying_units": [
+          {
+            "unit_id": "0-water-ladder",
+            "game_vehicle_type_id": 0,
+            "name": "Water Ladder",
+            "match_type": "counts-as"
+          }
+        ]
+      }
+    ]
+  },
+  "units": {
+    "schema_version": "2.1.0",
+    "data_version": "2026-07-30",
+    "units": [
+      {
+        "id": "7-hazmat-unit",
+        "game_vehicle_type_id": 7,
+        "name": "HazMat Unit",
+        "aliases": ["HazMat"],
+        "staffing": {
+          "minimum": 1,
+          "maximum": 6
+        },
+        "training_requirements": [
+          {
+            "course": "HazMat",
+            "academy": "Fire Academy",
+            "duration_days": 3,
+            "minimum_trained_staff": 6,
+            "applies_to_all_staff": true,
+            "personnel_role": "HazMat-trained firefighter"
+          }
+        ],
+        "capabilities": [
+          {
+            "requirement_id": "hazmat_unit_or_cbrn_vehicle",
+            "match_type": "exact"
+          }
+        ],
+        "operational_notes": ["Carries the specialist HazMat response."]
+      },
+      {
+        "id": "32-cbrn-vehicle",
+        "game_vehicle_type_id": 32,
+        "name": "CBRN Vehicle",
+        "aliases": [],
+        "staffing": {
+          "minimum": 1,
+          "maximum": 4
+        },
+        "training_requirements": [],
+        "capabilities": [
+          {
+            "requirement_id": "hazmat_unit_or_cbrn_vehicle",
+            "match_type": "counts-as"
+          }
+        ],
+        "operational_notes": []
+      },
+      {
+        "id": "0-water-ladder",
+        "game_vehicle_type_id": 0,
+        "name": "Water Ladder",
+        "aliases": [],
+        "staffing": {
+          "minimum": 1,
+          "maximum": 9
+        },
+        "training_requirements": [],
+        "capabilities": [
+          {
+            "requirement_id": "fire_engine",
+            "match_type": "counts-as"
+          }
+        ],
+        "operational_notes": ["A standard pump."]
+      }
+    ]
+  },
+  "personnel": {
+    "schema_version": "1.0.0",
+    "data_version": "2026-07-30",
+    "roles": [
+      {
+        "id": "hazmat-trained-firefighter",
+        "name": "HazMat-trained firefighter",
+        "qualification_type": "trained-specialist",
+        "aliases": [],
+        "associated_vehicle_type_ids": [7],
+        "courses": [
+          {
+            "name": "HazMat",
+            "academy": "Fire Academy",
+            "duration_days": 3
+          }
+        ],
+        "notes": []
+      }
+    ]
+  }
+}

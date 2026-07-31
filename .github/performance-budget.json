@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-30-issue-601-operational-pressure-board-v9-1",
-  "rationale": "Approve the measured Issue #601 command-board and responsive-style growth while retaining zero-growth budgets for managed schedulers, direct DOM lookup primitives, HTML assignment sites, observers and network requests.",
+  "revision": "2026-07-31-issue-610-uk-knowledge-link-v9-2",
+  "rationale": "Approve one explicit, user-triggered and lifecycle-managed Guide request callsite for Issue #610 while retaining zero-growth budgets for managed schedulers, direct DOM lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 601,
-    "version": "9.1.0",
-    "approvedNetworkRequestDelta": 0,
-    "scope": "Operational Pressure Board, global one-vehicle allocation, map and Missions controls, manual mention-safe Discord SITREP, eight-theme geometry and Desktop, Tablet and iOS touch contracts.",
+    "issue": 610,
+    "version": "9.2.0",
+    "approvedNetworkRequestDelta": 1,
+    "scope": "User-triggered MissionChief UK Guide capability, unit and personnel enrichment with schema validation, bounded durable cache, offline fallback, privacy-safe catalogue-drift reporting and deterministic request cancellation.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -38,7 +38,7 @@
     "document_wide_subtree_observers": 4,
     "get_element_by_id_calls": 113,
     "inner_html_writes": 22,
-    "network_request_calls": 5
+    "network_request_calls": 6
   },
   "absoluteReviewPercent": {
     "lines": 95,
@@ -215,6 +215,13 @@
       "version": "9.0.1",
       "approvedNetworkRequestDelta": 0,
       "scope": "Incident Command Wire reconciliation ownership fix with continuous no-rewind runtime proof.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 601,
+      "version": "9.1.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Operational Pressure Board, global one-vehicle allocation, map and Missions controls, manual mention-safe Discord SITREP, eight-theme geometry and Desktop, Tablet and iOS touch contracts.",
       "approvedMutationObserverDelta": 0
     }
   ]

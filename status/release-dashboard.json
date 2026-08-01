@@ -1,13 +1,13 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "10.2.4",
+  "currentVersion": "10.2.5",
   "sourceOfTruth": "GitHub",
   "distribution": "TKB Scripts",
   "status": {
     "validation": "passed",
     "githubRelease": "published",
-    "greasyForkSync": "verified",
+    "greasyForkSync": "delayed",
     "backup": "private-repository-verified",
     "discordDevelopment": "configured",
     "discordRelease": "posted",
@@ -25,10 +25,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-08-01T20:15:45Z",
+  "lastUpdated": "2026-08-01T22:09:10Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "4215da7303a07a321726fe08314de675a5704336498716042fce3caf2f0b3b4a",
+    "validatedSha256": "1db321a814fd795a46dffcfca5a9cbfb09cdd28692c27a2f3a8337396164111f",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -38,25 +38,25 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "10.2.4",
+    "version": "10.2.5",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "tkbDistributionVerified": true,
-    "greasyForkMetadataVerified": true,
+    "greasyForkMetadataVerified": false,
     "publicReleaseCreated": true,
-    "completedAt": "2026-08-01T20:15:45Z"
+    "completedAt": "2026-08-01T22:09:10Z"
   },
   "latestRelease": {
-    "version": "10.2.4",
-    "sha256": "4215da7303a07a321726fe08314de675a5704336498716042fce3caf2f0b3b4a",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.2.4",
+    "version": "10.2.5",
+    "sha256": "1db321a814fd795a46dffcfca5a9cbfb09cdd28692c27a2f3a8337396164111f",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.2.5",
     "tkbDistributionVerified": true,
-    "greasyForkVerified": true,
-    "privateBackupCommit": "46311be1f33c6be4d1483f0414fec1df6b9147bf",
-    "discordMessageId": "1533206626755149945",
+    "greasyForkVerified": false,
+    "privateBackupCommit": "64ce85fe4bb593d4ede6464406a04fb965bb89cc",
+    "discordMessageId": "1533235167060295743",
     "discordChannelId": "1264992613845565440",
     "discordPosted": true,
-    "completedAt": "2026-08-01T20:15:45Z"
+    "completedAt": "2026-08-01T22:09:10Z"
   }
 }

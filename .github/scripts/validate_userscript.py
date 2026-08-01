@@ -300,6 +300,11 @@ def main() -> int:
         "version": version,
         "source": str(SOURCE.relative_to(ROOT)),
         "distributionFiles": [str(path.relative_to(ROOT)) for path in distribution_files],
+        "validationCandidateFiles": [
+            *(str(path.relative_to(ROOT)) for path in distribution_files),
+            str(SUMS.relative_to(ROOT)),
+            str(MANIFEST.relative_to(ROOT)),
+        ],
         "sha256": user_hash,
         "bytes": len(raw),
         "lines": text.count("\n") + 1,

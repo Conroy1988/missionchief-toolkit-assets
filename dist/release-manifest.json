@@ -1,17 +1,33 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "version": "5.0.7",
+  "version": "10.2.2",
   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
   "distributionFiles": [
     "dist/MissionChief_Map_Command_Toolkit.user.js",
-    "dist/MissionChief_Map_Command_Toolkit.txt"
+    "dist/MissionChief_Map_Command_Toolkit.txt",
+    "dist/MissionChief_Map_Command_Toolkit.install.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.update.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.meta.js",
+    "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.css"
   ],
-  "sha256": "97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da",
-  "bytes": 2060765,
-  "lines": 31761,
+  "candidateArtifactFiles": [
+    "dist/MissionChief_Map_Command_Toolkit.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.txt",
+    "dist/MissionChief_Map_Command_Toolkit.install.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.update.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.meta.js",
+    "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.css",
+    "dist/SHA256SUMS.txt",
+    "dist/release-manifest.json"
+  ],
+  "sha256": "d09df85749a2f28ccdbfc7b9e628d87375422cdc87cf270f7448e42afeb4bf84",
+  "bytes": 2109707,
+  "lines": 31751,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",
-    "runtimeVersion": "5.0.7",
+    "runtimeVersion": "10.2.2",
     "author": "Conroy1988",
     "license": "MIT",
     "missionChiefRules": [
@@ -22,5 +38,15 @@
     "warnings": []
   },
   "baselineHashMatch": null,
-  "distributionStatus": "dry-run-not-yet-greasyfork-source"
+  "distribution": {
+    "officialChannel": "tkb-gaming.scot",
+    "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
+    "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
+    "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
+    "greasyForkMirror": "non-blocking",
+    "greasyForkCharacters": 1323625,
+    "greasyForkLimit": 2097152,
+    "stylesheetSha256": "5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b"
+  },
+  "distributionStatus": "dry-run-first-party-and-mirror-assets"
 }

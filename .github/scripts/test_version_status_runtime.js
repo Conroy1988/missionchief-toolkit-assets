@@ -1,21 +1,47 @@
 #!/usr/bin/env node
 'use strict';
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
 const root = path.resolve(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
-const startMarker = '    // Issue #153: stable live Toolkit version-status control.';
+const startMarker = '    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.';
 const endMarker = '    function createCleanExit() {';
 const start = source.indexOf(startMarker);
 const end = source.indexOf(endMarker, start);
-assert(start >= 0 && end > start, 'unable to extract Issue #153 runtime block');
+assert.ok(start >= 0 && end > start, 'unable to extract version-status runtime block');
 const block = source.slice(start, end);
 
-class FakeClassList { constructor() { this.values = new Set(); } contains(value) { return this.values.has(value); } toggle(value, force) { const enabled = force === undefined ? !this.values.has(value) : Boolean(force); if (enabled) this.values.add(value); else this.values.delete(value); return enabled; } }
+class FakeClassList {
+    constructor() { this.values = new Set(); }
+    contains(value) { return this.values.has(value); }
+    toggle(value, force) {
+        const enabled = force === undefined ? !this.values.has(value) : Boolean(force);
+        if (enabled) this.values.add(value); else this.values.delete(value);
+        return enabled;
+    }
+}
 class FakeElement {
-    constructor(tagName = 'div', ownerDocument = null) { this.tagName = String(tagName).toUpperCase(); this.ownerDocument = ownerDocument; this.id = ''; this.type = ''; this.className = ''; this.textContent = ''; this.title = ''; this.dataset = {}; this.attributes = new Map(); this.classList = new FakeClassList(); this.children = []; this.parentNode = null; this.queryMap = new Map(); this.listeners = new Map(); this.isConnected = true; }
+    constructor(tagName = 'div', ownerDocument = null) {
+        this.tagName = String(tagName).toUpperCase();
+        this.ownerDocument = ownerDocument;
+        this.id = '';
+        this.type = '';
+        this.className = '';
+        this.textContent = '';
+        this.title = '';
+        this.dataset = {};
+        this.attributes = new Map();
+        this.classList = new FakeClassList();
+        this.children = [];
+        this.parentNode = null;
+        this.queryMap = new Map();
+        this.listeners = new Map();
+        this.isConnected = true;
+    }
     setAttribute(name, value) { this.attributes.set(name, String(value)); if (name === 'id') this.id = String(value); }
     getAttribute(name) { return this.attributes.get(name) || null; }
     querySelector(selector) { return this.queryMap.get(selector) || null; }
@@ -26,110 +52,264 @@ class FakeElement {
     remove() { this.isConnected = false; if (this.parentNode) this.parentNode.children = this.parentNode.children.filter(child => child !== this); this.ownerDocument?.nodes.delete(this); }
 }
 class FakeDocument {
-    constructor() { this.nodes = new Set(); this.documentElement = new FakeElement('html', this); this.head = new FakeElement('head', this); this.body = new FakeElement('body', this); this.nodes.add(this.documentElement); this.nodes.add(this.head); this.nodes.add(this.body); }
+    constructor() {
+        this.nodes = new Set();
+        this.documentElement = new FakeElement('html', this);
+        this.head = new FakeElement('head', this);
+        this.body = new FakeElement('body', this);
+        this.visibilityState = 'visible';
+        this.nodes.add(this.documentElement);
+        this.nodes.add(this.head);
+        this.nodes.add(this.body);
+    }
     createElement(tagName) { return new FakeElement(tagName, this); }
     getElementById(id) { return Array.from(this.nodes).find(node => node.isConnected && node.id === id) || null; }
+    querySelector(selector) { return String(selector).startsWith('#') ? this.getElementById(String(selector).slice(1)) : null; }
 }
 
+const productUrl = 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/';
 const localValues = new Map();
 const openedUrls = [];
 const listenedEvents = [];
 const document = new FakeDocument();
 const context = {
-    console, URL, Promise, Date, Object, Array, Number, String, Error, JSON, RegExp, Math, Set,
+    console,
+    URL,
+    Promise,
+    Date,
+    Object,
+    Array,
+    Number,
+    String,
+    Error,
+    JSON,
+    RegExp,
+    Math,
+    Set,
     queueMicrotask,
     globalThis: null,
-    SCRIPT: { name: 'MissionChief Map Command Toolkit', version: '4.20.2', controlId: 'mc-map-command-toolkit-control' },
-    pageWindow: { localStorage: { getItem: key => localValues.has(key) ? localValues.get(key) : null, setItem: (key, value) => localValues.set(key, String(value)), removeItem: key => localValues.delete(key) }, open: url => { openedUrls.push(url); return { opener: {} }; }, fetch: null, AbortController },
+    SCRIPT: { name: 'MissionChief Map Command Toolkit', version: '10.2.9', controlId: 'mc-map-command-toolkit-control' },
+    pageWindow: {
+        localStorage: {
+            getItem: key => localValues.has(key) ? localValues.get(key) : null,
+            setItem: (key, value) => localValues.set(key, String(value)),
+            removeItem: key => localValues.delete(key),
+        },
+        open: url => { openedUrls.push(url); return { opener: {} }; },
+        fetch: null,
+        AbortController,
+    },
     document,
     runtime: { destroyed: false, requests: new Set(), fetchControllers: new Set() },
     runtimeListen: (target, type, listener, options) => { target.addEventListener(type, listener, options); listenedEvents.push({ target, type, listener, options }); },
     runtimeSetTimeout: (callback, delay) => setTimeout(callback, delay),
     runtimeClearTimeout: timer => clearTimeout(timer),
-    showToast: () => {},
+    toolkitCommandShellContextActive: () => true,
+    showToast: () => undefined,
 };
 context.globalThis = context;
 vm.createContext(context);
-vm.runInContext(block + `\nthis.__versionStatusApi = { constants: VERSION_STATUS, parse: versionStatusParse, compare: versionStatusCompare, validate: versionStatusValidateManifest, presentation: versionStatusPresentation, cacheFresh: versionStatusCacheIsFresh, failureCooling: versionStatusFailureCooling, ensureButton: ensureVersionStatusButton, requestManifest: versionStatusRequestManifest, runCheck: runVersionStatusCheck, render: versionStatusRender, model: () => versionStatusModel, nextDelay: versionStatusAutomaticDelay, schedule: scheduleVersionStatusCheck, setModel: value => { versionStatusModel = { ...versionStatusModel, ...value }; }, reset: () => { versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; versionStatusCheckPromise = null; versionStatusHydrationPromise = null; versionStatusTimer = null; versionStatusRequest = null; } };` , context);
+vm.runInContext(block + `
+this.__versionStatusApi = {
+  constants: VERSION_STATUS,
+  parse: versionStatusParse,
+  compare: versionStatusCompare,
+  validate: versionStatusValidateManifest,
+  presentation: versionStatusPresentation,
+  cacheFresh: versionStatusCacheIsFresh,
+  failureCooling: versionStatusFailureCooling,
+  ensureButton: ensureVersionStatusButton,
+  requestManifest: versionStatusRequestManifest,
+  runCheck: runVersionStatusCheck,
+  render: versionStatusRender,
+  open: versionStatusOpen,
+  model: () => versionStatusModel,
+  nextDelay: versionStatusAutomaticDelay,
+  schedule: scheduleVersionStatusCheck,
+  dispose: disposeVersionStatus,
+  timer: () => versionStatusTimer,
+  request: () => versionStatusRequest,
+  setModel: value => { versionStatusModel = { ...versionStatusModel, ...value }; },
+  reset: () => {
+    versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' };
+    versionStatusCheckPromise = null;
+    versionStatusHydrationPromise = null;
+    versionStatusTimer = null;
+    versionStatusRequest = null;
+    versionStatusRequestToken += 1;
+    versionStatusInitialCheckQueued = false;
+  }
+};`, context);
 const api = context.__versionStatusApi;
-const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: `https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`, updateUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/', publishedAt: '2026-07-19T13:08:02Z' });
+const manifest = version => ({
+    schemaVersion: 1,
+    channel: 'stable',
+    version,
+    releaseNotesUrl: `https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`,
+    updateUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/',
+    publishedAt: '2026-08-01T20:00:00Z',
+});
+
+function click(element, overrides = {}) {
+    const listener = element.listeners.get('click')?.[0];
+    assert.equal(typeof listener, 'function', 'button click listener missing');
+    listener({ preventDefault() {}, shiftKey: false, ...overrides });
+}
 
 (async () => {
-    assert.deepStrictEqual(Array.from(api.parse('4.15.10')), [4, 15, 10], 'stable semantic version parses numerically');
-    assert.strictEqual(api.parse('4.15'), null, 'malformed installed version is rejected');
-    assert.strictEqual(api.parse('4.20.0-beta.1'), null, 'prerelease version is not accepted as stable');
-    assert.strictEqual(api.compare('4.15.10', '4.15.9'), 1, 'multi-digit patch versions compare numerically');
-    assert.strictEqual(api.compare('4.16.0', '4.15.99'), 1, 'minor update compares numerically');
-    assert.strictEqual(api.compare('bad', '4.15.9'), null, 'malformed comparison fails safely');
+    assert.deepEqual(Array.from(api.parse('10.2.10')), [10, 2, 10]);
+    assert.equal(api.parse('10.2'), null);
+    assert.equal(api.parse('10.2.10-beta.1'), null);
+    assert.equal(api.compare('10.2.10', '10.2.9'), 1, 'multi-digit patch comparison is numeric');
+    assert.equal(api.compare('10.3.0', '10.2.99'), 1);
+    assert.equal(api.compare('11.0.0', '10.99.99'), 1);
 
-    const current = api.validate(manifest('4.20.0'));
-    assert.strictEqual(api.presentation('4.20.0', current).state, 'latest', 'equal stable version displays LATEST');
-    assert.strictEqual(api.presentation('4.20.0', current).destination, current.releaseNotesUrl, 'LATEST opens matching GitHub release notes');
-    const patch = api.validate(manifest('4.20.1'));
-    assert.strictEqual(api.presentation('4.20.0', patch).state, 'update', 'published patch update displays UPDATE');
-    assert.strictEqual(api.presentation('4.20.0', patch).destination, patch.updateUrl, 'UPDATE opens the TKB installer URL');
-    assert.throws(() => api.validate({ ...manifest('4.20.1-beta.1'), version: '4.20.1-beta.1' }), /stable semantic version/, 'draft or prerelease manifest is rejected');
-    assert.throws(() => api.validate({ ...manifest('4.20.1'), releaseNotesUrl: 'https://example.com/release' }), /canonical/, 'non-canonical release URL is rejected');
+    const current = api.validate(manifest('10.2.9'));
+    const patch = api.validate(manifest('10.2.10'));
+    assert.equal(api.presentation('10.2.9', current).state, 'latest');
+    assert.equal(api.presentation('10.2.9', patch).state, 'update');
+    assert.equal(api.presentation('10.2.9', current).destination, productUrl);
+    assert.equal(api.presentation('10.2.9', patch).destination, productUrl);
+    assert.throws(() => api.validate({ ...manifest('10.2.10-beta.1'), version: '10.2.10-beta.1' }), /stable semantic version/);
+    assert.throws(() => api.validate({ ...manifest('10.2.10'), releaseNotesUrl: 'https://example.com/release' }), /canonical/);
 
     const now = 10_000_000;
-    assert.strictEqual(api.cacheFresh({ checkedAt: now - (29 * 60 * 1000), manifest: current }, now), true, '29-minute successful cache is fresh');
-    assert.strictEqual(api.cacheFresh({ checkedAt: now - (30 * 60 * 1000), manifest: current }, now), false, '30-minute successful cache is stale');
-    assert.strictEqual(api.failureCooling({ failedAt: now - (9 * 60 * 1000) }, now), true, '9-minute failure remains in cooldown');
-    assert.strictEqual(api.failureCooling({ failedAt: now - (10 * 60 * 1000) }, now), false, '10-minute failure cooldown expires');
-    assert.strictEqual(api.constants.autoIntervalMs, 30 * 60 * 1000, 'automatic active-tab cadence is 30 minutes');
-    api.setModel({ state: 'latest', manifest: current, checkedAt: now - (29 * 60 * 1000), error: '' });
-    assert.strictEqual(api.nextDelay(now), 60 * 1000, 'automatic scheduler waits only for the remaining successful-cache lifetime');
-    api.setModel({ state: 'error', manifest: null, checkedAt: 0, failedAt: now - (9 * 60 * 1000), error: 'offline' });
-    assert.strictEqual(api.nextDelay(now), 60 * 1000, 'automatic failure retry waits only for the remaining cooldown');
+    assert.equal(api.cacheFresh({ checkedAt: now - 59_999, manifest: current }, now), true);
+    assert.equal(api.cacheFresh({ checkedAt: now - 60_000, manifest: current }, now), false);
+    assert.equal(api.failureCooling({ failedAt: now - 59_999 }, now), true);
+    assert.equal(api.failureCooling({ failedAt: now - 60_000 }, now), false);
+    assert.equal(api.constants.autoIntervalMs, 60_000);
+    assert.equal(api.constants.cacheMs, 60_000);
+    assert.equal(api.constants.failureCooldownMs, 60_000);
+    assert.equal(api.constants.productUrl, productUrl);
+    api.setModel({ state: 'latest', manifest: current, checkedAt: now, failedAt: 0, error: '' });
+    assert.equal(api.nextDelay(now), 60_000, 'next successful check is scheduled for 60 seconds');
+    api.setModel({ state: 'latest', manifest: current, checkedAt: now - 60_000, failedAt: now, error: 'offline' });
+    assert.equal(api.nextDelay(now), 60_000, 'transient failure retry is scheduled for 60 seconds');
+
     const scheduledTimers = [];
-    const originalRuntimeSetTimeout = context.runtimeSetTimeout;
-    const originalRuntimeClearTimeout = context.runtimeClearTimeout;
-    context.runtimeSetTimeout = (callback, delay) => { scheduledTimers.push({ callback, delay }); return scheduledTimers.length; };
-    context.runtimeClearTimeout = () => {};
-    document.visibilityState = 'hidden';
-    api.reset(); api.schedule(1234, false);
-    assert.strictEqual(scheduledTimers[0].delay, 1234, 'automatic scheduler honours the requested delay');
-    await scheduledTimers[0].callback();
-    assert.strictEqual(scheduledTimers.length, 1, 'hidden tabs defer without creating a background polling timer');
-    document.visibilityState = 'visible';
-    context.runtimeSetTimeout = originalRuntimeSetTimeout;
-    context.runtimeClearTimeout = originalRuntimeClearTimeout;
+    const clearedTimers = [];
+    context.runtimeSetTimeout = (callback, delay) => { const timer = { callback, delay, cleared: false }; scheduledTimers.push(timer); return timer; };
+    context.runtimeClearTimeout = timer => { if (timer) { timer.cleared = true; clearedTimers.push(timer); } };
 
-    const control = document.createElement('div'); control.id = context.SCRIPT.controlId;
-    const row = document.createElement('div'); const shell = document.createElement('div'); const economy = document.createElement('button'); economy.className = 'mcms-economy-btn';
-    control.queryMap.set('.mcms-launch-row', row); row.queryMap.set('.mcms-economy-btn', economy);
-    document.body.appendChild(control); control.appendChild(row); row.appendChild(shell); row.appendChild(economy);
-    const first = api.ensureButton(); const second = api.ensureButton();
-    assert.strictEqual(first, second, 'repeated Toolkit UI recovery does not duplicate version control');
-    assert.strictEqual(document.getElementById(api.constants.buttonId), first, 'version control uses one collision-resistant ID');
-    assert.strictEqual(row.children.indexOf(first), row.children.indexOf(economy) - 1, 'version control is placed immediately before Economy beside the main Toolkit shell');
-    assert(!first.className.includes('mcms-economy-btn'), 'version control avoids Economy behaviour-selector collisions');
-    assert(first.className.includes('mcms-version-btn--unified'), 'version control uses the unified control-family variant');
-    assert(!first.className.includes('mcms-version-btn--tile'), 'legacy standalone tile class is removed');
-    assert.strictEqual(first.dataset.variant, 'control-family', 'version control exposes the unified visual variant');
-    assert.strictEqual(first.getAttribute('aria-live'), 'polite', 'version state changes are announced accessibly');
+    const control = document.createElement('div');
+    control.id = context.SCRIPT.controlId;
+    const row = document.createElement('div');
+    const shell = document.createElement('div');
+    const economy = document.createElement('button');
+    economy.className = 'mcms-economy-btn';
+    control.queryMap.set('.mcms-launch-row', row);
+    row.queryMap.set('.mcms-economy-btn', economy);
+    document.body.appendChild(control);
+    control.appendChild(row);
+    row.appendChild(shell);
+    row.appendChild(economy);
+
+    const first = api.ensureButton();
+    const second = api.ensureButton();
+    await Promise.resolve();
+    assert.equal(first, second, 'repeated launcher reconciliation reuses one button');
+    assert.equal(document.getElementById(api.constants.buttonId), first);
+    assert.equal(row.children.indexOf(first), row.children.indexOf(economy) - 1);
+    assert.equal(scheduledTimers.filter(timer => !timer.cleared).length, 1, 'button mount creates exactly one initial timer');
+    assert.equal(scheduledTimers.at(-1).delay, api.constants.bootDelayMs, 'initial check is queued shortly after mount');
+    assert.equal(first.getAttribute('aria-live'), 'polite');
+
+    api.setModel({ state: 'latest', manifest: current, checkedAt: Date.now(), failedAt: 0, error: '' });
     api.render();
-    assert.strictEqual(first.dataset.label, 'CHECK', 'idle status is rendered through the dedicated label layer');
-    assert.strictEqual(first.textContent, '', 'raw button text is removed to prevent inherited wrapping');
-    const styleText = document.getElementById(api.constants.styleId).textContent;
-    assert(styleText.includes('content:attr(data-label)!important'), 'visible status uses the dedicated pseudo label layer');
-    assert(styleText.includes('white-space:nowrap!important'), 'status label wrapping is forcibly disabled');
-    assert(styleText.includes('word-break:keep-all!important'), 'status words cannot be split by inherited game CSS');
-    assert(styleText.includes('width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important'), 'Desktop status matches the control-family footprint');
-    assert(styleText.includes('[data-state="latest"]::before{content:"✓"!important'), 'LATEST state includes a check indicator');
-    assert(styleText.includes('[data-state="update"]::before{content:"↑"!important'), 'UPDATE state includes an update indicator');
-    assert(styleText.includes('[data-state="error"]::before{content:"!"!important'), 'RETRY state includes an error indicator');
-    assert(!styleText.includes('grid-template-rows:20px auto'), 'standalone grid tile geometry is removed');
-    assert(styleText.includes('data-mcms-tablet-active'), 'Tablet-specific version-control styling is present');
-    assert(styleText.includes('data-mcms-mobile-active'), 'iOS/Mobile-specific version-control styling is present');
+    assert.equal(first.dataset.label, 'LATEST');
+    assert.equal(first.classList.contains('mcms-version-update-alert'), false);
+    assert.match(first.title, /is current — open official Toolkit page/u);
+    click(first);
+    assert.equal(openedUrls.at(-1), productUrl, 'LATEST opens the official TKB product page');
 
-    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.ontimeout()); return { abort() {} }; };
-    await assert.rejects(api.requestManifest(), /timed out/, 'network timeout rejects without reporting LATEST');
+    api.setModel({ state: 'update', manifest: patch, checkedAt: Date.now(), failedAt: 0, error: '' });
+    api.render();
+    assert.equal(first.dataset.label, 'UPDATE');
+    assert.equal(first.classList.contains('mcms-version-update-alert'), true);
+    assert.match(first.title, /10\.2\.10 available — open official update page/u);
+    click(first);
+    assert.equal(openedUrls.at(-1), productUrl, 'UPDATE opens the official TKB product page');
+    assert.ok(openedUrls.every(url => url === productUrl), 'version button exposed a non-TKB destination');
+
+    const alertStyle = document.getElementById(api.constants.alertStyleId).textContent;
+    assert.match(alertStyle, /@keyframes mcmsVersionUpdateNeon/u);
+    assert.match(alertStyle, /data-state="update"/u);
+    assert.match(alertStyle, /prefers-reduced-motion:reduce/u);
+    assert.match(alertStyle, /animation:none !important/u, 'reduced-motion update halo is static');
+    assert.match(alertStyle, /box-shadow:0 0 7px/u, 'reduced-motion update halo remains conspicuous');
+    const baseStyle = document.getElementById(api.constants.styleId).textContent;
+    assert.match(baseStyle, /data-mcms-tablet-active/u);
+    assert.match(baseStyle, /data-mcms-mobile-active/u);
+    assert.match(baseStyle, /width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important/u);
+
+    // A release appearing between scheduled checks changes the live state without reload.
+    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('10.2.9')) })); return { abort() {} }; };
+    api.reset();
+    await api.runCheck(true);
+    assert.equal(api.model().state, 'latest');
+    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('10.2.10')) })); return { abort() {} }; };
+    await api.runCheck(true);
+    assert.equal(api.model().state, 'update');
+    assert.equal(first.dataset.label, 'UPDATE');
+
+    // Returning to current status removes both the alert class and animation state.
+    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('10.2.9')) })); return { abort() {} }; };
+    await api.runCheck(true);
+    assert.equal(api.model().state, 'latest');
+    assert.equal(first.classList.contains('mcms-version-update-alert'), false);
+
+    // Failure after a verified result preserves that result; failed first check remains neutral.
     context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onerror()); return { abort() {} }; };
-    api.reset(); await api.runCheck(true); assert.strictEqual(api.model().state, 'error', 'rejected request renders retry/error state');
-    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('4.20.3')) })); return { abort() {} }; };
-    api.reset(); await api.runCheck(true); assert.strictEqual(api.model().state, 'update', 'successful live response renders UPDATE');
-    assert.strictEqual(first.dataset.label, 'UPDATE', 'UPDATE remains a single dedicated label after a live check');
+    api.setModel({ state: 'update', manifest: patch, checkedAt: Date.now(), failedAt: 0, error: '' });
+    await api.runCheck(true);
+    assert.equal(api.model().state, 'update');
+    assert.equal(api.model().manifest.version, '10.2.10');
+    api.reset();
+    await api.runCheck(true);
+    assert.equal(api.model().state, 'error');
+    assert.equal(api.model().manifest, null);
+    assert.equal(first.dataset.label, 'CHECK', 'failed first check does not falsely render LATEST');
 
-    console.log('Version status runtime fixtures passed');
+    // Concurrent callers share one in-flight request.
+    let liveOptions = null;
+    let requestCount = 0;
+    context.GM_xmlhttpRequest = options => { requestCount += 1; liveOptions = options; return { abort() {} }; };
+    api.reset();
+    const pendingA = api.runCheck(true);
+    const pendingB = api.runCheck(true);
+    await Promise.resolve();
+    assert.equal(requestCount, 1, 'overlapping checks created more than one request');
+    liveOptions.onload({ status: 200, responseText: JSON.stringify(manifest('10.2.10')) });
+    await Promise.all([pendingA, pendingB]);
+    assert.equal(api.model().state, 'update');
+
+    // Teardown clears the timer, aborts the request, and ignores its stale completion.
+    let aborted = 0;
+    let staleOptions = null;
+    context.GM_xmlhttpRequest = options => { staleOptions = options; return { abort() { aborted += 1; options.onabort(); } }; };
+    api.reset();
+    const staleCheck = api.runCheck(true);
+    await Promise.resolve();
+    api.schedule(60_000, false);
+    const activeTimer = api.timer();
+    api.dispose();
+    assert.equal(activeTimer.cleared, true, 'teardown did not clear the update timer');
+    assert.equal(aborted, 1, 'teardown did not abort the in-flight update request');
+    await staleCheck;
+    assert.equal(document.getElementById(api.constants.buttonId), null);
+    assert.equal(document.getElementById(api.constants.alertStyleId), null);
+    staleOptions?.onload?.({ status: 200, responseText: JSON.stringify(manifest('99.0.0')) });
+    assert.notEqual(api.model().manifest?.version, '99.0.0', 'stale response changed version state after teardown');
+
+    // Hidden tabs do no background work; foreground recovery can schedule an immediate freshness check.
+    api.reset();
+    document.visibilityState = 'hidden';
+    api.schedule(1234, false);
+    const hiddenTimer = api.timer();
+    await hiddenTimer.callback();
+    assert.equal(api.timer(), null);
+    document.visibilityState = 'visible';
+
+    console.log('Version status runtime fixtures passed: 60-second verified cadence, semantic comparison, TKB-only navigation, neon accessibility, failure preservation, overlap prevention and teardown safety.');
 })().catch(error => { console.error(error); process.exit(1); });

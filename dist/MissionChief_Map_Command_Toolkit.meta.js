@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.4
+// @version      10.2.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT

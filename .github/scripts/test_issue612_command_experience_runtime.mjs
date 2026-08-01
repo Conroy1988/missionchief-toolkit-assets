@@ -185,6 +185,7 @@ const uiSandbox = {
   fullscreenMapTarget: null,
   findLeafletMapInstance: () => mockMap,
   getViewportMetrics: () => ({ width: 730, height: 1200, offsetLeft: 0, offsetTop: 0 }),
+  toolkitCommandShellContextActive: () => true,
   toolkitPrimaryMapElement: () => dom.window.document.getElementById("map"),
   getLargestLeafletMap: () => dom.window.document.getElementById("map"),
   saveState() {},

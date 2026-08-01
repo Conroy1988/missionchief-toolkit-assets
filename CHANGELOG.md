@@ -1,5 +1,17 @@
 # Changelog
 
+## [10.2.5] - 2026-08-01
+
+### Map-only command shell and live update alert
+
+- Restricts the global Toolkit launcher, dock, command menu, overlays and map keyboard ownership to the positively identified top-level MissionChief map on the canonical root route.
+- Retires the document/body fallback that allowed standalone mission, credits, alliance, building and vehicle pages to mount the map command shell.
+- Tears down stale map UI on history navigation and remounts it exactly once when returning to the canonical map, without changing saved command-bar preferences or page-specific enhancements.
+- Checks the guarded GitHub stable-release manifest every 60 seconds while the canonical map context remains active, using semantic numeric version comparison and one non-overlapping request/timer lifecycle.
+- Makes both `LATEST` and `UPDATE` open the official TKB Toolkit product page; a newer release adds a conspicuous full-button neon pulse with a strong static reduced-motion halo.
+- Preserves the last verified state during transient failures, keeps an unsuccessful first check neutral, ignores superseded responses and aborts pending update work when map ownership ends.
+- Adds deterministic route, history, mission-window, non-map, persisted-state, shortcut, device-layout, cadence, destination, failure, overlap, teardown, theme-independent glow and accessibility regressions for Issues #638 and #639.
+
 ## [10.2.4] - 2026-08-01
 
 ### Alliance Member Manager page isolation

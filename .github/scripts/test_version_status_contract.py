@@ -29,16 +29,17 @@ def main() -> int:
     builder = BUILDER.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
-    start = source.index("    // Issue #153: stable live Toolkit version-status control.")
+    start = source.index("    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.")
     end = source.index("    function createCleanExit() {", start)
     block = source[start:end]
 
-    assert source.count("// Issue #153: stable live Toolkit version-status control.") == 1
-    assert "cacheMs: 30 * 60 * 1000" in block
-    assert "autoIntervalMs: 30 * 60 * 1000" in block
-    assert "failureCooldownMs: 10 * 60 * 1000" in block
+    assert source.count("// Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.") == 1
+    assert "productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/'" in block
+    assert "cacheMs: 60 * 1000" in block
+    assert "autoIntervalMs: 60 * 1000" in block
+    assert "failureCooldownMs: 60 * 1000" in block
     assert "requestTimeoutMs: 8 * 1000" in block
-    assert "bootDelayMs: 15 * 1000" in block
+    assert "bootDelayMs: 1500" in block
     assert "setInterval(" not in block, "version checker must use a non-overlapping recursive timeout"
     assert "scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false)" in block
     assert "document.visibilityState === 'hidden'" in block
@@ -50,6 +51,7 @@ def main() -> int:
     assert "button.className = 'mcms-economy-btn mcms-version-btn mcms-version-btn--unified'" not in block
     assert "button.dataset.variant = 'control-family'" in block
     assert "button.dataset.label = label" in block
+    assert "button.classList.toggle('mcms-version-update-alert', stateName === 'update')" in block
     assert "button.textContent = ''" in block
     assert "content:attr(data-label)!important" in block
     assert "white-space:nowrap!important" in block
@@ -57,6 +59,10 @@ def main() -> int:
     assert "width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important" in block
     assert '[data-state="latest"]::before{content:"✓"!important' in block
     assert '[data-state="update"]::before{content:"↑"!important' in block
+    assert "@keyframes mcmsVersionUpdateNeon" in block
+    assert "prefers-reduced-motion:reduce" in block
+    assert "animation:none !important" in block
+    assert "box-shadow:0 0 7px rgba(57,255,207,1)" in block
     assert "grid-template-rows:20px auto" not in block
     assert "mcms-version-btn--tile" not in block
     for marker in [
@@ -64,16 +70,22 @@ def main() -> int:
         "function versionStatusValidateManifest(payload)",
         "function versionStatusCacheIsFresh(cache, now = Date.now())",
         "function ensureVersionStatusButton()",
+        "function ensureVersionStatusAlertStyle()",
         "function versionStatusRequestManifest()",
         "function versionStatusAutomaticDelay(now = Date.now())",
         "function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false)",
         "function disposeVersionStatus()",
         "data-mcms-tablet-active",
         "data-mcms-mobile-active",
-        "runtime.requests?.add?.(versionStatusRequest)",
+        "runtime.requests?.add?.(requestHandle)",
+        "versionStatusRequestToken += 1",
+        "toolkitCommandShellContextActive()",
     ]:
         assert marker in block, f"version-status runtime marker missing: {marker}"
     assert "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json" in block
+    assert "pageWindow.open(VERSION_STATUS.productUrl" in block
+    assert "pageWindow.open(destination" not in block
+    assert "versionStatusPresentation(SCRIPT.version, manifest).destination" not in block
     assert "scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);" in source
     assert "scheduleVersionStatusCheck(0, false);" in source
     assert "disposeVersionStatus();" in source

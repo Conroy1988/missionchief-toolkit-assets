@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.4
+// @version      10.2.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.4',
+        version: '10.2.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -20610,7 +20610,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openContextCommandMenu(element, point = null) {
-        if (state.safeMode.enabled) return false;
+        if (state.safeMode.enabled || !toolkitCommandShellContextActive()) return false;
         const record = contextCommandRecordFromElement(element);
         if (!record) return false;
         closeContextCommandMenu();
@@ -20652,7 +20652,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function handleContextCommandRequest(event) {
-        if (event.defaultPrevented || state.safeMode.enabled) return false;
+        if (event.defaultPrevented || state.safeMode.enabled || !toolkitCommandShellContextActive()) return false;
         const point = { x: Number(event.clientX), y: Number(event.clientY) };
         if (!openContextCommandMenu(event.target, point)) return false;
         event.preventDefault();
@@ -21266,6 +21266,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function executeInputCommand(command) {
+        if (!toolkitCommandShellContextActive()) {
+            teardownToolkitCommandShell('keyboard command outside canonical map context');
+            return false;
+        }
         const action = INPUT_COMMAND_META[command]?.action;
         if (!action || (state.safeMode.enabled && !['menu', 'safeMode'].includes(action))) return false;
         if (action === 'menu') { togglePanel(); return true; }
@@ -21345,6 +21349,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openTabletQuickWheel(point = null, { manual = false, returnFocus = null } = {}) {
+        if (!toolkitCommandShellContextActive()) return false;
         if (!manual && (activeDeviceLayout !== 'tablet' || !state.quickWheel.enabled)) return false;
         closeTabletQuickWheel();
         const viewport = getViewportMetrics();
@@ -26927,7 +26932,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         saveState();
         updateUI();
     }
-    // Issue #515: restore the generic Toolkit launcher shell removed during v7 retirement.
+    // Issue #515 restored the launcher; Issue #638 restricts ownership to the canonical map page.
     function toolkitTopLevelDocument(doc = document) {
         try {
             const view = doc?.defaultView;
@@ -26936,23 +26941,97 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             return true;
         }
     }
+    function toolkitDocumentPathname(doc = document) {
+        let pathname = '';
+        try { pathname = doc?.defaultView?.location?.pathname || ''; } catch (error) {}
+        if (!pathname) {
+            try { pathname = doc === document ? location.pathname : ''; } catch (error) {}
+        }
+        const decoded = decodedPathname(pathname).replace(/\/{2,}/gu, '/').replace(/\/+$/gu, '');
+        return decoded || '/';
+    }
+    function toolkitCommandShellRouteEligible(doc = document) {
+        return toolkitTopLevelDocument(doc) && toolkitDocumentPathname(doc) === '/';
+    }
     function toolkitPrimaryMapElement(mapEl, doc = document) {
+        if (!toolkitCommandShellRouteEligible(doc)) return null;
         const missionSelector = '#mission-form,.mission-window,.mission_window,.modal,.modal-content,.lightbox,[data-mission-id]';
+        const mapOuter = doc?.querySelector?.('#map_outer') || null;
         const candidates = [
             doc?.querySelector?.('#map'),
+            mapOuter?.querySelector?.('.leaflet-container,[data-leaflet-map="main"]'),
             mapEl,
-            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"],.leaflet-container') || [])
+            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"]') || [])
         ];
         for (const candidate of candidates) {
             if (!candidate || candidate.ownerDocument !== doc || candidate.isConnected === false) continue;
             if (candidate.closest?.(missionSelector)) continue;
+            const insideCanonicalShell = Boolean(mapOuter?.contains?.(candidate));
+            const explicitMainMap = candidate.id === 'map' && Boolean(
+                insideCanonicalShell
+                || candidate.classList?.contains?.('leaflet-container')
+                || candidate.matches?.('[data-leaflet-map="main"]')
+            );
+            const declaredMainMap = candidate.matches?.('[data-leaflet-map="main"]') && insideCanonicalShell;
+            const canonicalLeafletMap = insideCanonicalShell && candidate.classList?.contains?.('leaflet-container');
+            if (!explicitMainMap && !declaredMainMap && !canonicalLeafletMap) continue;
             return candidate;
         }
         return null;
     }
     function toolkitControlHost(mapEl, doc = document) {
-        if (!toolkitTopLevelDocument(doc)) return null;
-        return toolkitPrimaryMapElement(mapEl, doc) || doc?.body || doc?.documentElement || null;
+        return toolkitPrimaryMapElement(mapEl, doc);
+    }
+    function toolkitCommandShellContextActive(doc = document) {
+        if (!toolkitCommandShellRouteEligible(doc)) return false;
+        const discoveredMap = doc === document ? getLargestLeafletMap() : null;
+        return Boolean(toolkitPrimaryMapElement(discoveredMap, doc));
+    }
+    function teardownToolkitCommandShell(reason = 'ineligible command-shell context') {
+        disposeVersionStatus();
+        const nodeIds = [
+            SCRIPT.controlId,
+            SCRIPT.panelId,
+            SCRIPT.toastId,
+            SCRIPT.payoutFlashId,
+            SCRIPT.vehicleStatusId,
+            SCRIPT.pressureBoardId,
+            SCRIPT.majorIncidentFeedId,
+            SCRIPT.transportSweepHudId,
+            SCRIPT.helpCenterId,
+            SCRIPT.commandPaletteId,
+            SCRIPT.commandExperienceModalId,
+            SCRIPT.contextMenuId,
+            SCRIPT.quickWheelId,
+            SCRIPT.fullscreenExitId,
+            SCRIPT.vehicleFollowId,
+            SCRIPT.cleanExitId,
+        ];
+        let removed = 0;
+        for (const id of nodeIds) {
+            const node = document.querySelector?.(`[id="${id}"]`);
+            if (!node) continue;
+            node.remove();
+            removed += 1;
+        }
+        document.querySelectorAll?.('.mcms-map-fullscreen-target').forEach(element => element.classList.remove('mcms-map-fullscreen-target'));
+        fullscreenMapTarget?.classList?.remove?.('mcms-map-fullscreen-target');
+        fullscreenMapTarget = null;
+        autoHideDockRevealed = false;
+        settingsPanelActivated = false;
+        dragState = null;
+        contextCommandTarget = null;
+        commandPaletteEntries = [];
+        commandPaletteResults = [];
+        commandPaletteSelectedIndex = 0;
+        commandPaletteReturnFocus = null;
+        quickWheelReturnFocus = null;
+        quickWheelRestoreDragging = false;
+        document.documentElement?.removeAttribute?.('data-mcms-command-palette-open');
+        document.documentElement?.removeAttribute?.('data-mcms-help-open');
+        document.documentElement?.style?.removeProperty?.('cursor');
+        document.body?.style?.removeProperty?.('user-select');
+        return { reason, removed };
     }
     function toolkitApplyCommandBarState(control = null) {
         control ||= document.querySelector?.(`#${SCRIPT.controlId}`) || null;
@@ -27345,6 +27424,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openPanel() {
+        if (!toolkitCommandShellContextActive()) {
+            teardownToolkitCommandShell('menu request outside canonical map context');
+            return;
+        }
         const panel = document.getElementById(SCRIPT.panelId) || createPanel();
         if (!panel) return;
         applyRootAttributes();
@@ -27945,6 +28028,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openCommandPalette({ returnFocus = null, initialQuery = '' } = {}) {
+        if (!toolkitCommandShellContextActive()) return null;
         if (state.safeMode.enabled) { showToast('Command Palette is suspended in Toolkit Safe Mode'); return null; }
         const existing = commandExperienceElement(SCRIPT.commandPaletteId);
         if (existing) {
@@ -28258,6 +28342,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function handleKeyboard(event) {
+        if (!toolkitCommandShellContextActive()) {
+            teardownToolkitCommandShell('keyboard event outside canonical map context');
+            return;
+        }
         if (event.key === 'Escape' && closeContextCommandMenu({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeCommandPalette({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeTabletQuickWheel({ restoreFocus: true })) { event.preventDefault(); return; }
@@ -28374,35 +28462,225 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         `;
     }
 
-    // Issue #153: stable live Toolkit version-status control.
-    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 30 * 60 * 1000, autoIntervalMs: 30 * 60 * 1000, failureCooldownMs: 10 * 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 15 * 1000, longPressMs: 650, styleId: 'mcms-version-status-style', buttonId: 'mcms-version-status-control' });
-    let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false;
+    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.
+    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
+    let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusRequestToken = 0; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false; let versionStatusInitialCheckQueued = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
     function versionStatusUrl(value, kind, version) { let url; try { url = new URL(String(value || '')); } catch (err) { throw new Error(`Invalid ${kind} URL.`); } if (url.protocol !== 'https:') throw new Error(`${kind} URL must use HTTPS.`); if (kind === 'release') { const expected = `/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`; if (url.hostname !== 'github.com' || url.pathname !== expected) throw new Error('Release URL is not canonical.'); } else if (url.hostname !== 'tkb-gaming.scot' || url.pathname !== '/mission-chief-scripts/map-command-toolkit/install/') throw new Error('Update URL is not canonical.'); return url.href; }
     function versionStatusValidateManifest(payload) { if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('Version manifest is not an object.'); if (Number(payload.schemaVersion) !== 1 || payload.channel !== 'stable') throw new Error('Version manifest channel is invalid.'); const version = String(payload.version || '').trim(); if (!versionStatusParse(version)) throw new Error('Version manifest does not contain a stable semantic version.'); return { schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: versionStatusUrl(payload.releaseNotesUrl, 'release', version), updateUrl: versionStatusUrl(payload.updateUrl, 'update', version), publishedAt: String(payload.publishedAt || '') }; }
-    function versionStatusPresentation(installedVersion, manifest) { const comparison = versionStatusCompare(manifest?.version, installedVersion); if (comparison === null) throw new Error('Installed or published version is malformed.'); return comparison > 0 ? { state: 'update', destination: manifest.updateUrl } : { state: 'latest', destination: manifest.releaseNotesUrl }; }
+    function versionStatusPresentation(installedVersion, manifest) { const comparison = versionStatusCompare(manifest?.version, installedVersion); if (comparison === null) throw new Error('Installed or published version is malformed.'); return { state: comparison > 0 ? 'update' : 'latest', destination: VERSION_STATUS.productUrl }; }
     function versionStatusCacheIsFresh(cache, now = Date.now()) { if (!cache || typeof cache !== 'object') return false; const checkedAt = Number(cache.checkedAt); if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt >= VERSION_STATUS.cacheMs) return false; try { versionStatusValidateManifest(cache.manifest); return true; } catch (err) { return false; } }
     function versionStatusFailureCooling(value, now = Date.now()) { const failedAt = Number(value?.failedAt ?? value); return Number.isFinite(failedAt) && failedAt <= now && now - failedAt < VERSION_STATUS.failureCooldownMs; }
     async function versionStatusStorageRead(key) { try { if (typeof GM_getValue === 'function') return await GM_getValue(key, null); } catch (err) {} try { const raw = pageWindow.localStorage?.getItem(key); return raw ? JSON.parse(raw) : null; } catch (err) { return null; } }
     async function versionStatusStorageWrite(key, value) { try { if (typeof GM_setValue === 'function') { await GM_setValue(key, value); return; } } catch (err) {} try { pageWindow.localStorage?.setItem(key, JSON.stringify(value)); } catch (err) {} }
     async function versionStatusStorageDelete(key) { try { if (typeof GM_deleteValue === 'function') { await GM_deleteValue(key); return; } } catch (err) {} try { pageWindow.localStorage?.removeItem(key); } catch (err) {} }
-    function versionStatusRender() { const button = document.getElementById(VERSION_STATUS.buttonId); if (!button) return; const installed = SCRIPT.version; const available = versionStatusModel.manifest?.version || ''; const stateName = versionStatusModel.state; const labels = { idle: 'CHECK', checking: 'CHECK', latest: 'LATEST', update: 'UPDATE', error: 'RETRY' }; const label = labels[stateName] || 'CHECK'; button.textContent = ''; button.dataset.label = label; button.dataset.state = stateName; button.setAttribute('aria-busy', String(stateName === 'checking')); let title = `Check Toolkit ${installed} against the verified production release.`; if (stateName === 'checking') title = `Checking Toolkit ${installed} for updates…`; if (stateName === 'latest') title = `Toolkit ${installed} is current — open release notes. Shift-click, right-click or long-press to recheck.`; if (stateName === 'update') title = `Toolkit ${installed} installed; ${available} available — open update page. Shift-click, right-click or long-press to recheck.`; if (stateName === 'error') title = 'Version check unavailable — activate to retry.'; button.title = title; button.setAttribute('aria-label', title); }
+    function versionStatusRender() { const button = document.getElementById(VERSION_STATUS.buttonId); if (!button) return; const installed = SCRIPT.version; const available = versionStatusModel.manifest?.version || ''; const stateName = versionStatusModel.state; const labels = { idle: 'CHECK', checking: 'CHECK', latest: 'LATEST', update: 'UPDATE', error: 'CHECK' }; const label = labels[stateName] || 'CHECK'; button.textContent = ''; button.dataset.label = label; button.dataset.state = stateName; button.classList.toggle('mcms-version-update-alert', stateName === 'update'); button.setAttribute('aria-busy', String(stateName === 'checking')); let title = `Toolkit ${installed} — open official Toolkit page`; if (stateName === 'checking') title = `Checking Toolkit ${installed} against the verified production release — open official Toolkit page`; if (stateName === 'latest') title = `Toolkit ${installed} is current — open official Toolkit page`; if (stateName === 'update') title = `Toolkit ${installed} installed; ${available} available — open official update page`; if (stateName === 'error') title = `Toolkit ${installed} update check unavailable — open official Toolkit page`; button.title = title; button.setAttribute('aria-label', title); }
     function ensureVersionStatusStyle() { if (document.getElementById(VERSION_STATUS.styleId)) return; const style = document.createElement('style'); style.id = VERSION_STATUS.styleId; style.textContent = `#${VERSION_STATUS.buttonId}{--mcms-version-accent:#6fb7ff;--mcms-version-accent-rgb:111,183,255;box-sizing:border-box!important;position:relative;display:inline-flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;align-self:flex-start;flex:0 0 48px!important;width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important;margin:0!important;padding:4px 3px 3px!important;overflow:hidden!important;border:1px solid rgba(255,255,255,.26)!important;border-radius:9px!important;background:linear-gradient(180deg,rgba(48,53,59,.98) 0%,rgba(15,19,23,.98) 100%)!important;color:#f5f7fa!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;box-shadow:0 3px 9px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(var(--mcms-version-accent-rgb),.11)!important;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}#${VERSION_STATUS.buttonId}::before{content:"•"!important;box-sizing:border-box;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important;padding:0!important;border:1px solid rgba(var(--mcms-version-accent-rgb),.72)!important;border-radius:50%!important;background:rgba(var(--mcms-version-accent-rgb),.16)!important;color:var(--mcms-version-accent)!important;font:900 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;box-shadow:0 0 7px rgba(var(--mcms-version-accent-rgb),.22),inset 0 1px 0 rgba(255,255,255,.1)!important}#${VERSION_STATUS.buttonId}::after{content:attr(data-label)!important;box-sizing:border-box;display:block!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;color:#f5f7fa!important;font:800 7.2px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;letter-spacing:.12px!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;text-overflow:clip!important}#${VERSION_STATUS.buttonId}:focus-visible{outline:2px solid var(--mcms-version-accent)!important;outline-offset:2px}#${VERSION_STATUS.buttonId}[data-state="latest"]{--mcms-version-accent:#5bd391;--mcms-version-accent-rgb:91,211,145}#${VERSION_STATUS.buttonId}[data-state="latest"]::before{content:"✓"!important}#${VERSION_STATUS.buttonId}[data-state="update"]{--mcms-version-accent:#ffc452;--mcms-version-accent-rgb:255,196,82}#${VERSION_STATUS.buttonId}[data-state="update"]::before{content:"↑"!important}#${VERSION_STATUS.buttonId}[data-state="checking"]{--mcms-version-accent:#76c7ff;--mcms-version-accent-rgb:118,199,255;cursor:progress;opacity:.88}#${VERSION_STATUS.buttonId}[data-state="checking"]::before{content:"…"!important}#${VERSION_STATUS.buttonId}[data-state="error"]{--mcms-version-accent:#ff7e7e;--mcms-version-accent-rgb:255,126,126}#${VERSION_STATUS.buttonId}[data-state="error"]::before{content:"!"!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}{flex-basis:44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding:3px 2px!important;border-radius:8px!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}::before{flex-basis:18px!important;width:18px!important;height:18px!important;font-size:11px!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}::after{font-size:6.7px!important;letter-spacing:0!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}{flex-basis:46px!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;padding:3px 2px!important;border-radius:9px!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}::before{flex-basis:19px!important;width:19px!important;height:19px!important;font-size:11px!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}::after{font-size:6.9px!important;letter-spacing:0!important}@media (prefers-reduced-motion:reduce){#${VERSION_STATUS.buttonId}{transition:none!important}}`; (document.head || document.documentElement).appendChild(style); }
-    function versionStatusOpen() { const manifest = versionStatusModel.manifest; if (!manifest) { scheduleVersionStatusCheck(0, true); return; } let destination; try { destination = versionStatusPresentation(SCRIPT.version, manifest).destination; } catch (err) { scheduleVersionStatusCheck(0, true); return; } const opened = pageWindow.open(destination, '_blank', 'noopener,noreferrer'); try { if (opened) opened.opener = null; } catch (err) {} }
-    function ensureVersionStatusButton() { ensureVersionStatusStyle(); const control = document.getElementById(SCRIPT.controlId); const row = control?.querySelector?.('.mcms-launch-row'); if (!control || !row) return null; let button = document.getElementById(VERSION_STATUS.buttonId); if (button && !control.contains(button)) { button.remove(); button = null; } if (!button) { button = document.createElement('button'); button.id = VERSION_STATUS.buttonId; button.type = 'button'; button.className = 'mcms-version-btn mcms-version-btn--unified'; button.dataset.variant = 'control-family'; button.setAttribute('aria-live', 'polite'); const economy = row.querySelector?.('.mcms-economy-btn') || null; row.insertBefore(button, economy); runtimeListen(button, 'click', event => { event.preventDefault(); if (versionStatusSuppressClick) { versionStatusSuppressClick = false; return; } if (event.shiftKey || versionStatusModel.state === 'idle' || versionStatusModel.state === 'error') { scheduleVersionStatusCheck(0, true); return; } if (versionStatusModel.state !== 'checking') versionStatusOpen(); }); runtimeListen(button, 'contextmenu', event => { event.preventDefault(); scheduleVersionStatusCheck(0, true); }); runtimeListen(button, 'pointerdown', event => { if (event.pointerType === 'mouse') return; runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = runtimeSetTimeout(() => { versionStatusSuppressClick = true; scheduleVersionStatusCheck(0, true); showToast('Checking Toolkit version…'); }, VERSION_STATUS.longPressMs); }); for (const eventName of ['pointermove', 'pointerup', 'pointercancel']) runtimeListen(button, eventName, () => { runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = null; }, { passive: true }); } versionStatusRender(); if (!versionStatusHydrationPromise) void hydrateVersionStatus(); return button; }
+    function ensureVersionStatusAlertStyle() {
+        if (document.querySelector(`#${VERSION_STATUS.alertStyleId}`)) return;
+        const style = document.createElement('style');
+        style.id = VERSION_STATUS.alertStyleId;
+        style.textContent = `
+            @keyframes mcmsVersionUpdateNeon {
+                0%,100% { box-shadow:0 0 5px rgba(57,255,207,.82),0 0 12px rgba(57,255,207,.62),0 0 22px rgba(57,210,255,.42),0 3px 9px rgba(0,0,0,.5),inset 0 0 8px rgba(57,255,207,.18); }
+                50% { box-shadow:0 0 8px rgba(57,255,207,1),0 0 20px rgba(57,255,207,.96),0 0 34px rgba(57,210,255,.78),0 3px 9px rgba(0,0,0,.5),inset 0 0 14px rgba(57,255,207,.32); }
+            }
+            #${VERSION_STATUS.buttonId}[data-state="update"] {
+                --mcms-version-accent:#39ffcf !important;
+                --mcms-version-accent-rgb:57,255,207 !important;
+                border-color:rgba(94,255,220,.96) !important;
+                background:linear-gradient(180deg,rgba(5,66,62,.99) 0%,rgba(2,23,28,.99) 100%) !important;
+                color:#fff !important;
+                box-shadow:0 0 5px rgba(57,255,207,.95),0 0 13px rgba(57,255,207,.78),0 0 24px rgba(57,210,255,.58),0 3px 9px rgba(0,0,0,.5),inset 0 0 10px rgba(57,255,207,.22) !important;
+                animation:mcmsVersionUpdateNeon 1.8s ease-in-out infinite !important;
+            }
+            @media (prefers-reduced-motion:reduce) {
+                #${VERSION_STATUS.buttonId}[data-state="update"] {
+                    animation:none !important;
+                    box-shadow:0 0 7px rgba(57,255,207,1),0 0 18px rgba(57,255,207,.9),0 0 30px rgba(57,210,255,.7),0 3px 9px rgba(0,0,0,.5),inset 0 0 12px rgba(57,255,207,.28) !important;
+                }
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    }
+    function versionStatusOpen() { const opened = pageWindow.open(VERSION_STATUS.productUrl, '_blank', 'noopener,noreferrer'); try { if (opened) opened.opener = null; } catch (err) {} }
+    function ensureVersionStatusButton() {
+        ensureVersionStatusStyle();
+        ensureVersionStatusAlertStyle();
+        const control = document.getElementById(SCRIPT.controlId);
+        const row = control?.querySelector?.('.mcms-launch-row');
+        if (!control || !row) return null;
+        let button = document.getElementById(VERSION_STATUS.buttonId);
+        if (button && !control.contains(button)) { button.remove(); button = null; }
+        if (!button) {
+            button = document.createElement('button');
+            button.id = VERSION_STATUS.buttonId;
+            button.type = 'button';
+            button.className = 'mcms-version-btn mcms-version-btn--unified';
+            button.dataset.variant = 'control-family';
+            button.setAttribute('aria-live', 'polite');
+            const economy = row.querySelector?.('.mcms-economy-btn') || null;
+            row.insertBefore(button, economy);
+            runtimeListen(button, 'click', event => {
+                event.preventDefault();
+                if (versionStatusSuppressClick) { versionStatusSuppressClick = false; return; }
+                if (event.shiftKey) { scheduleVersionStatusCheck(0, true); return; }
+                versionStatusOpen();
+            });
+            runtimeListen(button, 'contextmenu', event => { event.preventDefault(); scheduleVersionStatusCheck(0, true); });
+            runtimeListen(button, 'pointerdown', event => {
+                if (event.pointerType === 'mouse') return;
+                runtimeClearTimeout(versionStatusLongPressTimer);
+                versionStatusLongPressTimer = runtimeSetTimeout(() => {
+                    versionStatusSuppressClick = true;
+                    scheduleVersionStatusCheck(0, true);
+                    showToast('Checking Toolkit version…');
+                }, VERSION_STATUS.longPressMs);
+            });
+            for (const eventName of ['pointermove', 'pointerup', 'pointercancel']) {
+                runtimeListen(button, eventName, () => {
+                    runtimeClearTimeout(versionStatusLongPressTimer);
+                    versionStatusLongPressTimer = null;
+                }, { passive: true });
+            }
+        }
+        versionStatusRender();
+        if (!versionStatusHydrationPromise) void hydrateVersionStatus();
+        if (!versionStatusInitialCheckQueued && versionStatusTimer === null && !versionStatusCheckPromise) {
+            versionStatusInitialCheckQueued = true;
+            queueMicrotask(() => {
+                versionStatusInitialCheckQueued = false;
+                if (!runtime.destroyed && document.visibilityState !== 'hidden' && button?.isConnected && toolkitCommandShellContextActive() && versionStatusTimer === null && !versionStatusCheckPromise) {
+                    scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+                }
+            });
+        }
+        return button;
+    }
     async function hydrateVersionStatus() { if (versionStatusHydrationPromise) return versionStatusHydrationPromise; versionStatusHydrationPromise = (async () => { const now = Date.now(); const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); } })().finally(() => { versionStatusHydrationPromise = null; }); return versionStatusHydrationPromise; }
-    function versionStatusRequestManifest() { return new Promise((resolve, reject) => { let settled = false; let timeoutTimer = null; const finish = (error, text) => { if (settled) return; settled = true; runtimeClearTimeout(timeoutTimer); if (versionStatusRequest?.abort) runtime.requests?.delete?.(versionStatusRequest); versionStatusRequest = null; if (error) { reject(error); return; } try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); } catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); } }; const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}`; if (typeof GM_xmlhttpRequest === 'function') { try { versionStatusRequest = GM_xmlhttpRequest({ method: 'GET', url, timeout: VERSION_STATUS.requestTimeoutMs, responseType: 'text', headers: { Accept: 'application/json' }, onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300 ? finish(null, response.responseText) : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)), onerror: () => finish(new Error('Version endpoint could not be reached.')), ontimeout: () => finish(new Error('Version check timed out.')), onabort: () => finish(new Error('Version check was cancelled.')) }); if (versionStatusRequest?.abort) runtime.requests?.add?.(versionStatusRequest); } catch (err) { finish(err); } return; } const Controller = pageWindow.AbortController || globalThis.AbortController; const controller = typeof Controller === 'function' ? new Controller() : null; if (controller) runtime.fetchControllers?.add?.(controller); timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs); Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, { cache: 'no-store', credentials: 'omit', signal: controller?.signal, headers: { Accept: 'application/json' } })).then(response => { if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`); return response.text(); }).then(text => finish(null, text)).catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.'))).finally(() => { if (controller) runtime.fetchControllers?.delete?.(controller); }); }); }
-    async function runVersionStatusCheck(force = false) { ensureVersionStatusButton(); if (versionStatusCheckPromise) return versionStatusCheckPromise; versionStatusCheckPromise = (async () => { const now = Date.now(); if (!force) { const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return versionStatusModel; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); return versionStatusModel; } } versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, error: '' }; versionStatusRender(); try { const manifest = await versionStatusRequestManifest(); const checkedAt = Date.now(); const presentation = versionStatusPresentation(SCRIPT.version, manifest); versionStatusModel = { state: presentation.state, manifest, checkedAt, error: '' }; await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest }); await versionStatusStorageDelete(VERSION_STATUS.failureKey); } catch (err) { const failedAt = Date.now(); versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt, error: String(err?.message || err || 'failed') }; await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt }); } versionStatusRender(); return versionStatusModel; })().finally(() => { versionStatusCheckPromise = null; }); return versionStatusCheckPromise; }
+    function versionStatusRequestManifest() {
+        const requestToken = ++versionStatusRequestToken;
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            let timeoutTimer = null;
+            let requestHandle = null;
+            const finish = (error, text) => {
+                if (settled) return;
+                settled = true;
+                runtimeClearTimeout(timeoutTimer);
+                if (requestHandle?.abort) runtime.requests?.delete?.(requestHandle);
+                if (requestHandle) runtime.fetchControllers?.delete?.(requestHandle);
+                if (versionStatusRequest === requestHandle) versionStatusRequest = null;
+                if (runtime.destroyed || requestToken !== versionStatusRequestToken) {
+                    reject(new Error('Version check was superseded.'));
+                    return;
+                }
+                if (error) { reject(error); return; }
+                try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); }
+                catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); }
+            };
+            const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}-${requestToken}`;
+            if (typeof GM_xmlhttpRequest === 'function') {
+                try {
+                    requestHandle = GM_xmlhttpRequest({
+                        method: 'GET',
+                        url,
+                        timeout: VERSION_STATUS.requestTimeoutMs,
+                        responseType: 'text',
+                        headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                        onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
+                            ? finish(null, response.responseText)
+                            : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
+                        onerror: () => finish(new Error('Version endpoint could not be reached.')),
+                        ontimeout: () => finish(new Error('Version check timed out.')),
+                        onabort: () => finish(new Error('Version check was cancelled.')),
+                    });
+                    versionStatusRequest = requestHandle;
+                    if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
+                } catch (err) { finish(err); }
+                return;
+            }
+            const Controller = pageWindow.AbortController || globalThis.AbortController;
+            const controller = typeof Controller === 'function' ? new Controller() : null;
+            requestHandle = controller;
+            versionStatusRequest = controller;
+            if (controller) runtime.fetchControllers?.add?.(controller);
+            timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
+            Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
+                cache: 'no-store',
+                credentials: 'omit',
+                signal: controller?.signal,
+                headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+            }))
+                .then(response => {
+                    if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
+                    return response.text();
+                })
+                .then(text => finish(null, text))
+                .catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
+        });
+    }
+    async function runVersionStatusCheck(force = false) {
+        ensureVersionStatusButton();
+        if (versionStatusCheckPromise) return versionStatusCheckPromise;
+        const pendingCheck = (async () => {
+            const now = Date.now();
+            if (!force) {
+                const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey);
+                if (versionStatusCacheIsFresh(cache, now)) {
+                    const manifest = versionStatusValidateManifest(cache.manifest);
+                    versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), failedAt: 0, error: '' };
+                    versionStatusRender();
+                    return versionStatusModel;
+                }
+                const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey);
+                if (versionStatusFailureCooling(failure, now)) {
+                    if (!versionStatusModel.manifest || !['latest', 'update'].includes(versionStatusModel.state)) {
+                        versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' };
+                        versionStatusRender();
+                    }
+                    return versionStatusModel;
+                }
+            }
+            const previousVerified = versionStatusModel.manifest && ['latest', 'update'].includes(versionStatusModel.state)
+                ? { ...versionStatusModel }
+                : null;
+            if (!previousVerified) {
+                versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, failedAt: 0, error: '' };
+                versionStatusRender();
+            }
+            try {
+                const manifest = await versionStatusRequestManifest();
+                const checkedAt = Date.now();
+                const presentation = versionStatusPresentation(SCRIPT.version, manifest);
+                versionStatusModel = { state: presentation.state, manifest, checkedAt, failedAt: 0, error: '' };
+                await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest });
+                await versionStatusStorageDelete(VERSION_STATUS.failureKey);
+            } catch (err) {
+                if (String(err?.message || err) === 'Version check was superseded.') return versionStatusModel;
+                const failedAt = Date.now();
+                const error = String(err?.message || err || 'failed');
+                versionStatusModel = previousVerified
+                    ? { ...previousVerified, failedAt, error }
+                    : { state: 'error', manifest: null, checkedAt: 0, failedAt, error };
+                await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt });
+            }
+            versionStatusRender();
+            return versionStatusModel;
+        })();
+        const trackedCheck = pendingCheck.finally(() => {
+            if (versionStatusCheckPromise === trackedCheck) versionStatusCheckPromise = null;
+        });
+        versionStatusCheckPromise = trackedCheck;
+        return trackedCheck;
+    }
     function versionStatusAutomaticDelay(now = Date.now()) {
         const current = Number(now) || Date.now();
-        if (versionStatusModel.state === 'error') {
-            const failedAt = Number(versionStatusModel.failedAt) || 0;
-            if (failedAt > 0) {
-                const elapsed = Math.max(0, current - failedAt);
-                return Math.max(1000, VERSION_STATUS.failureCooldownMs - Math.min(VERSION_STATUS.failureCooldownMs, elapsed));
-            }
-            return VERSION_STATUS.failureCooldownMs;
+        const failedAt = Number(versionStatusModel.failedAt) || 0;
+        if (failedAt > 0) {
+            const elapsed = Math.max(0, current - failedAt);
+            return Math.max(1000, VERSION_STATUS.failureCooldownMs - Math.min(VERSION_STATUS.failureCooldownMs, elapsed));
         }
         const checkedAt = Number(versionStatusModel.checkedAt) || 0;
         if (checkedAt > 0 && versionStatusModel.manifest) {
@@ -28412,7 +28690,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return VERSION_STATUS.autoIntervalMs;
     }
     function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false) {
-        if (runtime.destroyed) return;
+        if (runtime.destroyed || !toolkitCommandShellContextActive()) {
+            disposeVersionStatus();
+            return;
+        }
         ensureVersionStatusButton();
         if (versionStatusTimer !== null) {
             if (!force && Number(delay) === VERSION_STATUS.bootDelayMs) return;
@@ -28420,20 +28701,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         versionStatusTimer = runtimeSetTimeout(async () => {
             versionStatusTimer = null;
-            if (runtime.destroyed) return;
+            if (runtime.destroyed || !toolkitCommandShellContextActive()) {
+                disposeVersionStatus();
+                return;
+            }
             if (!force && document.visibilityState === 'hidden') return;
             try {
                 await runVersionStatusCheck(force);
             } finally {
-                if (!runtime.destroyed && document.visibilityState !== 'hidden') {
+                if (!runtime.destroyed && toolkitCommandShellContextActive() && document.visibilityState !== 'hidden') {
                     scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false);
                 }
             }
         }, Math.max(0, Number(delay) || 0));
     }
-    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); }
+    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; versionStatusInitialCheckQueued = false; versionStatusRequestToken += 1; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; versionStatusCheckPromise = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); document.querySelector(`#${VERSION_STATUS.alertStyleId}`)?.remove(); }
 
     function createCleanExit() {
+        if (!toolkitCommandShellContextActive()) return null;
         if (document.getElementById(SCRIPT.cleanExitId)) return;
         const button = document.createElement('button');
         button.id = SCRIPT.cleanExitId;
@@ -28451,7 +28736,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const existing = document.getElementById(SCRIPT.controlId);
         if (existing) {
             if (existing.parentElement !== host) host.appendChild(existing);
-            existing.classList.toggle('mcms-control-fallback', !primaryMap);
+            existing.classList.remove('mcms-control-fallback');
             toolkitApplyCommandBarState(existing);
             return existing;
         }
@@ -28550,7 +28835,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
         toolkitApplyCommandBarState(control);
         host.appendChild(control);
-        control.classList.toggle('mcms-control-fallback', !primaryMap);
+        control.classList.remove('mcms-control-fallback');
         renderScreenPins();
         updateUI();
         return control;
@@ -28711,6 +28996,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function createPanel() {
+        if (!toolkitCommandShellContextActive()) return null;
         const existingPanel = document.getElementById(SCRIPT.panelId);
         if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
         const panelStartedAt = startupClock();
@@ -29776,9 +30062,16 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         updateCommandInterfaceHeader(panel);
     }
     function ensureUi() {
-        if (!toolkitTopLevelDocument(document)) return true;
+        if (!toolkitCommandShellRouteEligible(document)) {
+            teardownToolkitCommandShell('route is not the canonical top-level map');
+            return true;
+        }
         const discoveredMap = getLargestLeafletMap();
         const mapEl = toolkitPrimaryMapElement(discoveredMap, document);
+        if (!mapEl) {
+            teardownToolkitCommandShell('canonical map has not been positively identified');
+            return false;
+        }
         const control = createControl(mapEl);
         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
         if (control) ensureVersionStatusButton();
@@ -29794,6 +30087,52 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         toolkitApplyCommandBarState(control);
         if (!maybeShowSetupWizard()) maybeShowUpdateBriefing();
         return Boolean(control || document.getElementById(SCRIPT.controlId));
+    }
+
+    let toolkitCommandShellRouteReconcileQueued = false;
+    function reconcileToolkitCommandShellRoute(reason = 'navigation') {
+        invalidateMapElementCache();
+        if (!toolkitCommandShellRouteEligible(document)) {
+            teardownToolkitCommandShell(`${reason}: ineligible route`);
+            return true;
+        }
+        return ensureUi();
+    }
+    function queueToolkitCommandShellRouteReconcile(reason = 'history') {
+        if (toolkitCommandShellRouteReconcileQueued || runtime.destroyed) return;
+        toolkitCommandShellRouteReconcileQueued = true;
+        queueMicrotask(() => {
+            toolkitCommandShellRouteReconcileQueued = false;
+            if (!runtime.destroyed) reconcileToolkitCommandShellRoute(reason);
+        });
+    }
+    function installToolkitCommandShellNavigationHooks() {
+        const historyObject = pageWindow.history;
+        if (!historyObject || historyObject.__mcmsCommandShellNavigationHooks === SCRIPT.version) return true;
+        for (const method of ['pushState', 'replaceState']) {
+            const original = historyObject[method];
+            if (typeof original !== 'function') continue;
+            const wrapped = function (...args) {
+                const result = original.apply(this, args);
+                queueToolkitCommandShellRouteReconcile(`history.${method}`);
+                return result;
+            };
+            try {
+                historyObject[method] = wrapped;
+                runtime.hookRestorers.push(() => {
+                    if (historyObject[method] === wrapped) historyObject[method] = original;
+                });
+            } catch (error) {}
+        }
+        try { historyObject.__mcmsCommandShellNavigationHooks = SCRIPT.version; } catch (error) {}
+        runtime.hookRestorers.push(() => {
+            try {
+                if (historyObject.__mcmsCommandShellNavigationHooks === SCRIPT.version) {
+                    delete historyObject.__mcmsCommandShellNavigationHooks;
+                }
+            } catch (error) {}
+        });
+        return true;
     }
 
     function mutationBelongsToToolkit(mutation) {
@@ -30402,11 +30741,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             attempts += 1;
             const ready = Boolean(runBootIntegration('core UI mount', ensureUi));
             const mapReady = Boolean(runBootIntegration('map discovery', getLargestLeafletMap));
+            const commandShellRouteEligible = toolkitCommandShellRouteEligible(document);
             runBootIntegration('mission marker hook', installMissionMarkerAddHook);
             runBootIntegration('radio message hook', installRadioMessageHook);
             runBootIntegration('credits update hook', installCreditsUpdateHook);
             runBootIntegration('credits observer', observeCreditValue);
-            if (ready && (mapReady || attempts >= 12)) {
+            if (ready && (!commandShellRouteEligible || mapReady || attempts >= 12)) {
                 complete = true;
                 runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
                 runBootIntegration('marker state sync', () => {
@@ -30490,6 +30830,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         bootStartedAt = Date.now();
         const bootPerformanceStartedAt = startupClock();
         const allianceBuildingsOnly = isAllianceBuildingsPath() && state.allianceBuildingsMap === false;
+        runBootIntegration('command-shell route lifecycle', installToolkitCommandShellNavigationHooks);
         if (!allianceBuildingsOnly) startBootAttemptCoordinator(bootPerformanceStartedAt);
         runBootIntegration('root attributes', applyRootAttributes);
         runBootIntegration('Alliance Buildings optimisation', installAllianceBuildingsPageOptimisation);
@@ -30623,8 +30964,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const recoverUiAfterNavigation = event => {
             runtimeSetTimeout(() => {
                 if (runtime.destroyed || document.hidden) return;
-                invalidateMapElementCache();
-                ensureUi();
+                reconcileToolkitCommandShellRoute(event?.type || 'navigation');
                 connectMainMutationObserver();
                 recoverMajorIncidentFeed(event?.type || 'navigation');
             }, 120);

@@ -26,7 +26,7 @@ assert '[[ "$EVIDENCE_PR" == "$PR_NUMBER" ]]' in a
 assert 'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"' not in a
 for token in ("implementation_ready_at","validation_completed_at","pull_request_number","pr_created_at","pr_merged_at"):
     assert token in a, token
-for token in ("Resolve exact immutable release candidate","Verify Greasy Fork and back up concurrently","BACKUP_PID=$!","GF_PID=$!","sleep 2","sleep 5","sleep 15","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
+for token in ("Resolve exact immutable release candidate","Verify first-party distribution and private backup","Verify Greasy Fork mirror without blocking production","greasyForkStatus","tkbDistribution","sleep 5","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
     assert token in p, token
 assert "gh run watch" not in p
 assert 'validated_sha: ${{ needs.authorize.outputs.expected_main }}' in o
@@ -47,7 +47,8 @@ assert "Implementation-ready → green median" in dashboard
 assert "| 8.2.7 | v4 | normal | 57s | 45s | 15m 27s | 2m 18s | 2m 31s | 13s | 6s |" in dashboard
 assert chr(1) not in p
 assert p.count("      - name: Record successful release, manifest, announcement and speed state") == 1
-assert 'echo "- ✅ Greasy Fork verification and private backup ran concurrently"' in p
+assert 'echo "- ✅ TKB install, update, metadata and mirror assets verified"' in p
+assert 'echo "- ✅ Greasy Fork mirror checked without blocking production"' in p
 assert 'GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}' in p
 assert "name: Toolkit Hotfix Gate" in v
 assert "test_consolidated_pr_gate.py" in v

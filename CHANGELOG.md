@@ -1,5 +1,17 @@
 # Changelog
 
+## [10.2.1] - 2026-08-01
+
+### First-party TKB distribution
+
+- Moves the supported installer and automatic-update channel to the TKB MissionChief Scripts hub while retaining GitHub as the canonical source and immutable release archive.
+- Publishes separate install, update and metadata assets so the TKB product page can report new-install and successful-update package counts without counting metadata checks or page views.
+- Adds an hourly public download-statistics feed with totals and per-version history derived from GitHub Release asset counters.
+- Keeps the complete 2.1 MB Toolkit self-contained on the first-party channel and builds a separate Greasy Fork mirror with the large non-executable stylesheet loaded from an immutable SHA-256-pinned release resource.
+- Reduces the Greasy Fork mirror to approximately 1.32 million characters—about 774,000 below its hard limit—without minifying executable JavaScript or turning the script into a remote code loader.
+- Makes Greasy Fork a non-blocking discovery mirror: its delay or rejection is recorded as a warning and can no longer block the private backup, Discord announcement, release ledger or TKB deployment.
+- Adds an in-Toolkit migration briefing linking existing users to the official TKB installer while preserving every v10.2 feature, setting and deterministic teardown contract.
+
 ## [10.2.0] - 2026-08-01
 
 ### Operational Map Flow

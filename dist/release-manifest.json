@@ -1,17 +1,22 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "version": "10.2.0",
+  "version": "10.2.1",
   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
   "distributionFiles": [
     "dist/MissionChief_Map_Command_Toolkit.user.js",
-    "dist/MissionChief_Map_Command_Toolkit.txt"
+    "dist/MissionChief_Map_Command_Toolkit.txt",
+    "dist/MissionChief_Map_Command_Toolkit.install.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.update.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.meta.js",
+    "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.css"
   ],
-  "sha256": "2d3b6c994ffbb4b5fb2d0c1a6d6b38645a8c465c36ead15338186d5c4636df20",
-  "bytes": 2108794,
-  "lines": 31745,
+  "sha256": "91099941cf510ab506076cccc32c7255fba6f6b552c58c61848c5f5244578d7d",
+  "bytes": 2109504,
+  "lines": 31749,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",
-    "runtimeVersion": "10.2.0",
+    "runtimeVersion": "10.2.1",
     "author": "Conroy1988",
     "license": "MIT",
     "missionChiefRules": [
@@ -22,5 +27,15 @@
     "warnings": []
   },
   "baselineHashMatch": null,
-  "distributionStatus": "dry-run-not-yet-greasyfork-source"
+  "distribution": {
+    "officialChannel": "tkb-gaming.scot",
+    "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
+    "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
+    "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
+    "greasyForkMirror": "non-blocking",
+    "greasyForkCharacters": 1323422,
+    "greasyForkLimit": 2097152,
+    "stylesheetSha256": "5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b"
+  },
+  "distributionStatus": "dry-run-first-party-and-mirror-assets"
 }

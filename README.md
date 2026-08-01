@@ -10,7 +10,7 @@
 
 <table>
 <tr>
-<td width="25%" align="center"><a href="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"><strong>⬇ INSTALL / UPDATE</strong><br><sub>Greasy Fork stable channel</sub></a></td>
+<td width="25%" align="center"><a href="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/"><strong>⬇ INSTALL / UPDATE</strong><br><sub>Official TKB channel</sub></a></td>
 <td width="25%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/"><strong>📘 OPEN THE GUIDE</strong><br><sub>Features, setup and operation</sub></a></td>
 <td width="25%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/themes/"><strong>🎛 EXPLORE INTERFACES</strong><br><sub>Eight complete command systems</sub></a></td>
 <td width="25%" align="center"><a href="status/README.md"><strong>✓ RELEASE CONTROL</strong><br><sub>Verified production state</sub></a></td>
@@ -22,8 +22,8 @@
 ### **Live version and distribution authority: [Release Control](status/README.md)**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
-[![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
-[![Installs](https://img.shields.io/greasyfork/dt/586018?label=INSTALLS&color=0f766e)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
+[![TKB distribution](https://img.shields.io/badge/TKB-OFFICIAL%20INSTALL-e52b32)](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)
+[![Greasy Fork mirror](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK%20MIRROR&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v10.2.0
+## Current interface — v10.2.1
 
 ### One command system across desktop, tablet and iPhone
 
-Version `10.2.0` adds four bounded everyday map tools. **Mission Progress Rings** show an exact clearing percentage only when MissionChief exposes a live remaining value or exact patient/prisoner totals; unknown progress stays unknown and native markers are never replaced. **Unit Locator & Follow Mode** searches personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected.
+Version `10.2.1` publishes the complete v10.2 Operational Map Flow through the official TKB install and automatic-update channel. Separate verified packages measure new installs and update downloads, while Greasy Fork remains an optional, non-blocking mirror. **Mission Progress Rings** show an exact clearing percentage only when MissionChief exposes a live remaining value or exact patient/prisoner totals; unknown progress stays unknown and native markers are never replaced. **Unit Locator & Follow Mode** searches personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected.
 
 **Alliance Chat Mission Previews** expand mission links already present in the current alliance chat using mission data already live on the page. They do not fetch linked missions or store chat messages or user identities. **One-Click Session Cleanup** previews an exact transient-state allowlist before confirmation and protects settings, device layouts, themes, profiles, bookmarks, recovery snapshots, Discord webhooks, secrets, Financial Archive history and MissionChief data.
 
@@ -228,17 +228,18 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch adde
 ## Install and update
 
 1. Install **Tampermonkey** or another compatible userscript manager.
-2. Open the verified installer: **[Install MissionChief Map Command Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)**.
+2. Open the verified installer: **[Install MissionChief Map Command Toolkit](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/)**.
 3. Confirm installation and reload MissionChief.
 4. Open the Toolkit command button on the map.
 5. Enable only the systems useful to the current account, device and workflow.
 
 > [!IMPORTANT]
-> **Greasy Fork is the supported installation and automatic-update channel.** GitHub is the canonical source, validation authority, documentation host and immutable release archive.
+> **TKB is the supported installation and automatic-update channel.** GitHub is the canonical source, validation authority and immutable release archive. Greasy Fork is a non-blocking discovery mirror.
 
 | Need | Destination |
 |---|---|
-| Install or update | [Greasy Fork installer](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js) |
+| Install or update | [Official TKB installer](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
+| View download statistics | [TKB product page](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/#stats-title) |
 | Read the guide | [Documentation](https://conroy1988.github.io/missionchief-toolkit-assets/) |
 | Explore interfaces | [Theme and interface gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/) |
 | Check release health | [Release Control Panel](status/README.md) |
@@ -264,7 +265,8 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch adde
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
 | **Validated SHA-256** | [`dist/SHA256SUMS.txt`](dist/SHA256SUMS.txt) |
 | **GitHub Release** | [Latest verified release](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest) |
-| **Greasy Fork** | [Stable channel](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) |
+| **Official distribution** | [TKB MissionChief Scripts](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
+| **Greasy Fork** | [Non-blocking mirror](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) |
 | **Private backup and Discord delivery** | [Release Control Panel](status/README.md) |
 | **Hosted media audit** | [Asset Health](.github/ASSET_HEALTH.md) |
 
@@ -275,14 +277,14 @@ Exact-head validation
       ↓
 Immutable GitHub Release
       ↓
-Greasy Fork source verification
+TKB install/update verification
       ↓
-Private recovery backup
+Private recovery backup + optional Greasy Fork check
       ↓
 Discord release confirmation
 ```
 
-GitHub remains authoritative. Greasy Fork is verified as the public distribution channel rather than imported back into canonical source.
+GitHub remains authoritative. TKB owns the supported public distribution URLs; Greasy Fork is checked as a discovery mirror and is never imported back into canonical source.
 
 ---
 

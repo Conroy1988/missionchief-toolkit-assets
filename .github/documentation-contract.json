@@ -96,7 +96,8 @@
     "One-Click Session Cleanup"
   ],
   "installUrls": [
-    "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
+    "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/",
+    "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
     "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
   ],
   "requiredFeatureNames": [

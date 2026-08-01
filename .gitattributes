@@ -1,0 +1,5 @@
+# Generated userscript variants preserve the canonical release bytes exactly.
+dist/MissionChief_Map_Command_Toolkit.install.user.js -whitespace
+dist/MissionChief_Map_Command_Toolkit.update.user.js -whitespace
+dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js -whitespace
+dist/MissionChief_Map_Command_Toolkit.css -whitespace

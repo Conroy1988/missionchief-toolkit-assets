@@ -67,12 +67,23 @@ def verify(evidence_path: Path, source_path: Path, dist_dir: Path, expected_comm
     }
     if evidence.get("distribution") != expected_distribution:
         fail("Validation evidence distribution inventory changed")
-    expected_sum_lines = {
-        f"{user_hash}  MissionChief_Map_Command_Toolkit.user.js",
-        f"{text_hash}  MissionChief_Map_Command_Toolkit.txt",
-    }
+    distribution_files = manifest.get("distributionFiles")
+    if not isinstance(distribution_files, list) or not distribution_files:
+        distribution_files = [
+            "dist/MissionChief_Map_Command_Toolkit.user.js",
+            "dist/MissionChief_Map_Command_Toolkit.txt",
+        ]
+    expected_sum_lines = set()
+    for declared in distribution_files:
+        declared_path = Path(str(declared))
+        if declared_path.parent.name != "dist":
+            fail(f"Distribution file is outside dist/: {declared}")
+        candidate_path = dist_dir / declared_path.name
+        if not candidate_path.is_file():
+            fail(f"Declared distribution file is missing: {declared_path.name}")
+        expected_sum_lines.add(f"{sha256(candidate_path)}  {declared_path.name}")
     if set(sums_path.read_text(encoding="utf-8").splitlines()) != expected_sum_lines:
-        fail("Candidate checksum file does not match the validated distribution")
+        fail("Candidate checksum file does not match the declared distribution")
     return {"version": version, "sha256": source_hash, "sourceCommit": expected_commit,
             "sourceRef": expected_ref, "state": "validated"}
 
@@ -88,7 +99,14 @@ def self_test() -> None:
         (dist / "SHA256SUMS.txt").write_text(
             f"{digest}  {user.name}\n{digest}  {text.name}\n", encoding="utf-8")
         (dist / "release-manifest.json").write_text(
-            json.dumps({"version": "1.2.3", "sha256": digest}) + "\n", encoding="utf-8")
+            json.dumps({
+                "version": "1.2.3",
+                "sha256": digest,
+                "distributionFiles": [
+                    "dist/MissionChief_Map_Command_Toolkit.user.js",
+                    "dist/MissionChief_Map_Command_Toolkit.txt",
+                ],
+            }) + "\n", encoding="utf-8")
         evidence = root / "validation-candidate.json"
         evidence.write_text(json.dumps({
             "schemaVersion": 1, "state": "validated", "workflow": "Validate Canonical Userscript",

@@ -8,14 +8,14 @@ The checker discovers and verifies:
 
 - raw GitHub image and audio URLs referenced by the canonical userscript and repository configuration;
 - media files committed to this repository, using their stable `raw.githubusercontent.com/.../main/...` paths;
-- the latest GitHub Release userscript asset;
-- the Greasy Fork install userscript;
-- the Greasy Fork metadata endpoint;
+- the TKB first-party install and update userscript routes;
+- the TKB metadata route;
+- the Greasy Fork install mirror as a non-blocking signal;
 - the Greasy Fork project page as a non-blocking availability signal.
 
 For repository media, it validates local file size, file signatures, public HTTP status, content type and public size parity. Git LFS pointer files are rejected.
 
-For public userscripts, the GitHub Release asset remains the full-file SHA-256 authority and must match `status/release-dashboard.json -> latestRelease`. Greasy Fork must expose the same `@version` and the same byte-identical executable body after the userscript metadata block; its service-generated metadata envelope may differ without weakening code-integrity verification.
+For public userscripts, the GitHub Release asset remains the full-file SHA-256 authority recorded in `status/release-dashboard.json -> latestRelease`. Both TKB install and update routes must resolve to that byte-identical full script. Greasy Fork deliberately uses a separately validated mirror whose large non-executable stylesheet is loaded from the matching immutable, SHA-256-pinned release resource, so it is monitored without a full-body equality requirement.
 
 ## Execution
 

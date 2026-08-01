@@ -63,12 +63,13 @@ def handover_lines(version: str, source_hash: str, manifest: dict, release_mode:
             "- GitHub canonical source: validated",
             "- Distribution bundle: prepared for production publication",
             f"- GitHub Release: published by the controlled release workflow as `v{version}`",
-            "- Greasy Fork: must be verified at the matching version before backup or announcement",
-            "- Private migration backup: runs only after Greasy Fork verification",
-            "- Discord release announcement: runs only after Greasy Fork verification and private backup",
+            "- TKB installer and update channel: verified against immutable GitHub Release assets",
+            "- Greasy Fork: checked as a non-blocking discovery mirror",
+            "- Private migration backup: verified before announcement",
+            "- Discord release announcement: runs after TKB distribution and private backup verification",
         ]
         next_gate = (
-            "The controlled production workflow must verify the matching Greasy Fork version, "
+            "The controlled production workflow must verify the first-party installer, update package and metadata, "
             "commit the complete release to the private migration repository, and only then post the release announcement."
         )
     else:
@@ -76,7 +77,7 @@ def handover_lines(version: str, source_hash: str, manifest: dict, release_mode:
             "- GitHub canonical source: validated",
             "- Distribution bundle: prepared in dry-run mode",
             "- GitHub Release: not published",
-            "- Greasy Fork: unchanged and still serving the live public script",
+            "- TKB distribution and Greasy Fork mirror: unchanged",
             "- Private migration backup: not written",
             "- Discord release announcement: not sent",
         ]
@@ -128,6 +129,11 @@ def main() -> int:
         SOURCE,
         DIST / "MissionChief_Map_Command_Toolkit.user.js",
         DIST / "MissionChief_Map_Command_Toolkit.txt",
+        DIST / "MissionChief_Map_Command_Toolkit.install.user.js",
+        DIST / "MissionChief_Map_Command_Toolkit.update.user.js",
+        DIST / "MissionChief_Map_Command_Toolkit.meta.js",
+        DIST / "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+        DIST / "MissionChief_Map_Command_Toolkit.css",
         DIST / "SHA256SUMS.txt",
         manifest_path,
         CHANGELOG,
@@ -154,6 +160,14 @@ def main() -> int:
 
     shutil.copy2(DIST / "MissionChief_Map_Command_Toolkit.user.js", versioned_user)
     shutil.copy2(DIST / "MissionChief_Map_Command_Toolkit.txt", versioned_txt)
+    for variant_name in [
+        "MissionChief_Map_Command_Toolkit.install.user.js",
+        "MissionChief_Map_Command_Toolkit.update.user.js",
+        "MissionChief_Map_Command_Toolkit.meta.js",
+        "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+        "MissionChief_Map_Command_Toolkit.css",
+    ]:
+        shutil.copy2(DIST / variant_name, OUTPUT / variant_name)
     shutil.copy2(DIST / "SHA256SUMS.txt", stable_sums)
     shutil.copy2(DIST / "SHA256SUMS.txt", versioned_sums)
 
@@ -175,6 +189,11 @@ def main() -> int:
         "bundleFiles": [
             versioned_user.name,
             versioned_txt.name,
+            "MissionChief_Map_Command_Toolkit.install.user.js",
+            "MissionChief_Map_Command_Toolkit.update.user.js",
+            "MissionChief_Map_Command_Toolkit.meta.js",
+            "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+            "MissionChief_Map_Command_Toolkit.css",
             stable_sums.name,
             versioned_sums.name,
             f"CHANGELOG-v{requested_version}.md",

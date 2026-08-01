@@ -62,12 +62,12 @@ def canonical_release_url(version: str, value: object) -> str:
 def canonical_update_url(value: object) -> str:
     url = str(value or "").strip()
     parts = urlparse(url)
-    if parts.scheme != "https" or parts.netloc != "update.greasyfork.org":
-        raise ManifestError("Greasy Fork update URL is not canonical")
-    if not parts.path.startswith("/scripts/586018/"):
-        raise ManifestError("Greasy Fork update URL does not target Toolkit script 586018")
+    if parts.scheme != "https" or parts.netloc != "tkb-gaming.scot":
+        raise ManifestError("TKB installer URL is not canonical")
+    if parts.path != "/mission-chief-scripts/map-command-toolkit/install/":
+        raise ManifestError("TKB installer URL does not target the Toolkit")
     if parts.params or parts.query or parts.fragment:
-        raise ManifestError("Greasy Fork update URL must not contain params, query or fragment")
+        raise ManifestError("TKB installer URL must not contain params, query or fragment")
     return url
 
 
@@ -80,7 +80,6 @@ def build_manifest(dashboard: dict, settings: dict) -> dict[str, object]:
     required_status = {
         "validation": "passed",
         "githubRelease": "published",
-        "greasyForkSync": "verified",
         "backup": "private-repository-verified",
         "discordRelease": "posted",
         "assetAudit": "passed",
@@ -96,8 +95,6 @@ def build_manifest(dashboard: dict, settings: dict) -> dict[str, object]:
         raise ManifestError(f"Stable semantic version required, found {version!r}")
     if str(dashboard.get("currentVersion") or "").strip() != version:
         raise ManifestError("Dashboard currentVersion is not the verified latest release")
-    if latest.get("greasyForkVerified") is not True:
-        raise ManifestError("Greasy Fork is not verified")
     if latest.get("discordPosted") is not True:
         raise ManifestError("Discord release is not recorded")
     if not str(latest.get("privateBackupCommit") or "").strip():
@@ -111,16 +108,16 @@ def build_manifest(dashboard: dict, settings: dict) -> dict[str, object]:
     if not published_at:
         raise ManifestError("Verified release completion time is absent")
 
-    greasy_fork = settings.get("greasyFork")
-    if not isinstance(greasy_fork, dict):
-        raise ManifestError("Release settings are missing greasyFork configuration")
+    distribution = settings.get("distribution")
+    if not isinstance(distribution, dict):
+        raise ManifestError("Release settings are missing first-party distribution configuration")
 
     return {
         "schemaVersion": 1,
         "channel": "stable",
         "version": version,
         "releaseNotesUrl": canonical_release_url(version, latest.get("githubRelease")),
-        "updateUrl": canonical_update_url(greasy_fork.get("installUrl")),
+        "updateUrl": canonical_update_url(distribution.get("installUrl")),
         "publishedAt": published_at,
         "sha256": sha256,
     }
@@ -197,7 +194,6 @@ def self_test() -> None:
         "status": {
             "validation": "passed",
             "githubRelease": "published",
-            "greasyForkSync": "verified",
             "backup": "private-repository-verified",
             "discordRelease": "posted",
             "assetAudit": "passed",
@@ -207,15 +203,14 @@ def self_test() -> None:
             "version": "1.2.3",
             "sha256": "a" * 64,
             "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v1.2.3",
-            "greasyForkVerified": True,
             "privateBackupCommit": "b" * 40,
             "discordPosted": True,
             "completedAt": "2026-07-24T12:00:00Z",
         },
     }
     settings = {
-        "greasyFork": {
-            "installUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+        "distribution": {
+            "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"
         }
     }
     expected = build_manifest(dashboard, settings)

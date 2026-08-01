@@ -23,6 +23,12 @@ USER_JS = DIST / "MissionChief_Map_Command_Toolkit.user.js"
 TXT = DIST / "MissionChief_Map_Command_Toolkit.txt"
 SUMS = DIST / "SHA256SUMS.txt"
 MANIFEST = DIST / "release-manifest.json"
+VARIANT_BUILDER = ROOT / ".github" / "scripts" / "build_distribution_variants.py"
+INSTALL_USER_JS = DIST / "MissionChief_Map_Command_Toolkit.install.user.js"
+UPDATE_USER_JS = DIST / "MissionChief_Map_Command_Toolkit.update.user.js"
+META_JS = DIST / "MissionChief_Map_Command_Toolkit.meta.js"
+GREASY_FORK_USER_JS = DIST / "MissionChief_Map_Command_Toolkit.greasyfork.user.js"
+MAIN_STYLESHEET = DIST / "MissionChief_Map_Command_Toolkit.css"
 INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
 INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
 ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
@@ -163,7 +169,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required=[INTEGRITY_AUDITOR,INTEGRITY_POLICY,ASSET_AUDITOR,AUDIO_ALIAS_AUDITOR,VERSION_STATUS_CONTRACT,FINANCIAL_OVERVIEW_CONTRACT,MAIN_STYLE_HEADROOM_CONTRACT,V7_RETIREMENT_CONTRACT,MISSION_AGE_RETENTION_CONTRACT,NATIVE_TRANSPORT_SWEEP_CONTRACT,ISSUE447_MENU_BOOT_CONTRACT,ISSUE450_CORE_BOOTSTRAP_CONTRACT,ISSUE454_PREBOOT_STATE_CONTRACT,ISSUE464_LAUNCHER_SETTINGS_CONTRACT]
+    required=[INTEGRITY_AUDITOR,INTEGRITY_POLICY,ASSET_AUDITOR,AUDIO_ALIAS_AUDITOR,VERSION_STATUS_CONTRACT,FINANCIAL_OVERVIEW_CONTRACT,MAIN_STYLE_HEADROOM_CONTRACT,V7_RETIREMENT_CONTRACT,MISSION_AGE_RETENTION_CONTRACT,NATIVE_TRANSPORT_SWEEP_CONTRACT,ISSUE447_MENU_BOOT_CONTRACT,ISSUE450_CORE_BOOTSTRAP_CONTRACT,ISSUE454_PREBOOT_STATE_CONTRACT,ISSUE464_LAUNCHER_SETTINGS_CONTRACT,VARIANT_BUILDER]
     missing=[path.relative_to(ROOT) for path in required if not path.exists()]
     if missing: fail("integrity tooling is incomplete: "+", ".join(map(str,missing)))
     with tempfile.TemporaryDirectory(prefix="mcms-integrity-") as temp:
@@ -237,6 +243,20 @@ def main() -> int:
     USER_JS.write_bytes(raw)
     TXT.write_bytes(raw)
 
+    variant_result = subprocess.run(
+        [sys.executable, str(VARIANT_BUILDER)],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if variant_result.returncode != 0:
+        fail("distribution variant build failed: " + (variant_result.stderr or variant_result.stdout).strip())
+    try:
+        variant_evidence = json.loads(variant_result.stdout)
+    except json.JSONDecodeError as error:
+        fail(f"distribution variant evidence is invalid: {error}")
+
     retired_extension_token = "ls" + "sm"
     if retired_extension_token in USER_JS.read_text(encoding="utf-8").lower() or retired_extension_token in TXT.read_text(encoding="utf-8").lower():
         fail("retired integration content remains in generated distribution")
@@ -246,8 +266,22 @@ def main() -> int:
 
     user_hash = sha256(USER_JS)
     txt_hash = sha256(TXT)
+    distribution_files = [
+        USER_JS,
+        TXT,
+        INSTALL_USER_JS,
+        UPDATE_USER_JS,
+        META_JS,
+        GREASY_FORK_USER_JS,
+        MAIN_STYLESHEET,
+    ]
+    missing_variants = [path.name for path in distribution_files if not path.is_file()]
+    if missing_variants:
+        fail("distribution variants are missing: " + ", ".join(missing_variants))
+    if INSTALL_USER_JS.read_bytes() != raw or UPDATE_USER_JS.read_bytes() != raw:
+        fail("first-party install and update assets must match the canonical userscript")
     SUMS.write_text(
-        f"{user_hash}  {USER_JS.name}\n{txt_hash}  {TXT.name}\n",
+        "".join(f"{sha256(path)}  {path.name}\n" for path in distribution_files),
         encoding="utf-8",
     )
 
@@ -265,7 +299,7 @@ def main() -> int:
         "project": "MissionChief Map Command Toolkit",
         "version": version,
         "source": str(SOURCE.relative_to(ROOT)),
-        "distributionFiles": [str(USER_JS.relative_to(ROOT)), str(TXT.relative_to(ROOT))],
+        "distributionFiles": [str(path.relative_to(ROOT)) for path in distribution_files],
         "sha256": user_hash,
         "bytes": len(raw),
         "lines": text.count("\n") + 1,
@@ -278,7 +312,17 @@ def main() -> int:
             "warnings": metadata_warnings,
         },
         "baselineHashMatch": baseline_match,
-        "distributionStatus": "dry-run-not-yet-greasyfork-source",
+        "distribution": {
+            "officialChannel": "tkb-gaming.scot",
+            "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
+            "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
+            "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
+            "greasyForkMirror": "non-blocking",
+            "greasyForkCharacters": variant_evidence["greasyForkCharacters"],
+            "greasyForkLimit": variant_evidence["greasyForkLimit"],
+            "stylesheetSha256": variant_evidence["stylesheetSha256"],
+        },
+        "distributionStatus": "dry-run-first-party-and-mirror-assets",
     }
     MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 

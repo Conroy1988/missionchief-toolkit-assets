@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-624-operational-map-flow-v10-2",
-  "rationale": "Approve the measured Issue #624 exact progress, user-triggered vehicle follow, current-page alliance preview and allowlisted session-cleanup source/style growth while retaining zero growth in requests, schedulers, listeners, DOM ID lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-08-01-issue-627-tkb-distribution-v10-2-1",
+  "rationale": "Approve the measured Issue #627 first-party distribution metadata and migration briefing changes while retaining zero growth in requests, schedulers, listeners, DOM ID lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 624,
-    "version": "10.2.0",
+    "issue": 627,
+    "version": "10.2.1",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Exact Mission Progress Rings, explicit personal Unit Locator and Follow Mode, current-page Alliance Chat Mission Previews and protected One-Click Session Cleanup.",
+    "scope": "First-party TKB install/update metadata, migration briefing and non-blocking Greasy Fork mirror.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },

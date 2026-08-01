@@ -52,7 +52,7 @@ context.globalThis = context;
 vm.createContext(context);
 vm.runInContext(block + `\nthis.__versionStatusApi = { constants: VERSION_STATUS, parse: versionStatusParse, compare: versionStatusCompare, validate: versionStatusValidateManifest, presentation: versionStatusPresentation, cacheFresh: versionStatusCacheIsFresh, failureCooling: versionStatusFailureCooling, ensureButton: ensureVersionStatusButton, requestManifest: versionStatusRequestManifest, runCheck: runVersionStatusCheck, render: versionStatusRender, model: () => versionStatusModel, nextDelay: versionStatusAutomaticDelay, schedule: scheduleVersionStatusCheck, setModel: value => { versionStatusModel = { ...versionStatusModel, ...value }; }, reset: () => { versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; versionStatusCheckPromise = null; versionStatusHydrationPromise = null; versionStatusTimer = null; versionStatusRequest = null; } };` , context);
 const api = context.__versionStatusApi;
-const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: `https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`, updateUrl: 'https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js', publishedAt: '2026-07-19T13:08:02Z' });
+const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: `https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`, updateUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/', publishedAt: '2026-07-19T13:08:02Z' });
 
 (async () => {
     assert.deepStrictEqual(Array.from(api.parse('4.15.10')), [4, 15, 10], 'stable semantic version parses numerically');
@@ -67,7 +67,7 @@ const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, rel
     assert.strictEqual(api.presentation('4.20.0', current).destination, current.releaseNotesUrl, 'LATEST opens matching GitHub release notes');
     const patch = api.validate(manifest('4.20.1'));
     assert.strictEqual(api.presentation('4.20.0', patch).state, 'update', 'published patch update displays UPDATE');
-    assert.strictEqual(api.presentation('4.20.0', patch).destination, patch.updateUrl, 'UPDATE opens Greasy Fork update URL');
+    assert.strictEqual(api.presentation('4.20.0', patch).destination, patch.updateUrl, 'UPDATE opens the TKB installer URL');
     assert.throws(() => api.validate({ ...manifest('4.20.1-beta.1'), version: '4.20.1-beta.1' }), /stable semantic version/, 'draft or prerelease manifest is rejected');
     assert.throws(() => api.validate({ ...manifest('4.20.1'), releaseNotesUrl: 'https://example.com/release' }), /canonical/, 'non-canonical release URL is rejected');
 

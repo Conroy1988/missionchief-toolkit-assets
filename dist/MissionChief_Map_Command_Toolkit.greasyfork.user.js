@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.5
+// @version      10.2.6
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -29,7 +29,7 @@
 // @connect      discordapp.com
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
-// @resource     mcmsMainStyles https://github.com/Conroy1988/missionchief-toolkit-assets/releases/download/v10.2.5/MissionChief_Map_Command_Toolkit.css#sha256=5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b
+// @resource     mcmsMainStyles https://github.com/Conroy1988/missionchief-toolkit-assets/releases/download/v10.2.6/MissionChief_Map_Command_Toolkit.css#sha256=5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b
 // @run-at       document-start
 // @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
 // @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js
@@ -469,7 +469,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.5',
+        version: '10.2.6',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -2697,6 +2697,97 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         };
     }
 
+    function resolveDesktopDockWorkspace(mapRect, viewport = getViewportMetrics(), position = 'bl', margin = 8, obstructionRects = []) {
+        const finite = value => typeof value === 'number' && Number.isFinite(value);
+        if (!mapRect || !finite(mapRect.left) || !finite(mapRect.right) || !finite(mapRect.top) || !finite(mapRect.bottom) || mapRect.right <= mapRect.left || mapRect.bottom <= mapRect.top) return null;
+        const viewportLeft = finite(viewport?.offsetLeft) ? viewport.offsetLeft : 0;
+        const viewportTop = finite(viewport?.offsetTop) ? viewport.offsetTop : 0;
+        const viewportRight = viewportLeft + Math.max(1, finite(viewport?.width) ? viewport.width : 1);
+        const viewportBottom = viewportTop + Math.max(1, finite(viewport?.height) ? viewport.height : 1);
+        const safeMargin = Math.max(0, finite(margin) ? margin : 8);
+        const visibleLeft = Math.max(viewportLeft, mapRect.left);
+        const visibleRight = Math.min(viewportRight, mapRect.right);
+        const visibleTop = Math.max(viewportTop, mapRect.top);
+        const visibleBottom = Math.min(viewportBottom, mapRect.bottom);
+        if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) return null;
+
+        let safeTop = visibleTop + safeMargin;
+        for (const rect of Array.isArray(obstructionRects) ? obstructionRects : []) {
+        if (!rect || !finite(rect.left) || !finite(rect.right) || !finite(rect.top) || !finite(rect.bottom)) continue;
+        if (rect.right <= visibleLeft || rect.left >= visibleRight || rect.bottom <= visibleTop || rect.top >= visibleBottom) continue;
+        safeTop = Math.max(safeTop, Math.min(visibleBottom, rect.bottom + safeMargin));
+        }
+        const safeBottom = Math.max(safeTop, visibleBottom - safeMargin);
+        const bottomAnchored = String(position).startsWith('b');
+        const rightAnchored = String(position).endsWith('r');
+        const baseTop = position === 'tr' ? 48 : 10;
+        const baseLeft = position === 'tl' ? 54 : 12;
+        const top = Math.max(baseTop, safeTop - mapRect.top);
+        const bottom = Math.max(42, mapRect.bottom - safeBottom);
+        const left = Math.max(baseLeft, visibleLeft - mapRect.left + safeMargin);
+        const right = Math.max(12, mapRect.right - visibleRight + safeMargin);
+        const anchorTop = bottomAnchored ? safeTop : mapRect.top + top;
+        const anchorBottom = bottomAnchored ? mapRect.bottom - bottom : safeBottom;
+        const horizontalOffset = rightAnchored ? right : left;
+        return {
+        top: Math.round(top),
+        bottom: Math.round(bottom),
+        left: Math.round(left),
+        right: Math.round(right),
+        maxHeight: Math.max(1, Math.floor(anchorBottom - anchorTop)),
+        maxWidth: Math.max(1, Math.floor(visibleRight - visibleLeft - safeMargin - horizontalOffset))
+        };
+    }
+
+    function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
+        if (!control) return;
+        for (const property of ['--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        delete control.dataset.mcmsDesktopDockFit;
+    }
+
+    function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
+        if (!control || !mapEl || activeDeviceLayout !== 'desktop' || isTouchLayoutActive()) {
+        clearDesktopDockSizing(control);
+        return false;
+        }
+        let mapRect = null;
+        try { mapRect = mapEl.getBoundingClientRect?.() || null; } catch (err) {}
+        const viewport = getViewportMetrics();
+        const panel = document.querySelector?.(`#${SCRIPT.panelId}`);
+        const obstructionRects = collectDesktopWorkspaceObstructions(viewport, mapEl, panel).map(item => item.rect);
+        const position = activeDockPosition();
+        const workspace = resolveDesktopDockWorkspace(mapRect, viewport, position, 8, obstructionRects);
+        if (!workspace) {
+        clearDesktopDockSizing(control);
+        return false;
+        }
+
+        const launchRow = control.querySelector?.('.mcms-launch-row');
+        const filter = control.querySelector?.('.mcms-floating-filter');
+        const pins = control.querySelector?.('.mcms-screen-pins');
+        const launchHeight = Math.max(1, Math.ceil(launchRow?.getBoundingClientRect?.().height || launchRow?.offsetHeight || 56));
+        const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
+        const pinNaturalHeight = pinsVisible ? Math.max(29, Math.ceil(pins?.getBoundingClientRect?.().height || pins?.offsetHeight || 29)) : 0;
+        const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
+        const filterMargin = state.commandBarOpen === false ? 0 : 6;
+        const availableAfterLaunch = Math.max(1, workspace.maxHeight - launchHeight - filterMargin - nudgeY);
+        const pinHeight = pinsVisible ? Math.min(pinNaturalHeight, Math.max(0, availableAfterLaunch - 54)) : 0;
+        const pinMargin = pinHeight > 0 ? 6 : 0;
+        const filterHeight = Math.max(1, availableAfterLaunch - pinHeight - pinMargin);
+
+        control.style.setProperty('--mcms-desktop-dock-max-height', `${workspace.maxHeight}px`);
+        control.style.setProperty('--mcms-desktop-dock-max-width', `${workspace.maxWidth}px`);
+        control.style.setProperty('--mcms-desktop-dock-top', `${workspace.top}px`);
+        control.style.setProperty('--mcms-desktop-dock-bottom', `${workspace.bottom}px`);
+        control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
+        control.style.setProperty('--mcms-desktop-dock-right', `${workspace.right}px`);
+        control.style.setProperty('--mcms-desktop-filter-max-height', `${filterHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-max-height', `${pinHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-margin', `${pinMargin}px`);
+        control.dataset.mcmsDesktopDockFit = `${position}:${workspace.maxWidth}:${workspace.maxHeight}:${filterHeight}:${pinHeight}`;
+        return Boolean(filter);
+    }
+
     function stopDesktopPanelWorkspaceObservation() {
         if (desktopPanelResizeObserver) {
         for (const element of desktopPanelObservedElements) {
@@ -2725,9 +2816,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!desktopPanelResizeObserver) {
         desktopPanelResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => {
             if (runtime.destroyed || activeDeviceLayout !== 'desktop') return;
+            const mapEl = getLargestLeafletMap();
+            applyDesktopDockLayout(mapEl);
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel) return;
-            applyDesktopPanelSizing(panel, getLargestLeafletMap());
+            applyDesktopPanelSizing(panel, mapEl);
             if (!dragState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
         }));
         }
@@ -2899,6 +2992,21 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{max-width:var(--mcms-desktop-dock-max-width,360px)!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:var(--mcms-desktop-dock-right,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{width:min(240px,var(--mcms-desktop-dock-max-width,240px))!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="fallout4"]{--mcms-page-bg:#071008;--mcms-page-surface:#102014;--mcms-page-surface-2:#193021;--mcms-page-text:#ecffd4;--mcms-page-muted:#b2ca9e;--mcms-page-accent:#b9ff72}
@@ -8942,6 +9050,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         majorIncidentFeedObservedElement = null;
         document.getElementById(SCRIPT.majorIncidentFeedId)?.remove();
         majorIncidentFeedRenderSignature = '';
+        fitControlToMap();
     }
 
     function majorIncidentFeedDomComplete(feed) {
@@ -9038,13 +9147,17 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         majorIncidentFeedLayoutFrame = null;
         const feed = document.getElementById(SCRIPT.majorIncidentFeedId);
         if (!feed || !state.majorIncidentFeed.enabled || !getLargestLeafletMap() || isAllianceBuildingsContext()) {
-        if (feed) feed.classList.remove('mcms-feed-visible');
+        if (feed) {
+            feed.classList.remove('mcms-feed-visible');
+            fitControlToMap();
+        }
         return false;
         }
 
         const { bar } = majorIncidentFeedHeaderContext();
         if (!bar) {
         feed.classList.remove('mcms-feed-visible');
+        fitControlToMap();
         return false;
         }
         const barRect = bar.getBoundingClientRect();
@@ -9068,6 +9181,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         feed.style.setProperty('top', `${Math.round(barRect.bottom + 1)}px`, 'important');
         feed.style.setProperty('width', `${Math.round(feedWidth)}px`, 'important');
         feed.classList.add('mcms-feed-visible');
+        fitControlToMap();
         scheduleMajorIncidentFeedMotion(feed, false, 35);
         return true;
     }
@@ -9196,7 +9310,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             resetMajorIncidentFeedObserver();
             majorIncidentFeedObservedElement = feed;
             majorIncidentFeedResizeObserver = runtimeTrackObserver(new pageWindow.ResizeObserver(() => {
-                if (feed.isConnected) scheduleMajorIncidentFeedMotion(feed, false, 70);
+                if (feed.isConnected) {
+                    scheduleMajorIncidentFeedMotion(feed, false, 70);
+                    fitControlToMap();
+                }
                 else recoverMajorIncidentFeed('header replacement');
             }));
             majorIncidentFeedResizeObserver.observe(feed);
@@ -17857,19 +17974,23 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const mapEl = getLargestLeafletMap();
             if (!mapEl) {
                 if (!isTouchLayoutActive()) {
+                    clearDesktopDockSizing();
                     observeDesktopPanelWorkspace(null);
                     applyDesktopPanelSizing(panel, null);
                 }
                 return;
             }
             if (mobileModeActive) {
+                clearDesktopDockSizing();
                 clearDesktopPanelSizing(panel);
                 applyMobileDockLayout(mapEl);
             } else if (tabletModeActive) {
+                clearDesktopDockSizing();
                 clearDesktopPanelSizing(panel);
                 applyTabletDockLayout(mapEl);
             } else {
                 clearTabletDockSizing();
+                applyDesktopDockLayout(mapEl);
                 observeDesktopPanelWorkspace(mapEl);
                 applyDesktopPanelSizing(panel, mapEl);
             }

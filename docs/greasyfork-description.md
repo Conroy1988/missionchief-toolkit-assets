@@ -1,10 +1,10 @@
 # MissionChief Map Command Toolkit
 
-## v10.2.0 candidate — Operational Map Flow
+## v10.2.1 — Operational Map Flow
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 10.2.0 adds exact Mission Progress Rings, local Unit Locator & Follow Mode, privacy-safe Alliance Chat Mission Previews and a confirmation-led One-Click Session Cleanup. Unknown mission progress is never guessed. Follow Mode never selects or dispatches a unit and stops on manual map movement, lost markers, Safe Mode or teardown. Chat previews use only mission evidence already live on the current page and never fetch linked missions or store chat messages or user identities. Cleanup has a strict transient-state allowlist and never removes settings, layouts, themes, profiles, bookmarks, recovery snapshots, secrets, webhooks, Financial Archive history or MissionChief data. Existing v10 users upgrade without interruption, and the release adds no network request, broad observer, background poller or interval. The complete v10.1 Command Experience, Personalisation Studio, Command Palette, Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
+Version 10.2.1 publishes the complete v10.2 Operational Map Flow and moves the supported install and automatic-update channel to TKB. Greasy Fork remains a non-blocking discovery mirror. Existing Greasy Fork users should open the official TKB installer once to move future updates to the first-party channel. The release adds exact Mission Progress Rings, local Unit Locator & Follow Mode, privacy-safe Alliance Chat Mission Previews and a confirmation-led One-Click Session Cleanup. Unknown mission progress is never guessed. Follow Mode never selects or dispatches a unit and stops on manual map movement, lost markers, Safe Mode or teardown. Chat previews use only mission evidence already live on the current page and never fetch linked missions or store chat messages or user identities. Cleanup has a strict transient-state allowlist and never removes settings, layouts, themes, profiles, bookmarks, recovery snapshots, secrets, webhooks, Financial Archive history or MissionChief data. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
 
 ### Retained native systems
 
@@ -53,5 +53,5 @@ The Pressure Board allocates each available personal vehicle at most once across
 
 Toolkit settings are retained in revisioned userscript storage and a compatible MissionChief page copy, with a previous good revision available for recovery. Financial and operational reports use the saved Discord webhook configured by the user. The webhook and Financial Archive are included only in the passphrase-encrypted full transfer; the safe JSON export omits both.
 
-Install stable: https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
+Official install and download statistics: https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/
 Source and releases: https://github.com/Conroy1988/missionchief-toolkit-assets

@@ -142,13 +142,15 @@ The immutable versioned `.user.js`, `.txt`, manifest and checksums are the sourc
 
 ### GitHub Release exists but Greasy Fork did not update
 
-Do not post a manual Discord announcement.
+Confirm the TKB install, update and metadata routes resolve the matching immutable release. A delayed Greasy Fork mirror does not block TKB production, private backup, Discord or the release ledger.
+
+If the webhook reports `Code is too long (maximum is 2097152 characters)`, verify the released `.greasyfork.user.js` asset is below the governed 1,750,000-character budget and references the matching SHA-256-pinned stylesheet. Do not upload a different payload manually.
 
 1. Verify the GitHub Release bundle with `VERIFY <version>`.
 2. Run **Release Recovery → retry-greasyfork** with `RETRY GREASYFORK <version>`.
 3. The workflow re-saves the existing release only when Greasy Fork is stale.
 4. It waits for matching metadata and verifies public asset health plus executable-body parity.
-5. It records Greasy Fork as verified on `release-state` only after those checks pass.
+5. It records Greasy Fork as verified on `release-state` only after those checks pass; the authoritative TKB release state remains unchanged.
 
 ### Greasy Fork updated but private backup failed
 
@@ -163,7 +165,7 @@ The public release is live, but recovery state is incomplete.
 ### Backup succeeded but Discord failed
 
 - Verify `DISCORD_RELEASE_WEBHOOK` still targets `Mission-Chief`.
-- Confirm release-state records Greasy Fork verification and a private backup commit.
+- Confirm release-state records TKB distribution verification and a private backup commit.
 - Run **Release Recovery → retry-discord** with `RETRY DISCORD <version>`.
 - When `discordPosted` is already true, the workflow exits without posting.
 - When a previous retry is marked pending, inspect Discord manually rather than forcing another post.

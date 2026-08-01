@@ -16,7 +16,7 @@ The site is deliberately separated into:
 | `docs/site-assets/site.css` | Responsive visual system |
 | `docs/site-assets/site.js` | Navigation, filtering, date formatting and copy controls |
 | `status/release-dashboard.json` | Current version and verified release health |
-| `.github/release-settings.json` | Greasy Fork installation and project links |
+| `.github/release-settings.json` | TKB distribution, statistics and Greasy Fork mirror links |
 | `CHANGELOG.md` | Release history |
 | `README.md` | Primary GitHub landing page and installation summary |
 | `help/index.html` | Searchable Help Centre loaded by the userscript |
@@ -27,7 +27,7 @@ The generated `_site/` directory is an Actions artifact. It is not committed to 
 
 ## Pages
 
-- Home and installation
+- Home and official TKB installation
 - Complete feature catalogue
 - Interface-theme and payout-presentation gallery
 - Documentation centre

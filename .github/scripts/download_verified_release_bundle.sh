@@ -36,8 +36,13 @@ MANIFEST="release-manifest-v${RELEASE_VERSION}.json"
 CHANGELOG="CHANGELOG-v${RELEASE_VERSION}.md"
 SUMS="SHA256SUMS-v${RELEASE_VERSION}.txt"
 HANDOVER="migration-handover-v${RELEASE_VERSION}.md"
+INSTALL_USER="MissionChief_Map_Command_Toolkit.install.user.js"
+UPDATE_USER="MissionChief_Map_Command_Toolkit.update.user.js"
+METADATA="MissionChief_Map_Command_Toolkit.meta.js"
+GREASY_FORK_USER="MissionChief_Map_Command_Toolkit.greasyfork.user.js"
+MAIN_STYLESHEET="MissionChief_Map_Command_Toolkit.css"
 
-required=("$VERSIONED_USER" "$VERSIONED_TXT" "$MANIFEST" "$CHANGELOG" "$SUMS" "$HANDOVER")
+required=("$VERSIONED_USER" "$VERSIONED_TXT" "$MANIFEST" "$CHANGELOG" "$SUMS" "$HANDOVER" "$INSTALL_USER" "$UPDATE_USER" "$METADATA" "$GREASY_FORK_USER" "$MAIN_STYLESHEET")
 if [[ "$REQUIRE_STABLE_ASSETS" == "true" ]]; then
   required+=("$STABLE_USER" "$STABLE_TXT")
 fi
@@ -69,6 +74,27 @@ SCRIPT_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$OU
 }
 [[ "$SCRIPT_VERSION" == "$RELEASE_VERSION" ]] || {
   echo "::error::Versioned userscript @version ${SCRIPT_VERSION:-missing} does not match ${RELEASE_VERSION}."
+  exit 1
+}
+
+cmp --silent "$OUTPUT_DIR/$INSTALL_USER" "$OUTPUT_DIR/$VERSIONED_USER" || {
+  echo "::error::First-party installer differs from the immutable release asset."
+  exit 1
+}
+cmp --silent "$OUTPUT_DIR/$UPDATE_USER" "$OUTPUT_DIR/$VERSIONED_USER" || {
+  echo "::error::First-party update package differs from the immutable release asset."
+  exit 1
+}
+[[ "$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$OUTPUT_DIR/$METADATA" | head -n 1 | xargs)" == "$RELEASE_VERSION" ]] || {
+  echo "::error::First-party metadata asset has the wrong version."
+  exit 1
+}
+[[ "$(sha256sum "$OUTPUT_DIR/$MAIN_STYLESHEET" | awk '{print $1}')" == "$(jq -r '.distribution.stylesheetSha256' "$OUTPUT_DIR/$MANIFEST")" ]] || {
+  echo "::error::Greasy Fork stylesheet resource differs from the release manifest."
+  exit 1
+}
+[[ "$(python3 -c 'from pathlib import Path; import sys; print(len(Path(sys.argv[1]).read_text(encoding="utf-8")))' "$OUTPUT_DIR/$GREASY_FORK_USER")" -le "$(jq -r '.distribution.greasyForkLimit' "$OUTPUT_DIR/$MANIFEST")" ]] || {
+  echo "::error::Greasy Fork mirror exceeds its governed character limit."
   exit 1
 }
 

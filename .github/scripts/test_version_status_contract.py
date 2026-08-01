@@ -87,7 +87,7 @@ def main() -> int:
     source_version = re.search(r"// @version\s+([^\s]+)", source).group(1)
     assert semver(manifest["version"]) <= semver(source_version)
     assert manifest["releaseNotesUrl"].endswith(f"/releases/tag/v{manifest['version']}")
-    assert manifest["updateUrl"].startswith("https://update.greasyfork.org/scripts/586018/")
+    assert manifest["updateUrl"] == "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"
 
     for marker in [
         "name: Verify Toolkit Update Manifest",

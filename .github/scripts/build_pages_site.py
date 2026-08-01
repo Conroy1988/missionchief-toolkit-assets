@@ -115,7 +115,7 @@ def page_shell(*, data: dict, dashboard: dict, base_path: str, active: str, titl
   </main>
   <footer class="footer">
     <div class="container footer-inner">
-      <div><strong>{esc(project["name"])}</strong><br>GitHub-controlled releases · Greasy Fork distribution · MIT licence</div>
+      <div><strong>{esc(project["name"])}</strong><br>GitHub-controlled releases · TKB first-party distribution · MIT licence</div>
       <div class="footer-links">
         <a href="{esc(project["repository"])}">GitHub</a>
         <a href="{esc(project["issues"])}">Support</a>
@@ -143,7 +143,8 @@ def health_table(dashboard: dict) -> str:
     rows = [
         ("Canonical validation", status.get("validation", "unknown")),
         ("GitHub Release", status.get("githubRelease", "unknown")),
-        ("Greasy Fork", status.get("greasyForkSync", "unknown")),
+        ("TKB distribution", status.get("tkbDistribution", status.get("greasyForkSync", "unknown"))),
+        ("Greasy Fork mirror", status.get("greasyForkSync", "unknown")),
         ("Private backup", status.get("backup", "unknown")),
         ("Development Discord", status.get("discordDevelopment", "unknown")),
         ("Release Discord", status.get("discordRelease", "unknown")),
@@ -201,7 +202,8 @@ def home_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     project = data["project"]
     release = dashboard.get("latestRelease", {})
     assets = dashboard.get("assets", {})
-    install = settings.get("greasyFork", {}).get("installUrl", "#")
+    install = settings.get("distribution", {}).get("installUrl", "#")
+    product_url = settings.get("distribution", {}).get("productUrl", "#")
     script_url = settings.get("greasyFork", {}).get("scriptUrl", "#")
     featured = []
     for category in data["featureCategories"][:4]:
@@ -217,7 +219,7 @@ def home_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     for theme in data["themes"][:3]:
         swatches = "".join(f'<span class="swatch" style="background:{esc(colour)}"></span>' for colour in theme["palette"])
         theme_cards.append(f'<a class="card card-link" href="{esc(href(base_path, "themes/"))}"><h3>{esc(theme["name"])}</h3><p>{esc(theme["description"])}</p><div class="palette">{swatches}</div></a>')
-    pipeline_html = "".join(f'<div class="pipeline-step">{esc(item)}</div>' for item in ["GitHub source", "Validation", "GitHub Release", "Greasy Fork", "Private backup", "Discord"])
+    pipeline_html = "".join(f'<div class="pipeline-step">{esc(item)}</div>' for item in ["GitHub source", "Validation", "GitHub Release", "TKB distribution", "Private backup", "Discord"])
     body = f'''
 <section class="hero">
   <div class="container">
@@ -226,7 +228,8 @@ def home_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     <p class="hero-copy">{esc(project["description"])}</p>
     <div class="actions">
       <a class="button primary" href="{esc(install)}">Install or update Toolkit</a>
-      <a class="button" href="{esc(script_url)}">View on Greasy Fork</a>
+      <a class="button" href="{esc(product_url)}">View TKB product page</a>
+      <a class="button" href="{esc(script_url)}">Greasy Fork mirror</a>
       <a class="button" href="{esc(href(base_path, "docs/"))}">Open documentation</a>
     </div>
     <div class="release-strip" aria-label="Current release status">
@@ -241,7 +244,7 @@ def home_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Operational systems</span><h2>One Toolkit, several command layers</h2></div><p>The interface remains map-first. Large systems are constructed on demand and can be enabled only when they are operationally useful.</p></div><div class="grid two">{''.join(featured)}</div><div class="actions"><a class="button" href="{esc(href(base_path, "features/"))}">Browse all features</a></div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Responsive operation</span><h2>Desktop, tablet and iOS</h2></div><p>Persistent settings and purpose-built layouts keep the Toolkit usable across large maps, touch screens and Safari on iPhone.</p></div><div class="grid three">{modes}</div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Interface themes</span><h2>Distinct skins, consistent controls</h2></div><p>Theme styling changes the presentation layer without changing the underlying operational workflow.</p></div><div class="grid three">{''.join(theme_cards)}</div></div></section>
-<section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Verified distribution</span><h2>GitHub to users, with recovery built in</h2></div><p>Public announcements occur only after the Greasy Fork version is live and the validated release has been backed up.</p></div><div class="pipeline">{pipeline_html}</div><div class="actions"><a class="button" href="{esc(href(base_path, "status/"))}">Open live release status</a><a class="button" href="{esc(project["releases"])}">GitHub Releases</a></div></div></section>
+<section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Verified distribution</span><h2>GitHub to TKB users, with recovery built in</h2></div><p>Public announcements occur only after first-party packages and the private backup are verified. Greasy Fork is checked separately as a non-blocking mirror.</p></div><div class="pipeline">{pipeline_html}</div><div class="actions"><a class="button" href="{esc(href(base_path, "status/"))}">Open live release status</a><a class="button" href="{esc(project["releases"])}">GitHub Releases</a></div></div></section>
 '''
     return page_shell(data=data, dashboard=dashboard, base_path=base_path, active="", title=project["name"], description=project["description"], body=body)
 
@@ -289,7 +292,7 @@ def docs_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     shortcuts = "".join(f'<div class="shortcut"><kbd>{esc(item["key"])}</kbd><span>{esc(item["action"])}</span></div>' for item in data["shortcuts"])
     trouble = "".join(f'<article class="card trouble-card"><h3>{esc(item["problem"])}</h3><ol>{"".join(f"<li>{esc(step)}</li>" for step in item["steps"])}</ol></article>' for item in data["troubleshooting"])
     issues = "".join(f'<article class="card issue-card {"watch" if item["level"] == "watch" else ""}"><h3>{esc(item["title"])}</h3><p>{esc(item["body"])}</p></article>' for item in data["knownIssues"])
-    install = settings.get("greasyFork", {}).get("installUrl", "#")
+    install = settings.get("distribution", {}).get("installUrl", "#")
     body = f'''<section class="page-hero"><div class="container"><span class="eyebrow">Documentation centre</span><h1>Install, operate and diagnose the Toolkit</h1><p>Start with the operating model, then use the feature guidance, confirmed shortcuts and troubleshooting paths below.</p><div class="actions"><a class="button primary" href="{esc(install)}">Install current release</a><a class="button" href="{esc(data["project"]["issues"])}">Open support form</a></div></div></section>
 <section class="section compact"><div class="container docs-layout"><aside class="docs-nav" aria-label="Documentation chapters">{''.join(nav)}<a href="#shortcuts">Keyboard shortcuts</a><a href="#troubleshooting">Troubleshooting</a><a href="#known-issues">Known issues</a></aside><div>{''.join(sections)}
 <section class="docs-block" id="shortcuts"><h2>Keyboard shortcuts</h2><p>Confirmed global shortcuts in the current Toolkit release. Inputs and editable fields remain protected from accidental activation.</p><div class="shortcut-grid">{shortcuts}</div></section>
@@ -341,7 +344,7 @@ def status_page(data: dict, dashboard: dict, base_path: str) -> str:
     body = f'''<section class="page-hero"><div class="container"><span class="eyebrow">Release control panel</span><h1>Current version {esc(release.get("version", dashboard.get("currentVersion", "unknown")))}</h1><p>The status page is generated from the same machine-readable dashboard used by release, recovery and Discord automation.</p><div class="actions"><a class="button" href="{esc(release.get("githubRelease", data["project"]["releases"]))}">Open current GitHub Release</a><button class="button" type="button" data-copy="{esc(hash_value)}">Copy SHA-256</button></div></div></section>
 <section class="section compact"><div class="container"><div class="card"><table class="status-table"><thead><tr><th>System</th><th>Health</th><th>Recorded state</th></tr></thead><tbody>{health_table(dashboard)}</tbody></table></div></div></section>
 <section class="section"><div class="container"><div class="grid three"><div class="card"><span class="stat-label">Validated SHA-256</span><p><code>{esc(hash_value)}</code></p></div><div class="card"><span class="stat-label">Media assets</span><p class="big-number">{esc(assets.get("discoveredFiles", 0))}</p><p>{esc(assets.get("referencedPaths", 0))} referenced hosted paths.</p></div><div class="card"><span class="stat-label">Last dashboard update</span><p data-iso-date="{esc(dashboard.get("lastUpdated", ""))}">{esc(dashboard.get("lastUpdated", "unknown"))}</p><p>Missing referenced paths: {esc(assets.get("missingReferencedPaths", 0))}</p></div></div></div></section>
-<section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Publication sequence</span><h2>Release integrity path</h2></div><p>Discord follows verified distribution and private backup. Recovery tooling can repair individual stages without creating duplicate releases.</p></div><div class="pipeline">{''.join(f'<div class="pipeline-step">{esc(item)}</div>' for item in ["Canonical source", "CI validation", "GitHub Release", "Greasy Fork", "Private backup", "Discord"])}</div></div></section>'''
+<section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Publication sequence</span><h2>Release integrity path</h2></div><p>Discord follows verified TKB distribution and private backup. Greasy Fork is observed as a non-blocking mirror.</p></div><div class="pipeline">{''.join(f'<div class="pipeline-step">{esc(item)}</div>' for item in ["Canonical source", "CI validation", "GitHub Release", "TKB distribution", "Private backup", "Discord"])}</div></div></section>'''
     return page_shell(data=data, dashboard=dashboard, base_path=base_path, active="status/", title=f'Status · {data["project"]["name"]}', description="Live Toolkit release and distribution status.", body=body)
 
 

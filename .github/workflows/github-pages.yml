@@ -3,11 +3,14 @@ name: GitHub Pages Documentation
 run-name: Documentation site · ${{ github.event_name }}
 
 on:
+  schedule:
+    - cron: "17 * * * *"
   push:
     branches:
       - main
     paths:
       - ".github/scripts/build_pages_site.py"
+      - ".github/scripts/build_download_stats.py"
       - ".github/scripts/test_pages_release_deploy_contract.py"
       - ".github/workflows/github-pages.yml"
       - ".github/release-settings.json"
@@ -40,6 +43,8 @@ jobs:
       - name: Validate source syntax
         run: |
           python3 -m py_compile .github/scripts/build_pages_site.py
+          python3 -m py_compile .github/scripts/build_download_stats.py
+          python3 .github/scripts/build_download_stats.py --self-test
           python3 -m py_compile .github/scripts/test_pages_release_deploy_contract.py
           python3 .github/scripts/test_pages_release_deploy_contract.py
           node --check docs/site-assets/site.js
@@ -142,18 +147,18 @@ jobs:
             git reset --hard origin/main
             DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
             RELEASE_STATE="$(jq -r '.status.githubRelease // empty' status/release-dashboard.json)"
-            GREASY_FORK_STATE="$(jq -r '.status.greasyForkSync // empty' status/release-dashboard.json)"
+            DISTRIBUTION_STATE="$(jq -r '.status.tkbDistribution // .status.greasyForkSync // empty' status/release-dashboard.json)"
             if [[ -z "$EXPECTED_VERSION" ]]; then
               EXPECTED_VERSION="$DASHBOARD_VERSION"
             fi
-            if [[ -n "$EXPECTED_VERSION" && "$DASHBOARD_VERSION" == "$EXPECTED_VERSION" && "$RELEASE_STATE" == "published" && "$GREASY_FORK_STATE" == "verified" ]]; then
+            if [[ -n "$EXPECTED_VERSION" && "$DASHBOARD_VERSION" == "$EXPECTED_VERSION" && "$RELEASE_STATE" == "published" && "$DISTRIBUTION_STATE" == "verified" ]]; then
               SOURCE_SHA="$(git rev-parse HEAD)"
               echo "release_version=$EXPECTED_VERSION" >> "$GITHUB_OUTPUT"
               echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
               echo "Deploying verified Toolkit ${EXPECTED_VERSION} from ${SOURCE_SHA}."
               exit 0
             fi
-            echo "Waiting for verified production state ${EXPECTED_VERSION:-unknown}; dashboard=${DASHBOARD_VERSION:-missing}, GitHub=${RELEASE_STATE:-missing}, Greasy Fork=${GREASY_FORK_STATE:-missing}."
+            echo "Waiting for verified production state ${EXPECTED_VERSION:-unknown}; dashboard=${DASHBOARD_VERSION:-missing}, GitHub=${RELEASE_STATE:-missing}, TKB distribution=${DISTRIBUTION_STATE:-missing}."
             sleep 15
           done
           echo "::error::Verified production state ${EXPECTED_VERSION:-unknown} was not available within 10 minutes."
@@ -176,6 +181,20 @@ jobs:
           grep -Fq "${{ steps.production.outputs.release_version }}" _site/index.html
           echo "Pages source: ${{ steps.production.outputs.source_sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Pages release: ${{ steps.production.outputs.release_version }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build public TKB download statistics
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --slurp > release-pages.json
+          python3 .github/scripts/build_download_stats.py \
+            --releases release-pages.json \
+            --output _site/data/download-stats.json
+          jq -e '.schemaVersion == 1 and (.newInstalls | type == "number") and (.successfulUpdates | type == "number")' \
+            _site/data/download-stats.json > /dev/null
+          echo "TKB download statistics feed generated." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

@@ -1,14 +1,6 @@
 {
   "compatibilityAliasManifest": ".github/asset-compatibility-aliases.json",
-  "crossEndpointComparisons": [
-    {
-      "code": "distribution-body-mismatch",
-      "description": "The Greasy Fork executable userscript body differs from the verified GitHub Release asset.",
-      "field": "bodySha256",
-      "left": "github-latest-userscript",
-      "right": "greasyfork-install-userscript"
-    }
-  ],
+  "crossEndpointComparisons": [],
   "excludedDirectories": [
     ".git",
     "__pycache__",
@@ -27,37 +19,49 @@
     {
       "compareLatestReleaseHash": true,
       "compareLatestReleaseVersion": true,
-      "id": "github-latest-userscript",
+      "id": "tkb-install-userscript",
       "kind": "userscript",
       "maxBytes": 2500000,
       "minBytes": 1000000,
       "required": true,
       "urlSource": {
-        "jsonPointer": "/greasyFork/sourceUrl",
+        "jsonPointer": "/distribution/installUrl",
         "path": ".github/release-settings.json"
       }
     },
     {
+      "compareLatestReleaseHash": true,
       "compareLatestReleaseVersion": true,
-      "id": "greasyfork-install-userscript",
+      "id": "tkb-update-userscript",
       "kind": "userscript",
       "maxBytes": 2500000,
       "minBytes": 1000000,
       "required": true,
       "urlSource": {
-        "jsonPointer": "/greasyFork/installUrl",
+        "jsonPointer": "/distribution/updateUrl",
         "path": ".github/release-settings.json"
       }
     },
     {
       "compareLatestReleaseVersion": true,
-      "id": "greasyfork-metadata",
+      "id": "tkb-metadata",
       "kind": "metadata",
       "maxBytes": 50000,
       "minBytes": 40,
       "required": true,
       "urlSource": {
-        "jsonPointer": "/greasyFork/metadataUrl",
+        "jsonPointer": "/distribution/metadataUrl",
+        "path": ".github/release-settings.json"
+      }
+    },
+    {
+      "id": "greasyfork-install-userscript",
+      "kind": "userscript",
+      "maxBytes": 2500000,
+      "minBytes": 1000000,
+      "required": false,
+      "urlSource": {
+        "jsonPointer": "/greasyFork/installUrl",
         "path": ".github/release-settings.json"
       }
     },
@@ -186,7 +190,7 @@
   "repository": {
     "stableRef": "main"
   },
-  "revision": "2026-07-17-canonical-audio-only",
+  "revision": "2026-08-01-tkb-first-party-distribution",
   "scanFiles": [
     "src/MissionChief_Map_Command_Toolkit.user.js",
     ".github/release-settings.json",

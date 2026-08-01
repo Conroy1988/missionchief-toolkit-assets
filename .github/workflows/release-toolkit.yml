@@ -238,6 +238,11 @@ jobs:
             --notes-file "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \
             "release-bundle/MissionChief_Map_Command_Toolkit.user.js" \
             "release-bundle/MissionChief_Map_Command_Toolkit.txt" \
+            "release-bundle/MissionChief_Map_Command_Toolkit.install.user.js" \
+            "release-bundle/MissionChief_Map_Command_Toolkit.update.user.js" \
+            "release-bundle/MissionChief_Map_Command_Toolkit.meta.js" \
+            "release-bundle/MissionChief_Map_Command_Toolkit.greasyfork.user.js" \
+            "release-bundle/MissionChief_Map_Command_Toolkit.css" \
             "release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js" \
             "release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.txt" \
             "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \
@@ -247,7 +252,7 @@ jobs:
           echo "created_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
           echo "created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-      - name: Verify Greasy Fork and back up concurrently
+      - name: Verify first-party distribution and private backup
         id: external
         env:
           RELEASE_VERSION: ${{ inputs.version }}
@@ -255,45 +260,55 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
           BACKUP_OUTPUT="$RUNNER_TEMP/private-backup-output"
-          (
-            GITHUB_OUTPUT="$BACKUP_OUTPUT" bash .github/scripts/backup_release_to_private_repo.sh > "$RUNNER_TEMP/private-backup.log" 2>&1
-            date +%s > "$RUNNER_TEMP/private-backup-epoch"
-          ) &
-          BACKUP_PID=$!
-          (
-            attempt=0
-            while true; do
-              attempt=$((attempt + 1))
-              if curl --fail --silent --show-error --location --compressed --max-time 30 --header "Cache-Control: no-cache" "${META_URL}?cache_bust=$(date +%s%N)" --output greasyfork-release.meta.js; then
-                LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork-release.meta.js | head -n 1 | xargs)"
-                if [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]]; then
-                  echo "$attempt" > "$RUNNER_TEMP/greasyfork-attempts"
-                  date +%s > "$RUNNER_TEMP/greasyfork-epoch"
-                  exit 0
-                fi
-              fi
-              elapsed=$(( $(date +%s) - ${{ steps.github_release.outputs.created_epoch }} ))
-              (( elapsed < 30 )) && sleep 2 && continue
-              (( elapsed < 150 )) && sleep 5 && continue
-              (( elapsed < 1800 )) && sleep 15 && continue
-              exit 1
-            done
-          ) &
-          GF_PID=$!
-          backup_status=0; gf_status=0
-          wait "$BACKUP_PID" || backup_status=$?
-          wait "$GF_PID" || gf_status=$?
-          cat "$RUNNER_TEMP/private-backup.log" || true
-          [[ "$backup_status" -eq 0 ]] || { echo "::error::Private backup failed."; exit "$backup_status"; }
-          [[ "$gf_status" -eq 0 ]] || { echo "::error::Greasy Fork verification failed."; exit "$gf_status"; }
+          FULL="release-bundle/MissionChief_Map_Command_Toolkit.user.js"
+          INSTALL="release-bundle/MissionChief_Map_Command_Toolkit.install.user.js"
+          UPDATE="release-bundle/MissionChief_Map_Command_Toolkit.update.user.js"
+          META="release-bundle/MissionChief_Map_Command_Toolkit.meta.js"
+          MIRROR="release-bundle/MissionChief_Map_Command_Toolkit.greasyfork.user.js"
+          CSS="release-bundle/MissionChief_Map_Command_Toolkit.css"
+          MANIFEST="release-bundle/release-manifest-v${RELEASE_VERSION}.json"
+          for file in "$FULL" "$INSTALL" "$UPDATE" "$META" "$MIRROR" "$CSS" "$MANIFEST"; do test -f "$file"; done
+          cmp --silent "$FULL" "$INSTALL"
+          cmp --silent "$FULL" "$UPDATE"
+          test "$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$META" | head -n 1 | xargs)" = "$RELEASE_VERSION"
+          test "$(sha256sum "$CSS" | awk '{print $1}')" = "$(jq -r '.distribution.stylesheetSha256' "$MANIFEST")"
+          test "$(python3 -c 'from pathlib import Path; print(len(Path("release-bundle/MissionChief_Map_Command_Toolkit.greasyfork.user.js").read_text(encoding="utf-8")))')" -le "$(jq -r '.distribution.greasyForkLimit' "$MANIFEST")"
+          GITHUB_OUTPUT="$BACKUP_OUTPUT" bash .github/scripts/backup_release_to_private_repo.sh
+          date +%s > "$RUNNER_TEMP/private-backup-epoch"
           BACKUP_COMMIT="$(sed -n 's/^backup_commit=//p' "$BACKUP_OUTPUT" | tail -n 1)"
           [[ -n "$BACKUP_COMMIT" ]]
           echo "backup_commit=$BACKUP_COMMIT" >> "$GITHUB_OUTPUT"
           echo "backup_epoch=$(cat "$RUNNER_TEMP/private-backup-epoch")" >> "$GITHUB_OUTPUT"
-          echo "greasyfork_epoch=$(cat "$RUNNER_TEMP/greasyfork-epoch")" >> "$GITHUB_OUTPUT"
-          echo "greasyfork_attempts=$(cat "$RUNNER_TEMP/greasyfork-attempts")" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Greasy Fork mirror without blocking production
+        id: greasyfork
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
+          attempt=0
+          verified=false
+          while (( attempt < 18 )); do
+            attempt=$((attempt + 1))
+            if curl --fail --silent --show-error --location --compressed --max-time 20 --header "Cache-Control: no-cache" "${META_URL}?cache_bust=$(date +%s%N)" --output greasyfork-release.meta.js; then
+              LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork-release.meta.js | head -n 1 | xargs)"
+              if [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]]; then verified=true; break; fi
+            fi
+            sleep 5
+          done
+          if [[ "$verified" == "true" ]]; then
+            verified_epoch="$(date +%s)"
+            echo "Greasy Fork mirror verified at ${RELEASE_VERSION}."
+          else
+            verified_epoch="${{ steps.github_release.outputs.created_epoch }}"
+            echo "::warning::Greasy Fork has not propagated ${RELEASE_VERSION}; TKB production remains verified and release processing will continue."
+          fi
+          echo "verified=$verified" >> "$GITHUB_OUTPUT"
+          echo "verified_epoch=$verified_epoch" >> "$GITHUB_OUTPUT"
+          echo "attempts=$attempt" >> "$GITHUB_OUTPUT"
 
       - name: Post verified release to Discord
         id: discord
@@ -307,8 +322,8 @@ jobs:
           set -euo pipefail
           [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || { echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."; exit 1; }
           [[ -n "${BACKUP_COMMIT:-}" ]] || { echo "::error::Private backup commit was not recorded."; exit 1; }
-          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+          SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
 
           python3 .github/scripts/build_discord_release_payload.py \
@@ -336,8 +351,9 @@ jobs:
           RELEASE_STARTED_AT: ${{ steps.release_start.outputs.started_at }}
           GITHUB_RELEASE_EPOCH: ${{ steps.github_release.outputs.created_epoch }}
           GITHUB_RELEASE_AT: ${{ steps.github_release.outputs.created_at }}
-          GREASYFORK_EPOCH: ${{ steps.external.outputs.greasyfork_epoch }}
-          GREASYFORK_ATTEMPTS: ${{ steps.external.outputs.greasyfork_attempts }}
+          GREASYFORK_EPOCH: ${{ steps.greasyfork.outputs.verified_epoch }}
+          GREASYFORK_ATTEMPTS: ${{ steps.greasyfork.outputs.attempts }}
+          GREASYFORK_VERIFIED: ${{ steps.greasyfork.outputs.verified }}
           BACKUP_EPOCH: ${{ steps.external.outputs.backup_epoch }}
           DISCORD_EPOCH: ${{ steps.discord.outputs.posted_epoch }}
           DISCORD_AT: ${{ steps.discord.outputs.posted_at }}
@@ -356,17 +372,21 @@ jobs:
           VERIFIED_EPOCH="$(date +%s)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
+          GREASYFORK_STATUS="delayed"
+          [[ "$GREASYFORK_VERIFIED" == "true" ]] && GREASYFORK_STATUS="verified"
           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
              --arg releaseUrl "$RELEASE_URL" --arg backupCommit "$BACKUP_COMMIT" \
+             --arg greasyForkStatus "$GREASYFORK_STATUS" --argjson greasyForkVerified "$GREASYFORK_VERIFIED" \
             '.currentVersion=$version |
              .status.validation="passed" |
              .status.githubRelease="published" |
-             .status.greasyForkSync="verified" |
+             .status.tkbDistribution="verified" |
+             .status.greasyForkSync=$greasyForkStatus |
              .status.backup="private-repository-verified" |
              .status.discordRelease="posted" |
              .status.releaseReadiness="passed" |
-             .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,greasyForkMetadataVerified:true,publicReleaseCreated:false,completedAt:$now} |
-             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,greasyForkVerified:true,privateBackupCommit:$backupCommit,discordPosted:true,completedAt:$now} |
+             .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,tkbDistributionVerified:true,greasyForkMetadataVerified:$greasyForkVerified,publicReleaseCreated:true,completedAt:$now} |
+             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,greasyForkVerified:$greasyForkVerified,privateBackupCommit:$backupCommit,discordPosted:true,completedAt:$now} |
              .lastUpdated=$now' \
             status/release-dashboard.json > status/release-dashboard.tmp
           mv status/release-dashboard.tmp status/release-dashboard.json
@@ -447,8 +467,8 @@ jobs:
             echo "- ✅ Immutable release bundle reused without rebuilding"
             echo "- ✅ Stable Greasy Fork release asset published"
             echo "- ✅ GitHub Release published"
-            echo "- ✅ Greasy Fork verification and private backup ran concurrently"
-            echo "- ✅ Greasy Fork version verified"
+            echo "- ✅ TKB install, update, metadata and mirror assets verified"
+            echo "- ✅ Greasy Fork mirror checked without blocking production"
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
             echo "- ✅ Candidate, implementation-to-green, PR, merge and publication telemetry attributed to the exact validated commit"

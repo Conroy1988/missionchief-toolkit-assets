@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 624,
-    "version": "10.2.0",
-    "sourceBytes": 2108794,
-    "sourceLines": 31744,
-    "sourceSha256": "2d3b6c994ffbb4b5fb2d0c1a6d6b38645a8c465c36ead15338186d5c4636df20",
+    "issue": 627,
+    "version": "10.2.1",
+    "sourceBytes": 2109504,
+    "sourceLines": 31748,
+    "sourceSha256": "91099941cf510ab506076cccc32c7255fba6f6b552c58c61848c5f5244578d7d",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
     "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
-    "maxSourceBytes": 2128794,
-    "maxSourceLines": 32044,
+    "maxSourceBytes": 2129504,
+    "maxSourceLines": 32048,
     "minTemplateBytes": 500000,
-    "baseline": "10.1.0",
+    "baseline": "10.2.0",
     "approvedGrowth": {
-      "sourceBytes": 36249,
-      "sourceLines": 497,
+      "sourceBytes": 710,
+      "sourceLines": 4,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #624 exact Mission Progress Rings, explicit Unit Locator and Follow Mode, current-page Alliance Chat Mission Previews and protected One-Click Session Cleanup"
+    "scope": "Issue #627 first-party TKB distribution metadata, migration briefing and canonical update route"
   }
 }

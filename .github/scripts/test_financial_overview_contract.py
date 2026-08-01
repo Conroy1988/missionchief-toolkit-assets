@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -218,7 +219,8 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="financial-overview-") as temp_dir:
         path = Path(temp_dir) / "harness.js"
         path.write_text(harness, encoding="utf-8")
-        completed = subprocess.run(["node", str(path)], cwd=ROOT, text=True, capture_output=True)
+        environment = {**os.environ, "TZ": "UTC"}
+        completed = subprocess.run(["node", str(path)], cwd=ROOT, text=True, capture_output=True, env=environment)
     if completed.stdout:
         print(completed.stdout, end="")
     if completed.stderr:

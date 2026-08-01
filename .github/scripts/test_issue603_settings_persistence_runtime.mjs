@@ -121,6 +121,7 @@ function createRuntime({ pageStore = new Map(), gmStore = new Map(), pageWritabl
       gmStore.delete(key);
       return true;
     },
+    captureSettingsSnapshot() { return false; },
     defaultState() {
       return clone(defaults);
     },

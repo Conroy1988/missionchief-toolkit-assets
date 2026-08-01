@@ -37,6 +37,7 @@
   ],
   "cleanupRootAttributes": [
     "data-mcms-ui-theme",
+    "data-mcms-custom-theme",
     "data-mc-map-skin",
     "data-mcms-clean",
     "data-mcms-marker-focus",

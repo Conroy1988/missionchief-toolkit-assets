@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-31-issue-618-command-palette-v9-4",
-  "rationale": "Approve the measured Issue #618 local Command Palette source, responsive-style growth and three lifecycle-managed dialog listeners while retaining zero growth in requests, schedulers, raw listeners, DOM lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-08-01-issue-620-personalisation-studio-v10",
+  "rationale": "Approve the measured Issue #620 Personalisation Studio source and responsive-style growth while retaining zero growth in requests, schedulers, listeners, DOM lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 618,
-    "version": "9.4.0",
+    "issue": 620,
+    "version": "10.0.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "User-triggered local Command Palette for current missions, vehicles, buildings, locations, Settings and safe actions with responsive keyboard and touch operation.",
+    "scope": "User-triggered Personalisation Studio for isolated device layouts, validated theme settings, configurable Quick Wheel slots, protected backups, setup guidance and opt-in notifications.",
     "approvedMutationObserverDelta": 0,
-    "approvedManagedListenerDelta": 3
+    "approvedManagedListenerDelta": 0
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -155,6 +155,13 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 618,
+      "version": "9.4.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "User-triggered local Command Palette for current missions, vehicles, buildings, locations, Settings and safe actions with responsive keyboard and touch operation.",
+      "approvedMutationObserverDelta": 0
+    },
     {
       "issue": 612,
       "version": "9.3.0",

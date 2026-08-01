@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.4.0
+// @version      10.0.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -465,7 +465,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.4.0',
+        version: '10.0.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -480,6 +480,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         commandPaletteId: 'mc-map-command-toolkit-command-palette',
         commandExperienceModalId: 'mc-map-command-toolkit-command-experience',
         quickWheelId: 'mc-map-command-toolkit-quick-wheel',
+        personalisationStyleId: 'mc-map-command-personalisation-style',
         fullscreenExitId: 'mc-map-command-toolkit-fullscreen-exit',
         cleanExitId: 'mcms-clean-exit',
         styleId: 'mc-map-command-toolkit-style-v4146',
@@ -488,6 +489,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         storageState: 'mc_map_command_toolkit_state_v150',
         settingsVaultState: 'mc_map_command_toolkit_settings_v1',
         settingsRecoveryState: 'mc_map_command_toolkit_settings_recovery_v1',
+        settingsSnapshotsState: 'mc_map_command_toolkit_settings_snapshots_v1',
         payoutHistoryState: 'mc_map_command_toolkit_payout_history_v200',
         sessionPerformanceState: 'mc_map_command_toolkit_session_v200',
         missionProgressState: 'mc_map_command_toolkit_mission_progress_v250',
@@ -1165,11 +1167,43 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         pressureBoard: Object.freeze({ label: 'Pressure', icon: 'P' }),
         fullscreen: Object.freeze({ label: 'Full Screen', icon: '⛶' }),
         commandPalette: Object.freeze({ label: 'Palette', icon: '⌕' }),
+        personalisation: Object.freeze({ label: 'Personalise', icon: '✦' }),
         menu: Object.freeze({ label: 'Toolkit Menu', icon: 'M' }),
         markerFocus: Object.freeze({ label: 'Marker Focus', icon: 'F' }),
         roadPriority: Object.freeze({ label: 'Road Priority', icon: 'R' })
     });
     const DEFAULT_QUICK_WHEEL_ACTIONS = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings', 'pressureBoard', 'fullscreen']);
+    const LAYOUT_DEVICE_KEYS = Object.freeze(['desktop', 'tablet', 'mobile']);
+    const LAYOUT_CONTROL_GROUPS = Object.freeze({
+        visibility: Object.freeze({ label: 'Visibility', controls: Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']) }),
+        intelligence: Object.freeze({ label: 'Intelligence', controls: Object.freeze(['allianceCredits', 'missionAge', 'transportWatcher', 'unitCommitment', 'stuckDetector']) }),
+        dashboard: Object.freeze({ label: 'Dashboard', controls: Object.freeze(['open-vehicle-status', 'open-pressure-board', 'open-command-palette']) }),
+        performance: Object.freeze({ label: 'Performance', controls: Object.freeze(['toggle-economy']) })
+    });
+    const DEFAULT_LAYOUT_GROUP_ORDER = Object.freeze(Object.keys(LAYOUT_CONTROL_GROUPS));
+    const LAYOUT_CONTROL_LABELS = Object.freeze({
+        myMissions: 'Personal Missions', allianceMissions: 'Alliance Missions', vehicles: 'Vehicles', buildings: 'Buildings',
+        allianceCredits: 'Alliance Credits', missionAge: 'Mission Age', transportWatcher: 'Transport Watcher', unitCommitment: 'Unit Count', stuckDetector: 'Stuck Detector',
+        'open-vehicle-status': 'Vehicle Codes', 'open-pressure-board': 'Pressure Board', 'open-command-palette': 'Command Palette', 'toggle-economy': 'Economy Mode'
+    });
+    const QUICK_WHEEL_SLOT_MIN = 4;
+    const QUICK_WHEEL_SLOT_MAX = 8;
+    const THEME_STUDIO_FORMAT = 'MissionChief Map Command Toolkit Theme';
+    const THEME_STUDIO_SCHEMA = 1;
+    const SETTINGS_SNAPSHOT_LIMIT = 5;
+    const SETTINGS_SNAPSHOT_INTERVAL_MS = 6 * 60 * 60 * 1000;
+    const NOTIFICATION_PRESETS = Object.freeze({
+        radio: Object.freeze({ label: 'Command Radio', wave: 'square' }),
+        soft: Object.freeze({ label: 'Soft Chime', wave: 'sine' }),
+        classic: Object.freeze({ label: 'Classic Alert', wave: 'triangle' })
+    });
+    const NOTIFICATION_EVENT_META = Object.freeze({
+        newMission: Object.freeze({ label: 'New mission', icon: '◎', title: 'New MissionChief incident' }),
+        completion: Object.freeze({ label: 'Mission completed', icon: '✓', title: 'Mission completed' }),
+        patient: Object.freeze({ label: 'Patient attention', icon: '✚', title: 'Patient transport requires attention' }),
+        stuck: Object.freeze({ label: 'Stuck incident', icon: '!', title: 'Mission appears stuck' }),
+        warning: Object.freeze({ label: 'Toolkit warning', icon: '⚠', title: 'Toolkit warning' })
+    });
     const SETTINGS_TRANSFER = Object.freeze({
         format: 'MissionChief Map Command Toolkit Encrypted Settings Transfer',
         schema: 1,
@@ -1261,6 +1295,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let payoutFlashAnimations = [];
     let payoutAmountAnimationFrame = null;
     let payoutAudioContext = null;
+    let notificationAudioContext = null;
+    const notificationEventSeen = new Map();
+    const notificationActiveEvents = new Set();
+    let setupWizardDraft = null;
     let payoutMediaAudio = null;
     let payoutMediaTemplate = '';
     let payoutMediaGeneration = 0;
@@ -1436,6 +1474,141 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let commandPaletteReturnFocus = null;
     state = loadState();
 
+    function defaultLayoutDeviceState(position = 'bl', device = 'desktop') {
+        const safePosition = POSITIONS[position] ? position : 'bl';
+        return {
+        position: safePosition,
+        groupOrder: [...DEFAULT_LAYOUT_GROUP_ORDER],
+        controlOrder: Object.fromEntries(Object.entries(LAYOUT_CONTROL_GROUPS).map(([key, group]) => [key, [...group.controls]])),
+        hiddenControls: [],
+        panelPosition: null,
+        panelWidth: device === 'desktop' ? 720 : device === 'tablet' ? 700 : 100,
+        panelHeight: device === 'mobile' ? 88 : 82
+        };
+    }
+
+    function defaultLayoutBuilderState(position = 'bl') {
+        return {
+        schema: 1,
+        layouts: Object.fromEntries(LAYOUT_DEVICE_KEYS.map(device => [device, defaultLayoutDeviceState(position, device)]))
+        };
+    }
+
+    function normaliseUniqueList(value, allowed, fallback) {
+        const allowedSet = new Set(allowed);
+        const result = [];
+        for (const item of Array.isArray(value) ? value : fallback) {
+        const key = String(item || '');
+        if (allowedSet.has(key) && !result.includes(key)) result.push(key);
+        }
+        for (const key of fallback) if (!result.includes(key)) result.push(key);
+        return result;
+    }
+
+    function normaliseLayoutBuilderState(value, legacyPosition = 'bl') {
+        const fallback = defaultLayoutBuilderState(legacyPosition);
+        const sourceLayouts = value?.layouts && typeof value.layouts === 'object' ? value.layouts : value;
+        const layouts = {};
+        for (const device of LAYOUT_DEVICE_KEYS) {
+        const base = fallback.layouts[device];
+        const source = sourceLayouts?.[device] && typeof sourceLayouts[device] === 'object' ? sourceLayouts[device] : {};
+        const groupOrder = normaliseUniqueList(source.groupOrder, DEFAULT_LAYOUT_GROUP_ORDER, DEFAULT_LAYOUT_GROUP_ORDER);
+        const controlOrder = {};
+        for (const [groupKey, group] of Object.entries(LAYOUT_CONTROL_GROUPS)) {
+            controlOrder[groupKey] = normaliseUniqueList(source.controlOrder?.[groupKey], group.controls, group.controls);
+        }
+        const allControls = Object.values(LAYOUT_CONTROL_GROUPS).flatMap(group => group.controls);
+        const hiddenControls = normaliseUniqueList(source.hiddenControls, allControls, []).slice(0, allControls.length);
+        layouts[device] = {
+            position: POSITIONS[source.position] ? source.position : base.position,
+            groupOrder,
+            controlOrder,
+            hiddenControls,
+            panelPosition: source.panelPosition && Number.isFinite(Number(source.panelPosition.left)) && Number.isFinite(Number(source.panelPosition.top))
+                ? { left: Number(source.panelPosition.left), top: Number(source.panelPosition.top) }
+                : null,
+            panelWidth: device === 'mobile' ? 100 : Math.round(clamp(source.panelWidth, device === 'tablet' ? 560 : 560, device === 'tablet' ? 900 : 960, base.panelWidth)),
+            panelHeight: Math.round(clamp(source.panelHeight, device === 'mobile' ? 72 : 60, 96, base.panelHeight))
+        };
+        }
+        return { schema: 1, layouts };
+    }
+
+    function activeLayoutPreferences(layout = activeDeviceLayout) {
+        const key = LAYOUT_DEVICE_KEYS.includes(layout) ? layout : 'desktop';
+        return state?.layoutBuilder?.layouts?.[key] || defaultLayoutDeviceState(state?.position || 'bl', key);
+    }
+
+    function defaultThemeStudioState() {
+        return { enabled: false, name: 'Custom Command', accent: '#68cfff', surface: '#0b1620', text: '#eef8ff', radius: 14, opacity: 94, blur: 10 };
+    }
+
+    function normaliseThemeColour(value, fallback) {
+        const colour = String(value || '').trim().toLowerCase();
+        return /^#[0-9a-f]{6}$/u.test(colour) ? colour : fallback;
+    }
+
+    function normaliseThemeStudioState(value) {
+        const base = defaultThemeStudioState();
+        const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        return {
+        enabled: Boolean(source.enabled),
+        name: String(source.name || base.name).trim().slice(0, 40) || base.name,
+        accent: normaliseThemeColour(source.accent, base.accent),
+        surface: normaliseThemeColour(source.surface, base.surface),
+        text: normaliseThemeColour(source.text, base.text),
+        radius: Math.round(clamp(source.radius, 4, 28, base.radius)),
+        opacity: Math.round(clamp(source.opacity, 72, 100, base.opacity)),
+        blur: Math.round(clamp(source.blur, 0, 24, base.blur))
+        };
+    }
+
+    function defaultQuickWheelSlots() {
+        return [
+        ...DEFAULT_QUICK_WHEEL_ACTIONS.map(id => ({ kind: 'action', id })),
+        { kind: 'palette', id: 'mission' },
+        { kind: 'palette', id: 'vehicle' }
+        ];
+    }
+
+    function normaliseQuickWheelSlot(value) {
+        if (typeof value === 'string') {
+        if (QUICK_WHEEL_ACTIONS[value]) return { kind: 'action', id: value };
+        const [kind, id] = value.split(':', 2);
+        return normaliseQuickWheelSlot({ kind, id });
+        }
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+        const kind = String(value.kind || '');
+        const id = String(value.id ?? '');
+        if (kind === 'action' && QUICK_WHEEL_ACTIONS[id]) return { kind, id };
+        if (kind === 'place' && QUICK_PLACES.some(place => place.id === id)) return { kind, id };
+        if (kind === 'bookmark' && Number.isInteger(Number(id)) && Number(id) >= 0 && Number(id) < 5) return { kind, id: String(Number(id)) };
+        if (kind === 'palette' && ['mission', 'vehicle', 'building'].includes(id)) return { kind, id };
+        return null;
+    }
+
+    function defaultNotificationState() {
+        return {
+        enabled: false,
+        browserEnabled: false,
+        preset: 'radio',
+        volume: 0.3,
+        events: Object.fromEntries(Object.keys(NOTIFICATION_EVENT_META).map(key => [key, false]))
+        };
+    }
+
+    function normaliseNotificationState(value) {
+        const base = defaultNotificationState();
+        const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        return {
+        enabled: Boolean(source.enabled),
+        browserEnabled: Boolean(source.browserEnabled),
+        preset: NOTIFICATION_PRESETS[source.preset] ? source.preset : base.preset,
+        volume: clamp(source.volume, 0, 1, base.volume),
+        events: Object.fromEntries(Object.keys(NOTIFICATION_EVENT_META).map(key => [key, Boolean(source.events?.[key])]))
+        };
+    }
+
     function defaultState() {
         return {
         uiTheme: 'mapCommand',
@@ -1453,7 +1626,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         tabletMode: 'auto',
         mobileMode: 'auto',
         interfaceDensity: { desktop: 'standard', tablet: 'standard' },
-        quickWheel: { enabled: true, actions: [...DEFAULT_QUICK_WHEEL_ACTIONS] },
+        layoutBuilder: defaultLayoutBuilderState(getLegacyPosition()),
+        themeStudio: defaultThemeStudioState(),
+        quickWheel: { enabled: true, slotCount: 6, actions: [...DEFAULT_QUICK_WHEEL_ACTIONS], slots: defaultQuickWheelSlots() },
+        setupWizard: { completed: false, schema: 1 },
+        notifications: defaultNotificationState(),
         updateBriefing: { enabled: true, seenVersion: '' },
         shortcuts: true,
         autoLoadAllVehicles: false,
@@ -1504,6 +1681,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
         interfaceDensity: { ...base.interfaceDensity, ...(parsed.interfaceDensity || {}) },
         quickWheel: { ...base.quickWheel, ...(parsed.quickWheel || {}) },
+        layoutBuilder: normaliseLayoutBuilderState(parsed.layoutBuilder, parsed.position || base.position),
+        themeStudio: normaliseThemeStudioState(parsed.themeStudio),
+        setupWizard: { ...base.setupWizard, ...(parsed.setupWizard || {}) },
+        notifications: normaliseNotificationState(parsed.notifications),
         updateBriefing: { ...base.updateBriefing, ...(parsed.updateBriefing || {}) },
         profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
         bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
@@ -1542,13 +1723,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
         merged.interfaceDensity.desktop = COMMAND_DENSITIES.includes(String(merged.interfaceDensity.desktop)) ? String(merged.interfaceDensity.desktop) : 'standard';
         merged.interfaceDensity.tablet = COMMAND_DENSITIES.includes(String(merged.interfaceDensity.tablet)) ? String(merged.interfaceDensity.tablet) : 'standard';
+        merged.layoutBuilder = normaliseLayoutBuilderState(merged.layoutBuilder, merged.position);
+        merged.themeStudio = normaliseThemeStudioState(merged.themeStudio);
         merged.quickWheel.enabled = merged.quickWheel.enabled !== false;
-        merged.quickWheel.actions = (Array.isArray(merged.quickWheel.actions) ? merged.quickWheel.actions : DEFAULT_QUICK_WHEEL_ACTIONS)
-            .map(String).filter(action => QUICK_WHEEL_ACTIONS[action]).slice(0, 6);
+        merged.quickWheel.slotCount = Math.round(clamp(merged.quickWheel.slotCount, QUICK_WHEEL_SLOT_MIN, QUICK_WHEEL_SLOT_MAX, 6));
+        const legacyWheelActions = Array.isArray(parsed?.quickWheel?.actions) ? parsed.quickWheel.actions : DEFAULT_QUICK_WHEEL_ACTIONS;
+        const wheelSource = Array.isArray(parsed?.quickWheel?.slots) ? parsed.quickWheel.slots : legacyWheelActions;
+        merged.quickWheel.slots = wheelSource.map(normaliseQuickWheelSlot).filter(Boolean).slice(0, QUICK_WHEEL_SLOT_MAX);
         for (const action of DEFAULT_QUICK_WHEEL_ACTIONS) {
-        if (merged.quickWheel.actions.length >= 6) break;
-        if (!merged.quickWheel.actions.includes(action)) merged.quickWheel.actions.push(action);
+        if (merged.quickWheel.slots.length >= QUICK_WHEEL_SLOT_MAX) break;
+        if (!merged.quickWheel.slots.some(slot => slot.kind === 'action' && slot.id === action)) merged.quickWheel.slots.push({ kind: 'action', id: action });
         }
+        while (merged.quickWheel.slots.length < QUICK_WHEEL_SLOT_MAX) merged.quickWheel.slots.push({ kind: 'action', id: 'commandPalette' });
+        merged.quickWheel.actions = merged.quickWheel.slots.slice(0, 6).map(slot => slot.kind === 'action' && QUICK_WHEEL_ACTIONS[slot.id] ? slot.id : 'commandPalette');
+        merged.setupWizard.schema = 1;
+        merged.setupWizard.completed = parsed?.setupWizard && typeof parsed.setupWizard === 'object' ? Boolean(parsed.setupWizard.completed) : true;
+        merged.notifications = normaliseNotificationState(merged.notifications);
         merged.updateBriefing.enabled = merged.updateBriefing.enabled !== false;
         merged.updateBriefing.seenVersion = String(merged.updateBriefing.seenVersion || '').slice(0, 32);
         merged.transportWatcher = merged.transportWatcher !== false;
@@ -1608,6 +1798,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         } else {
         merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
         }
+        if (!parsed.layoutBuilder && merged.panelPosition) {
+        merged.layoutBuilder.layouts.desktop.panelPosition = { ...merged.panelPosition };
+        merged.layoutBuilder.layouts.tablet.panelPosition = { ...merged.panelPosition };
+        }
 
         delete merged.__mcmsPersistence;
         delete merged.requiresAttention;
@@ -1638,6 +1832,50 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         } catch (err) {
         return false;
         }
+    }
+
+    function loadSettingsSnapshots() {
+        const raw = gmGetValueSafe(SCRIPT.settingsSnapshotsState, '');
+        try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!parsed || Number(parsed.schema) !== 1 || !Array.isArray(parsed.snapshots)) return [];
+        return parsed.snapshots.filter(item => item && typeof item === 'object' && item.state && typeof item.state === 'object')
+            .map(item => ({
+            id: String(item.id || ''),
+            createdAt: Math.max(0, Number(item.createdAt) || 0),
+            version: String(item.version || ''),
+            reason: String(item.reason || 'Recovery snapshot').slice(0, 80),
+            state: item.state
+            }))
+            .sort((left, right) => right.createdAt - left.createdAt)
+            .slice(0, SETTINGS_SNAPSHOT_LIMIT);
+        } catch (err) {
+        return [];
+        }
+    }
+
+    function saveSettingsSnapshots(snapshots) {
+        const safe = Array.isArray(snapshots) ? snapshots.slice(0, SETTINGS_SNAPSHOT_LIMIT) : [];
+        return gmSetValueSafe(SCRIPT.settingsSnapshotsState, JSON.stringify({ schema: 1, snapshots: safe }));
+    }
+
+    function captureSettingsSnapshot(value, { reason = 'Automatic recovery snapshot', force = false } = {}) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+        const snapshots = loadSettingsSnapshots();
+        const now = Date.now();
+        if (!force && snapshots[0] && now - snapshots[0].createdAt < SETTINGS_SNAPSHOT_INTERVAL_MS) return false;
+        const stateCopy = clonePlainData(value);
+        delete stateCopy.__mcmsPersistence;
+        const signature = JSON.stringify(stateCopy);
+        if (snapshots[0] && JSON.stringify(snapshots[0].state) === signature) return false;
+        snapshots.unshift({
+        id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
+        createdAt: now,
+        version: SCRIPT.version,
+        reason: String(reason || 'Recovery snapshot').slice(0, 80),
+        state: stateCopy
+        });
+        return saveSettingsSnapshots(snapshots);
     }
 
     function parseSettingsPersistenceCandidate(raw, source, priority = 0) {
@@ -1700,6 +1938,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         state: stateCopy
         };
         if (preserveRecovery && previousPrimary) {
+        captureSettingsSnapshot(previousPrimary.state, { reason: 'Automatic pre-change snapshot' });
         gmSetValueSafe(SCRIPT.settingsRecoveryState, typeof previousPrimaryRaw === 'string' ? previousPrimaryRaw : JSON.stringify(previousPrimaryRaw));
         }
         const durableSaved = gmSetValueSafe(SCRIPT.settingsVaultState, JSON.stringify(envelope));
@@ -11404,7 +11643,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.quickWheelId} { position:fixed !important; left:var(--mcms-wheel-x) !important; top:var(--mcms-wheel-y) !important; z-index:2147483500 !important; width:0 !important; height:0 !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important; }
         #${SCRIPT.quickWheelId} > button { position:absolute !important; left:0 !important; top:0 !important; width:76px !important; min-height:52px !important; transform:translate(-50%,-50%) !important; border:1px solid rgba(118,207,255,.55) !important; border-radius:12px !important; background:linear-gradient(150deg,rgba(25,47,62,.98),rgba(7,15,22,.98)) !important; color:#fff !important; box-shadow:0 8px 24px rgba(0,0,0,.56) !important; display:grid !important; place-items:center !important; align-content:center !important; gap:2px !important; }
         #${SCRIPT.quickWheelId} > button b { color:#70d2ff !important; font-size:15px !important; }#${SCRIPT.quickWheelId} > button span { font-size:8px !important; font-weight:800 !important; text-align:center !important; }
-        #${SCRIPT.quickWheelId} > button:nth-child(1) { margin: -96px 0 0 0 !important; }#${SCRIPT.quickWheelId} > button:nth-child(2) { margin:-48px 0 0 84px !important; }#${SCRIPT.quickWheelId} > button:nth-child(3) { margin:48px 0 0 84px !important; }#${SCRIPT.quickWheelId} > button:nth-child(4) { margin:96px 0 0 0 !important; }#${SCRIPT.quickWheelId} > button:nth-child(5) { margin:48px 0 0 -84px !important; }#${SCRIPT.quickWheelId} > button:nth-child(6) { margin:-48px 0 0 -84px !important; }
+        #${SCRIPT.quickWheelId} > button[role="menuitem"] { margin:0 !important; transform:translate(-50%,-50%) rotate(var(--mcms-wheel-angle,0deg)) translateY(-108px) rotate(calc(var(--mcms-wheel-angle,0deg) * -1)) !important; }
         #${SCRIPT.quickWheelId} > .mcms-quick-wheel-centre { width:54px !important; min-height:54px !important; margin:0 !important; border-radius:50% !important; border-color:#ff9e9e !important; color:#ffb2b2 !important; font-size:24px !important; }
         #${SCRIPT.quickWheelId} > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
@@ -11790,9 +12029,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const obstructionRects = collectDesktopWorkspaceObstructions(viewport, mapEl, panel)
         .map(item => item.rect);
         const bounds = resolveDesktopPanelBounds(mapRect, viewport, 12, obstructionRects);
-        panel.style.setProperty('--mcms-desktop-panel-max-height', `${bounds.maxHeight}px`);
-        panel.style.setProperty('max-height', `${bounds.maxHeight}px`, 'important');
-        panel.dataset.mcmsDesktopFit = `${bounds.left}:${bounds.top}:${bounds.right}:${bounds.bottom}:${bounds.maxHeight}`;
+        const desiredMaxHeight = Math.min(bounds.maxHeight, Math.max(320, Math.round(bounds.maxHeight * (activeLayoutPreferences('desktop').panelHeight / 100))));
+        const personalBounds = { ...bounds, maxHeight: desiredMaxHeight };
+        panel.style.setProperty('--mcms-desktop-panel-max-height', `${desiredMaxHeight}px`);
+        panel.style.setProperty('max-height', `${desiredMaxHeight}px`, 'important');
+        panel.dataset.mcmsDesktopFit = `${bounds.left}:${bounds.top}:${bounds.right}:${bounds.bottom}:${desiredMaxHeight}`;
 
         if (!dragState && panel.classList.contains('mcms-open')) {
         let panelRect = null;
@@ -11802,8 +12043,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
                 panelRect.left,
                 panelRect.top,
                 panelRect.width || panel.offsetWidth || 318,
-                Math.min(panelRect.height || panel.offsetHeight || 500, bounds.maxHeight),
-                bounds
+                Math.min(panelRect.height || panel.offsetHeight || 500, desiredMaxHeight),
+                personalBounds
             );
             if (Math.abs(panelRect.left - clamped.left) > 0.5 || Math.abs(panelRect.top - clamped.top) > 0.5) {
                 panel.style.setProperty('left', `${clamped.left}px`, 'important');
@@ -11813,7 +12054,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             }
         }
         }
-        return bounds;
+        return personalBounds;
     }
 
     function getIosBrowserSignals() {
@@ -11870,6 +12111,95 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         if (layout === 'tablet') return state.interfaceDensity.tablet;
         if (layout === 'desktop') return state.interfaceDensity.desktop;
         return 'standard';
+    }
+
+    function activeDockPosition(layout = activeDeviceLayout) {
+        const position = activeLayoutPreferences(layout).position;
+        return POSITIONS[position] ? position : (POSITIONS[state.position] ? state.position : 'bl');
+    }
+
+    function themeColourRgb(value) {
+        const colour = normaliseThemeColour(value, '#000000');
+        return [1, 3, 5].map(index => Number.parseInt(colour.slice(index, index + 2), 16)).join(',');
+    }
+
+    function applyPersonalisationStyle() {
+        let style = document.querySelector(`#${SCRIPT.personalisationStyleId}`);
+        if (!style) {
+        style = document.createElement('style');
+        style.id = SCRIPT.personalisationStyleId;
+        document.head.appendChild(style);
+        }
+        const theme = normaliseThemeStudioState(state.themeStudio);
+        const preferences = activeLayoutPreferences();
+        const surfaceRgb = themeColourRgb(theme.surface);
+        const opacity = (theme.opacity / 100).toFixed(2);
+        const panelWidth = activeDeviceLayout === 'mobile' ? '100vw' : `${preferences.panelWidth}px`;
+        style.textContent = `
+        html:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId}{width:min(${panelWidth},calc(100vw - 24px))!important}
+        .mcms-layout-hidden{display:none!important}.mcms-layout-group-hidden{display:none!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;margin-bottom:12px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-tabs button[aria-selected="true"]{border-color:#70ceff!important;background:rgba(39,139,197,.3)!important;color:#fff!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-pane{display:grid!important;gap:10px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-field{display:grid!important;gap:5px!important;min-width:0!important;color:#b7c9d5!important;font-size:10px!important;font-weight:800!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){width:100%!important;min-height:42px!important;padding:7px 9px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:8px!important;background:#07111a!important;color:#fff!important;font-size:12px!important;user-select:text!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-field input[type="color"]{padding:3px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-field input[type="range"]{padding:0!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-section{padding:11px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:11px!important;background:rgba(255,255,255,.035)!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-section>strong{display:block!important;margin-bottom:8px!important;color:#80d5ff!important;font-size:12px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-layout-list{display:grid!important;gap:6px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-layout-item{display:grid!important;grid-template-columns:28px minmax(0,1fr) 38px 38px!important;align-items:center!important;gap:6px!important;min-height:44px!important;padding:5px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:8px!important;background:rgba(0,0,0,.18)!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-layout-item[draggable="true"]{cursor:grab!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-layout-item input{width:20px!important;height:20px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-layout-item button{min-height:34px!important;padding:4px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-snapshot-list{display:grid!important;gap:7px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-snapshot-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:8px!important;padding:9px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:9px!important;background:rgba(0,0,0,.16)!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-snapshot-row small{display:block!important;margin-top:3px!important;color:#91a8b7!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-wizard-progress{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;margin-bottom:14px!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-wizard-progress span{height:5px!important;border-radius:99px!important;background:rgba(255,255,255,.12)!important}
+        #${SCRIPT.commandExperienceModalId} .mcms-wizard-progress span.mcms-active{background:#6fd0ff!important}
+        html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId},html[data-mcms-custom-theme="true"] body #${SCRIPT.controlId} .mcms-control-group,html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId} .mcms-command-palette-window,html[data-mcms-custom-theme="true"] #${SCRIPT.commandExperienceModalId} .mcms-command-experience-card{background:rgba(${surfaceRgb},${opacity})!important;color:${theme.text}!important;border-color:${theme.accent}!important;border-radius:${theme.radius}px!important;backdrop-filter:blur(${theme.blur}px)!important;-webkit-backdrop-filter:blur(${theme.blur}px)!important}
+        html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-tab-btn.mcms-active,.mcms-toggle-btn.mcms-on,.mcms-position-btn.mcms-active,.mcms-small-btn:hover),html[data-mcms-custom-theme="true"] body #${SCRIPT.controlId} :is(.mcms-float-btn,.mcms-economy-btn).mcms-on{border-color:${theme.accent}!important;background:${theme.accent}33!important;color:${theme.text}!important}
+        html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-section-label,.mcms-title,.mcms-label),html[data-mcms-custom-theme="true"] #${SCRIPT.commandExperienceModalId} :is(h2,strong),html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId} .mcms-command-palette-title span{color:${theme.accent}!important}
+        html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:${theme.accent};--mcms-palette-accent-rgb:${themeColourRgb(theme.accent)}}
+        @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}}
+        `;
+    }
+
+    function mapControlLayoutKey(element) {
+        if (!element) return '';
+        if (element.dataset?.toggle) return String(element.dataset.toggle);
+        if (element.dataset?.action) return String(element.dataset.action);
+        return '';
+    }
+
+    function applyLayoutBuilderControl(control = document.querySelector(`#${SCRIPT.controlId}`)) {
+        const filter = control?.querySelector?.('.mcms-floating-filter');
+        if (!filter) return false;
+        const preferences = activeLayoutPreferences();
+        const groups = new Map(Array.from(filter.querySelectorAll(':scope > .mcms-control-group')).map(group => [group.dataset.controlGroup, group]));
+        for (const groupKey of preferences.groupOrder) {
+        const group = groups.get(groupKey);
+        if (!group) continue;
+        filter.appendChild(group);
+        const label = group.querySelector(':scope > .mcms-control-group-label');
+        if (label) group.appendChild(label);
+        const controls = new Map(Array.from(group.querySelectorAll(':scope > button')).map(button => [mapControlLayoutKey(button), button]));
+        for (const controlKey of preferences.controlOrder[groupKey] || []) {
+            const button = controls.get(controlKey);
+            if (button) group.appendChild(button);
+        }
+        let visibleCount = 0;
+        for (const [controlKey, button] of controls.entries()) {
+            const hidden = preferences.hiddenControls.includes(controlKey);
+            button.classList.toggle('mcms-layout-hidden', hidden);
+            if (!hidden) visibleCount += 1;
+        }
+        group.classList.toggle('mcms-layout-group-hidden', visibleCount === 0);
+        }
+        control.dataset.mcmsLayoutDevice = activeDeviceLayout;
+        return true;
     }
 
     function deviceLayoutStatusText() {
@@ -11978,7 +12308,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const dockWidth = Math.max(1, Math.min(960, availableMapWidth));
         const contentWidth = Math.max(1, dockWidth - menuWidth - gap);
 
-        const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn, .mcms-floating-filter .mcms-economy-btn').length);
+        const filterCount = Math.max(1, Array.from(control.querySelectorAll('.mcms-floating-filter .mcms-float-btn, .mcms-floating-filter .mcms-economy-btn')).filter(button => !button.classList.contains('mcms-layout-hidden')).length);
         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
         const preferredFilterWidth = contentWidth >= 600 ? 92 : 82;
         const preferredPinWidth = contentWidth >= 600 ? 78 : 70;
@@ -12045,7 +12375,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
         const mapWidth = Math.min(rect.width, viewport.width);
         const dockWidth = Math.max(1, Math.min(1000, mapWidth - (margin * 2) - nudgeX));
-        const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+        const filterCount = Math.max(1, Array.from(control.querySelectorAll('.mcms-floating-filter .mcms-float-btn, .mcms-floating-filter .mcms-economy-btn')).filter(button => !button.classList.contains('mcms-layout-hidden')).length);
         const launchSlotCount = control.querySelector('.mcms-economy-btn') ? 3 : 2;
         const commandCount = launchSlotCount + filterCount;
         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
@@ -12083,15 +12413,14 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
 
         const viewport = getViewportMetrics();
         const mobile = mobileModeActive;
+        const layoutPreferences = activeLayoutPreferences();
         const margin = mobile ? 4 : (viewport.width < 700 ? 6 : 10);
         const availableWidth = Math.max(1, viewport.width - (margin * 2));
         const availableHeight = Math.max(mobile ? 160 : 180, viewport.height - (margin * 2));
         const desiredWidth = mobile
         ? availableWidth
-        : Math.min(availableWidth, viewport.orientation === 'landscape' ? 760 : 700);
-        const heightRatio = mobile
-        ? (viewport.orientation === 'landscape' ? 0.94 : 0.88)
-        : (viewport.orientation === 'landscape' ? 0.88 : 0.82);
+        : Math.min(availableWidth, layoutPreferences.panelWidth);
+        const heightRatio = clamp(layoutPreferences.panelHeight, mobile ? 72 : 60, 96, mobile ? 88 : 82) / 100;
         const maxHeight = Math.min(availableHeight, Math.max(mobile ? 220 : 260, viewport.height * heightRatio));
         panel.style.setProperty('position', 'fixed', 'important');
         panel.style.setProperty('width', `${Math.round(desiredWidth)}px`, 'important');
@@ -12162,12 +12491,15 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-mobile-mode', String(state.mobileMode));
         setAttributeIfChanged(root, 'data-mcms-mobile-active', String(Boolean(mobileModeActive)));
         setAttributeIfChanged(root, 'data-mcms-density', interfaceDensityForLayout(activeDeviceLayout));
+        setAttributeIfChanged(root, 'data-mcms-custom-theme', String(Boolean(state.themeStudio.enabled)));
         setAttributeIfChanged(root, 'data-mcms-tablet-orientation', tabletViewport.orientation);
         setAttributeIfChanged(root, 'data-mcms-mobile-orientation', tabletViewport.orientation);
         setAttributeIfChanged(root, 'data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
         setAttributeIfChanged(root, 'data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
         setAttributeIfChanged(root, 'data-mcms-show-vehicles', String(Boolean(state.visibility.vehicles)));
         setAttributeIfChanged(root, 'data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
+        applyPersonalisationStyle();
+        applyLayoutBuilderControl();
     }
 
     function getStrongMarkerSignal(icon) {
@@ -14027,6 +14359,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 label.__mcmsTransportWatcherLabel = true;
                 label.addTo(transportWatcherGroup);
                 transportWatcherLabels.set(missionId, label);
+                if (requirement.type === 'patient') emitToolkitNotification('patient', requirement.label || `Mission ${missionId}`, { dedupeKey: String(missionId) });
             } else {
                 try { label.setLatLng(latLng); } catch (err) {}
                 if (label.__mcmsTransportWatcherSignature !== signature) {
@@ -16808,6 +17141,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
         state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
         state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled ||
+        (state.notifications.enabled && Object.values(state.notifications.events).some(Boolean)) ||
         operationalUiIsVisible()
         );
     }
@@ -18408,8 +18742,32 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         missionLifecycleLastSeen.set(snapshot.missionId, now);
         const newlySeen = !knownMissionIds.has(snapshot.missionId);
         knownMissionIds.add(snapshot.missionId);
-        if (newlySeen && missionSpawnArmed && state.missionSpawn.enabled) runtimeSetTimeout(() => animateMissionSpawn(snapshot.missionId), 60);
+        if (newlySeen && missionSpawnArmed) {
+            emitToolkitNotification('newMission', snapshot.caption || `Mission ${snapshot.missionId}`, { dedupeKey: String(snapshot.missionId) });
+            if (state.missionSpawn.enabled) runtimeSetTimeout(() => animateMissionSpawn(snapshot.missionId), 60);
         }
+        }
+
+        const nextNotificationEvents = new Set();
+        if (state.notifications.enabled) {
+        for (const snapshot of current.values()) {
+            if (state.notifications.events.patient) {
+            const requirement = transportRequirementFromSnapshot(snapshot);
+            if (requirement?.type === 'patient') {
+                const key = `patient:${snapshot.missionId}`;
+                nextNotificationEvents.add(key);
+                if (!notificationActiveEvents.has(key)) emitToolkitNotification('patient', requirement.label || `Mission ${snapshot.missionId}`, { dedupeKey: String(snapshot.missionId) });
+            }
+            }
+            if (state.notifications.events.stuck && missionStuckRecord(snapshot.missionId, now)?.isStuck) {
+            const key = `stuck:${snapshot.missionId}`;
+            nextNotificationEvents.add(key);
+            if (!notificationActiveEvents.has(key)) emitToolkitNotification('stuck', snapshot.caption || `Mission ${snapshot.missionId} has not progressed`, { dedupeKey: String(snapshot.missionId) });
+            }
+        }
+        }
+        for (const key of notificationActiveEvents) if ((key.startsWith('patient:') || key.startsWith('stuck:')) && !nextNotificationEvents.has(key)) notificationActiveEvents.delete(key);
+        nextNotificationEvents.forEach(key => notificationActiveEvents.add(key));
 
         if (missionSnapshotReady) {
         for (const [missionId, previous] of previousSnapshots.entries()) {
@@ -18417,6 +18775,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             if (now - Number(previous.lastSeen || now) > 15000) continue;
             if (!recentCompletedMissions.some(item => item.missionId === missionId && now - item.removedAt < PAYOUT_MATCH_WINDOW_MS)) {
                 recentCompletedMissions.unshift({ ...previous, removedAt: now, matched: false });
+                emitToolkitNotification('completion', previous.caption || `Mission ${missionId}`, { dedupeKey: String(missionId) });
             }
         }
         }
@@ -20236,6 +20595,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     label.__mcmsStuckMissionLabel = true;
                     label.addTo(stuckMissionGroup);
                     stuckMissionLabels.set(missionId, label);
+                    emitToolkitNotification('stuck', snapshot.caption || `Mission ${missionId} has not progressed`, { dedupeKey: String(missionId) });
                 } else {
                     try { label.setLatLng(latLng); } catch (err) {}
                     if (label.__mcmsStuckSignature !== signature) {
@@ -20290,6 +20650,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         try { latLng = marker.getLatLng?.() || null; } catch (err) {}
         if (!latLng) return;
 
+        const notificationSnapshot = liveMissionSnapshots.get(missionId);
+        emitToolkitNotification('newMission', notificationSnapshot?.caption || (isPersonalMissionLayer(marker, missionId) ? 'New personal incident' : 'New alliance incident'), { dedupeKey: String(missionId) });
+
         marker._icon?.classList?.add('mcms-mission-spawn-focus');
         const personal = isPersonalMissionLayer(marker, missionId);
         const group = pageWindow.L.layerGroup();
@@ -20322,15 +20685,20 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }, state.economyMode ? Math.min(1600, MISSION_SPAWN_DURATION_MS) : MISSION_SPAWN_DURATION_MS);
     }
 
+    function missionSpawnLifecycleNeeded() {
+        return state.missionSpawn.enabled || (state.notifications.enabled && state.notifications.events.newMission);
+    }
+
     function handleMissionSpawnArguments(args) {
-        if (!state.missionSpawn.enabled) return;
+        if (!missionSpawnLifecycleNeeded()) return;
         const ids = new Set();
         args.forEach(arg => extractMissionIdsFromPayload(arg, ids));
         ids.forEach(missionId => {
             if (knownMissionIds.has(missionId)) return;
             knownMissionIds.add(missionId);
-            if (!missionSpawnArmed || !state.missionSpawn.enabled) return;
-            runtimeSetTimeout(() => animateMissionSpawn(missionId), 80);
+            if (!missionSpawnArmed) return;
+            emitToolkitNotification('newMission', `Mission ${missionId}`, { dedupeKey: String(missionId) });
+            if (state.missionSpawn.enabled) runtimeSetTimeout(() => animateMissionSpawn(missionId), 80);
         });
     }
 
@@ -20422,7 +20790,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         missionSpawnArmed = false;
         runtimeClearTimeout(missionSpawnPrimeTimer);
         knownMissionIds.clear();
-        if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+        if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector();
         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
         else stopAutoLoadAllVehicles();
         applyRootAttributes();
@@ -20479,6 +20847,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function closeCommandExperienceModal({ restoreFocus = true } = {}) {
         const overlay = commandExperienceElement(SCRIPT.commandExperienceModalId);
         if (!overlay) return false;
+        const closingSetupWizard = overlay.dataset.kind === 'Setup Wizard';
         const acknowledgeBriefing = restoreFocus && overlay.dataset.kind === 'Update Briefing' && state.updateBriefing.seenVersion !== SCRIPT.version;
         overlay.remove();
         document.documentElement.removeAttribute('data-mcms-command-experience-open');
@@ -20487,6 +20856,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         try { commandExperienceReturnFocus.focus({ preventScroll: true }); } catch (err) {}
         }
         commandExperienceReturnFocus = null;
+        if (closingSetupWizard && restoreFocus) setupWizardDraft = null;
         if (acknowledgeBriefing) {
         state.updateBriefing.seenVersion = SCRIPT.version;
         saveState();
@@ -20571,10 +20941,38 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (announce) showToast(state.fullscreenMap ? 'Full-screen map active · Escape to restore' : 'Standard MissionChief view restored');
     }
 
+    function quickWheelSlotValue(slot) {
+        const normalised = normaliseQuickWheelSlot(slot) || { kind: 'action', id: 'commandPalette' };
+        return `${normalised.kind}:${normalised.id}`;
+    }
+
+    function quickWheelSlotMeta(slot) {
+        const normalised = normaliseQuickWheelSlot(slot) || { kind: 'action', id: 'commandPalette' };
+        if (normalised.kind === 'action') return { ...normalised, ...QUICK_WHEEL_ACTIONS[normalised.id] };
+        if (normalised.kind === 'place') {
+        const place = QUICK_PLACES.find(item => item.id === normalised.id);
+        return { ...normalised, label: place?.name || 'Quick Place', icon: place?.label || '⌖' };
+        }
+        if (normalised.kind === 'bookmark') {
+        const bookmark = state.bookmarks[Number(normalised.id)];
+        return { ...normalised, label: bookmark?.name || `Bookmark ${Number(normalised.id) + 1}`, icon: bookmark ? bookmarkScreenLabel(bookmark) : '★' };
+        }
+        const paletteMeta = {
+        mission: { label: 'Search Missions', icon: 'M' },
+        vehicle: { label: 'Search Vehicles', icon: 'V' },
+        building: { label: 'Search Buildings', icon: 'B' }
+        };
+        return { ...normalised, ...(paletteMeta[normalised.id] || paletteMeta.mission) };
+    }
+
     function quickWheelOptions(selected) {
-        return Object.entries(QUICK_WHEEL_ACTIONS).map(([key, item]) =>
-        '<option value="' + escapeHtml(key) + '"' + (key === selected ? ' selected' : '') + '>' + escapeHtml(item.label) + '</option>'
-        ).join('');
+        const selectedValue = quickWheelSlotValue(selected);
+        const option = (value, label, disabled = false) => `<option value="${escapeHtml(value)}"${value === selectedValue ? ' selected' : ''}${disabled ? ' disabled' : ''}>${escapeHtml(label)}</option>`;
+        const actions = Object.entries(QUICK_WHEEL_ACTIONS).map(([key, item]) => option(`action:${key}`, item.label)).join('');
+        const places = QUICK_PLACES.map(place => option(`place:${place.id}`, `Location · ${place.name}`)).join('');
+        const bookmarks = state.bookmarks.map((bookmark, index) => option(`bookmark:${index}`, bookmark ? `Bookmark · ${bookmark.name}` : `Bookmark ${index + 1} · empty`, !bookmark)).join('');
+        const palettes = ['mission', 'vehicle', 'building'].map(kind => option(`palette:${kind}`, quickWheelSlotMeta({ kind: 'palette', id: kind }).label)).join('');
+        return `<optgroup label="Toolkit actions">${actions}</optgroup><optgroup label="Quick Places">${places}</optgroup><optgroup label="Saved bookmarks">${bookmarks}</optgroup><optgroup label="Live search">${palettes}</optgroup>`;
     }
 
     function closeTabletQuickWheel({ restoreFocus = false } = {}) {
@@ -20605,10 +21003,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         wheel.style.setProperty('--mcms-wheel-x', Math.round(x) + 'px');
         wheel.style.setProperty('--mcms-wheel-y', Math.round(y) + 'px');
         quickWheelReturnFocus = returnFocus?.isConnected ? returnFocus : null;
-        setInnerHtmlIfChanged(wheel, state.quickWheel.actions.map((action, index) => {
-        const item = QUICK_WHEEL_ACTIONS[action];
-        return '<button type="button" role="menuitem" style="--mcms-wheel-index:' + index + '" data-mcms-command-action="quick-wheel-command" data-command="' +
-            escapeHtml(action) + '" aria-label="' + escapeHtml(item.label) + '"><b>' + escapeHtml(item.icon) + '</b><span>' + escapeHtml(item.label) + '</span></button>';
+        const slots = state.quickWheel.slots.slice(0, state.quickWheel.slotCount);
+        setInnerHtmlIfChanged(wheel, slots.map((slot, index) => {
+        const item = quickWheelSlotMeta(slot);
+        const angle = Math.round((360 / Math.max(1, slots.length)) * index);
+        return '<button type="button" role="menuitem" style="--mcms-wheel-angle:' + angle + 'deg" data-mcms-command-action="quick-wheel-command" data-slot-index="' +
+            index + '" aria-label="' + escapeHtml(item.label) + '"><b>' + escapeHtml(item.icon) + '</b><span>' + escapeHtml(item.label) + '</span></button>';
         }).join('') + '<button class="mcms-quick-wheel-centre" type="button" data-mcms-command-action="quick-wheel-close" aria-label="Close Quick Wheel">×</button>');
         document.body.appendChild(wheel);
         const map = findLeafletMapInstance(false);
@@ -20631,7 +21031,391 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (command === 'pressureBoard') { toggleOperationalPressureBoard(); return; }
         if (command === 'fullscreen') { setMapFullscreen(!state.fullscreenMap); return; }
         if (command === 'commandPalette') { openCommandPalette(); return; }
+        if (command === 'personalisation') { openPersonalisationStudio(); return; }
         if (command === 'menu') openPanel();
+    }
+
+    function executeQuickWheelSlot(index) {
+        const slot = normaliseQuickWheelSlot(state.quickWheel.slots[Number(index)]);
+        if (!slot) { closeTabletQuickWheel(); return; }
+        if (slot.kind === 'action') { executeQuickWheelCommand(slot.id); return; }
+        closeTabletQuickWheel();
+        if (slot.kind === 'place') {
+        const place = QUICK_PLACES.find(item => item.id === slot.id);
+        if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
+        return;
+        }
+        if (slot.kind === 'bookmark') { goBookmark(Number(slot.id)); return; }
+        if (slot.kind === 'palette') openCommandPalette({ initialQuery: slot.id });
+    }
+
+    function movePersonalisationItem(list, value, direction) {
+        const next = [...list];
+        const index = next.indexOf(value);
+        if (index < 0) return next;
+        const target = Math.max(0, Math.min(next.length - 1, index + direction));
+        if (target === index) return next;
+        next.splice(index, 1);
+        next.splice(target, 0, value);
+        return next;
+    }
+
+    function personalisationTabsMarkup(active) {
+        const tabs = [
+        ['layout', 'Layout Builder'], ['theme', 'Theme Studio'], ['wheel', 'Quick Wheel'],
+        ['backup', 'Backup Centre'], ['setup', 'Setup Wizard'], ['notifications', 'Sounds & Alerts']
+        ];
+        const buttons = tabs.map(([key, label]) =>
+        `<button type="button" data-personal-tab="${key}" aria-selected="${key === active}">${label}</button>`
+        ).join('');
+        return `<nav class="mcms-personal-tabs" aria-label="Personalisation Studio sections">${buttons}</nav>`;
+    }
+
+    function layoutStudioMarkup(device) {
+        const preferences = state.layoutBuilder.layouts[device];
+        const positionOptions = Object.entries(POSITIONS).map(([key, item]) => `<option value="${key}"${preferences.position === key ? ' selected' : ''}>${escapeHtml(item.label)}</option>`).join('');
+        const groups = preferences.groupOrder.map(groupKey => {
+        const group = LAYOUT_CONTROL_GROUPS[groupKey];
+        const controls = preferences.controlOrder[groupKey].map(controlKey => {
+            const visible = !preferences.hiddenControls.includes(controlKey);
+            return `<div class="mcms-layout-item" draggable="true" data-layout-drag-type="control" data-layout-group="${groupKey}" data-layout-value="${controlKey}"><input type="checkbox" data-layout-control-visible="${controlKey}" data-layout-group="${groupKey}"${visible ? ' checked' : ''} aria-label="Show ${escapeHtml(LAYOUT_CONTROL_LABELS[controlKey])}"><span>${escapeHtml(LAYOUT_CONTROL_LABELS[controlKey])}</span><button type="button" data-layout-move-control="${controlKey}" data-layout-group="${groupKey}" data-direction="-1" aria-label="Move up">↑</button><button type="button" data-layout-move-control="${controlKey}" data-layout-group="${groupKey}" data-direction="1" aria-label="Move down">↓</button></div>`;
+        }).join('');
+        return `<section class="mcms-personal-section" draggable="true" data-layout-drag-type="group" data-layout-value="${groupKey}"><strong>${escapeHtml(group.label)} <button type="button" data-layout-move-group="${groupKey}" data-direction="-1" aria-label="Move group up">↑</button> <button type="button" data-layout-move-group="${groupKey}" data-direction="1" aria-label="Move group down">↓</button></strong><div class="mcms-layout-list">${controls}</div></section>`;
+        }).join('');
+        const deviceOptions = LAYOUT_DEVICE_KEYS.map(key => `<option value="${key}"${device === key ? ' selected' : ''}>${key === 'mobile' ? 'iOS Mobile' : key[0].toUpperCase() + key.slice(1)}</option>`).join('');
+        const widthField = device === 'mobile' ? '' : `<label class="mcms-personal-field"><span>Menu width · ${preferences.panelWidth}px</span><input type="range" min="560" max="${device === 'tablet' ? 900 : 960}" step="20" value="${preferences.panelWidth}" data-layout-panel-width></label>`;
+        return `<div class="mcms-personal-pane" data-personal-pane="layout">
+        <div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Editing device</span><select data-personal-layout-device>${deviceOptions}</select></label><label class="mcms-personal-field"><span>Dock position</span><select data-layout-position>${positionOptions}</select></label>${widthField}<label class="mcms-personal-field"><span>Menu height · ${preferences.panelHeight}%</span><input type="range" min="${device === 'mobile' ? 72 : 60}" max="96" step="2" value="${preferences.panelHeight}" data-layout-panel-height></label></div>
+        <div class="mcms-command-note">Drag groups or controls to reorder them. The arrow buttons provide the same control on touch and keyboard. Hidden controls remain available in Settings and the Command Palette.</div>
+        ${groups}<button type="button" data-personal-action="layout-reset">Restore ${device === 'mobile' ? 'iOS Mobile' : device[0].toUpperCase() + device.slice(1)} defaults</button></div>`;
+    }
+
+    function themeStudioMarkup() {
+        const theme = state.themeStudio;
+        const themeOptions = UI_THEME_ORDER.map(key => `<option value="${key}"${state.uiTheme === key ? ' selected' : ''}>${escapeHtml(UI_THEMES[key].label)}</option>`).join('');
+        return `<div class="mcms-personal-pane" data-personal-pane="theme"><section class="mcms-personal-section"><strong>Custom visual layer</strong><label class="mcms-personal-field"><span><input type="checkbox" data-theme-studio-setting="enabled"${theme.enabled ? ' checked' : ''}> Enable custom theme layer</span></label><div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Theme name</span><input type="text" maxlength="40" value="${escapeHtml(theme.name)}" data-theme-studio-setting="name"></label><label class="mcms-personal-field"><span>Base interface</span><select data-theme-studio-base>${themeOptions}</select></label><label class="mcms-personal-field"><span>Accent</span><input type="color" value="${theme.accent}" data-theme-studio-setting="accent"></label><label class="mcms-personal-field"><span>Surface</span><input type="color" value="${theme.surface}" data-theme-studio-setting="surface"></label><label class="mcms-personal-field"><span>Text</span><input type="color" value="${theme.text}" data-theme-studio-setting="text"></label><label class="mcms-personal-field"><span>Corner radius · ${theme.radius}px</span><input type="range" min="4" max="28" step="1" value="${theme.radius}" data-theme-studio-setting="radius"></label><label class="mcms-personal-field"><span>Panel opacity · ${theme.opacity}%</span><input type="range" min="72" max="100" step="1" value="${theme.opacity}" data-theme-studio-setting="opacity"></label><label class="mcms-personal-field"><span>Background blur · ${theme.blur}px</span><input type="range" min="0" max="24" step="1" value="${theme.blur}" data-theme-studio-setting="blur"></label></div></section><div class="mcms-personal-grid"><button type="button" data-personal-action="theme-export">Copy Theme Code</button><button type="button" data-personal-action="theme-import">Import Theme Code</button><button type="button" data-personal-action="theme-reset">Reset Custom Theme</button><button type="button" data-personal-action="theme-test">Toggle Preview</button></div><p class="mcms-command-note">Theme codes contain visual settings only—never webhooks, account information or operational data. Existing interface themes and map skins remain installed underneath.</p></div>`;
+    }
+
+    function quickWheelStudioMarkup() {
+        const slots = state.quickWheel.slots.slice(0, state.quickWheel.slotCount);
+        const countOptions = Array.from({ length: QUICK_WHEEL_SLOT_MAX - QUICK_WHEEL_SLOT_MIN + 1 }, (_, index) => index + QUICK_WHEEL_SLOT_MIN).map(count => `<option value="${count}"${count === state.quickWheel.slotCount ? ' selected' : ''}>${count} slots</option>`).join('');
+        const slotRows = slots.map((slot, index) => `<label class="mcms-personal-field"><span>Slot ${index + 1}</span><select data-wheel-slot="${index}">${quickWheelOptions(slot)}</select></label>`).join('');
+        return `<div class="mcms-personal-pane" data-personal-pane="wheel"><section class="mcms-personal-section"><strong>Quick Wheel composition</strong><div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Wheel enabled</span><select data-wheel-setting="enabled"><option value="true"${state.quickWheel.enabled ? ' selected' : ''}>Enabled</option><option value="false"${!state.quickWheel.enabled ? ' selected' : ''}>Disabled</option></select></label><label class="mcms-personal-field"><span>Number of slots</span><select data-wheel-setting="slotCount">${countOptions}</select></label></div><div class="mcms-layout-list">${slotRows}</div></section><div class="mcms-personal-grid"><button type="button" data-personal-action="wheel-open">Preview Wheel</button><button type="button" data-personal-action="wheel-reset">Restore Wheel Defaults</button></div><p class="mcms-command-note">Locations jump directly to the map. Mission, vehicle and building entries open the live Command Palette already filtered to that record type. No unit is selected or dispatched.</p></div>`;
+    }
+
+    function backupCentreMarkup() {
+        const snapshots = loadSettingsSnapshots();
+        const recovery = parseSettingsPersistenceCandidate(gmGetValueSafe(SCRIPT.settingsRecoveryState, null), 'tampermonkey-recovery', 40);
+        const rows = snapshots.length ? snapshots.map((snapshot, index) => `<div class="mcms-snapshot-row"><div><strong>${escapeHtml(snapshot.reason)}</strong><small>${new Date(snapshot.createdAt).toLocaleString()} · Toolkit ${escapeHtml(snapshot.version || 'unknown')}</small></div><button type="button" data-personal-action="snapshot-restore" data-snapshot-index="${index}">Restore</button></div>`).join('') : '<div class="mcms-command-note">No automatic snapshots have been recorded yet.</div>';
+        return `<div class="mcms-personal-pane" data-personal-pane="backup"><section class="mcms-personal-section"><strong>Private full transfer</strong><div class="mcms-personal-grid"><button type="button" data-personal-action="backup-encrypted">Encrypted Export</button><button type="button" data-personal-action="backup-import">Import Backup</button></div><p class="mcms-command-note">AES-256-GCM encryption includes all settings, layouts, themes, bookmarks, profiles, Discord webhook and Financial Archive data.</p></section><section class="mcms-personal-section"><strong>Safe and local recovery</strong><div class="mcms-personal-grid"><button type="button" data-personal-action="backup-safe">Safe Export</button><button type="button" data-personal-action="snapshot-create">Create Local Snapshot</button>${recovery ? '<button type="button" data-personal-action="recovery-restore">Restore Recovery Copy</button>' : ''}</div><p class="mcms-command-note">Safe exports and local snapshots contain Toolkit settings only. Discord webhook tokens, archive identity and financial history are excluded.</p></section><section class="mcms-personal-section"><strong>Automatic snapshots · latest ${SETTINGS_SNAPSHOT_LIMIT}</strong><div class="mcms-snapshot-list">${rows}</div></section><input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json,.mcms" data-personal-backup-file></div>`;
+    }
+
+    function setupStudioMarkup() {
+        return `<div class="mcms-personal-pane" data-personal-pane="setup"><section class="mcms-personal-section"><strong>Toolkit Setup Wizard</strong><p class="mcms-command-note">${state.setupWizard.completed ? 'Setup is complete. You can rerun the wizard without resetting bookmarks, profiles or integrations.' : 'Setup has not been completed on this installation.'}</p><button type="button" data-personal-action="setup-open">${state.setupWizard.completed ? 'Run Setup Wizard Again' : 'Start Setup Wizard'}</button></section><p class="mcms-command-note">Automatic onboarding appears only on a genuinely fresh installation. Existing users upgrading to v10 keep their current interface without interruption.</p></div>`;
+    }
+
+    function notificationStudioMarkup() {
+        const notifications = state.notifications;
+        const permission = typeof pageWindow.Notification === 'function' ? pageWindow.Notification.permission : 'unsupported';
+        const presetOptions = Object.entries(NOTIFICATION_PRESETS).map(([key, item]) => `<option value="${key}"${notifications.preset === key ? ' selected' : ''}>${escapeHtml(item.label)}</option>`).join('');
+        const eventFields = Object.entries(NOTIFICATION_EVENT_META).map(([key, item]) => `<label class="mcms-personal-field"><span><input type="checkbox" data-notification-event="${key}"${notifications.events[key] ? ' checked' : ''}> ${item.icon} ${escapeHtml(item.label)}</span></label>`).join('');
+        return `<div class="mcms-personal-pane" data-personal-pane="notifications"><section class="mcms-personal-section"><strong>Notification control</strong><div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Master alerts</span><select data-notification-setting="enabled"><option value="true"${notifications.enabled ? ' selected' : ''}>Enabled</option><option value="false"${!notifications.enabled ? ' selected' : ''}>Disabled</option></select></label><label class="mcms-personal-field"><span>Sound preset</span><select data-notification-setting="preset">${presetOptions}</select></label><label class="mcms-personal-field"><span>Master volume · ${Math.round(notifications.volume * 100)}%</span><input type="range" min="0" max="1" step="0.05" value="${notifications.volume}" data-notification-setting="volume"></label><label class="mcms-personal-field"><span>Browser notifications</span><select data-notification-setting="browserEnabled"><option value="true"${notifications.browserEnabled ? ' selected' : ''}>Enabled when permitted</option><option value="false"${!notifications.browserEnabled ? ' selected' : ''}>Disabled</option></select></label></div></section><section class="mcms-personal-section"><strong>Events</strong><div class="mcms-personal-grid">${eventFields}</div></section><div class="mcms-personal-grid"><button type="button" data-personal-action="notification-test">Test Selected Sound</button><button type="button" data-personal-action="notification-permission">Request Browser Permission</button></div><p class="mcms-command-note">Current browser permission: ${escapeHtml(permission)}. Alerts reuse existing mission lifecycle checks—no new poller, observer or request is added.</p></div>`;
+    }
+
+    function personalisationPaneMarkup(tab, device) {
+        if (tab === 'theme') return themeStudioMarkup();
+        if (tab === 'wheel') return quickWheelStudioMarkup();
+        if (tab === 'backup') return backupCentreMarkup();
+        if (tab === 'setup') return setupStudioMarkup();
+        if (tab === 'notifications') return notificationStudioMarkup();
+        return layoutStudioMarkup(device);
+    }
+
+    function renderPersonalisationStudio(overlay, tab = 'layout', device = null) {
+        if (!overlay) return;
+        const activeTab = ['layout', 'theme', 'wheel', 'backup', 'setup', 'notifications'].includes(tab) ? tab : 'layout';
+        const activeDevice = LAYOUT_DEVICE_KEYS.includes(device) ? device : (overlay.dataset.personalDevice || activeDeviceLayout);
+        overlay.dataset.personalTab = activeTab;
+        overlay.dataset.personalDevice = activeDevice;
+        const body = overlay.querySelector('.mcms-command-experience-body');
+        if (body) setInnerHtmlIfChanged(body, personalisationTabsMarkup(activeTab) + personalisationPaneMarkup(activeTab, activeDevice));
+        const subtitle = overlay.querySelector('header p');
+        if (subtitle) subtitle.textContent = `${activeTab === 'layout' ? 'Custom Layout Builder' : activeTab === 'theme' ? 'Visual Theme Studio' : activeTab === 'wheel' ? 'Quick Actions Wheel' : activeTab === 'backup' ? 'Settings Backup Centre' : activeTab === 'setup' ? 'First-run guidance' : 'Custom sounds and notifications'} · ${activeDevice === 'mobile' ? 'iOS Mobile' : activeDevice}`;
+    }
+
+    function saveAndApplyPersonalisation(announce = '') {
+        saveState();
+        applyRootAttributes();
+        updateUI();
+        fitControlToMap();
+        positionPanelOverlay(true);
+        if (announce) showToast(announce);
+    }
+
+    function encodeThemeStudioCode() {
+        const payload = { format: THEME_STUDIO_FORMAT, schema: THEME_STUDIO_SCHEMA, version: SCRIPT.version, theme: normaliseThemeStudioState(state.themeStudio) };
+        return settingsTransferBytesToBase64(new TextEncoder().encode(JSON.stringify(payload)));
+    }
+
+    function importThemeStudioCode(code) {
+        const decoded = new TextDecoder().decode(settingsTransferBase64ToBytes(String(code || '').trim()));
+        const payload = JSON.parse(decoded);
+        if (payload?.format !== THEME_STUDIO_FORMAT || Number(payload?.schema) !== THEME_STUDIO_SCHEMA) throw new Error('Unsupported Toolkit theme code.');
+        state.themeStudio = normaliseThemeStudioState(payload.theme);
+        saveAndApplyPersonalisation('Custom theme imported');
+    }
+
+    function restoreSettingsSnapshot(snapshot, label = 'recovery snapshot') {
+        if (!snapshot?.state || !pageWindow.confirm(`Restore this ${label}? Your current Toolkit settings will be saved as a local snapshot first.`)) return false;
+        try {
+        captureSettingsSnapshot(state, { reason: 'Before manual recovery restore', force: true });
+        state = normaliseLoadedState(snapshot.state, defaultState());
+        saveState({ requireWrite: true });
+        applyLoadedConfiguration();
+        showToast('Toolkit settings restored');
+        return true;
+        } catch (err) {
+        showToast(`Restore failed: ${err?.message || 'invalid snapshot'}`);
+        return false;
+        }
+    }
+
+    function handlePersonalisationAction(overlay, button) {
+        const action = button?.dataset?.personalAction;
+        const tab = overlay.dataset.personalTab || 'layout';
+        const device = overlay.dataset.personalDevice || activeDeviceLayout;
+        if (action === 'layout-reset') { state.layoutBuilder.layouts[device] = defaultLayoutDeviceState(state.position, device); saveAndApplyPersonalisation(`${device} layout restored`); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (action === 'wheel-open') { closeCommandExperienceModal({ restoreFocus: false }); openTabletQuickWheel(null, { manual: true }); return; }
+        if (action === 'wheel-reset') { state.quickWheel = { enabled: true, slotCount: 6, actions: [...DEFAULT_QUICK_WHEEL_ACTIONS], slots: defaultQuickWheelSlots() }; saveAndApplyPersonalisation('Quick Wheel restored'); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (action === 'theme-test') { state.themeStudio.enabled = !state.themeStudio.enabled; saveAndApplyPersonalisation(state.themeStudio.enabled ? 'Custom theme preview on' : 'Custom theme preview off'); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (action === 'theme-reset') { state.themeStudio = defaultThemeStudioState(); saveAndApplyPersonalisation('Custom theme reset'); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (action === 'theme-export') {
+        const code = encodeThemeStudioCode();
+        const clipboard = (pageWindow.navigator || navigator)?.clipboard;
+        if (typeof clipboard?.writeText === 'function') Promise.resolve(clipboard.writeText(code)).then(() => showToast('Theme code copied')).catch(() => pageWindow.prompt('Copy your Toolkit theme code:', code));
+        else pageWindow.prompt('Copy your Toolkit theme code:', code);
+        return;
+        }
+        if (action === 'theme-import') {
+        const code = pageWindow.prompt('Paste a Toolkit theme code:');
+        if (code === null) return;
+        try { importThemeStudioCode(code); renderPersonalisationStudio(overlay, tab, device); } catch (err) { showToast(err?.message || 'Theme code is invalid'); }
+        return;
+        }
+        if (action === 'backup-encrypted') { openEncryptedSettingsExport(); return; }
+        if (action === 'backup-safe') { exportSafeToolkitSettings(); return; }
+        if (action === 'backup-import') { overlay.querySelector('[data-personal-backup-file]')?.click?.(); return; }
+        if (action === 'snapshot-create') { captureSettingsSnapshot(state, { reason: 'Manual Backup Centre snapshot', force: true }); showToast('Local settings snapshot created'); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (action === 'snapshot-restore') { const snapshot = loadSettingsSnapshots()[Number(button.dataset.snapshotIndex)]; if (restoreSettingsSnapshot(snapshot)) closeCommandExperienceModal({ restoreFocus: false }); return; }
+        if (action === 'recovery-restore') { const recovery = parseSettingsPersistenceCandidate(gmGetValueSafe(SCRIPT.settingsRecoveryState, null), 'tampermonkey-recovery', 40); if (restoreSettingsSnapshot(recovery, 'recovery copy')) closeCommandExperienceModal({ restoreFocus: false }); return; }
+        if (action === 'setup-open') { openSetupWizard(0, { manual: true }); return; }
+        if (action === 'notification-test') { state.notifications.enabled = true; if (!Object.values(state.notifications.events).some(Boolean)) state.notifications.events.warning = true; saveState(); emitToolkitNotification('warning', 'This is a Toolkit notification test.', { dedupeKey: `test:${Date.now()}` }); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (action === 'notification-permission') { void requestToolkitNotificationPermission().then(() => renderPersonalisationStudio(overlay, tab, device)); return; }
+        const group = button.dataset.layoutMoveGroup;
+        if (group) { state.layoutBuilder.layouts[device].groupOrder = movePersonalisationItem(state.layoutBuilder.layouts[device].groupOrder, group, Number(button.dataset.direction)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
+        const control = button.dataset.layoutMoveControl;
+        if (control) { const groupKey = button.dataset.layoutGroup; const list = state.layoutBuilder.layouts[device].controlOrder[groupKey]; state.layoutBuilder.layouts[device].controlOrder[groupKey] = movePersonalisationItem(list, control, Number(button.dataset.direction)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); }
+    }
+
+    function handlePersonalisationChange(overlay, target) {
+        const tab = overlay.dataset.personalTab || 'layout';
+        const device = overlay.dataset.personalDevice || activeDeviceLayout;
+        if (target.matches('[data-personal-layout-device]')) { renderPersonalisationStudio(overlay, tab, target.value); return; }
+        const preferences = state.layoutBuilder.layouts[device];
+        if (target.matches('[data-layout-position]')) { preferences.position = POSITIONS[target.value] ? target.value : 'bl'; if (device === activeDeviceLayout) state.position = preferences.position; saveAndApplyPersonalisation(); return; }
+        if (target.matches('[data-layout-panel-width]')) { preferences.panelWidth = Math.round(clamp(target.value, 560, device === 'tablet' ? 900 : 960, preferences.panelWidth)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (target.matches('[data-layout-panel-height]')) { preferences.panelHeight = Math.round(clamp(target.value, device === 'mobile' ? 72 : 60, 96, preferences.panelHeight)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (target.matches('[data-layout-control-visible]')) { const key = target.dataset.layoutControlVisible; preferences.hiddenControls = target.checked ? preferences.hiddenControls.filter(item => item !== key) : [...new Set([...preferences.hiddenControls, key])]; saveAndApplyPersonalisation(); return; }
+        if (target.matches('[data-theme-studio-base]')) { applyUiTheme(target.value, false); return; }
+        const themeSetting = target.dataset.themeStudioSetting;
+        if (themeSetting) { const next = { ...state.themeStudio }; if (themeSetting === 'enabled') next.enabled = target.checked; else next[themeSetting] = target.value; state.themeStudio = normaliseThemeStudioState(next); saveAndApplyPersonalisation(); if (['radius', 'opacity', 'blur'].includes(themeSetting)) renderPersonalisationStudio(overlay, tab, device); return; }
+        const wheelSetting = target.dataset.wheelSetting;
+        if (wheelSetting === 'enabled') state.quickWheel.enabled = String(target.value) === 'true';
+        if (wheelSetting === 'slotCount') state.quickWheel.slotCount = Math.round(clamp(target.value, QUICK_WHEEL_SLOT_MIN, QUICK_WHEEL_SLOT_MAX, 6));
+        if (wheelSetting) { saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (target.matches('[data-wheel-slot]')) { const slot = normaliseQuickWheelSlot(target.value); if (slot) state.quickWheel.slots[Number(target.dataset.wheelSlot)] = slot; state.quickWheel.actions = state.quickWheel.slots.slice(0, 6).map(item => item.kind === 'action' ? item.id : 'commandPalette'); saveAndApplyPersonalisation(); return; }
+        const notificationSetting = target.dataset.notificationSetting;
+        if (notificationSetting) { if (notificationSetting === 'enabled' || notificationSetting === 'browserEnabled') state.notifications[notificationSetting] = String(target.value) === 'true'; else state.notifications[notificationSetting] = target.value; state.notifications = normaliseNotificationState(state.notifications); notificationActiveEvents.clear(); saveState(); if (notificationSetting === 'enabled') { if (state.notifications.enabled) unlockNotificationAudio(); missionSpawnArmed = false; runtimeClearTimeout(missionSpawnPrimeTimer); knownMissionIds.clear(); if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector(); } if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh(0); if (notificationSetting === 'volume') renderPersonalisationStudio(overlay, tab, device); return; }
+        if (target.matches('[data-notification-event]')) {
+        const eventKey = target.dataset.notificationEvent;
+        state.notifications.events[eventKey] = target.checked;
+        notificationActiveEvents.clear();
+        saveState();
+        if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh(0);
+        if (eventKey === 'newMission') {
+            missionSpawnArmed = false;
+            runtimeClearTimeout(missionSpawnPrimeTimer);
+            knownMissionIds.clear();
+            if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector();
+        }
+        }
+    }
+
+    function handlePersonalisationDrop(overlay, event) {
+        const source = overlay.__mcmsPersonalDrag;
+        const target = event.target?.closest?.('[data-layout-drag-type]');
+        if (!source || !target || source.type !== target.dataset.layoutDragType) return;
+        const device = overlay.dataset.personalDevice || activeDeviceLayout;
+        if (source.type === 'group') {
+        const list = state.layoutBuilder.layouts[device].groupOrder;
+        const from = list.indexOf(source.value); const to = list.indexOf(target.dataset.layoutValue);
+        if (from >= 0 && to >= 0 && from !== to) { list.splice(from, 1); list.splice(to, 0, source.value); }
+        } else if (source.group === target.dataset.layoutGroup) {
+        const list = state.layoutBuilder.layouts[device].controlOrder[source.group];
+        const from = list.indexOf(source.value); const to = list.indexOf(target.dataset.layoutValue);
+        if (from >= 0 && to >= 0 && from !== to) { list.splice(from, 1); list.splice(to, 0, source.value); }
+        }
+        saveAndApplyPersonalisation();
+        renderPersonalisationStudio(overlay, 'layout', device);
+    }
+
+    function openPersonalisationStudio(tab = 'layout') {
+        closePanel();
+        const overlay = openCommandExperienceModal({ kind: 'Personalisation Studio', title: 'Make the Toolkit yours', subtitle: 'Device-aware personalisation', body: '', actions: '<button type="button" data-mcms-command-action="modal-close">Close Studio</button>' });
+        renderPersonalisationStudio(overlay, tab, activeDeviceLayout);
+        overlay.onclick = event => { const tabButton = event.target?.closest?.('[data-personal-tab]'); if (tabButton) { renderPersonalisationStudio(overlay, tabButton.dataset.personalTab, overlay.dataset.personalDevice); return; } const actionButton = event.target?.closest?.('[data-personal-action],[data-layout-move-group],[data-layout-move-control]'); if (actionButton) handlePersonalisationAction(overlay, actionButton); };
+        overlay.onchange = event => { if (event.target?.matches?.('[data-personal-backup-file]')) { importToolkitConfigFile(event.target.files?.[0]); event.target.value = ''; return; } handlePersonalisationChange(overlay, event.target); };
+        overlay.ondragstart = event => { const item = event.target?.closest?.('[data-layout-drag-type]'); if (!item) return; overlay.__mcmsPersonalDrag = { type: item.dataset.layoutDragType, value: item.dataset.layoutValue, group: item.dataset.layoutGroup || '' }; try { event.dataTransfer.effectAllowed = 'move'; } catch (err) {} };
+        overlay.ondragover = event => { if (event.target?.closest?.('[data-layout-drag-type]')) event.preventDefault(); };
+        overlay.ondrop = event => { event.preventDefault(); handlePersonalisationDrop(overlay, event); overlay.__mcmsPersonalDrag = null; };
+        return overlay;
+    }
+
+    function setupWizardInitialDraft() {
+        return {
+        device: 'auto',
+        theme: state.uiTheme,
+        density: activeDeviceLayout === 'tablet' ? state.interfaceDensity.tablet : state.interfaceDensity.desktop,
+        profile: 'balanced',
+        alerts: 'off',
+        browser: false
+        };
+    }
+
+    function setupWizardStepMarkup(step) {
+        const draft = setupWizardDraft || setupWizardInitialDraft();
+        const progressSegments = [0, 1, 2].map(index => `<span class="${index <= step ? 'mcms-active' : ''}"></span>`).join('');
+        const progress = `<div class="mcms-wizard-progress">${progressSegments}</div>`;
+        if (step === 0) return progress + `<section class="mcms-personal-section"><strong>1 · Choose your device behaviour</strong><label class="mcms-personal-field"><span>Toolkit layout</span><select data-wizard-setting="device"><option value="auto"${draft.device === 'auto' ? ' selected' : ''}>Automatic detection</option><option value="desktop"${draft.device === 'desktop' ? ' selected' : ''}>Always Desktop</option><option value="tablet"${draft.device === 'tablet' ? ' selected' : ''}>Always Tablet</option><option value="mobile"${draft.device === 'mobile' ? ' selected' : ''}>Always iOS Mobile</option></select></label><p class="mcms-command-note">Automatic detection is recommended. Each device still keeps its own layout and density.</p></section>`;
+        const themeOptions = UI_THEME_ORDER.map(key => `<option value="${key}"${draft.theme === key ? ' selected' : ''}>${escapeHtml(UI_THEMES[key].label)}</option>`).join('');
+        const densityOptions = COMMAND_DENSITIES.map(key => `<option value="${key}"${draft.density === key ? ' selected' : ''}>${key === 'command' ? 'Command Centre' : key[0].toUpperCase() + key.slice(1)}</option>`).join('');
+        if (step === 1) return progress + `<section class="mcms-personal-section"><strong>2 · Choose your starting interface</strong><div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Interface theme</span><select data-wizard-setting="theme">${themeOptions}</select></label><label class="mcms-personal-field"><span>Density</span><select data-wizard-setting="density">${densityOptions}</select></label><label class="mcms-personal-field"><span>Command layout</span><select data-wizard-setting="profile"><option value="balanced"${draft.profile === 'balanced' ? ' selected' : ''}>Balanced · all controls</option><option value="clean"${draft.profile === 'clean' ? ' selected' : ''}>Clean · essential controls</option><option value="command"${draft.profile === 'command' ? ' selected' : ''}>Command · intelligence first</option></select></label></div></section>`;
+        return progress + `<section class="mcms-personal-section"><strong>3 · Choose alerts</strong><div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Sound alerts</span><select data-wizard-setting="alerts"><option value="off"${draft.alerts === 'off' ? ' selected' : ''}>Off</option><option value="subtle"${draft.alerts === 'subtle' ? ' selected' : ''}>Subtle · new and completed</option><option value="command"${draft.alerts === 'command' ? ' selected' : ''}>Command · all operational alerts</option></select></label><label class="mcms-personal-field"><span><input type="checkbox" data-wizard-setting="browser"${draft.browser ? ' checked' : ''}> Browser notifications</span></label></div><p class="mcms-command-note">Alerts remain local and optional. Browser permission is requested only when you finish with that option selected.</p></section>`;
+    }
+
+    function readSetupWizardDraft(overlay) {
+        const draft = setupWizardDraft || setupWizardInitialDraft();
+        overlay.querySelectorAll('[data-wizard-setting]').forEach(input => { const key = input.dataset.wizardSetting; draft[key] = input.type === 'checkbox' ? input.checked : input.value; });
+        setupWizardDraft = draft;
+    }
+
+    function applySetupWizardDraft() {
+        const draft = setupWizardDraft || setupWizardInitialDraft();
+        state.mobileMode = draft.device === 'mobile' ? 'on' : draft.device === 'desktop' || draft.device === 'tablet' ? 'off' : 'auto';
+        state.tabletMode = draft.device === 'tablet' ? 'on' : draft.device === 'desktop' || draft.device === 'mobile' ? 'off' : 'auto';
+        state.uiTheme = normaliseUiTheme(draft.theme);
+        state.interfaceDensity.desktop = COMMAND_DENSITIES.includes(draft.density) ? draft.density : 'standard';
+        state.interfaceDensity.tablet = COMMAND_DENSITIES.includes(draft.density) ? draft.density : 'standard';
+        const layoutDevice = draft.device === 'mobile' ? 'mobile' : draft.device === 'tablet' ? 'tablet' : 'desktop';
+        const layout = state.layoutBuilder.layouts[layoutDevice];
+        if (draft.profile === 'clean') layout.hiddenControls = ['allianceCredits', 'missionAge', 'transportWatcher', 'unitCommitment', 'stuckDetector', 'open-vehicle-status', 'open-pressure-board'];
+        else layout.hiddenControls = [];
+        if (draft.profile === 'command') layout.groupOrder = ['dashboard', 'intelligence', 'visibility', 'performance'];
+        state.notifications.enabled = draft.alerts !== 'off';
+        state.notifications.events = Object.fromEntries(Object.keys(NOTIFICATION_EVENT_META).map(key => [key, draft.alerts === 'command' || (draft.alerts === 'subtle' && ['newMission', 'completion'].includes(key))]));
+        state.notifications.browserEnabled = Boolean(draft.browser);
+        state.setupWizard = { completed: true, schema: 1 };
+        saveState({ requireWrite: true });
+        applyLoadedConfiguration();
+        if (draft.browser) void requestToolkitNotificationPermission();
+        setupWizardDraft = null;
+    }
+
+    function openSetupWizard(step = 0, { manual = false } = {}) {
+        if (!manual && state.setupWizard.completed) return false;
+        if (!setupWizardDraft) setupWizardDraft = setupWizardInitialDraft();
+        const safeStep = Math.max(0, Math.min(2, Number(step) || 0));
+        const actions = `${safeStep ? '<button type="button" data-wizard-action="back">Back</button>' : '<button type="button" data-wizard-action="skip">Skip</button>'}<button class="mcms-primary" type="button" data-wizard-action="${safeStep === 2 ? 'finish' : 'next'}">${safeStep === 2 ? 'Finish Setup' : 'Continue'}</button>`;
+        const overlay = openCommandExperienceModal({ kind: 'Setup Wizard', title: 'Welcome to Map Command', subtitle: `Step ${safeStep + 1} of 3 · your existing game data is never changed`, body: setupWizardStepMarkup(safeStep), actions });
+        overlay.dataset.wizardStep = String(safeStep);
+        overlay.onchange = () => readSetupWizardDraft(overlay);
+        overlay.onclick = event => {
+        const button = event.target?.closest?.('[data-wizard-action]');
+        if (!button) return;
+        readSetupWizardDraft(overlay);
+        const action = button.dataset.wizardAction;
+        if (action === 'skip') { state.setupWizard = { completed: true, schema: 1 }; saveState(); setupWizardDraft = null; closeCommandExperienceModal(); showToast('Setup wizard skipped'); return; }
+        if (action === 'back') { openSetupWizard(safeStep - 1, { manual: true }); return; }
+        if (action === 'next') { openSetupWizard(safeStep + 1, { manual: true }); return; }
+        if (action === 'finish') { applySetupWizardDraft(); closeCommandExperienceModal({ restoreFocus: false }); showToast('Toolkit setup complete'); }
+        };
+        return true;
+    }
+
+    function maybeShowSetupWizard() {
+        if (state.setupWizard.completed || Date.now() - bootStartedAt < 2000 || document.hidden) return false;
+        if (commandExperienceElement(SCRIPT.commandExperienceModalId) || commandExperienceElement(SCRIPT.commandPaletteId)) return false;
+        return openSetupWizard(0);
+    }
+
+    function unlockNotificationAudio() {
+        const AudioContextCtor = pageWindow.AudioContext || pageWindow.webkitAudioContext;
+        if (!AudioContextCtor) return null;
+        try {
+        notificationAudioContext ||= new AudioContextCtor();
+        if (notificationAudioContext.state === 'suspended') void notificationAudioContext.resume();
+        return notificationAudioContext;
+        } catch (err) { return null; }
+    }
+
+    function playToolkitNotificationCue(eventKey) {
+        if (!state.notifications.enabled || !state.notifications.events[eventKey] || state.notifications.volume <= 0) return false;
+        const context = unlockNotificationAudio();
+        if (!context) return false;
+        const preset = NOTIFICATION_PRESETS[state.notifications.preset] || NOTIFICATION_PRESETS.radio;
+        const frequencies = { newMission: [660, 880], completion: [523, 659, 784], patient: [440, 660], stuck: [220, 180], warning: [330, 247] }[eventKey] || [440];
+        const startedAt = context.currentTime + 0.01;
+        const gain = context.createGain();
+        gain.gain.setValueAtTime(0.0001, startedAt);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, state.notifications.volume * 0.13), startedAt + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startedAt + (frequencies.length * 0.13) + 0.12);
+        gain.connect(context.destination);
+        frequencies.forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        oscillator.type = preset.wave;
+        oscillator.frequency.setValueAtTime(frequency, startedAt + (index * 0.13));
+        oscillator.connect(gain);
+        oscillator.start(startedAt + (index * 0.13));
+        oscillator.stop(startedAt + (index * 0.13) + 0.16);
+        });
+        return true;
+    }
+
+    function emitToolkitNotification(eventKey, detail = '', { dedupeKey = '' } = {}) {
+        if (!state.notifications.enabled || !state.notifications.events[eventKey]) return false;
+        const key = `${eventKey}:${dedupeKey || detail}`;
+        const now = Date.now();
+        if (notificationEventSeen.has(key) && now - notificationEventSeen.get(key) < 30000) return false;
+        notificationEventSeen.set(key, now);
+        for (const [seenKey, seenAt] of notificationEventSeen.entries()) if (now - seenAt > 5 * 60 * 1000) notificationEventSeen.delete(seenKey);
+        playToolkitNotificationCue(eventKey);
+        const NotificationCtor = pageWindow.Notification;
+        if (state.notifications.browserEnabled && typeof NotificationCtor === 'function' && NotificationCtor.permission === 'granted') {
+        try { new NotificationCtor(NOTIFICATION_EVENT_META[eventKey]?.title || SCRIPT.name, { body: String(detail || NOTIFICATION_EVENT_META[eventKey]?.label || '').slice(0, 180), tag: `mcms-${eventKey}-${dedupeKey || ''}`, silent: true }); } catch (err) {}
+        }
+        return true;
+    }
+
+    async function requestToolkitNotificationPermission() {
+        const NotificationCtor = pageWindow.Notification;
+        if (typeof NotificationCtor !== 'function' || typeof NotificationCtor.requestPermission !== 'function') { showToast('Browser notifications are unavailable'); return 'unsupported'; }
+        try {
+        const permission = await NotificationCtor.requestPermission();
+        state.notifications.browserEnabled = permission === 'granted';
+        saveState();
+        showToast(permission === 'granted' ? 'Browser notifications enabled' : 'Browser notification permission not granted');
+        return permission;
+        } catch (err) { showToast('Browser notification request failed'); return 'denied'; }
     }
 
     function settingsTransferBytesToBase64(bytes) {
@@ -21049,6 +21833,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         deviceLayout: activeDeviceLayout + ' · ' + interfaceDensityForLayout(),
         checks
         };
+        if (checks.some(item => item.tone === 'warn' || item.tone === 'bad')) emitToolkitNotification('warning', 'Toolkit Doctor found a warning or failure.', { dedupeKey: `doctor:${checks.map(item => item.tone).join('')}` });
         const activeModal = commandExperienceElement(SCRIPT.commandExperienceModalId);
         if (activeModal?.dataset.kind === 'Toolkit Doctor') renderToolkitDoctor(report);
         else toolkitDoctorReport = report;
@@ -21076,18 +21861,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
         '<div class="mcms-update-grid">' +
-            '<article><b>Search Everything</b><p>Find active missions, personal vehicles, buildings, locations, settings and safe Toolkit actions from one place.</p></article>' +
-            '<article><b>Keyboard &amp; Touch</b><p>Press K from the map, tap Palette in the command bar or add it to the Tablet Quick Wheel.</p></article>' +
-            '<article><b>Local &amp; Safe</b><p>Results are built only when opened, add no background polling and never dispatch a vehicle automatically.</p></article>' +
-        '</div><p class="mcms-command-note">Try Wakefield, stuck vehicles or full screen. Arrow keys and touch both use the same ranked results.</p>';
+            '<article><b>Your Layout</b><p>Reorder or hide map controls independently on Desktop, Tablet and iOS, then resize and position the command panel.</p></article>' +
+            '<article><b>Your Look &amp; Wheel</b><p>Layer custom colours and surfaces over any interface, and place actions, locations or live searches into four to eight Quick Wheel slots.</p></article>' +
+            '<article><b>Your Safety Net</b><p>Create encrypted transfers, safe exports and local recovery snapshots from one Backup Centre.</p></article>' +
+        '</div><p class="mcms-command-note">Open Personalisation Studio from Settings or the Command Palette. Setup guidance and every sound or browser alert remain optional.</p>';
     }
 
     function openUpdateBriefing({ manual = false } = {}) {
         if (!manual && !state.updateBriefing.enabled) return false;
         openCommandExperienceModal({
         kind: 'Update Briefing',
-        title: 'Command Palette online',
-        subtitle: 'One search now reaches the whole Toolkit.',
+        title: 'Personalisation Studio online',
+        subtitle: 'One place now shapes the Toolkit around you.',
         body: updateBriefingBody(),
         actions: '<button type="button" data-mcms-command-action="briefing-disable">Don’t Show Again</button><button class="mcms-primary" type="button" data-mcms-command-action="briefing-dismiss">Got It</button>'
         });
@@ -21103,6 +21888,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function maybeShowUpdateBriefing() {
+        if (!state.setupWizard.completed) return false;
         if (!state.updateBriefing.enabled || state.updateBriefing.seenVersion === SCRIPT.version) return false;
         if (Date.now() - bootStartedAt < 2000 || document.hidden || transportSweepRuntime.running) return false;
         if (commandExperienceElement(SCRIPT.commandExperienceModalId) || commandExperienceElement(SCRIPT.commandPaletteId) || document.documentElement.hasAttribute('data-mcms-help-open')) return false;
@@ -21122,7 +21908,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (action === 'modal-close') { closeCommandExperienceModal(); return true; }
         if (action === 'fullscreen-exit') { setMapFullscreen(false); return true; }
         if (action === 'quick-wheel-close') { closeTabletQuickWheel({ restoreFocus: true }); return true; }
-        if (action === 'quick-wheel-command') { executeQuickWheelCommand(button.dataset.command); return true; }
+        if (action === 'quick-wheel-command') { executeQuickWheelSlot(Number(button.dataset.slotIndex)); return true; }
         if (action === 'transfer-encrypt') { void createEncryptedSettingsExport(); return true; }
         if (action === 'transfer-decrypt') { void unlockEncryptedSettingsImport(); return true; }
         if (action === 'transfer-apply') { applyPendingSettingsTransfer(); return true; }
@@ -25624,7 +26410,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function applyPosition(position, persist = true) {
-        state.position = POSITIONS[position] ? position : 'bl';
+        const nextPosition = POSITIONS[position] ? position : 'bl';
+        state.position = nextPosition;
+        activeLayoutPreferences().position = nextPosition;
         if (persist) saveState();
         updateUI();
         fitControlToMap();
@@ -25752,7 +26540,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
     function handleMissionMonitoringToggle(feature) {
         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
-        else if (feature === 'missionSpawn') { state.missionSpawn.enabled = !state.missionSpawn.enabled; missionSpawnArmed = false; runtimeClearTimeout(missionSpawnPrimeTimer); knownMissionIds.clear(); if (state.missionSpawn.enabled) primeMissionSpawnDetector(); }
+        else if (feature === 'missionSpawn') { state.missionSpawn.enabled = !state.missionSpawn.enabled; missionSpawnArmed = false; runtimeClearTimeout(missionSpawnPrimeTimer); knownMissionIds.clear(); if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector(); }
         else return false;
         return true; }
     function applyMissionMonitoringToggleEffects(feature) {
@@ -25927,10 +26715,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (dragState) return;
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel || !panel.classList.contains('mcms-open')) return;
+        const savedPosition = activeLayoutPreferences().panelPosition || state.panelPosition;
         if (mobileModeActive) { applyTabletPanelPosition(); return; }
         if (tabletModeActive) {
             applyTabletPanelPosition({ sizeOnly: true });
-            if (!(useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top)))) {
+            if (!(useSavedPosition && savedPosition && Number.isFinite(Number(savedPosition.left)) && Number.isFinite(Number(savedPosition.top)))) {
                 applyTabletPanelPosition();
                 return;
             }
@@ -25938,9 +26727,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!tabletModeActive) clearTabletPanelSizing(panel);
         let left;
         let top;
-        if (useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top))) {
-            left = Number(state.panelPosition.left);
-            top = Number(state.panelPosition.top);
+        if (useSavedPosition && savedPosition && Number.isFinite(Number(savedPosition.left)) && Number.isFinite(Number(savedPosition.top))) {
+            left = Number(savedPosition.left);
+            top = Number(savedPosition.top);
         } else {
             const pos = getDefaultPanelPosition();
             left = pos.left;
@@ -25952,6 +26741,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function resetPanelPosition() {
         if (mobileModeActive) { showToast('Mobile Mode uses a fixed responsive panel'); return; }
+        activeLayoutPreferences().panelPosition = null;
         state.panelPosition = null;
         saveState();
         if (tabletModeActive) applyTabletPanelPosition();
@@ -25966,6 +26756,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const rect = panel.getBoundingClientRect();
         const pos = clampPanelPosition(rect.left + dx, rect.top + dy);
         setPanelCssPosition(pos.left, pos.top);
+        activeLayoutPreferences().panelPosition = { left: pos.left, top: pos.top };
         state.panelPosition = { left: pos.left, top: pos.top };
         saveState();
         showToast(`Menu ${pos.left}, ${pos.top}`);
@@ -26024,6 +26815,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const rect = panel.getBoundingClientRect();
             const pos = clampPanelPosition(rect.left, rect.top);
             setPanelCssPosition(pos.left, pos.top);
+            activeLayoutPreferences().panelPosition = { left: pos.left, top: pos.top };
             state.panelPosition = { left: pos.left, top: pos.top };
             saveState();
         }
@@ -26182,13 +26974,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         );
 
         add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
+        add('personalisation', 'Open Personalisation Studio', 'Layouts, themes, Quick Wheel, backups, setup and alerts', 'customize customise appearance sound notification backup wizard', () => openPersonalisationStudio(), true);
         add('pressure-board', `${operationalPressureBoardOpen() ? 'Close' : 'Open'} Operational Pressure Board`, 'Live demand and response pressure across active missions', 'mission board dashboard demand radar', () => toggleOperationalPressureBoard(), true);
         add('vehicle-codes', `${commandExperienceElement(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ? 'Close' : 'Open'} Vehicle Code Status`, 'Inspect current personal-unit availability by FMS code', 'vehicles units availability status fms codes', () => toggleVehicleCodeStatus(), true);
         add('fullscreen', `${state.fullscreenMap ? 'Exit' : 'Enter'} Full-Screen Map`, `Map full-screen mode · currently ${state.fullscreenMap ? 'on' : 'off'}`, 'fullscreen maximise maximize restore', () => setMapFullscreen(!state.fullscreenMap), true);
         add('doctor', 'Run Toolkit Doctor', 'Safe user-triggered diagnostics and UI repair', 'health report warning repair diagnostic', () => { void runToolkitDoctor(); }, true);
         add('help', 'Open Help Centre', 'Search the complete Toolkit guide', 'documentation instructions support guide', () => openHelpCenter());
         add('briefing', 'Open Update Briefing', `Review what changed in Toolkit ${SCRIPT.version}`, 'release notes whats new version', () => openUpdateBriefing({ manual: true }));
-        add('quick-wheel', 'Open Tablet Quick Wheel', 'Show the configured six-slot touch command wheel', 'tablet touch long press radial wheel', () => openTabletQuickWheel(null, { manual: true }));
+        add('quick-wheel', 'Open Tablet Quick Wheel', `Show the configured ${state.quickWheel.slotCount}-slot touch command wheel`, 'tablet touch long press radial wheel', () => openTabletQuickWheel(null, { manual: true }));
         add('command-bar', `${state.commandBarOpen === false ? 'Show' : 'Hide'} Map Command Bar`, `Persistent map command controls · currently ${state.commandBarOpen === false ? 'hidden' : 'shown'}`, 'dock toolbar collapse expand', () => toggleCommandBar());
         add('economy', `${state.economyMode ? 'Disable' : 'Enable'} Economy Mode`, `Performance mode · currently ${state.economyMode ? 'on' : 'off'}`, 'performance cpu gpu low power', () => setEconomyMode(!state.economyMode, true), true);
 
@@ -26485,7 +27278,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return overlay;
     }
 
-    function openCommandPalette({ returnFocus = null } = {}) {
+    function openCommandPalette({ returnFocus = null, initialQuery = '' } = {}) {
         const existing = commandExperienceElement(SCRIPT.commandPaletteId);
         if (existing) {
             existing.querySelector('[data-command-palette-input]')?.focus?.({ preventScroll: true });
@@ -26501,9 +27294,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         commandPaletteSelectedIndex = 0;
         const overlay = createCommandPalette();
         document.documentElement.setAttribute('data-mcms-command-palette-open', 'true');
-        renderCommandPalette('', overlay);
+        const input = overlay.querySelector('[data-command-palette-input]');
+        if (input) input.value = String(initialQuery || '');
+        renderCommandPalette(String(initialQuery || ''), overlay);
         updateUI();
-        overlay.querySelector('[data-command-palette-input]')?.focus?.({ preventScroll: true });
+        input?.focus?.({ preventScroll: true });
         return overlay;
     }
 
@@ -27327,6 +28122,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             <section class="mcms-tab-panel" data-panel="skins">
                 <div class="mcms-section-label">Interface theme</div>
                 <div class="mcms-ui-theme-grid">${uiThemeButtons}</div>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="open-theme-studio">Open Visual Theme Studio</button>
                 <div class="mcms-status mcms-ui-theme-status">Interface themes restyle the complete toolkit without changing your selected operational map skin.</div>
                 <div class="mcms-section-label">Core skins</div>
                 <div class="mcms-grid-2">${coreThemeButtons}</div>
@@ -27526,13 +28322,16 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 <div class="mcms-grid-2">
                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Command Palette: K. Map tools: 1–8. Vehicle Codes: V. Menu: M.')}
                     <button class="mcms-small-btn" type="button" data-action="open-command-palette">Open Command Palette</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-personalisation-studio">Personalisation Studio</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-notification-studio">Sounds &amp; Alerts</button>
                 </div>
                 <div class="mcms-section-label">Tablet Quick Wheel</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('quickWheel', '◉', 'Quick Wheel', 'Long-press the map in Tablet Mode to open six touch-friendly commands.')}
                     <button class="mcms-small-btn" id="mcms-open-quick-wheel-setting" type="button" data-action="open-tablet-quick-wheel">Open Wheel</button>
                 </div>
-                <div class="mcms-quick-wheel-settings">${state.quickWheel.actions.map((action, index) => `<div class="mcms-row"><span class="mcms-row-label">Wheel slot ${index + 1}</span><select class="mcms-select" data-setting="quick-wheel-slot-${index}">${quickWheelOptions(action)}</select></div>`).join('')}</div>
+                <div class="mcms-quick-wheel-settings">${state.quickWheel.slots.slice(0, state.quickWheel.slotCount).map((slot, index) => `<div class="mcms-row"><span class="mcms-row-label">Wheel slot ${index + 1}</span><select class="mcms-select" data-setting="quick-wheel-slot-${index}">${quickWheelOptions(slot)}</select></div>`).join('')}</div>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="open-wheel-studio">Fully Customise Quick Wheel</button>
                 <div class="mcms-status">Tablet long-press uses MissionChief’s Leaflet tap-hold gesture, so ordinary taps and map panning remain native until the hold is confirmed.</div>
                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
                 <div class="mcms-section-label">Map command bar</div>
@@ -27550,12 +28349,15 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 <div class="mcms-grid-2">
                     <button class="mcms-small-btn" type="button" data-action="toolkit-doctor">Run Toolkit Doctor</button>
                     <button class="mcms-small-btn" type="button" data-action="open-update-briefing">Open Update Briefing</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-setup-wizard">Run Setup Wizard</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-layout-studio">Open Layout Builder</button>
                 </div>
                 <div class="mcms-section-label">Backup &amp; recovery</div>
                 <div class="mcms-config-actions">
                     <button class="mcms-small-btn" type="button" data-action="export-config" title="Encrypt every Toolkit setting, Discord webhook and Financial Archive record with a passphrase" aria-label="Create encrypted settings transfer">Encrypted Export</button>
                     <button class="mcms-small-btn" type="button" data-action="import-config" title="Import an encrypted or legacy Toolkit settings backup" aria-label="Import Toolkit settings">Import</button>
                     <button class="mcms-small-btn" type="button" data-action="export-safe-config" title="Export settings without Discord webhook, archive identity or financial history" aria-label="Export safe settings without private integrations">Safe Export</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-backup-centre">Backup Centre</button>
                     <button class="mcms-small-btn" type="button" data-action="reset-config">Reset</button>
                 </div>
                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json,.mcms" data-import-config-file>
@@ -27773,6 +28575,13 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         if (action === 'open-help-center') { openHelpCenter(); return; }
         if (action === 'open-command-palette') { openCommandPalette({ returnFocus: button }); return; }
+        if (action === 'open-personalisation-studio') { openPersonalisationStudio('layout'); return; }
+        if (action === 'open-layout-studio') { openPersonalisationStudio('layout'); return; }
+        if (action === 'open-theme-studio') { openPersonalisationStudio('theme'); return; }
+        if (action === 'open-wheel-studio') { openPersonalisationStudio('wheel'); return; }
+        if (action === 'open-backup-centre') { openPersonalisationStudio('backup'); return; }
+        if (action === 'open-notification-studio') { openPersonalisationStudio('notifications'); return; }
+        if (action === 'open-setup-wizard') { openSetupWizard(0, { manual: true }); return; }
         if (action === 'toggle-command-bar') { toggleCommandBar(); return; }
         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
@@ -27922,12 +28731,13 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             showToast(`${key === 'desktop' ? 'Desktop' : 'Tablet'} density: ${state.interfaceDensity[key] === 'command' ? 'Command Centre' : state.interfaceDensity[key]}`);
             return;
         }
-        if (/^quick-wheel-slot-[0-5]$/u.test(setting)) {
+        if (/^quick-wheel-slot-[0-7]$/u.test(setting)) {
             const index = Number(setting.slice(-1));
-            const action = QUICK_WHEEL_ACTIONS[target.value] ? target.value : DEFAULT_QUICK_WHEEL_ACTIONS[index];
-            state.quickWheel.actions[index] = action;
+            const slot = normaliseQuickWheelSlot(target.value) || { kind: 'action', id: DEFAULT_QUICK_WHEEL_ACTIONS[index] || 'commandPalette' };
+            state.quickWheel.slots[index] = slot;
+            state.quickWheel.actions = state.quickWheel.slots.slice(0, 6).map(item => item.kind === 'action' && QUICK_WHEEL_ACTIONS[item.id] ? item.id : 'commandPalette');
             saveState(); updateUI();
-            showToast(`Quick Wheel slot ${index + 1}: ${QUICK_WHEEL_ACTIONS[action].label}`);
+            showToast(`Quick Wheel slot ${index + 1}: ${quickWheelSlotMeta(slot).label}`);
             return;
         }
         if (setting === 'major-incident-minimum') {
@@ -28066,7 +28876,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const control = document.getElementById(SCRIPT.controlId);
         const panel = document.getElementById(SCRIPT.panelId);
         if (control) {
-            for (const pos of Object.keys(POSITIONS)) updateUiToggleClass(control, `mcms-pos-${pos}`, state.position === pos);
+            const dockPosition = activeDockPosition();
+            for (const pos of Object.keys(POSITIONS)) updateUiToggleClass(control, `mcms-pos-${pos}`, dockPosition === pos);
             updateUiSetStyleProperty(control.style, '--mcms-nudge-x', `${state.nudge.x}px`);
             updateUiSetStyleProperty(control.style, '--mcms-nudge-y', `${state.nudge.y}px`);
             toolkitApplyCommandBarState(control);
@@ -28151,7 +28962,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             updateUiSetAttribute(btn, 'aria-pressed', String(active));
         });
         panel.querySelectorAll('.mcms-theme-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.theme === state.theme));
-        panel.querySelectorAll('.mcms-position-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.position === state.position));
+        panel.querySelectorAll('.mcms-position-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.position === activeDockPosition()));
         const toggleValues = {
             clean: state.cleanMode,
             markerFocus: state.markerFocus,
@@ -28207,9 +29018,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             updateUiSetText(button.querySelector('.mcms-pill'), on ? 'ON' : 'OFF');
         }
         updateAllianceMemberManagerMenuControl();
-        state.quickWheel.actions.forEach((action, index) => {
+        state.quickWheel.slots.slice(0, state.quickWheel.slotCount).forEach((slot, index) => {
             const select = panel.querySelector(`[data-setting="quick-wheel-slot-${index}"]`);
-            if (select && document.activeElement !== select) updateUiSetProperty(select, 'value', action);
+            if (select && document.activeElement !== select) updateUiSetProperty(select, 'value', quickWheelSlotValue(slot));
         });
         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
         if (majorIncidentMinimum) updateUiSetProperty(majorIncidentMinimum, 'value', String(state.majorIncidentFeed.minimumCredits));
@@ -28297,7 +29108,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
         }
         toolkitApplyCommandBarState(control);
-        maybeShowUpdateBriefing();
+        if (!maybeShowSetupWizard()) maybeShowUpdateBriefing();
         return Boolean(control || document.getElementById(SCRIPT.controlId));
     }
 
@@ -28607,7 +29418,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
         if (missionSnapshotsNeeded()) refreshMissionSnapshots();
-        if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+        if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector();
         if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(180);
         if (state.transportWatcher) scheduleTransportWatcherRefresh(220);
         if (state.resourceGap.enabled) scheduleResourceGapRefresh(260);
@@ -29065,7 +29876,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }));
         mainMutationObserver = observer;
         runtimeListen(document, 'keydown', handleKeyboard);
-        runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
+        runtimeListen(document, 'pointerdown', () => { unlockPayoutAudio(); if (state.notifications.enabled) unlockNotificationAudio(); }, { once: true, capture: true });
         runtimeListen(document, 'click', event => {
             if (handleCommandExperienceAction(event)) return;
             runtimeSetTimeout(refreshSuppression, 0);
@@ -29194,10 +30005,15 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             stopPayoutFlashAnimation();
             disposePayoutMediaAudio();
             try { payoutAudioContext?.close?.(); } catch (err) {}
+            try { notificationAudioContext?.close?.(); } catch (err) {}
+            notificationAudioContext = null;
+            notificationEventSeen.clear();
+            notificationActiveEvents.clear();
             clearDiscordPreviewChartUrl();
             closeTabletQuickWheel();
             closeCommandPalette({ restoreFocus: false });
             closeCommandExperienceModal({ restoreFocus: false });
+            document.querySelector(`#${SCRIPT.personalisationStyleId}`)?.remove();
             fullscreenMapTarget?.classList?.remove('mcms-map-fullscreen-target');
             fullscreenMapTarget = null;
             commandExperienceElement(SCRIPT.fullscreenExitId)?.remove();
@@ -29217,7 +30033,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             markerRegistryCache.clear();
             removeOldInstances();
             const root = document.documentElement;
-            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
         });
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

@@ -120,6 +120,7 @@ const sandbox = {
     removeMajorIncidentFeed() {},
     applyMapFullscreenState() {},
     maybeShowUpdateBriefing() {},
+    maybeShowSetupWizard() { return false; },
     positionPayoutFlashOverlay() {},
 };
 vm.createContext(sandbox);

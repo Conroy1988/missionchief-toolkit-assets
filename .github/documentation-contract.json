@@ -82,7 +82,8 @@
     "Operational Pressure Board",
     "Operational SITREP",
     "Economy Mode",
-    "Toolkit Command Palette"
+    "Toolkit Command Palette",
+    "Personalisation Studio"
   ],
   "installUrls": [
     "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
@@ -102,7 +103,8 @@
     "Payout presentations",
     "Economy Mode",
     "Desktop, Tablet and iOS Mobile Mode",
-    "Toolkit Command Palette"
+    "Toolkit Command Palette",
+    "Personalisation Studio"
   ],
   "publicDocumentation": {
     "readmeRequiredTokens": [
@@ -116,7 +118,8 @@
       "saved Discord webhook",
       "eight complete interface systems",
       "The Godfather",
-      "Toolkit Command Palette"
+      "Toolkit Command Palette",
+      "Personalisation Studio"
     ],
     "readmeForbiddenTokens": [
       "Operational Window Suite",
@@ -142,7 +145,8 @@
       "saved Discord webhook",
       "eight complete interface systems",
       "The Godfather",
-      "Toolkit Command Palette"
+      "Toolkit Command Palette",
+      "Personalisation Studio"
     ],
     "helpForbiddenTokens": [
       "Operational Window Suite",
@@ -168,7 +172,8 @@
       "saved Discord webhook",
       "eight complete interface systems",
       "The Godfather",
-      "Toolkit Command Palette"
+      "Toolkit Command Palette",
+      "Personalisation Studio"
     ],
     "greasyForkForbiddenTokens": [
       "Operational Window Suite",

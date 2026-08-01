@@ -339,9 +339,18 @@ jobs:
 
           curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
             --request POST --header "Content-Type: application/json" \
-            --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
+            --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true" \
+            > discord-release-response.json
+          DISCORD_MESSAGE_ID="$(jq -r '.id // empty' discord-release-response.json)"
+          DISCORD_CHANNEL_ID="$(jq -r '.channel_id // empty' discord-release-response.json)"
+          [[ "$DISCORD_MESSAGE_ID" =~ ^[0-9]{17,22}$ && "$DISCORD_CHANNEL_ID" =~ ^[0-9]{17,22}$ ]] || {
+            echo "::error::Discord did not return a valid release message identity."
+            exit 1
+          }
           echo "posted_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
           echo "posted_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+          echo "message_id=$DISCORD_MESSAGE_ID" >> "$GITHUB_OUTPUT"
+          echo "channel_id=$DISCORD_CHANNEL_ID" >> "$GITHUB_OUTPUT"
 
       - name: Record successful release, manifest, announcement and speed state
         env:
@@ -357,6 +366,8 @@ jobs:
           BACKUP_EPOCH: ${{ steps.external.outputs.backup_epoch }}
           DISCORD_EPOCH: ${{ steps.discord.outputs.posted_epoch }}
           DISCORD_AT: ${{ steps.discord.outputs.posted_at }}
+          DISCORD_MESSAGE_ID: ${{ steps.discord.outputs.message_id }}
+          DISCORD_CHANNEL_ID: ${{ steps.discord.outputs.channel_id }}
           VALIDATED_SHA: ${{ inputs.validated_sha }}
           RELEASE_SOURCE_SHA: ${{ steps.release_start.outputs.source_sha }}
           SOURCE_PR_NUMBER: ${{ inputs.pull_request_number }}
@@ -376,6 +387,7 @@ jobs:
           [[ "$GREASYFORK_VERIFIED" == "true" ]] && GREASYFORK_STATUS="verified"
           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
              --arg releaseUrl "$RELEASE_URL" --arg backupCommit "$BACKUP_COMMIT" \
+             --arg discordMessageId "$DISCORD_MESSAGE_ID" --arg discordChannelId "$DISCORD_CHANNEL_ID" \
              --arg greasyForkStatus "$GREASYFORK_STATUS" --argjson greasyForkVerified "$GREASYFORK_VERIFIED" \
             '.currentVersion=$version |
              .status.validation="passed" |
@@ -386,7 +398,7 @@ jobs:
              .status.discordRelease="posted" |
              .status.releaseReadiness="passed" |
              .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,tkbDistributionVerified:true,greasyForkMetadataVerified:$greasyForkVerified,publicReleaseCreated:true,completedAt:$now} |
-             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,greasyForkVerified:$greasyForkVerified,privateBackupCommit:$backupCommit,discordPosted:true,completedAt:$now} |
+             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,greasyForkVerified:$greasyForkVerified,privateBackupCommit:$backupCommit,discordMessageId:$discordMessageId,discordChannelId:$discordChannelId,discordPosted:true,completedAt:$now} |
              .lastUpdated=$now' \
             status/release-dashboard.json > status/release-dashboard.tmp
           mv status/release-dashboard.tmp status/release-dashboard.json

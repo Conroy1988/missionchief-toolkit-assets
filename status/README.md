@@ -9,7 +9,7 @@
 | Canonical source | 🟢 | Validated Canonical Source |
 | Validation | 🟢 | Passed |
 | GitHub Release | 🟢 | Published |
-| Greasy Fork | 🔵 | Delayed |
+| TKB Scripts | 🟢 | Verified |
 | Private backup | 🟢 | Private Repository Verified |
 | Discord development | 🟢 | Configured |
 | Discord releases | 🟢 | Posted |
@@ -46,7 +46,7 @@ Release readiness and bundle rebuild
       ↓
 Stable distribution publication
       ↓
-GitHub Release and Greasy Fork verification
+GitHub Release and TKB Scripts verification
       ↓
 Private migration backup
       ↓

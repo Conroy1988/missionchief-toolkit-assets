@@ -55,7 +55,7 @@ jobs:
           DASHBOARD="status/release-dashboard.json"
           TRACKER=".github/greasyfork-version.txt"
           DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' "$DASHBOARD")"
-          GREASYFORK_VERIFIED="$(jq -r '.latestRelease.greasyForkVerified // false' "$DASHBOARD")"
+          TKB_DISTRIBUTION_VERIFIED="$(jq -r '.latestRelease.tkbDistributionVerified // false' "$DASHBOARD")"
           DISCORD_POSTED="$(jq -r '.latestRelease.discordPosted // false' "$DASHBOARD")"
           TRACKER_VERSION="$(tr -d '\r\n ' < "$TRACKER" 2>/dev/null || true)"
 
@@ -63,7 +63,7 @@ jobs:
           STATE="inconsistent"
           if [[ -n "$DASHBOARD_VERSION" &&
                 "$TRACKER_VERSION" == "$DASHBOARD_VERSION" &&
-                "$GREASYFORK_VERIFIED" == "true" &&
+                "$TKB_DISTRIBUTION_VERIFIED" == "true" &&
                 "$DISCORD_POSTED" == "true" ]]; then
             ACCEPTABLE=true
             STATE="synchronized"
@@ -76,7 +76,7 @@ jobs:
             --arg sourceCommit "$GITHUB_SHA" \
             --arg generatedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --argjson acceptable "$ACCEPTABLE" \
-            --argjson greasyForkVerified "$GREASYFORK_VERIFIED" \
+            --argjson tkbDistributionVerified "$TKB_DISTRIBUTION_VERIFIED" \
             --argjson discordPosted "$DISCORD_POSTED" \
             '{
               schemaVersion: 1,
@@ -86,7 +86,7 @@ jobs:
               generatedAt: $generatedAt,
               dashboardVersion: $dashboardVersion,
               trackerVersion: $trackerVersion,
-              greasyForkVerified: $greasyForkVerified,
+              tkbDistributionVerified: $tkbDistributionVerified,
               discordPosted: $discordPosted,
               publicMainChanged: false,
               releaseDashboardChanged: false,
@@ -99,7 +99,7 @@ jobs:
             echo "- State: **${STATE}**"
             echo "- Dashboard version: \`${DASHBOARD_VERSION:-missing}\`"
             echo "- Tracker version: \`${TRACKER_VERSION:-missing}\`"
-            echo "- Greasy Fork verified: **${GREASYFORK_VERIFIED}**"
+            echo "- TKB distribution verified: **${TKB_DISTRIBUTION_VERIFIED}**"
             echo "- Discord posted: **${DISCORD_POSTED}**"
             echo "- Public main changed: **no**"
           } > announcement-state/release-announcement-state.md

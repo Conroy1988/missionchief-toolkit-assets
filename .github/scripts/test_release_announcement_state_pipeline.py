@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RELEASE = ROOT / ".github" / "workflows" / "release-toolkit.yml"
 VERIFY = ROOT / ".github" / "workflows" / "reconcile-release-announcement-state.yml"
+CARD_OPERATIONS = ROOT / ".github" / "workflows" / "discord-release-preview.yml"
 DASHBOARD = ROOT / "status" / "release-dashboard.json"
 TRACKER = ROOT / ".github" / "greasyfork-version.txt"
 
@@ -28,6 +29,7 @@ def forbid(text: str, markers: list[str], label: str) -> None:
 def main() -> int:
     release = RELEASE.read_text(encoding="utf-8")
     verify = VERIFY.read_text(encoding="utf-8")
+    card_operations = CARD_OPERATIONS.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
     tracker = TRACKER.read_text(encoding="utf-8").strip()
 
@@ -37,6 +39,9 @@ def main() -> int:
         "printf '%s\\n' \"$RELEASE_VERSION\" > .github/greasyfork-version.txt",
         "python3 .github/scripts/build_stable_update_manifest.py",
         "status/update-manifest.json",
+        "discord-release-response.json",
+        "message_id=$DISCORD_MESSAGE_ID",
+        "discordMessageId:$discordMessageId",
         "Dashboard, release-speed telemetry, stable update manifest and announcement tracker updated atomically",
     ], "Production release workflow")
     discord_index = release.index("      - name: Post verified release to Discord")
@@ -53,6 +58,8 @@ def main() -> int:
         "announcementTrackerChanged: false",
         "Upload immutable announcement-state evidence",
         "missionchief-release-announcement-state-${{ github.sha }}",
+        "tkbDistributionVerified",
+        "TKB distribution verified",
         "No automatic mutation was attempted.",
     ], "Announcement-state verification workflow")
     forbid(verify, [
@@ -62,15 +69,31 @@ def main() -> int:
         "git pull --rebase",
         "github-actions[bot]",
         "git reset --hard",
+        "latestRelease.greasyForkVerified",
     ], "Announcement-state verification workflow")
 
     latest = dashboard.get("latestRelease") or {}
     if str(latest.get("version") or "") != tracker:
         raise AssertionError("Committed announcement tracker does not match latest verified release")
-    if latest.get("greasyForkVerified") is not True:
-        raise AssertionError("Latest verified release is not marked Greasy Fork verified")
+    if latest.get("tkbDistributionVerified") is not True:
+        raise AssertionError("Latest verified release is not marked TKB distribution verified")
     if latest.get("discordPosted") is not True:
         raise AssertionError("Latest verified release is not marked Discord posted")
+    for key in ("discordMessageId", "discordChannelId"):
+        if not str(latest.get(key) or "").isdigit():
+            raise AssertionError(f"Latest verified release has no stored {key}")
+
+    require(card_operations, [
+        "Refresh verified release card in place",
+        "github.event.comment.user.login == github.repository_owner",
+        "github.event.comment.author_association == 'OWNER'",
+        "startsWith(github.event.comment.body, '/refresh-release-card ')",
+        "Only the current verified release card can be refreshed.",
+        "'.distribution.productUrl'",
+        "'.distribution.installUrl'",
+        '--request PATCH --header "Content-Type: application/json"',
+        '"${DISCORD_WEBHOOK_URL}/messages/${MESSAGE_ID}"',
+    ], "Discord release-card operations workflow")
 
     print("Release announcement state passed: atomic release commit and read-only verification.")
     return 0

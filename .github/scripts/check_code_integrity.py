@@ -84,6 +84,13 @@ CASE_RE = re.compile(r"\bcase\s+([\"'])(?P<key>[^\"']+)\1\s*:")
 KEY_ACTION_MAP_RE = re.compile(
     r"(?P<q1>['\"])(?P<key>[^'\"]+)(?P=q1)\s*:\s*(?P<q2>['\"])(?P<action>[^'\"]+)(?P=q2)"
 )
+DEFAULT_HOTKEY_BINDINGS_RE = re.compile(
+    r"\bconst\s+DEFAULT_HOTKEY_BINDINGS\s*=\s*Object\.freeze\(\{(?P<body>[^{}]{1,6000})\}\)",
+    re.S,
+)
+DEFAULT_HOTKEY_ITEM_RE = re.compile(
+    r"(?P<action>[A-Za-z_$][\w$]*)\s*:\s*(?P<q>['\"])(?P<key>[^'\"]+)(?P=q)"
+)
 DATA_SHORTCUT_RE = re.compile(r"\bdata-(?:hotkey|shortcut)\s*=\s*([\"'])(?P<key>[^\"']+)\1", re.I)
 SELECTOR_CALL_RE = re.compile(r"\b(?:querySelector|querySelectorAll|matches|closest)\s*\(")
 NAVIGATION_KEYS = {"esc", "enter", "space", "tab", "home", "end", "up", "down", "left", "right"}
@@ -308,6 +315,12 @@ def extract_shortcut_contract(text: str) -> tuple[list[LiteralOccurrence], dict[
     visible: dict[str, list[LiteralOccurrence]] = defaultdict(list)
     handlers: dict[str, list[LiteralOccurrence]] = defaultdict(list)
     findings: list[Finding] = []
+    default_hotkeys: list[tuple[str, str, int]] = []
+    default_match = DEFAULT_HOTKEY_BINDINGS_RE.search(text)
+    if default_match:
+        for item in DEFAULT_HOTKEY_ITEM_RE.finditer(default_match.group("body")):
+            offset = default_match.start("body") + item.start()
+            default_hotkeys.append((normalize_key(item.group("key")), item.group("action"), offset))
 
     for match in FLOAT_SHORTCUT_RE.finditer(text):
         key = normalize_key(match.group("shortcut"))
@@ -317,6 +330,10 @@ def extract_shortcut_contract(text: str) -> tuple[list[LiteralOccurrence], dict[
     for start, end in keydown_regions(text):
         region = text[start:end]
         region_line = line_number(text, start)
+        if "keyboardBindingFromEvent" in region and "state.inputStudio.hotkeys" in region:
+            for key, action, offset in default_hotkeys:
+                occurrence = LiteralOccurrence(key, line_number(text, offset), f"handler-default-map:{action}")
+                handlers[key].append(occurrence); bindings.append(occurrence)
         for match in KEY_COMPARISON_RE.finditer(region):
             key = normalize_key(match.group("key") or match.group("reverse_key") or "", match.group("field") or match.group("reverse_field") or "key")
             if not key or key in NAVIGATION_KEYS:

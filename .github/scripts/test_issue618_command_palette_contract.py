@@ -18,7 +18,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.0.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.1.0"
 
     palette = section(source, "    function commandPaletteNormalise(", "    function closeHelpCenter(")
     for required in [
@@ -68,7 +68,8 @@ def main() -> int:
     for required in [
         "commandPaletteId: 'mc-map-command-toolkit-command-palette'",
         "makeActionFloatButton('open-command-palette', 'K'",
-        "if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey && !event.repeat && key === 'k')",
+        "palette: 'K'",
+        "state.inputStudio.hotkeys[key] === binding",
         "data-action=\"open-command-palette\"",
         "commandPalette: Object.freeze({ label: 'Palette'",
         "if (command === 'commandPalette') { openCommandPalette(); return; }",

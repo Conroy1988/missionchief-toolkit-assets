@@ -31,7 +31,7 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 24
+    assert apply_root.count("setAttributeIfChanged(root,") == 30
     assert "data-mcms-critical-view" not in apply_root
     assert "root.setAttribute(" not in apply_root
     assert apply_root.index("setAttributeIfChanged(root, 'data-mcms-economy'") < apply_root.index("activeDeviceLayout = resolveDeviceLayout()")
@@ -46,10 +46,12 @@ class FakeRoot {{
     clearCalls() {{ this.calls.length = 0; }}
 }}
 const root = new FakeRoot();
-const document = {{ documentElement: root }};
+const document = {{ documentElement: root, querySelector() {{ return null; }} }};
+const SCRIPT = {{ panelId: "mc-map-command-toolkit-panel" }};
 let activeDeviceLayout = "desktop";
 let tabletModeActive = false;
 let mobileModeActive = false;
+let autoHideDockRevealed = false;
 let nextLayout = "desktop";
 let orientation = "landscape";
 const calculations = {{ layout: 0, tablet: 0, mobile: 0, viewport: 0 }};
@@ -58,6 +60,7 @@ const state = {{
     missionPulse: false, roadPriority: true, compactDock: false, commandBarOpen: true,
     economyMode: false, fullscreenMap: false, allianceBuildingsMap: true, tabletMode: "auto", mobileMode: "auto",
     interfaceDensity: {{ desktop: "compact", tablet: "command" }}, themeStudio: {{ enabled: false }},
+    missionChiefReskin: false, autoHideDock: {{ enabled: false, edge: "auto" }}, safeMode: {{ enabled: false }},
     visibility: {{ allianceMissions: true, myMissions: false, vehicles: true, buildings: false }}
 }};
 function normaliseUiTheme(value) {{ return String(value); }}
@@ -75,6 +78,9 @@ const expected = {{
     "data-mcms-marker-focus": "true", "data-mcms-mission-pulse": "false", "data-mcms-road-priority": "true",
     "data-mcms-compact-dock": "false", "data-mcms-command-bar-open": "true", "data-mcms-economy": "false",
     "data-mcms-map-fullscreen": "false", "data-mcms-density": "compact", "data-mcms-custom-theme": "false",
+    "data-mcms-missionchief-reskin": "false", "data-mcms-dock-auto-hide": "false",
+    "data-mcms-auto-hide-axis": "vertical", "data-mcms-auto-hide-revealed": "false",
+    "data-mcms-safe-mode": "false", "data-mcms-panel-open": "false",
     "data-mcms-alliance-buildings-map": "enabled", "data-mcms-device-layout": "desktop", "data-mcms-tablet-mode": "auto",
     "data-mcms-tablet-active": "false", "data-mcms-mobile-mode": "auto", "data-mcms-mobile-active": "false",
     "data-mcms-tablet-orientation": "landscape", "data-mcms-mobile-orientation": "landscape",
@@ -82,7 +88,7 @@ const expected = {{
     "data-mcms-show-vehicles": "true", "data-mcms-show-buildings": "false"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 24, "first call writes every missing attribute");
+assert.equal(root.calls.length, 30, "first call writes every missing attribute");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
 root.clearCalls();

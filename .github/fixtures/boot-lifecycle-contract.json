@@ -23,6 +23,7 @@
   "requiredDocumentListeners": [
     "keydown",
     "pointerdown",
+    "contextmenu",
     "click",
     "visibilitychange"
   ],
@@ -38,6 +39,12 @@
   "cleanupRootAttributes": [
     "data-mcms-ui-theme",
     "data-mcms-custom-theme",
+    "data-mcms-missionchief-reskin",
+    "data-mcms-dock-auto-hide",
+    "data-mcms-auto-hide-axis",
+    "data-mcms-auto-hide-revealed",
+    "data-mcms-safe-mode",
+    "data-mcms-panel-open",
     "data-mc-map-skin",
     "data-mcms-clean",
     "data-mcms-marker-focus",
@@ -89,6 +96,7 @@
     "disposePayoutMediaAudio",
     "clearDiscordPreviewChartUrl",
     "closeCommandPalette",
+    "closeContextCommandMenu",
     "closeTabletQuickWheel",
     "closeCommandExperienceModal",
     "stopDesktopPanelWorkspaceObservation",

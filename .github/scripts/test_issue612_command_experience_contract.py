@@ -19,14 +19,14 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.0.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.1.0"
 
     state = section(source, "    function defaultState()", "    function normaliseLoadedState(")
     for required in [
         "fullscreenMap: false",
         "interfaceDensity: { desktop: 'standard', tablet: 'standard' }",
         "quickWheel: { enabled: true",
-        "updateBriefing: { enabled: true, seenVersion: '' }",
+        "updateBriefing: { enabled: true, seenVersion: '', seenFeatures: [] }",
     ]:
         assert required in state, required
 

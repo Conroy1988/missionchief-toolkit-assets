@@ -219,6 +219,23 @@
           ]
         },
         {
+          "name": "Contextual Command Menus",
+          "summary": "Opens safe item-specific actions by Desktop right-click or Tablet/iOS marker long-press.",
+          "details": [
+            "Mission focus and native open",
+            "Vehicle and building native open",
+            "Local Command Palette search",
+            "No unit selection or dispatch"
+          ],
+          "visual": "context-command-menus",
+          "tags": [
+            "context",
+            "missions",
+            "touch",
+            "navigation"
+          ]
+        },
+        {
           "name": "Smart Bookmark Labels",
           "summary": "Creates compact place labels while preserving access to the complete location name.",
           "details": [
@@ -399,6 +416,71 @@
             "responsive",
             "notifications"
           ]
+        },
+        {
+          "name": "Complete MissionChief Reskinning",
+          "summary": "Extends the active Toolkit interface across MissionChief chrome, lists, windows, forms and tables with one-switch reversal.",
+          "details": [
+            "All eight Toolkit interfaces",
+            "Protected operational status colours",
+            "Validated custom-theme support",
+            "Instant native-interface restoration"
+          ],
+          "visual": "missionchief-reskin",
+          "tags": [
+            "themes",
+            "missionchief",
+            "appearance"
+          ]
+        },
+        {
+          "name": "Smart Auto-Hiding Dock",
+          "summary": "Tucks command controls toward the configured edge while preserving the launcher and live version status.",
+          "details": [
+            "Horizontal, vertical or automatic collapse",
+            "Desktop hover and focus reveal",
+            "Tablet and iOS launcher reveal",
+            "Panel-open recovery"
+          ],
+          "visual": "smart-auto-hide-dock",
+          "tags": [
+            "dock",
+            "responsive",
+            "space"
+          ]
+        },
+        {
+          "name": "Hotkey & Gesture Studio",
+          "summary": "Remaps every Toolkit keyboard command and assigns four opt-in touch-dock swipes.",
+          "details": [
+            "Duplicate-safe key validation",
+            "Editable-field and browser shortcut protection",
+            "Deliberate touch thresholds",
+            "Default restoration"
+          ],
+          "visual": "hotkey-gesture-studio",
+          "tags": [
+            "input",
+            "shortcuts",
+            "gestures",
+            "touch"
+          ]
+        },
+        {
+          "name": "Toolkit Safe Mode",
+          "summary": "Suspends optional modules without overwriting feature choices, secrets or recovery data.",
+          "details": [
+            "Settings and guaranteed exit remain available",
+            "Toolkit Doctor, export and recovery retained",
+            "Bounded secret-free transition snapshots",
+            "Original modules restore on exit"
+          ],
+          "visual": "toolkit-safe-mode",
+          "tags": [
+            "recovery",
+            "diagnostics",
+            "safety"
+          ]
         }
       ]
     },
@@ -406,6 +488,22 @@
       "name": "Release assurance",
       "description": "Know which version is installed and how the public release is verified.",
       "features": [
+        {
+          "name": "What’s New & Feature Beacon",
+          "summary": "Introduces each release feature with a direct route and keeps its Settings entry marked NEW until viewed.",
+          "details": [
+            "Once-per-version briefing",
+            "Direct Open Feature actions",
+            "Per-feature acknowledgement",
+            "Permanent manual reopen"
+          ],
+          "visual": "feature-beacon",
+          "tags": [
+            "updates",
+            "discoverability",
+            "guidance"
+          ]
+        },
         {
           "name": "Live Version Status",
           "summary": "Shows LATEST or UPDATE as a single-line map control with manual rechecking.",

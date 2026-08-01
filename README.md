@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v1000) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v1010) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,9 +58,15 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v10.0.0
+## Current interface — v10.1.0
 
 ### One command system across desktop, tablet and iPhone
+
+Version `10.1.0` makes the command experience easier to discover, faster to reach and safer to recover. **What’s New & Feature Beacon** introduces each addition with a direct Open Feature action and leaves a `NEW` marker on its Settings route until viewed. Right-click a supported mission, vehicle or building—or long-press its marker on Tablet/iOS—for a contextual menu containing safe focus, native open and local search actions only.
+
+**Complete MissionChief Reskinning** can extend the active Toolkit interface across MissionChief navigation, mission lists, windows, tables, forms and buttons while preserving operational warning, success and danger meaning. **Smart Auto-Hiding Dock** tucks the command controls against the configured edge without hiding the launcher or live version status.
+
+**Hotkey & Gesture Studio** remaps every Toolkit keyboard command with duplicate rejection and assigns four optional touch swipes. **Toolkit Safe Mode** temporarily suspends optional overlays, dashboards, effects and input surfaces while retaining Settings, Toolkit Doctor, export, recovery and a guaranteed exit. Existing feature choices, webhooks and Financial Archive data are not overwritten.
 
 Version `10.0.0` adds the six-part **Personalisation Studio**. Open it from Settings or search for it in the Command Palette to configure independent Desktop, Tablet and iOS control layouts, custom interface colours and surfaces, four through eight Quick Wheel slots, protected settings backups, first-run guidance and opt-in sounds or browser notifications.
 
@@ -100,9 +106,12 @@ Toolkit settings survive normal page refreshes and userscript updates through a 
 | **Incident Command Wire** | Broadcasts the priority incident sequence with an expanded queue and direct map navigation |
 | **Operational Pressure Board** | Opens from the map with shortcut `B` and combines mission priority, shared fleet demand, reserve risk and transport pressure into one evidence-led board |
 | **Toolkit Command Palette** | Opens with `K` and searches live missions, vehicles, buildings, locations, Settings and safe commands from one responsive surface |
+| **Contextual Command Menus** | Opens safe item-specific focus, native-open and Palette-search actions by right-click or touch long-press without dispatching units |
 | **MissionChief UK Knowledge Link** | Explains live requirements with verified units, crew, training and personnel evidence plus direct TKB Guide records |
 | **Toolkit Doctor** | Runs privacy-safe diagnostics for version, runtime ownership, persistence, map mount, public Guide reachability and responsive geometry |
 | **Personalisation Studio** | Builds independent device layouts, custom themes, a four-to-eight-slot Quick Wheel, protected backups, setup guidance and opt-in alerts |
+| **MissionChief Reskin, Smart Dock and Input Studio** | Extends the active theme across the game, auto-hides the dock and remaps every Toolkit hotkey or opt-in touch gesture |
+| **What’s New & Toolkit Safe Mode** | Makes new features discoverable and supplies a settings-preserving recovery state with Doctor, export and recovery access |
 | **Full-Screen Map and Tablet Quick Wheel** | Maximises the map with guaranteed recovery and exposes configurable long-press actions on Tablet |
 | **Operational SITREP** | Manually posts the current board snapshot to the saved Discord webhook with mention suppression and no automatic dispatch or posting |
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |

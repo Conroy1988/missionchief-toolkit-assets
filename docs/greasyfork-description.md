@@ -1,13 +1,17 @@
 # MissionChief Map Command Toolkit
 
-## v9.4.0 candidate — Toolkit Command Palette
+## v10.0.0 candidate — Personalisation Studio
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 9.4.0 adds the global Toolkit Command Palette. Press K, use the permanent Palette map control, open it from Settings or assign it to a Tablet Quick Wheel slot. It searches active missions, personal vehicles, known buildings, Quick Places, bookmarks, map profiles, Settings cards and safe Toolkit actions from a local snapshot built only when opened. Results use existing MissionChief or Toolkit pathways, never select or dispatch a vehicle and add no request, poller, observer or scheduler. The Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained v9.3 system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
+Version 10.0.0 adds one Personalisation Studio for independent Desktop, Tablet and iOS layouts, custom colours and surfaces, four through eight Quick Wheel slots, protected settings backups, a fresh-install Setup Wizard and opt-in sounds or browser notifications. Existing users upgrade without an interruption. Visual theme codes contain no secrets; local snapshots contain general Toolkit state only; Discord and Financial Archive data remain protected by the established authenticated encrypted transfer. Alerts reuse existing Toolkit lifecycle checks and add no request, poller, observer or scheduler. The Command Palette, Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained v9 system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
 
 ### Retained native systems
 
+- Six-part Personalisation Studio with per-device layouts and validated custom interface themes
+- Four-to-eight-slot Quick Wheel using actions, Quick Places, bookmarks and live Palette searches
+- Settings Backup Centre with encrypted transfer, safe export and bounded local snapshots
+- Fresh-install-only Setup Wizard plus opt-in local sounds and permissioned browser notifications
 - Global Toolkit Command Palette with K shortcut, touch operation and optional Tablet Quick Wheel access
 - Mission Age map timers and shortcut `6`
 - Mission Value

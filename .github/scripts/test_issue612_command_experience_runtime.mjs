@@ -173,7 +173,8 @@ const uiSandbox = {
     fullscreenMap: false,
     quickWheel: {
       enabled: true,
-      actions: ["myMissions", "allianceMissions", "vehicles", "buildings", "pressureBoard", "fullscreen"],
+      slotCount: 6,
+      slots: ["myMissions", "allianceMissions", "vehicles", "buildings", "pressureBoard", "fullscreen"].map(id => ({ kind: "action", id })),
     },
     interfaceDensity: { desktop: "compact", tablet: "command" },
   },
@@ -191,6 +192,7 @@ const uiSandbox = {
   fitControlToMap() {},
   positionPanelOverlay() {},
   showToast() {},
+  quickWheelSlotMeta(slot) { return { ...slot, ...uiSandbox.QUICK_WHEEL_ACTIONS[slot.id] }; },
   toggleFeature(command) { uiSandbox.lastToggle = command; },
   toggleOperationalPressureBoard() { uiSandbox.pressureToggled = true; },
   openPanel() { uiSandbox.panelOpened = true; },
@@ -251,7 +253,7 @@ const briefingDom = new JSDOM("<!doctype html><html><body></body></html>", { pre
 let briefingOpened = 0;
 const briefingSandbox = {
   document: briefingDom.window.document,
-  state: { updateBriefing: { enabled: true, seenVersion: "9.2.0" } },
+  state: { setupWizard: { completed: true }, updateBriefing: { enabled: true, seenVersion: "9.2.0" } },
   SCRIPT: { version: "9.3.0", commandExperienceModalId: "command-modal" },
   bootStartedAt: Date.now() - 5000,
   transportSweepRuntime: { running: true },

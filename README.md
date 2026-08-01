@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v932) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v1000) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,11 +58,17 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.4.0
+## Current interface — v10.0.0
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.4.0` adds the global **Toolkit Command Palette**. Press `K`, select the permanent **Palette** map control, open it from Settings or assign it to the Tablet Quick Wheel. Search active missions, personal vehicles, buildings, Quick Places, bookmarks, map profiles, Settings cards and safe Toolkit actions without leaving the map.
+Version `10.0.0` adds the six-part **Personalisation Studio**. Open it from Settings or search for it in the Command Palette to configure independent Desktop, Tablet and iOS control layouts, custom interface colours and surfaces, four through eight Quick Wheel slots, protected settings backups, first-run guidance and opt-in sounds or browser notifications.
+
+The Layout Builder supports drag, touch and keyboard-friendly arrow controls; hidden controls remain reachable through Settings and the Palette. Theme codes contain visual choices only. The Backup Centre keeps the established authenticated AES-256-GCM full transfer for private data, a secret-free safe export and five bounded local settings snapshots. Automatic snapshots contain Toolkit state only—Discord webhooks and Financial Archive identity or history remain in their dedicated stores and enter only the encrypted transfer.
+
+The Setup Wizard appears automatically only on a genuinely fresh install. Every existing user upgrades without interruption and can reopen or skip it at any time. Sounds are synthesised locally, browser permission is requested only after an explicit choice, and alerts reuse existing mission and diagnostic lifecycles without adding a network request, poller, timer or observer.
+
+Version `9.4.0` added the global **Toolkit Command Palette**. Press `K`, select the permanent **Palette** map control, open it from Settings or assign it to the Tablet Quick Wheel. Search active missions, personal vehicles, buildings, Quick Places, bookmarks, map profiles, Settings cards and safe Toolkit actions without leaving the map.
 
 Results are ranked locally from the live runtime snapshot only when the Palette opens. It adds no network request or background task, never selects or dispatches a vehicle and routes every result through an existing Toolkit or MissionChief-native pathway. The fixed Locations Quick Jumps remain **Edinburgh, Fife, Wakefield, London and Newcastle**.
 
@@ -96,7 +102,8 @@ Toolkit settings survive normal page refreshes and userscript updates through a 
 | **Toolkit Command Palette** | Opens with `K` and searches live missions, vehicles, buildings, locations, Settings and safe commands from one responsive surface |
 | **MissionChief UK Knowledge Link** | Explains live requirements with verified units, crew, training and personnel evidence plus direct TKB Guide records |
 | **Toolkit Doctor** | Runs privacy-safe diagnostics for version, runtime ownership, persistence, map mount, public Guide reachability and responsive geometry |
-| **Full-Screen Map and Tablet Quick Wheel** | Maximises the map with guaranteed recovery and exposes six configurable long-press actions on Tablet |
+| **Personalisation Studio** | Builds independent device layouts, custom themes, a four-to-eight-slot Quick Wheel, protected backups, setup guidance and opt-in alerts |
+| **Full-Screen Map and Tablet Quick Wheel** | Maximises the map with guaranteed recovery and exposes configurable long-press actions on Tablet |
 | **Operational SITREP** | Manually posts the current board snapshot to the saved Discord webhook with mention suppression and no automatic dispatch or posting |
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |
 | **Mission Value** | Shows verified mission value inside opened MissionChief windows |

@@ -380,6 +380,25 @@
             "backup",
             "devices"
           ]
+        },
+        {
+          "name": "Personalisation Studio",
+          "summary": "Tailors each device layout, visual theme, Quick Wheel and notification profile from one safe workspace.",
+          "details": [
+            "Independent Desktop, Tablet and iOS layouts",
+            "Validated visual-only theme codes",
+            "Four to eight configurable Quick Wheel slots",
+            "Encrypted transfers and five bounded local snapshots",
+            "Fresh-install setup guidance",
+            "Opt-in local sounds and browser notifications"
+          ],
+          "visual": "personalisation-studio",
+          "tags": [
+            "settings",
+            "themes",
+            "responsive",
+            "notifications"
+          ]
         }
       ]
     },

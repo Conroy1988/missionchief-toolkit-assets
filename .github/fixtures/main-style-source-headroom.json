@@ -121,26 +121,26 @@
     },
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
-  "v9Candidate": {
-    "issue": 618,
-    "version": "9.4.0",
-    "sourceBytes": 1961542,
-    "sourceLines": 30017,
-    "sourceSha256": "f544e065795e29165f653b64a08b83a8eefccb26c7a7744496cd4dc99bf64f90",
-    "templateBytes": 786166,
+  "v10Candidate": {
+    "issue": 620,
+    "version": "10.0.0",
+    "sourceBytes": 2034228,
+    "sourceLines": 30833,
+    "sourceSha256": "eac8655717ed80474eafdb7dffeaca97f26f47a1d194245712a4746cb9767428",
+    "templateBytes": 785895,
     "templateLines": 9383,
-    "templateSha256": "f34cb026ae5f324dc73889e22dbd7fd4cb3891d44b2ecd8b40340f5e3a1b9769",
-    "canonicalCssSha256": "d22fbc6d0dd89a4fecfa2c61940e3fffa6b056e814af97c61cfce23755441ff4",
-    "maxSourceBytes": 1981542,
-    "maxSourceLines": 30317,
+    "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
+    "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
+    "maxSourceBytes": 2054228,
+    "maxSourceLines": 31133,
     "minTemplateBytes": 500000,
-    "baseline": "9.3.2",
+    "baseline": "9.4.0",
     "approvedGrowth": {
-      "sourceBytes": 42937,
-      "sourceLines": 548,
-      "templateBytes": 11586,
-      "templateLines": 65
+      "sourceBytes": 72686,
+      "sourceLines": 816,
+      "templateBytes": -271,
+      "templateLines": 0
     },
-    "scope": "Issue #618 local global Command Palette, complete runtime catalogue and responsive keyboard/touch surface"
+    "scope": "Issue #620 Personalisation Studio, isolated device layouts, validated theme layer, configurable Quick Wheel, recovery snapshots, setup guidance and opt-in notifications"
   }
 }

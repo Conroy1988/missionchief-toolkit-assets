@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "9.4.0";
-const EXPECTED_SHA = "f544e065795e29165f653b64a08b83a8eefccb26c7a7744496cd4dc99bf64f90";
+const EXPECTED_VERSION = "10.0.0";
+const EXPECTED_SHA = "eac8655717ed80474eafdb7dffeaca97f26f47a1d194245712a4746cb9767428";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader"];
 
@@ -79,7 +79,7 @@ function baseState() {
     visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true }, allianceCredits: true, missionAge: true,
     transportWatcher: true, unitCommitment: true, economyMode: false, fullscreenMap: false, activeTab: "map", uiTheme: "mapCommand", theme: "classic",
     interfaceDensity: { desktop: "standard", tablet: "compact" },
-    quickWheel: { enabled: true, actions: ["myMissions", "allianceMissions", "vehicles", "buildings", "pressureBoard", "fullscreen"] },
+    quickWheel: { enabled: true, slotCount: 6, slots: ["myMissions", "allianceMissions", "vehicles", "buildings", "pressureBoard", "fullscreen"].map(id => ({ kind: "action", id })) },
     cleanMode: false, markerFocus: false, missionPulse: true, roadPriority: false, coverage: { enabled: true, radiusMi: 10 }, shortcuts: true,
     autoLoadAllVehicles: true, allianceBuildingsMap: true, missionLockAudio: true,
     payoutFlash: { enabled: true, soundEnabled: true, template: "command", threshold: 10000, durationMs: 5000, soundVolume: 0.35 },
@@ -185,6 +185,7 @@ export async function measureWriteSuppression() {
     FINANCE_REPORT_COMPLEXITIES: Object.freeze(["simple", "informative", "wolf"]), FINANCE_REPORT_COMPLEXITY_RANK: Object.freeze({ simple: 0, informative: 1, wolf: 2 }), FINANCE_REPORT_COMPLEXITY_COPY: Object.freeze({ simple: "simple", informative: "informative", wolf: "wolf" }),
     COMMAND_SECTION_META: Object.freeze({ map: { label: "Map", title: "Map Controls" }, missions: { label: "Missions", title: "Mission Operations" }, finance: { label: "Finance", title: "Finance Command" }, locations: { label: "Locations", title: "Saved Locations" }, appearance: { label: "Appearance", title: "Appearance" }, settings: { label: "Settings", title: "Toolkit Settings" } }),
     commandSearchQuery: "", mobileModeActive: false,
+    activeDockPosition: () => state.position, quickWheelSlotValue: slot => `${slot.kind}:${slot.id}`,
     applyRootAttributes: () => countNested("applyRootAttributes"), scheduleMajorIncidentFeedRender: () => countNested("scheduleMajorIncidentFeedRender"), removeMajorIncidentFeed: () => countNested("removeMajorIncidentFeed"), toolkitApplyCommandBarState: () => countNested("toolkitApplyCommandBarState"), refreshTabletModeUi: () => countNested("refreshTabletModeUi"), updateAllianceMemberManagerMenuControl: () => countNested("updateAllianceMemberManagerMenuControl"), renderTransportSweepPanel: () => countNested("renderTransportSweepPanel"), getDiscordWebhookUrl: () => "https://discord.invalid/webhook", setDiscordStatus: () => countNested("setDiscordStatus"), discordFinanceStatus: "ready", discordFinanceStatusTone: "success", setOperationalSitrepStatus: () => countNested("setOperationalSitrepStatus"), operationalSitrepStatus: "ready", operationalSitrepStatusTone: "neutral", operationalPressureBoardOpen: () => false, renderFinanceVaultStatus: () => countNested("renderFinanceVaultStatus"), renderProfiles: () => countNested("renderProfiles"), operationalVisible: false, operationalUiIsVisible: () => sandbox.operationalVisible, renderOperationalPanels: () => countNested("renderOperationalPanels"), __MCMS_PROFILER__: profiler };
   sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v9.0.1.js" });
   const panel = window.document.getElementById(sandbox.SCRIPT.panelId);

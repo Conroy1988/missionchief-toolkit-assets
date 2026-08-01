@@ -1,5 +1,19 @@
 # Changelog
 
+## [10.0.0] - 2026-08-01
+
+### Personalisation Studio
+
+- Adds one six-part Personalisation Studio for Custom Layout Builder, Visual Theme Studio, Quick Actions Wheel, Settings Backup Centre, Toolkit Setup Wizard and Custom Sounds & Notifications.
+- Stores independent Desktop, Tablet and iOS control order, visibility, dock position, panel position and panel size while keeping every hidden control reachable from Settings and the Command Palette.
+- Layers a validated custom accent, surface, text, radius, transparency and blur treatment over any retained interface theme, with live preview and portable visual-only theme codes.
+- Expands the Tablet Quick Wheel from six fixed action choices to four through eight configurable slots containing Toolkit actions, Quick Places, custom bookmarks or live mission, vehicle and building Palette searches.
+- Unifies encrypted full transfer, secret-free safe export, import, the retained recovery copy and five bounded automatic or manual local settings snapshots without placing Discord or Financial Archive secrets into snapshot storage.
+- Shows a skippable three-step Setup Wizard only for genuinely fresh installs; existing users upgrade without interruption and can reopen it manually at any time.
+- Adds disabled-by-default synthesised sound and explicitly permissioned browser notifications for new missions, completions, waiting patients, stuck incidents and Toolkit warnings while reusing existing lifecycle checks.
+- Preserves every saved v9 setting through deterministic migration, all eight interfaces, Desktop/Tablet/iOS behaviour, MissionChief-native action authority and the existing zero-background-growth performance envelope.
+- Adds static and rendered runtime regressions for Issue #620.
+
 ## [9.4.0] - 2026-07-31
 
 ### Toolkit Command Palette

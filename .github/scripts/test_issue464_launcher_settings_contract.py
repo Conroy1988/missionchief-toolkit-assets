@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 text = (ROOT / 'src' / 'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
 fixture = json.loads((ROOT / '.github/fixtures/main-style-source-headroom.json').read_text(encoding='utf-8'))
-line_limit = fixture['v9Candidate']['maxSourceLines']
+line_limit = fixture['v10Candidate']['maxSourceLines']
 
 def section(start, end):
     first = text.index(start)

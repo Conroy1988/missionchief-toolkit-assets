@@ -157,7 +157,7 @@ def command_links(install_url: str, release_url: str, script_url: str) -> str:
     return (
         f"**[⬇️ Install / Update]({install_url})**"
         f"  •  [📋 Release notes]({release_url})"
-        f"  •  [🛠️ Greasy Fork]({script_url})"
+        f"  •  [🧰 TKB Scripts]({script_url})"
     )
 
 
@@ -171,7 +171,7 @@ def build_primary(args: argparse.Namespace, brief: str) -> dict:
         "description": (
             "**VERIFIED PUBLIC RELEASE**\n"
             "The latest command package has cleared every release gate and is "
-            "available now on Greasy Fork.\n\n"
+            "available now through TKB Scripts.\n\n"
             "`LIVE`  `VERIFIED`  `RECOVERABLE`"
         ),
         "url": args.release_url,
@@ -193,7 +193,7 @@ def build_primary(args: argparse.Namespace, brief: str) -> dict:
             },
             {
                 "name": "PUBLIC CHANNEL",
-                "value": "Greasy Fork\n**SYNCED** ✅",
+                "value": "TKB Scripts\n**LIVE** ✅",
                 "inline": True,
             },
             {

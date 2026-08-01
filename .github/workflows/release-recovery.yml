@@ -256,8 +256,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+          SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           python3 .github/scripts/build_discord_release_payload.py \
             --mode primary \

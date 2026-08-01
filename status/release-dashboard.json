@@ -3,7 +3,7 @@
   "pipelineVersion": 3,
   "currentVersion": "10.2.1",
   "sourceOfTruth": "GitHub",
-  "distribution": "Greasy Fork",
+  "distribution": "TKB Scripts",
   "status": {
     "validation": "passed",
     "githubRelease": "published",
@@ -54,6 +54,8 @@
     "tkbDistributionVerified": true,
     "greasyForkVerified": false,
     "privateBackupCommit": "ee44887ee62a4bb86cdad841d09b0c3c6d3340d5",
+    "discordMessageId": "1533139417718591670",
+    "discordChannelId": "1264992613845565440",
     "discordPosted": true,
     "completedAt": "2026-08-01T15:48:41Z"
   }

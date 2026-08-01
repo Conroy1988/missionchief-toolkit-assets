@@ -47,8 +47,8 @@ jobs:
           set -euo pipefail
 
           VERSION="$(jq -r '.currentVersion' status/release-dashboard.json)"
-          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+          SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
           HASH="$(jq -r '.latestRelease.sha256 // empty' status/release-dashboard.json)"
           BACKUP_COMMIT="$(jq -r '.latestRelease.privateBackupCommit // empty' status/release-dashboard.json)"
@@ -104,7 +104,7 @@ jobs:
           embed["title"] = f"🧪 TEST // TOOLKIT {version} RELEASE CARD"
           embed["description"] = (
               "**LIVE DESIGN PREVIEW — NO RELEASE ACTION TAKEN**\n"
-              "This is a rendering test only. Greasy Fork and the published "
+              "This is a rendering test only. TKB release routes and the published "
               "version are unchanged.\n\n"
               + original_description
           )
@@ -164,5 +164,116 @@ jobs:
             BODY="✅ Discord release embed preview posted successfully. No release was created and no public version was changed."
           else
             BODY="❌ Discord release embed preview failed. Review the **Discord Release Preview** Actions run before retrying."
+          fi
+          gh issue comment "$TARGET_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+
+  refresh:
+    name: Refresh verified release card in place
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.comment.user.login == github.repository_owner &&
+      github.event.comment.author_association == 'OWNER' &&
+      startsWith(github.event.comment.body, '/refresh-release-card ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Validate release payload builder
+        run: python3 .github/scripts/test_discord_release_payload.py
+
+      - name: Build verified TKB release payload
+        id: target
+        env:
+          COMMAND: ${{ github.event.comment.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$COMMAND" =~ ^/refresh-release-card[[:space:]]+([0-9]+\.[0-9]+\.[0-9]+)$ ]] || {
+            echo "::error::Use /refresh-release-card <version>."
+            exit 1
+          }
+          VERSION="${BASH_REMATCH[1]}"
+          CURRENT_VERSION="$(jq -r '.currentVersion' status/release-dashboard.json)"
+          MESSAGE_ID="$(jq -r '.latestRelease.discordMessageId // empty' status/release-dashboard.json)"
+          RELEASED_AT="$(jq -r '.latestRelease.completedAt // empty' status/release-dashboard.json)"
+          HASH="$(jq -r '.latestRelease.sha256 // empty' status/release-dashboard.json)"
+          BACKUP_COMMIT="$(jq -r '.latestRelease.privateBackupCommit // empty' status/release-dashboard.json)"
+          [[ "$VERSION" == "$CURRENT_VERSION" ]] || {
+            echo "::error::Only the current verified release card can be refreshed."
+            exit 1
+          }
+          [[ "$MESSAGE_ID" =~ ^[0-9]{17,22}$ ]] || {
+            echo "::error::The current release does not have a stored Discord message identity."
+            exit 1
+          }
+
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { capture = 1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > release-refresh-changelog.md
+          [[ -s release-refresh-changelog.md ]] || {
+            echo "::error::Unable to extract release notes for v${VERSION}."
+            exit 1
+          }
+
+          SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
+          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
+          python3 .github/scripts/build_discord_release_payload.py \
+            --mode primary \
+            --version "$VERSION" \
+            --changelog release-refresh-changelog.md \
+            --output discord-release-refresh.json \
+            --release-url "$RELEASE_URL" \
+            --script-url "$SCRIPT_URL" \
+            --install-url "$INSTALL_URL" \
+            --sha256 "$HASH" \
+            --backup-commit "$BACKUP_COMMIT"
+          jq --arg releasedAt "$RELEASED_AT" '.embeds[0].timestamp=$releasedAt' \
+            discord-release-refresh.json > discord-release-refresh.tmp
+          mv discord-release-refresh.tmp discord-release-refresh.json
+          echo "message_id=$MESSAGE_ID" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Edit existing Discord release card
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          MESSAGE_ID: ${{ steps.target.outputs.message_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || {
+            echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."
+            exit 1
+          }
+          curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 3 \
+            --request PATCH --header "Content-Type: application/json" \
+            --data @discord-release-refresh.json \
+            "${DISCORD_WEBHOOK_URL}/messages/${MESSAGE_ID}" \
+            > discord-release-refresh-response.json
+          jq -e --arg id "$MESSAGE_ID" '.id == $id' discord-release-refresh-response.json >/dev/null
+
+      - name: Report refresh result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_NUMBER: ${{ github.event.issue.number }}
+          JOB_STATUS: ${{ job.status }}
+          VERSION: ${{ steps.target.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$JOB_STATUS" == "success" ]]; then
+            BODY="✅ Toolkit v${VERSION} Discord release card refreshed in place with TKB Scripts as the public channel."
+          else
+            BODY="❌ Discord release-card refresh failed. Review the **Discord Release Preview** Actions run before retrying."
           fi
           gh issue comment "$TARGET_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"

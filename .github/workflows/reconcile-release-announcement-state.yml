@@ -11,7 +11,6 @@ on:
     paths:
       - ".github/workflows/release-toolkit.yml"
       - ".github/workflows/reconcile-release-announcement-state.yml"
-      - ".github/greasyfork-version.txt"
       - "status/release-dashboard.json"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"
@@ -27,7 +26,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Verify release announcement tracker
+    name: Verify release announcement state
     if: >-
       github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
@@ -44,7 +43,7 @@ jobs:
           persist-credentials: false
           show-progress: false
 
-      - name: Verify dashboard and announcement tracker
+      - name: Verify dashboard and first-party authority
         id: state
         continue-on-error: true
         shell: bash
@@ -53,16 +52,15 @@ jobs:
           mkdir -p announcement-state
 
           DASHBOARD="status/release-dashboard.json"
-          TRACKER=".github/greasyfork-version.txt"
           DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' "$DASHBOARD")"
+          DISTRIBUTION_AUTHORITY="$(jq -r '.latestRelease.distributionAuthority // empty' "$DASHBOARD")"
           TKB_DISTRIBUTION_VERIFIED="$(jq -r '.latestRelease.tkbDistributionVerified // false' "$DASHBOARD")"
           DISCORD_POSTED="$(jq -r '.latestRelease.discordPosted // false' "$DASHBOARD")"
-          TRACKER_VERSION="$(tr -d '\r\n ' < "$TRACKER" 2>/dev/null || true)"
 
           ACCEPTABLE=false
           STATE="inconsistent"
           if [[ -n "$DASHBOARD_VERSION" &&
-                "$TRACKER_VERSION" == "$DASHBOARD_VERSION" &&
+                "$DISTRIBUTION_AUTHORITY" == "tkb-website-only" &&
                 "$TKB_DISTRIBUTION_VERIFIED" == "true" &&
                 "$DISCORD_POSTED" == "true" ]]; then
             ACCEPTABLE=true
@@ -72,7 +70,7 @@ jobs:
           jq -n \
             --arg state "$STATE" \
             --arg dashboardVersion "$DASHBOARD_VERSION" \
-            --arg trackerVersion "$TRACKER_VERSION" \
+            --arg distributionAuthority "$DISTRIBUTION_AUTHORITY" \
             --arg sourceCommit "$GITHUB_SHA" \
             --arg generatedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --argjson acceptable "$ACCEPTABLE" \
@@ -85,12 +83,11 @@ jobs:
               sourceCommit: $sourceCommit,
               generatedAt: $generatedAt,
               dashboardVersion: $dashboardVersion,
-              trackerVersion: $trackerVersion,
+              distributionAuthority: $distributionAuthority,
               tkbDistributionVerified: $tkbDistributionVerified,
               discordPosted: $discordPosted,
               publicMainChanged: false,
-              releaseDashboardChanged: false,
-              announcementTrackerChanged: false
+              releaseDashboardChanged: false
             }' > announcement-state/release-announcement-state.json
 
           {
@@ -98,7 +95,7 @@ jobs:
             echo
             echo "- State: **${STATE}**"
             echo "- Dashboard version: \`${DASHBOARD_VERSION:-missing}\`"
-            echo "- Tracker version: \`${TRACKER_VERSION:-missing}\`"
+            echo "- Distribution authority: \`${DISTRIBUTION_AUTHORITY:-missing}\`"
             echo "- TKB distribution verified: **${TKB_DISTRIBUTION_VERIFIED}**"
             echo "- Discord posted: **${DISCORD_POSTED}**"
             echo "- Public main changed: **no**"
@@ -126,5 +123,5 @@ jobs:
       - name: Enforce announcement-state result
         if: steps.state.outcome != 'success'
         run: |
-          echo "Verified release dashboard and announcement tracker are inconsistent. No automatic mutation was attempted."
+          echo "Verified release dashboard, TKB-only distribution authority and Discord state are inconsistent. No automatic mutation was attempted."
           exit 1

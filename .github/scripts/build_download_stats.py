@@ -61,7 +61,7 @@ def build(releases: list[dict]) -> dict:
         "measurement": {
             "newInstalls": f"GitHub Release downloads of {INSTALL_ASSET}",
             "successfulUpdates": f"GitHub Release downloads of {UPDATE_ASSET}",
-            "excludes": ["metadata checks", "page views", "Greasy Fork installs", "direct source views"],
+            "excludes": ["metadata checks", "page views", "TKB Website funnel events", "direct source views"],
         },
         "versions": versions,
         "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

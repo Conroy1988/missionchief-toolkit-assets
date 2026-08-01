@@ -88,7 +88,7 @@ def main() -> int:
             'git commit -m "Record Toolkit ${RELEASE_VERSION} verified release state"',
             "- name: Dispatch GitHub Pages asynchronously",
             "gh workflow run github-pages.yml --ref main",
-            "Dashboard, release-speed telemetry, stable update manifest and announcement tracker updated atomically",
+            "Dashboard, release-speed telemetry and stable update manifest updated atomically",
         ],
         "Production release workflow",
     )

@@ -13,7 +13,7 @@ Before every public release:
 5. Run **Actions → Release Toolkit**.
 6. Enter the exact version and type `RELEASE`.
 
-The readiness workflow does not create a GitHub Release, change Greasy Fork, post to Discord or write to the private migration repository.
+The readiness workflow does not create a GitHub Release, publish through the TKB Website, post to Discord or write to the private migration repository.
 
 ## Recovery state location
 
@@ -22,7 +22,7 @@ The governed recovery ledger is stored on the `release-state` branch:
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `status/update-manifest.json`;
-- `.github/greasyfork-version.txt`.
+- `.github/release-announcement-version.txt`.
 
 `release-recovery.yml` never commits these files to public `main`. It prepares a detached release-state worktree, validates the branch role and mutable-path allowlist, then performs a normal non-force push through `.github/scripts/release_state_branch.py`.
 
@@ -40,10 +40,9 @@ Both workflows use explicit confirmation phrases. Replace the angle-bracket plac
 | Operation | Confirmation phrase | Public effect |
 |---|---|---|
 | Verify immutable release bundle | `VERIFY <version>` | Read-only |
-| Retry Greasy Fork release event and verification | `RETRY GREASYFORK <version>` | Re-saves the existing latest GitHub Release; creates no new release |
 | Retry private migration backup | `RETRY BACKUP <version>` | Creates a missing archive or reuses an identical existing archive |
 | Retry Discord release announcement | `RETRY DISCORD <version>` | Posts only when the recovery ledger does not already record the announcement |
-| Rebuild dashboard state | `REBUILD DASHBOARD <version>` | Reconstructs release-state from verified GitHub, Greasy Fork and private archive evidence |
+| Rebuild dashboard state | `REBUILD DASHBOARD <version>` | Reconstructs release-state from verified GitHub, TKB Website and private archive evidence |
 | Repair stable GitHub Release asset names | `REPAIR ASSETS <version>` | Restores stable `.user.js` and `.txt` assets from immutable versioned assets |
 | Prepare reviewed rollback | `PREPARE ROLLBACK <source> TO <recovery>` | Opens a PR; does not publish anything |
 
@@ -90,7 +89,7 @@ Never publish an older version number as a rollback. Userscript managers general
 6. Runs JavaScript syntax and static performance checks.
 7. Opens a labelled review PR.
 
-After that PR is reviewed and merged, use the normal **Release Readiness Check** and **Release Toolkit** workflows. Rollback preparation never creates a release, changes Greasy Fork, writes the private backup or posts to Discord.
+After that PR is reviewed and merged, use the normal **Release Readiness Check** and **Release Toolkit** workflows. Rollback preparation never creates a release, publishes through the TKB Website, writes the private backup or posts to Discord.
 
 ## Release checkpoints
 
@@ -103,7 +102,7 @@ Release bundle and hashes
       ↓
 GitHub Release
       ↓
-Greasy Fork webhook and version verification
+TKB Website install/update verification
       ↓
 Private migration backup
       ↓
@@ -140,19 +139,11 @@ Run **Release Recovery → repair-stable-assets** with `REPAIR ASSETS <version>`
 
 The immutable versioned `.user.js`, `.txt`, manifest and checksums are the source of truth. The workflow restores only the stable asset names, verifies SHA-256 and re-saves the existing release. No repository branch is changed by this operation.
 
-### GitHub Release exists but Greasy Fork did not update
+### GitHub Release exists but the TKB Website did not update
 
-Confirm the TKB install, update and metadata routes resolve the matching immutable release. A delayed Greasy Fork mirror does not block TKB production, private backup, Discord or the release ledger.
+Confirm the TKB install, update and metadata routes are reachable and resolve the matching immutable release. Verify the release bundle with `VERIFY <version>`, then repair stable GitHub Release asset names when necessary with `REPAIR ASSETS <version>`. Do not bypass the first-party routes or distribute a different payload manually.
 
-If the webhook reports `Code is too long (maximum is 2097152 characters)`, verify the released `.greasyfork.user.js` asset is below the governed 1,750,000-character budget and references the matching SHA-256-pinned stylesheet. Do not upload a different payload manually.
-
-1. Verify the GitHub Release bundle with `VERIFY <version>`.
-2. Run **Release Recovery → retry-greasyfork** with `RETRY GREASYFORK <version>`.
-3. The workflow re-saves the existing release only when Greasy Fork is stale.
-4. It waits for matching metadata and verifies public asset health plus executable-body parity.
-5. It records Greasy Fork as verified on `release-state` only after those checks pass; the authoritative TKB release state remains unchanged.
-
-### Greasy Fork updated but private backup failed
+### TKB Website updated but private backup failed
 
 The public release is live, but recovery state is incomplete.
 
@@ -178,7 +169,7 @@ Run **Release Recovery → rebuild-dashboard** with `REBUILD DASHBOARD <version>
 The workflow verifies:
 
 - the immutable GitHub Release bundle and SHA-256;
-- the matching Greasy Fork metadata version;
+- the matching TKB Website metadata version;
 - the private archive version and hash;
 - the private backup commit.
 
@@ -213,4 +204,4 @@ For any archived release, the following must agree:
 - byte identity of `.user.js` and `.txt`;
 - stable and versioned release assets when stable names are present.
 
-The private repository is the authoritative disaster-recovery archive. The public GitHub Release is the distribution archive. Greasy Fork remains the installation endpoint. `release-state` is the operational recovery ledger.
+The private repository is the authoritative disaster-recovery archive. The public GitHub Release is the immutable distribution archive. The TKB Website is the sole installation and update endpoint. `release-state` is the operational recovery ledger.

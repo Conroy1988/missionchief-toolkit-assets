@@ -229,7 +229,6 @@ jobs:
             dist/MissionChief_Map_Command_Toolkit.install.user.js
             dist/MissionChief_Map_Command_Toolkit.update.user.js
             dist/MissionChief_Map_Command_Toolkit.meta.js
-            dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js
             dist/MissionChief_Map_Command_Toolkit.css
             dist/SHA256SUMS.txt
             dist/release-manifest.json

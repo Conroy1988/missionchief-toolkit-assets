@@ -50,7 +50,7 @@ def main() -> int:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
         ],
         "credential": "github.token",
         "actor": "github-actions[bot]",
@@ -84,7 +84,6 @@ def main() -> int:
             "ref: main",
             "persist-credentials: false",
             "VERIFY ${RELEASE_VERSION}",
-            "RETRY GREASYFORK ${RELEASE_VERSION}",
             "RETRY BACKUP ${RELEASE_VERSION}",
             "RETRY DISCORD ${RELEASE_VERSION}",
             "REBUILD DASHBOARD ${RELEASE_VERSION}",
@@ -94,8 +93,6 @@ def main() -> int:
             "release_state_branch.py prepare",
             "Seed recovery ledger from verified main compatibility state",
             "release_recovery_state.py seed",
-            "Record Greasy Fork recovery on release-state",
-            "record-greasyfork",
             "Record private backup recovery on release-state",
             "record-backup",
             "Claim Discord retry on release-state without posting",
@@ -120,6 +117,8 @@ def main() -> int:
             "git add status/release-dashboard.json",
             "git add \"$DASHBOARD\"",
             "github-actions[bot]@users.noreply.github.com",
+            "RETRY GREASYFORK",
+            ".greasyFork.metadataUrl",
         ],
         "Release recovery workflow",
     )
@@ -131,9 +130,8 @@ def main() -> int:
             'DASHBOARD_REL = Path("status/release-dashboard.json")',
             'README_REL = Path("status/README.md")',
             'MANIFEST_REL = Path("status/update-manifest.json")',
-            'TRACKER_REL = Path(".github/greasyfork-version.txt")',
+            'TRACKER_REL = Path(".github/release-announcement-version.txt")',
             "seed_from_main",
-            "record_greasyfork",
             "record_backup",
             "claim_discord",
             "finalize_discord",
@@ -185,8 +183,8 @@ def main() -> int:
             raise AssertionError(f"Self-tests failed: {helper.name}")
 
     print(
-        "Release recovery state contract passed: guarded API side effects, release-state-only ledger, "
-        "atomic Discord claim/finalization and no public-main mutation."
+        "Release recovery state contract passed: TKB-only guarded API side effects, release-state-only ledger, "
+        "atomic Discord claim/finalization, no retired-channel operation and no public-main mutation."
     )
     return 0
 

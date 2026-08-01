@@ -50,7 +50,7 @@ def main() -> int:
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt",
+        ".github/release-announcement-version.txt",
     ]
     release_state = branches["release-state"]
     if release_state.get("governedPaths") != state_paths:
@@ -99,7 +99,7 @@ def main() -> int:
             'path == "status/release-dashboard.json"',
             'path == "status/README.md"',
             'path == "status/update-manifest.json"',
-            'path == ".github/greasyfork-version.txt"',
+            'path == ".github/release-announcement-version.txt"',
             "cross_validate_release_state",
             "stable manifest is ahead of the recovery dashboard",
             "announcement tracker is ahead of the recovery dashboard",

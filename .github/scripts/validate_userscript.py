@@ -27,7 +27,6 @@ VARIANT_BUILDER = ROOT / ".github" / "scripts" / "build_distribution_variants.py
 INSTALL_USER_JS = DIST / "MissionChief_Map_Command_Toolkit.install.user.js"
 UPDATE_USER_JS = DIST / "MissionChief_Map_Command_Toolkit.update.user.js"
 META_JS = DIST / "MissionChief_Map_Command_Toolkit.meta.js"
-GREASY_FORK_USER_JS = DIST / "MissionChief_Map_Command_Toolkit.greasyfork.user.js"
 MAIN_STYLESHEET = DIST / "MissionChief_Map_Command_Toolkit.css"
 INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
 INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
@@ -272,7 +271,6 @@ def main() -> int:
         INSTALL_USER_JS,
         UPDATE_USER_JS,
         META_JS,
-        GREASY_FORK_USER_JS,
         MAIN_STYLESHEET,
     ]
     missing_variants = [path.name for path in distribution_files if not path.is_file()]
@@ -322,12 +320,10 @@ def main() -> int:
             "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
             "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
             "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
-            "greasyForkMirror": "non-blocking",
-            "greasyForkCharacters": variant_evidence["greasyForkCharacters"],
-            "greasyForkLimit": variant_evidence["greasyForkLimit"],
+            "authority": "tkb-website-only",
             "stylesheetSha256": variant_evidence["stylesheetSha256"],
         },
-        "distributionStatus": "dry-run-first-party-and-mirror-assets",
+        "distributionStatus": "dry-run-first-party-assets",
     }
     MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 

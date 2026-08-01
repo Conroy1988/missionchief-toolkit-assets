@@ -175,7 +175,7 @@ def main() -> int:
         "- [ ] Confirm changelog section and public wording",
         "- [ ] Review affected features, themes and operating modes",
         "- [ ] Run Release Readiness Check",
-        "- [ ] Confirm GitHub Release, Greasy Fork, private backup and Discord targets",
+        "- [ ] Confirm TKB Website distribution, GitHub Release archive, private backup and Discord targets",
         "- [ ] Publish only through the production release workflow",
         "",
     ])

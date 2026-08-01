@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Apply controlled Toolkit recovery-state transitions on ``release-state``.
 
-The GitHub Release, Greasy Fork, private backup and Discord side effects remain
+The first-party TKB release, private backup and Discord side effects remain
 owned by the workflow. This module owns only the governed operational ledger:
 dashboard JSON, rendered Markdown, stable update manifest and announcement
 tracker. Every commit is delegated to ``release_state_branch.py``.
@@ -23,7 +23,7 @@ HELPER = ROOT / ".github" / "scripts" / "release_state_branch.py"
 DASHBOARD_REL = Path("status/release-dashboard.json")
 README_REL = Path("status/README.md")
 MANIFEST_REL = Path("status/update-manifest.json")
-TRACKER_REL = Path(".github/greasyfork-version.txt")
+TRACKER_REL = Path(".github/release-announcement-version.txt")
 SETTINGS = ROOT / ".github" / "release-settings.json"
 GENERATOR = ROOT / ".github" / "scripts" / "generate_release_dashboard.py"
 MANIFEST_BUILDER = ROOT / ".github" / "scripts" / "build_stable_update_manifest.py"
@@ -176,23 +176,6 @@ def require_release(dashboard: dict, version: str) -> dict:
     return latest
 
 
-def record_greasyfork(state_root: Path, version: str) -> None:
-    version = validate_version(version)
-    state = paths(state_root)
-    dashboard = read_json(state["dashboard"])
-    latest = require_release(dashboard, version)
-    dashboard.setdefault("status", {})["greasyForkSync"] = "verified"
-    latest["greasyForkVerified"] = True
-    dashboard["lastUpdated"] = now()
-    write_json(state["dashboard"], dashboard)
-    render_dashboard(state_root)
-    commit_state(
-        state_root,
-        f"Record Toolkit {version} Greasy Fork recovery",
-        [DASHBOARD_REL, README_REL],
-    )
-
-
 def record_backup(state_root: Path, version: str, backup_commit: str) -> None:
     version = validate_version(version)
     if not FULL_COMMIT.fullmatch(backup_commit):
@@ -219,8 +202,8 @@ def claim_discord(state_root: Path, version: str, nonce: str) -> None:
     state = paths(state_root)
     dashboard = read_json(state["dashboard"])
     latest = require_release(dashboard, version)
-    if latest.get("greasyForkVerified") is not True:
-        raise RecoveryStateError("Greasy Fork is not verified; Discord retry is blocked")
+    if latest.get("tkbDistributionVerified") is not True or latest.get("distributionAuthority") != "tkb-website-only":
+        raise RecoveryStateError("TKB Website distribution is not verified as sole authority; Discord retry is blocked")
     backup_commit = str(latest.get("privateBackupCommit") or "").strip()
     if not backup_commit:
         raise RecoveryStateError("Private backup is not recorded; Discord retry is blocked")
@@ -319,7 +302,7 @@ def rebuild_dashboard(
         {
             "validation": "passed",
             "githubRelease": "published",
-            "greasyForkSync": "verified",
+            "greasyForkSync": "retired",
             "backup": "private-repository-verified",
             "discordRelease": "posted" if discord_posted else "not-posted",
             "assetAudit": "passed",
@@ -331,7 +314,9 @@ def rebuild_dashboard(
         "state": "passed",
         "requiredSecrets": True,
         "privateRepositoryReadWrite": True,
-        "greasyForkMetadataVerified": True,
+        "tkbDistributionVerified": True,
+        "distributionAuthority": "tkb-website-only",
+        "greasyForkMetadataVerified": False,
         "publicReleaseCreated": False,
         "completedAt": completed,
     }
@@ -339,7 +324,9 @@ def rebuild_dashboard(
         "version": version,
         "sha256": sha256,
         "githubRelease": release_url,
-        "greasyForkVerified": True,
+        "tkbDistributionVerified": True,
+        "distributionAuthority": "tkb-website-only",
+        "greasyForkVerified": False,
         "privateBackupCommit": backup_commit,
         "discordPosted": discord_posted,
         "completedAt": completed,
@@ -373,7 +360,7 @@ def self_test() -> None:
     else:
         raise AssertionError("Invalid recovery version was accepted")
     assert DASHBOARD_REL.as_posix() == "status/release-dashboard.json"
-    assert TRACKER_REL.as_posix() == ".github/greasyfork-version.txt"
+    assert TRACKER_REL.as_posix() == ".github/release-announcement-version.txt"
     print("Release recovery state self-tests passed.")
 
 
@@ -386,10 +373,6 @@ def parse_args() -> argparse.Namespace:
     seed.add_argument("--state-root", type=Path, required=True)
     seed.add_argument("--version", required=True)
     seed.add_argument("--allow-missing", action="store_true")
-
-    greasyfork = subcommands.add_parser("record-greasyfork")
-    greasyfork.add_argument("--state-root", type=Path, required=True)
-    greasyfork.add_argument("--version", required=True)
 
     backup = subcommands.add_parser("record-backup")
     backup.add_argument("--state-root", type=Path, required=True)
@@ -423,8 +406,6 @@ def main() -> int:
         return 0
     if args.command == "seed":
         seed_from_main(args.state_root, args.version, args.allow_missing)
-    elif args.command == "record-greasyfork":
-        record_greasyfork(args.state_root, args.version)
     elif args.command == "record-backup":
         record_backup(args.state_root, args.version, args.backup_commit)
     elif args.command == "claim-discord":

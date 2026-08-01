@@ -53,30 +53,6 @@
         "jsonPointer": "/distribution/metadataUrl",
         "path": ".github/release-settings.json"
       }
-    },
-    {
-      "id": "greasyfork-install-userscript",
-      "kind": "userscript",
-      "maxBytes": 2500000,
-      "minBytes": 1000000,
-      "required": false,
-      "urlSource": {
-        "jsonPointer": "/greasyFork/installUrl",
-        "path": ".github/release-settings.json"
-      }
-    },
-    {
-      "allowedWarningStatuses": [
-        403,
-        429
-      ],
-      "id": "greasyfork-project-page",
-      "kind": "url",
-      "required": false,
-      "urlSource": {
-        "jsonPointer": "/greasyFork/scriptUrl",
-        "path": ".github/release-settings.json"
-      }
     }
   ],
   "latestReleaseDashboard": "status/release-dashboard.json",
@@ -176,8 +152,7 @@
     }
   },
   "monitoredHosts": [
-    "raw.githubusercontent.com",
-    "update.greasyfork.org"
+    "raw.githubusercontent.com"
   ],
   "network": {
     "maxBytesPerAsset": 30000000,

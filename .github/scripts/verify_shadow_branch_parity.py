@@ -103,7 +103,7 @@ def validate_path_classes(branch: str, policy: dict) -> None:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
         ]
         expected_writers = [
             ".github/workflows/release-recovery.yml",
@@ -193,7 +193,7 @@ def validate_operational_content(path: str, content: bytes) -> tuple[bool, str, 
         metadata.update({"version": version, "manifest": manifest})
         return True, f"stable manifest v{version}", metadata
 
-    if path == ".github/greasyfork-version.txt":
+    if path == ".github/release-announcement-version.txt":
         value = text.strip()
         if not SEMVER.fullmatch(value):
             return False, f"fallback tracker is not a stable semantic version: {value!r}", metadata
@@ -209,7 +209,7 @@ def cross_validate_release_state(files: list[dict[str, object]]) -> list[str]:
     dashboard_version = str((by_path["status/release-dashboard.json"].get("metadata") or {}).get("version") or "")
     readme_version = str((by_path["status/README.md"].get("metadata") or {}).get("version") or "")
     manifest_version = str((by_path["status/update-manifest.json"].get("metadata") or {}).get("version") or "")
-    tracker_version = str((by_path[".github/greasyfork-version.txt"].get("metadata") or {}).get("version") or "")
+    tracker_version = str((by_path[".github/release-announcement-version.txt"].get("metadata") or {}).get("version") or "")
 
     if dashboard_version and readme_version and dashboard_version != readme_version:
         errors.append("release-state dashboard and rendered Markdown versions differ")
@@ -332,14 +332,14 @@ def self_test() -> None:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
         ],
         "mirroredPaths": [],
         "operationalPaths": [
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
         ],
         "operationalWriters": [
             ".github/workflows/release-recovery.yml",
@@ -359,8 +359,8 @@ def self_test() -> None:
         "cutoverIssue": 41,
     }
     assert not validate_role("release-state", role, policy)
-    assert validate_operational_content(".github/greasyfork-version.txt", b"5.0.7\n")[0]
-    assert not validate_operational_content(".github/greasyfork-version.txt", b"latest\n")[0]
+    assert validate_operational_content(".github/release-announcement-version.txt", b"5.0.7\n")[0]
+    assert not validate_operational_content(".github/release-announcement-version.txt", b"latest\n")[0]
     assert semver_tuple("5.0.7") < semver_tuple("5.0.8")
     print("Shadow branch parity self-tests passed.")
 

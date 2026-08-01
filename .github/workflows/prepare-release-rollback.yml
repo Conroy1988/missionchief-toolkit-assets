@@ -166,7 +166,7 @@ jobs:
             echo "### Safety"
             echo
             echo "- This PR does **not** publish a GitHub Release."
-            echo "- This PR does **not** change Greasy Fork."
+            echo "- This PR does **not** change any retired external channel."
             echo "- This PR does **not** post to Discord."
             echo "- After review and merge, run **Release Readiness Check** and the normal **Release Toolkit** workflow for v${RECOVERY_VERSION}."
           } > /tmp/rollback-pr.md
@@ -210,6 +210,6 @@ jobs:
             echo "- Candidate SHA-256: \`${CANDIDATE_HASH}\`"
             echo "- Review PR: ${PR_URL}"
             echo "- Public release: not created"
-            echo "- Greasy Fork: unchanged"
+            echo "- Retired external channels: unchanged"
             echo "- Discord: unchanged"
           } >> "$GITHUB_STEP_SUMMARY"

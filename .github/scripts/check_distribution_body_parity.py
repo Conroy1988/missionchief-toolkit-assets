@@ -59,7 +59,7 @@ def resolve_endpoint_urls(root: Path, policy: dict[str, Any]) -> dict[str, str]:
 
 def cache_bust(url: str) -> str:
     parsed = urllib.parse.urlparse(url)
-    if parsed.hostname not in {"update.greasyfork.org", "raw.githubusercontent.com"}:
+    if parsed.hostname not in {"tkb-gaming.scot", "raw.githubusercontent.com"}:
         return url
     query = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
     query.append(("asset_health", str(time.time_ns())))
@@ -245,7 +245,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
 def self_test() -> int:
     base = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('same');\n"
-    transformed = b"// ==UserScript==\n// @version 1.2.3\n// served-by Greasy Fork\n// ==/UserScript==\nconsole.log('same');\n"
+    transformed = b"// ==UserScript==\n// @version 1.2.3\n// served-by first-party gateway\n// ==/UserScript==\nconsole.log('same');\n"
     changed = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('changed');\n"
     assert inspect(base)["bodySha256"] == inspect(transformed)["bodySha256"]
     assert inspect(base)["sha256"] != inspect(transformed)["sha256"]

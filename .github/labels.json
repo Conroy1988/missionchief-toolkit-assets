@@ -88,7 +88,7 @@
     {
       "name": "area: release pipeline",
       "color": "000000",
-      "description": "GitHub Actions, Greasy Fork, backups, Discord or release infrastructure"
+      "description": "TKB Website, GitHub Actions, backups, Discord or release infrastructure"
     }
   ]
 }

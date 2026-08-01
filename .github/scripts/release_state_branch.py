@@ -80,7 +80,7 @@ def validate_role(role: dict) -> set[str]:
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt",
+        ".github/release-announcement-version.txt",
         ROLE_PATH.as_posix(),
     }
     if allowed_paths != required:
@@ -257,7 +257,7 @@ def self_test() -> None:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
             ".github/branch-role.json",
         ],
         "liveConsumersEnabled": False,
@@ -266,7 +266,7 @@ def self_test() -> None:
         "cutoverIssue": 41,
     }
     allowed = validate_role(role)
-    assert ".github/greasyfork-version.txt" in allowed
+    assert ".github/release-announcement-version.txt" in allowed
     assert ".github/branch-role.json" not in allowed
 
     broken = dict(role)

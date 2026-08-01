@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Build the first-party and Greasy Fork Toolkit distribution variants.
-
-The canonical userscript remains the full, self-contained TKB edition.  The
-Greasy Fork mirror differs only by loading the large non-executable main
-stylesheet from an immutable, SHA-256 pinned release resource.
-"""
+"""Build the first-party TKB Website Toolkit distribution assets."""
 
 from __future__ import annotations
 
@@ -21,16 +16,7 @@ DIST = ROOT / "dist"
 INSTALL = DIST / "MissionChief_Map_Command_Toolkit.install.user.js"
 UPDATE = DIST / "MissionChief_Map_Command_Toolkit.update.user.js"
 METADATA = DIST / "MissionChief_Map_Command_Toolkit.meta.js"
-GREASY_FORK = DIST / "MissionChief_Map_Command_Toolkit.greasyfork.user.js"
 STYLESHEET = DIST / "MissionChief_Map_Command_Toolkit.css"
-
-GREASY_FORK_CHARACTER_LIMIT = 2_097_152
-GREASY_FORK_OPERATIONAL_BUDGET = 1_750_000
-RESOURCE_NAME = "mcmsMainStyles"
-RELEASE_ASSET_URL = (
-    "https://github.com/Conroy1988/missionchief-toolkit-assets/"
-    "releases/download/v{version}/MissionChief_Map_Command_Toolkit.css"
-)
 
 
 class DistributionError(RuntimeError):
@@ -42,7 +28,6 @@ class VariantResult:
     version: str
     stylesheet_sha256: str
     stylesheet_bytes: int
-    greasy_fork_characters: int
 
 
 def fail(message: str) -> None:
@@ -130,61 +115,6 @@ def render_stylesheet(source: str) -> str:
     return rendered
 
 
-def build_greasy_fork_source(source: str, version: str, stylesheet_hash: str) -> str:
-    call_start, call_end, _ = main_styles_template(source)
-    resource_url = RELEASE_ASSET_URL.format(version=version)
-    header = metadata_block(source)
-    body = source[len(header):]
-
-    if "// @grant        GM_getResourceText" in header or f"// @resource     {RESOURCE_NAME} " in header:
-        fail("canonical TKB source must not contain Greasy Fork resource metadata")
-    header = header.replace(
-        "// @grant        GM_deleteValue\n",
-        "// @grant        GM_deleteValue\n// @grant        GM_getResourceText\n",
-    )
-    header = header.replace(
-        "// @run-at       document-start\n",
-        f"// @resource     {RESOURCE_NAME} {resource_url}#sha256={stylesheet_hash}\n"
-        "// @run-at       document-start\n",
-    )
-    header = re.sub(
-        r"^//\s*@downloadURL\s+.+$",
-        "// @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
-        header,
-        flags=re.MULTILINE,
-    )
-    header = re.sub(
-        r"^//\s*@updateURL\s+.+$",
-        "// @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js",
-        header,
-        flags=re.MULTILINE,
-    )
-
-    replacement = (
-        "        const resourceCss = typeof GM_getResourceText === 'function'\n"
-        f"        ? GM_getResourceText('{RESOURCE_NAME}')\n"
-        "        : '';\n"
-        "        if (typeof resourceCss !== 'string' || resourceCss.length < 500000) {\n"
-        "        mainStylesInstalled = false;\n"
-        "        throw new Error('Toolkit stylesheet resource is unavailable or failed integrity validation.');\n"
-        "        }\n"
-        "        addStyle(resourceCss);"
-    )
-    body_call_start = call_start - len(header) + len(metadata_block(source))
-    body_call_end = call_end - len(header) + len(metadata_block(source))
-    # The metadata header length is unchanged until this point in the canonical source.
-    canonical_header_length = len(metadata_block(source))
-    body_call_start = call_start - canonical_header_length
-    body_call_end = call_end - canonical_header_length
-    variant = header + body[:body_call_start] + replacement + body[body_call_end:]
-
-    if "addStyle(`" in variant[variant.find("function installMainStyles()"):variant.find("function installMainStyles()") + 1000]:
-        fail("Greasy Fork build retained the embedded main stylesheet")
-    if f"#sha256={stylesheet_hash}" not in variant:
-        fail("Greasy Fork build is missing the stylesheet integrity pin")
-    return variant
-
-
 def build() -> VariantResult:
     source_bytes = SOURCE.read_bytes()
     source = source_bytes.decode("utf-8")
@@ -200,25 +130,10 @@ def build() -> VariantResult:
     STYLESHEET.write_bytes(stylesheet_bytes)
     stylesheet_hash = sha256_bytes(stylesheet_bytes)
 
-    greasy_fork = build_greasy_fork_source(source, version, stylesheet_hash)
-    greasy_fork_characters = len(greasy_fork)
-    if greasy_fork_characters > GREASY_FORK_CHARACTER_LIMIT:
-        fail(
-            f"Greasy Fork variant has {greasy_fork_characters} characters, "
-            f"over the {GREASY_FORK_CHARACTER_LIMIT} hard limit"
-        )
-    if greasy_fork_characters > GREASY_FORK_OPERATIONAL_BUDGET:
-        fail(
-            f"Greasy Fork variant has {greasy_fork_characters} characters, "
-            f"over the {GREASY_FORK_OPERATIONAL_BUDGET} operational budget"
-        )
-    GREASY_FORK.write_text(greasy_fork, encoding="utf-8")
-
     return VariantResult(
         version=version,
         stylesheet_sha256=stylesheet_hash,
         stylesheet_bytes=len(stylesheet_bytes),
-        greasy_fork_characters=greasy_fork_characters,
     )
 
 
@@ -228,9 +143,6 @@ def main() -> int:
         "version": result.version,
         "stylesheetSha256": result.stylesheet_sha256,
         "stylesheetBytes": result.stylesheet_bytes,
-        "greasyForkCharacters": result.greasy_fork_characters,
-        "greasyForkLimit": GREASY_FORK_CHARACTER_LIMIT,
-        "greasyForkBudget": GREASY_FORK_OPERATIONAL_BUDGET,
     }, indent=2))
     return 0
 

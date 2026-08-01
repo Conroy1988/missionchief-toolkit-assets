@@ -103,7 +103,7 @@ jobs:
                   ;;
                 'Release Toolkit')
                   TITLE='🚀 Production release pipeline started'
-                  DESCRIPTION='The validated candidate has entered publication, Greasy Fork verification and private-backup processing.'
+                  DESCRIPTION='The validated candidate has entered first-party TKB publication and private-backup processing.'
                   COLOR='5763719'
                   STAGE='Production'
                   ;;
@@ -128,7 +128,7 @@ jobs:
                     ;;
                   'Release Toolkit')
                     TITLE='✅ Production pipeline completed'
-                    DESCRIPTION='Publication, Greasy Fork verification, private backup and the formal release announcement completed successfully.'
+                    DESCRIPTION='First-party TKB publication, private backup and the formal release announcement completed successfully.'
                     COLOR='5763719'
                     STAGE='Production'
                     ;;

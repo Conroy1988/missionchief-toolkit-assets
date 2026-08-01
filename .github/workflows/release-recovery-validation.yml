@@ -71,7 +71,6 @@ jobs:
           set -euo pipefail
           required=(
             'VERIFY <version>'
-            'RETRY GREASYFORK <version>'
             'RETRY BACKUP <version>'
             'RETRY DISCORD <version>'
             'REBUILD DASHBOARD <version>'

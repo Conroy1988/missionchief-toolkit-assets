@@ -51,7 +51,6 @@ def main() -> int:
             "needs.classify.outputs.releaseCandidate == 'true'",
             "needs.classify.outputs.exhaustiveIntegrity == 'true'",
             "needs.classify.outputs.exhaustivePerformance == 'true'",
-            "needs.classify.outputs.externalParity == 'true'",
             "Allow intentionally skipped lanes",
             "CLASSIFY_RESULT: ${{ needs.classify.result }}",
         ),
@@ -73,7 +72,7 @@ def main() -> int:
         (
             "fail closed",
             "Documentation-only",
-            "External Greasy Fork parity",
+            "Retired external distribution checks",
             "exact-tree",
         ),
         "path-aware documentation",

@@ -11,7 +11,6 @@ RELEASE = ROOT / ".github" / "workflows" / "release-toolkit.yml"
 VERIFY = ROOT / ".github" / "workflows" / "reconcile-release-announcement-state.yml"
 CARD_OPERATIONS = ROOT / ".github" / "workflows" / "discord-release-preview.yml"
 DASHBOARD = ROOT / "status" / "release-dashboard.json"
-TRACKER = ROOT / ".github" / "greasyfork-version.txt"
 
 
 def require(text: str, markers: list[str], label: str) -> None:
@@ -31,18 +30,16 @@ def main() -> int:
     verify = VERIFY.read_text(encoding="utf-8")
     card_operations = CARD_OPERATIONS.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
-    tracker = TRACKER.read_text(encoding="utf-8").strip()
 
     require(release, [
         "Post verified release to Discord",
         "Record successful release, manifest, announcement and speed state",
-        "printf '%s\\n' \"$RELEASE_VERSION\" > .github/greasyfork-version.txt",
         "python3 .github/scripts/build_stable_update_manifest.py",
         "status/update-manifest.json",
         "discord-release-response.json",
         "message_id=$DISCORD_MESSAGE_ID",
         "discordMessageId:$discordMessageId",
-        "Dashboard, release-speed telemetry, stable update manifest and announcement tracker updated atomically",
+        "Dashboard, release-speed telemetry and stable update manifest updated atomically",
     ], "Production release workflow")
     discord_index = release.index("      - name: Post verified release to Discord")
     state_index = release.index("      - name: Record successful release, manifest, announcement and speed state")
@@ -54,8 +51,9 @@ def main() -> int:
         "name: Verify Release Announcement State",
         "permissions:\n  contents: read",
         "persist-credentials: false",
-        "Verify dashboard and announcement tracker",
-        "announcementTrackerChanged: false",
+        "Verify dashboard and first-party authority",
+        "distributionAuthority",
+        "tkb-website-only",
         "Upload immutable announcement-state evidence",
         "missionchief-release-announcement-state-${{ github.sha }}",
         "tkbDistributionVerified",
@@ -73,8 +71,8 @@ def main() -> int:
     ], "Announcement-state verification workflow")
 
     latest = dashboard.get("latestRelease") or {}
-    if str(latest.get("version") or "") != tracker:
-        raise AssertionError("Committed announcement tracker does not match latest verified release")
+    if latest.get("distributionAuthority") != "tkb-website-only":
+        raise AssertionError("Latest verified release does not retain TKB Website-only authority")
     if latest.get("tkbDistributionVerified") is not True:
         raise AssertionError("Latest verified release is not marked TKB distribution verified")
     if latest.get("discordPosted") is not True:

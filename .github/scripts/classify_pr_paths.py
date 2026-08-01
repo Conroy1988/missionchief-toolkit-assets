@@ -22,7 +22,6 @@ BOOL_KEYS = (
     "releaseCandidate",
     "exhaustiveIntegrity",
     "exhaustivePerformance",
-    "externalParity",
 )
 
 
@@ -54,7 +53,6 @@ def classify(paths: Iterable[str], policy: dict, *, full: bool = False) -> dict:
     result["matchedGroups"] = {name: [] for name in groups}
 
     if full:
-        result["externalParity"] = True
         return result
 
     if not normalized:
@@ -125,7 +123,6 @@ def classify(paths: Iterable[str], policy: dict, *, full: bool = False) -> dict:
         or unknown
         or bool(result["matchedGroups"]["performanceExhaustive"])
     )
-    result["externalParity"] = False
     return result
 
 
@@ -169,7 +166,6 @@ def self_test(policy: dict) -> None:
     assert source["releaseChecks"]
     assert not source["exhaustiveIntegrity"]
     assert not source["exhaustivePerformance"]
-    assert not source["externalParity"]
 
     docs = classify(["README.md", "docs/SITE.md"], policy)
     assert docs["repository"] and docs["documentationChecks"]

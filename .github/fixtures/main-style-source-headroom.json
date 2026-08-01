@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 641,
-    "version": "10.2.6",
-    "sourceBytes": 2118054,
-    "sourceLines": 32010,
-    "sourceSha256": "7ab40a8bd896ff429d4377bc920487a1b12b13ea0be23790981392863c3a2b91",
+    "issue": "first-party-analytics",
+    "version": "10.3.0",
+    "sourceBytes": 2125219,
+    "sourceLines": 32150,
+    "sourceSha256": "6ef3e1fa6d2bdba16cd191a5b6bb42c2497bfa964c715945244521dcb3869d18",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
     "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
     "maxSourceBytes": 2129504,
-    "maxSourceLines": 32048,
+    "maxSourceLines": 32190,
     "minTemplateBytes": 500000,
-    "baseline": "10.2.5",
+    "baseline": "10.2.6",
     "approvedGrowth": {
-      "sourceBytes": 10224,
-      "sourceLines": 121,
+      "sourceBytes": 7165,
+      "sourceLines": 140,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #641 visible-map Desktop dock containment with Major Incident Wire reservation and internal command scrolling"
+    "scope": "First-party privacy-safe Toolkit lifecycle, adoption, feature, performance and bounded error analytics"
   }
 }

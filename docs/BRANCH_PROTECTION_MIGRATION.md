@@ -9,7 +9,6 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - `.github/shadow-branch-policy.json`;
 - `.github/scripts/test_branch_write_inventory.py`;
 - `.github/scripts/test_validation_candidate_pipeline.py`;
-- `.github/scripts/test_greasyfork_parity_pipeline.py`;
 - `.github/scripts/test_release_announcement_state_pipeline.py`;
 - `.github/scripts/test_update_manifest_pipeline.py`;
 - `.github/scripts/test_release_authority_pipeline.py`;
@@ -26,7 +25,7 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - owner-authenticated review branches for packages and rollback preparation;
 - explicit production, recovery and shadow-synchronization confirmation phrases;
 - exact commit/ref/hash validation evidence;
-- deterministic dashboard, Greasy Fork, announcement-state and update-manifest verification;
+- deterministic dashboard, first-party distribution, announcement-state and update-manifest verification;
 - atomic production dashboard, stable manifest and announcement compatibility state;
 - isolated non-live `release-state` and `distribution` branches;
 - verified administrator repair access to both operational branches;
@@ -42,30 +41,30 @@ The 24 July 2026 baseline identified 10 direct public-main writers. Every `conte
 
 ### Artifact-only validation and evidence ✅
 
-Seven workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
+Six workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
 
 - canonical userscript validation;
 - release dry runs;
 - repository/dependency audits;
 - release dashboard projection;
-- Greasy Fork canonical parity;
 - release announcement-state verification;
 - stable update-manifest verification.
 
 ### GitHub source authority ✅
 
-Automatic source importing is retired. GitHub is authoritative. Live Greasy Fork parity accepts canonical-ahead during publication and fails on live-ahead or equal-version content drift.
+Automatic source importing is retired. GitHub is the immutable release archive and the TKB Website is the sole install/update authority.
 
 ### Atomic production compatibility state ✅
 
 Normal production releases no longer require follow-up announcement or manifest commits.
 
-After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` commits these together:
+After TKB Website verification, private backup and Discord publication, `release-toolkit.yml` commits these together:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `status/update-manifest.json`;
-- `.github/greasyfork-version.txt`.
+- `status/release-speed-history.json`;
+- `status/RELEASE_SPEED.md`.
 
 The manifest is built by `.github/scripts/build_stable_update_manifest.py`. The former publisher is now a read-only projection verifier with retained evidence.
 
@@ -96,9 +95,7 @@ The connected administrator identity completed:
 
 ### Fallback announcer retired ✅
 
-The former `greasyfork-release-monitor.yml` first moved off public `main`, then was retired completely in v10.2.3 after TKB became the supported public channel.
-
-Greasy Fork is still checked as a non-blocking discovery mirror, but it cannot post a release or define the public version. The controlled production workflow verifies the exact live TKB install, update and metadata version before it posts to Discord.
+The former external release monitor was retired completely in v10.2.3 after TKB became the supported public channel. Its remaining scheduled parity workflow and mirror builder are now removed. The controlled production workflow verifies the exact live TKB install, update and metadata version before it posts to Discord.
 
 ### Release recovery ledger moved to release-state ✅
 
@@ -107,7 +104,6 @@ Greasy Fork is still checked as a non-blocking discovery mirror, but it cannot p
 The workflow retains all exact confirmation phrases and the shared `toolkit-production-release` lock. Its external operations remain unchanged:
 
 - verify immutable GitHub Release bundles;
-- retry Greasy Fork release events;
 - retry private migration backups;
 - retry Discord announcements;
 - repair stable GitHub Release assets.
@@ -122,7 +118,7 @@ All recovery-ledger mutations are delegated to `.github/scripts/release_recovery
 The recovery-state layer:
 
 - seeds from newer verified `main` compatibility state when necessary;
-- records Greasy Fork and backup recovery;
+- records private-backup recovery;
 - creates a pending Discord claim before the HTTP post;
 - finalises Discord state only when the expected claim nonce remains current;
 - rebuilds verified dashboard state from release and private-backup evidence;
@@ -153,8 +149,8 @@ Direct public-main writers are reduced from **10 to 1**.
 
 Public `main` still contains:
 
-1. stable `dist/` and root Greasy Fork mirrors;
-2. dashboard, stable manifest and announcement compatibility state written by normal production releases.
+1. reviewed first-party distribution source and generated assets;
+2. dashboard, stable manifest and release-speed compatibility state written by normal production releases.
 
 Fallback and recovery workflows no longer mutate `main`. Only `release-toolkit.yml` remains a direct public-main writer.
 
@@ -166,7 +162,7 @@ Reviewed source, workflows, tests, policy, documentation and temporary compatibi
 
 ### Distribution branch
 
-Stable `dist/` and root userscript mirrors required by Greasy Fork, written by a narrowly scoped release GitHub App.
+Stable first-party distribution mirrors, written by a narrowly scoped release GitHub App after cutover.
 
 ### Release-state branch
 
@@ -174,7 +170,7 @@ Primary dashboard, manifest, announcement, fallback-monitor and recovery state. 
 
 ### Immutable evidence
 
-Validation candidates, parity audits, synchronization plans, announcement checks, dashboard and manifest projections, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
+Validation candidates, synchronization plans, announcement checks, dashboard and manifest projections, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
 
 ## Access and speed requirements
 
@@ -201,13 +197,12 @@ The final protection design must retain fast owner operation:
 8. ✅ Move release recovery state to `release-state`.
 9. Move primary production dashboard, manifest and announcement authority to `release-state`.
 10. Publish a versioned Toolkit migration that reads the manifest from `release-state` with a reviewed compatibility fallback.
-11. Move stable `dist/` and Greasy Fork mirrors to `distribution`.
+11. Move stable first-party distribution mirrors to `distribution`.
 12. Replace temporary credentials with a narrowly scoped GitHub App.
 13. Remove unnecessary `contents: write` from orchestration-only workflows.
 14. Rehearse without public-main mutation:
     - normal Release Readiness;
     - full production publication;
-    - Greasy Fork-only retry;
     - private-backup-only retry;
     - Discord-only retry;
     - dashboard reconstruction;

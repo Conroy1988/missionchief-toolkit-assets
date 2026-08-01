@@ -108,7 +108,6 @@
       ".github/scripts/test_development_package_workflow.py",
       ".github/scripts/test_automation_record_hygiene.py",
       ".github/scripts/test_branch_write_inventory.py",
-      ".github/scripts/test_greasyfork_parity_pipeline.py",
       ".github/scripts/test_release_announcement_state_pipeline.py",
       ".github/scripts/test_release_authority_pipeline.py",
       ".github/scripts/test_release_recovery_state_pipeline.py",

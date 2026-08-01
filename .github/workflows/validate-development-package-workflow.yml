@@ -11,7 +11,6 @@ on:
       - ".github/workflows/pages-production-monitor.yml"
       - ".github/workflows/validate-development-package-workflow.yml"
       - ".github/scripts/*.sh"
-      - ".github/scripts/audit_greasyfork_canonical_parity.py"
       - ".github/scripts/audit_repository.py"
       - ".github/scripts/build_stable_update_manifest.py"
       - ".github/scripts/generate_release_dashboard.py"
@@ -24,12 +23,11 @@ on:
       - ".github/scripts/verify_validation_candidate.py"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"
-      - ".github/greasyfork-version.txt"
+      - ".github/release-announcement-version.txt"
       - ".github/shadow-branch-policy.json"
       - ".github/scripts/test_automation_record_hygiene.py"
       - ".github/scripts/test_branch_write_inventory.py"
       - ".github/scripts/test_development_package_workflow.py"
-      - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_release_announcement_state_pipeline.py"
       - ".github/scripts/test_release_recovery_state_pipeline.py"
       - ".github/scripts/test_release_authority_pipeline.py"
@@ -72,7 +70,6 @@ jobs:
             python3 .github/scripts/test_automation_record_hygiene.py
             python3 .github/scripts/test_branch_write_inventory.py
             python3 .github/scripts/test_validation_candidate_pipeline.py
-            python3 .github/scripts/test_greasyfork_parity_pipeline.py
             python3 .github/scripts/test_release_announcement_state_pipeline.py
             python3 .github/scripts/test_release_authority_pipeline.py
             python3 .github/scripts/test_release_recovery_state_pipeline.py

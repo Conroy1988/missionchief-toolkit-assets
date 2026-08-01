@@ -31,14 +31,14 @@
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt"
+        ".github/release-announcement-version.txt"
       ],
       "mirroredPaths": [],
       "operationalPaths": [
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt"
+        ".github/release-announcement-version.txt"
       ],
       "operationalWriters": [
         ".github/workflows/release-recovery.yml"

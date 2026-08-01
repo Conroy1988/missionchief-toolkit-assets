@@ -1,5 +1,18 @@
 # Changelog
 
+## [10.1.0] - 2026-08-01
+
+### Command Experience
+
+- Adds a once-per-version **What’s New & Feature Beacon** with direct Open Feature actions and persistent `NEW` Settings badges until each route is visited.
+- Adds Desktop right-click and Tablet/iOS marker long-press contextual menus for safe focus, native open and local Palette-search actions without selecting or dispatching units.
+- Extends the active Toolkit theme across MissionChief navigation, lists, windows, tables, forms and buttons while preserving operational status colours and one-switch native restoration.
+- Adds a Smart Auto-Hiding Dock with horizontal, vertical or dock-following collapse, Desktop hover/focus reveal and touch launcher recovery.
+- Adds Hotkey & Gesture Studio for every Toolkit keyboard command, duplicate-safe binding validation and four opt-in dock swipes with deliberate touch thresholds.
+- Adds Toolkit Safe Mode to suspend optional modules while preserving Settings, Doctor, encrypted and safe export, recovery snapshots and a guaranteed exit.
+- Migrates existing v10 state without prompting, takes bounded secret-free snapshots before Safe Mode transitions and retains Discord webhook and Financial Archive separation.
+- Adds no request, poller, interval, observer or animation-frame scheduler and adds Issue #622 static plus rendered runtime regressions.
+
 ## [10.0.0] - 2026-08-01
 
 ### Personalisation Studio

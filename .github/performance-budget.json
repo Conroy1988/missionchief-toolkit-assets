@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-620-personalisation-studio-v10",
-  "rationale": "Approve the measured Issue #620 Personalisation Studio source and responsive-style growth while retaining zero growth in requests, schedulers, listeners, DOM lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-08-01-issue-622-command-experience-v10-1",
+  "rationale": "Approve the measured Issue #622 user-triggered command-experience source, responsive-style and single lifecycle-managed context-menu listener growth while retaining zero growth in requests, schedulers, direct listeners, DOM lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 620,
-    "version": "10.0.0",
+    "issue": 622,
+    "version": "10.1.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "User-triggered Personalisation Studio for isolated device layouts, validated theme settings, configurable Quick Wheel slots, protected backups, setup guidance and opt-in notifications.",
+    "scope": "User-triggered feature beacons, contextual safe actions, reversible MissionChief reskinning, smart dock, remappable inputs and settings-preserving Toolkit Safe Mode.",
     "approvedMutationObserverDelta": 0,
-    "approvedManagedListenerDelta": 0
+    "approvedManagedListenerDelta": 1
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -17,8 +17,8 @@
   "absoluteLimits": {
     "bytes": 3000000,
     "lines": 64000,
-    "css_bytes": 950000,
-    "css_rule_blocks": 7000,
+    "css_bytes": 1100000,
+    "css_rule_blocks": 7500,
     "set_interval_calls": 4,
     "set_timeout_calls": 25,
     "mutation_observers": 9,
@@ -34,7 +34,7 @@
     "runtime_observer_track_calls": 15,
     "runtime_idle_calls": 3,
     "mutation_observer_constructions": 13,
-    "resize_observer_constructions": 4,
+    "resize_observer_constructions": 5,
     "broad_subtree_observers": 11,
     "document_wide_subtree_observers": 4,
     "get_element_by_id_calls": 113,
@@ -70,7 +70,7 @@
       "failPercent": 10.0
     },
     "css_rule_blocks": {
-      "warnDelta": 25,
+      "warnDelta": 60,
       "failDelta": 255
     },
     "set_interval_calls": {
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 620,
+      "version": "10.0.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "User-triggered Personalisation Studio for isolated device layouts, validated theme settings, configurable Quick Wheel slots, protected backups, setup guidance and opt-in notifications.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 618,
       "version": "9.4.0",

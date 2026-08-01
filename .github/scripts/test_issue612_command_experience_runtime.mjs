@@ -171,6 +171,7 @@ const uiSandbox = {
   },
   state: {
     fullscreenMap: false,
+    safeMode: { enabled: false },
     quickWheel: {
       enabled: true,
       slotCount: 6,

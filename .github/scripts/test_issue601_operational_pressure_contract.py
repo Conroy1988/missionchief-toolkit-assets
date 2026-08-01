@@ -46,11 +46,12 @@ def main() -> int:
     assert "dispatch vehicles" in board
 
     shortcuts = section(source, "    function handleKeyboard(event)", "    function buildThemeOptions(")
-    assert "key === 'b'" in shortcuts
-    assert "toggleOperationalPressureBoard()" in shortcuts
+    assert "state.inputStudio.hotkeys[key] === binding" in shortcuts
+    assert "executeInputCommand(command)" in shortcuts
+    assert "pressureBoard: 'B'" in source
 
     update_ui = section(source, "    function updateUI()", "    function ensureUi()")
-    assert "Operational Pressure Board: ${open ? 'active' : 'off'}. Shortcut: B." in update_ui
+    assert "state.inputStudio.hotkeys.pressureBoard || 'none'" in update_ui
     assert "open ? 'ACTIVE' : 'OFF'" in update_ui
     assert "pressureBoardToggle" in update_ui
 

@@ -31,11 +31,13 @@
     "open-backup-centre",
     "open-command-palette",
     "open-help-center",
+    "open-input-studio",
     "open-layout-studio",
     "open-notification-studio",
     "open-personalisation-studio",
     "open-pressure-board",
     "open-setup-wizard",
+    "open-shell-studio",
     "open-tablet-quick-wheel",
     "open-theme-studio",
     "open-update-briefing",
@@ -55,6 +57,7 @@
     "stop-transport-sweep",
     "test-payout-flash",
     "toggle-command-search",
+    "toggle-safe-mode",
     "toolkit-doctor"
   ],
   "dynamicActions": [

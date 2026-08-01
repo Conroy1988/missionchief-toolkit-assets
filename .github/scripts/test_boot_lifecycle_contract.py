@@ -31,17 +31,18 @@ FUNCTION_NAMES = [
 
 def extract_function(source: str, masked: str, name: str) -> str:
     pattern = re.compile(rf"\b(?:async\s+)?function\s+{re.escape(name)}\s*\(")
-    matches = list(pattern.finditer(masked))
+    matches = list(pattern.finditer(source))
     if len(matches) != 1:
         raise AssertionError(f"Expected one declaration for {name}, found {len(matches)}")
     start = matches[0].start()
-    parameter_open = masked.find("(", start)
+    local_masked = audit.mask_non_code(source[start:])
+    parameter_open = local_masked.find("(")
     if parameter_open < 0:
         raise AssertionError(f"Parameter list not found for {name}")
     depth = 0
     parameter_close = None
-    for index in range(parameter_open, len(masked)):
-        char = masked[index]
+    for index in range(parameter_open, len(local_masked)):
+        char = local_masked[index]
         if char == "(":
             depth += 1
         elif char == ")":
@@ -51,11 +52,11 @@ def extract_function(source: str, masked: str, name: str) -> str:
                 break
     if parameter_close is None:
         raise AssertionError(f"Parameter list did not close for {name}")
-    opening = masked.find("{", parameter_close + 1)
-    closing = audit.matching_brace(masked, opening)
+    opening = local_masked.find("{", parameter_close + 1)
+    closing = audit.matching_brace(local_masked, opening)
     if opening < 0 or closing is None:
         raise AssertionError(f"Unable to extract {name}")
-    return source[start:closing + 1]
+    return source[start:start + closing + 1]
 
 
 def extract_runtime_block(source: str) -> str:

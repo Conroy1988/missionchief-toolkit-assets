@@ -1,13 +1,18 @@
 # MissionChief Map Command Toolkit
 
-## v10.0.0 candidate — Personalisation Studio
+## v10.1.0 candidate — Command Experience
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 10.0.0 adds one Personalisation Studio for independent Desktop, Tablet and iOS layouts, custom colours and surfaces, four through eight Quick Wheel slots, protected settings backups, a fresh-install Setup Wizard and opt-in sounds or browser notifications. Existing users upgrade without an interruption. Visual theme codes contain no secrets; local snapshots contain general Toolkit state only; Discord and Financial Archive data remain protected by the established authenticated encrypted transfer. Alerts reuse existing Toolkit lifecycle checks and add no request, poller, observer or scheduler. The Command Palette, Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained v9 system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
+Version 10.1.0 adds What’s New feature beacons, safe right-click/long-press contextual menus, complete optional MissionChief reskinning, a Smart Auto-Hiding Dock, remappable hotkeys and opt-in touch gestures, and Toolkit Safe Mode. Safe Mode suspends optional modules without overwriting settings, Discord webhook or Financial Archive data; Settings, Toolkit Doctor, export, recovery and the exit remain available. Context menus never select or dispatch units. Existing v10 users upgrade without interruption, and the release adds no request, poller, interval, observer or animation-frame scheduler. Personalisation Studio, Command Palette, Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
 
 ### Retained native systems
 
+- What’s New & Feature Beacon with direct feature routes and persistent per-feature NEW markers
+- Contextual Command Menus by right-click or touch long-press for missions, vehicles and buildings
+- Complete MissionChief Reskinning plus reversible Smart Auto-Hiding Dock
+- Hotkey & Gesture Studio with duplicate-safe bindings and opt-in touch swipes
+- Toolkit Safe Mode with settings-preserving recovery and guaranteed exit
 - Six-part Personalisation Studio with per-device layouts and validated custom interface themes
 - Four-to-eight-slot Quick Wheel using actions, Quick Places, bookmarks and live Palette searches
 - Settings Backup Centre with encrypted transfer, safe export and bounded local snapshots

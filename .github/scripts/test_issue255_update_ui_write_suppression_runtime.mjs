@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "10.0.0";
-const EXPECTED_SHA = "eac8655717ed80474eafdb7dffeaca97f26f47a1d194245712a4746cb9767428";
+const EXPECTED_VERSION = "10.1.0";
+const EXPECTED_SHA = "7e192b39af59341ea7ed2ca132613776e6a261d10acd211b83d712a9da2a1084";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader"];
 
@@ -79,6 +79,8 @@ function baseState() {
     visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true }, allianceCredits: true, missionAge: true,
     transportWatcher: true, unitCommitment: true, economyMode: false, fullscreenMap: false, activeTab: "map", uiTheme: "mapCommand", theme: "classic",
     interfaceDensity: { desktop: "standard", tablet: "compact" },
+    inputStudio: { hotkeys: { menu: "M", palette: "K", myMissions: "1", allianceMissions: "2", vehicles: "3", buildings: "4", allianceCredits: "5", missionAge: "6", transportWatcher: "7", unitCommitment: "8", vehicleCodes: "V", pressureBoard: "B", clean: "C", markerFocus: "F", missionPulse: "P", roadPriority: "R", safeMode: "Shift+S" }, gestures: { enabled: false } },
+    updateBriefing: { enabled: true, seenVersion: "", seenFeatures: [] }, safeMode: { enabled: false },
     quickWheel: { enabled: true, slotCount: 6, slots: ["myMissions", "allianceMissions", "vehicles", "buildings", "pressureBoard", "fullscreen"].map(id => ({ kind: "action", id })) },
     cleanMode: false, markerFocus: false, missionPulse: true, roadPriority: false, coverage: { enabled: true, radiusMi: 10 }, shortcuts: true,
     autoLoadAllVehicles: true, allianceBuildingsMap: true, missionLockAudio: true,

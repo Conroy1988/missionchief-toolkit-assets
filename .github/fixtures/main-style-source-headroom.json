@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
   "candidateVersion": "5.0.7",
@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 620,
-    "version": "10.0.0",
-    "sourceBytes": 2034228,
-    "sourceLines": 30833,
-    "sourceSha256": "eac8655717ed80474eafdb7dffeaca97f26f47a1d194245712a4746cb9767428",
+    "issue": 622,
+    "version": "10.1.0",
+    "sourceBytes": 2072545,
+    "sourceLines": 31247,
+    "sourceSha256": "7e192b39af59341ea7ed2ca132613776e6a261d10acd211b83d712a9da2a1084",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
     "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
-    "maxSourceBytes": 2054228,
-    "maxSourceLines": 31133,
+    "maxSourceBytes": 2092545,
+    "maxSourceLines": 31547,
     "minTemplateBytes": 500000,
-    "baseline": "9.4.0",
+    "baseline": "10.0.0",
     "approvedGrowth": {
-      "sourceBytes": 72686,
-      "sourceLines": 816,
-      "templateBytes": -271,
+      "sourceBytes": 38317,
+      "sourceLines": 414,
+      "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #620 Personalisation Studio, isolated device layouts, validated theme layer, configurable Quick Wheel, recovery snapshots, setup guidance and opt-in notifications"
+    "scope": "Issue #622 feature beacons, contextual actions, reversible MissionChief reskinning, smart dock, remappable inputs and settings-preserving Safe Mode"
   }
 }

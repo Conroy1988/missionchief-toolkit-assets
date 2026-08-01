@@ -58,6 +58,8 @@ def main() -> int:
         "announcementTrackerChanged: false",
         "Upload immutable announcement-state evidence",
         "missionchief-release-announcement-state-${{ github.sha }}",
+        "tkbDistributionVerified",
+        "TKB distribution verified",
         "No automatic mutation was attempted.",
     ], "Announcement-state verification workflow")
     forbid(verify, [
@@ -67,6 +69,7 @@ def main() -> int:
         "git pull --rebase",
         "github-actions[bot]",
         "git reset --hard",
+        "latestRelease.greasyForkVerified",
     ], "Announcement-state verification workflow")
 
     latest = dashboard.get("latestRelease") or {}

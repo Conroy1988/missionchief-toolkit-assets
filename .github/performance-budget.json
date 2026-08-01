@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-622-command-experience-v10-1",
-  "rationale": "Approve the measured Issue #622 user-triggered command-experience source, responsive-style and single lifecycle-managed context-menu listener growth while retaining zero growth in requests, schedulers, direct listeners, DOM lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-08-01-issue-624-operational-map-flow-v10-2",
+  "rationale": "Approve the measured Issue #624 exact progress, user-triggered vehicle follow, current-page alliance preview and allowlisted session-cleanup source/style growth while retaining zero growth in requests, schedulers, listeners, DOM ID lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 622,
-    "version": "10.1.0",
+    "issue": 624,
+    "version": "10.2.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "User-triggered feature beacons, contextual safe actions, reversible MissionChief reskinning, smart dock, remappable inputs and settings-preserving Toolkit Safe Mode.",
+    "scope": "Exact Mission Progress Rings, explicit personal Unit Locator and Follow Mode, current-page Alliance Chat Mission Previews and protected One-Click Session Cleanup.",
     "approvedMutationObserverDelta": 0,
-    "approvedManagedListenerDelta": 1
+    "approvedManagedListenerDelta": 0
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 622,
+      "version": "10.1.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "User-triggered feature beacons, contextual safe actions, reversible MissionChief reskinning, smart dock, remappable inputs and settings-preserving Toolkit Safe Mode.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 1
+    },
     {
       "issue": 620,
       "version": "10.0.0",

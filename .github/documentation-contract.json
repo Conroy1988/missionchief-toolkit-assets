@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -89,7 +89,11 @@
     "Complete MissionChief reskin",
     "Smart auto-hiding dock",
     "Hotkey Studio",
-    "Toolkit Safe Mode"
+    "Toolkit Safe Mode",
+    "Mission Progress Rings",
+    "Unit Locator & Follow Mode",
+    "Alliance Chat Mission Previews",
+    "One-Click Session Cleanup"
   ],
   "installUrls": [
     "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
@@ -116,7 +120,11 @@
     "Complete MissionChief Reskinning",
     "Smart Auto-Hiding Dock",
     "Hotkey & Gesture Studio",
-    "Toolkit Safe Mode"
+    "Toolkit Safe Mode",
+    "Mission Progress Rings",
+    "Unit Locator & Follow Mode",
+    "Alliance Chat Mission Previews",
+    "One-Click Session Cleanup"
   ],
   "publicDocumentation": {
     "readmeRequiredTokens": [
@@ -137,7 +145,11 @@
       "Complete MissionChief Reskinning",
       "Smart Auto-Hiding Dock",
       "Hotkey & Gesture Studio",
-      "Toolkit Safe Mode"
+      "Toolkit Safe Mode",
+      "Mission Progress Rings",
+      "Unit Locator & Follow Mode",
+      "Alliance Chat Mission Previews",
+      "One-Click Session Cleanup"
     ],
     "readmeForbiddenTokens": [
       "Operational Window Suite",
@@ -170,7 +182,11 @@
       "Complete MissionChief Reskinning",
       "Smart Auto-Hiding Dock",
       "Hotkey & Gesture Studio",
-      "Toolkit Safe Mode"
+      "Toolkit Safe Mode",
+      "Mission Progress Rings",
+      "Unit Locator & Follow Mode",
+      "Alliance Chat Mission Previews",
+      "One-Click Session Cleanup"
     ],
     "helpForbiddenTokens": [
       "Operational Window Suite",
@@ -203,7 +219,11 @@
       "Complete MissionChief Reskinning",
       "Smart Auto-Hiding Dock",
       "Hotkey & Gesture Studio",
-      "Toolkit Safe Mode"
+      "Toolkit Safe Mode",
+      "Mission Progress Rings",
+      "Unit Locator & Follow Mode",
+      "Alliance Chat Mission Previews",
+      "One-Click Session Cleanup"
     ],
     "greasyForkForbiddenTokens": [
       "Operational Window Suite",

@@ -108,6 +108,40 @@
             "discord",
             "shortcut"
           ]
+        },
+        {
+          "name": "Mission Progress Rings",
+          "summary": "Shows accessible exact clearing progress around supported live mission markers without replacing them.",
+          "details": [
+            "Exact MissionChief remaining-progress values",
+            "Exact patient and prisoner fallback totals",
+            "Unknown progress is never guessed",
+            "Independent Mission Intelligence toggle"
+          ],
+          "visual": "mission-progress-rings",
+          "tags": [
+            "missions",
+            "map",
+            "progress",
+            "accessibility"
+          ]
+        },
+        {
+          "name": "Alliance Chat Mission Previews",
+          "summary": "Adds live mission context beside existing alliance-chat mission links without fetching or storing chat content.",
+          "details": [
+            "Current-page live mission evidence only",
+            "Native mission links preserved",
+            "No chat message or user identity storage",
+            "No linked-mission request"
+          ],
+          "visual": "alliance-chat-mission-previews",
+          "tags": [
+            "missions",
+            "alliance",
+            "chat",
+            "privacy"
+          ]
         }
       ]
     },
@@ -128,6 +162,23 @@
             "vehicles",
             "status",
             "shortcut"
+          ]
+        },
+        {
+          "name": "Unit Locator & Follow Mode",
+          "summary": "Searches current personal vehicles locally and follows one explicitly selected live marker.",
+          "details": [
+            "Caption, ID, type, station and FMS/status search",
+            "One-time Locate and deliberate Follow actions",
+            "Visible Stop control",
+            "Automatic cancellation on manual movement, marker loss, Safe Mode or teardown"
+          ],
+          "visual": "unit-locator-follow",
+          "tags": [
+            "vehicles",
+            "search",
+            "map",
+            "follow"
           ]
         },
         {
@@ -415,6 +466,23 @@
             "themes",
             "responsive",
             "notifications"
+          ]
+        },
+        {
+          "name": "One-Click Session Cleanup",
+          "summary": "Previews and clears only allowlisted transient Toolkit state while protecting durable configuration and private data.",
+          "details": [
+            "Exact preview and confirmation",
+            "Temporary effects, searches, notification memory and rebuildable caches only",
+            "Settings, profiles, bookmarks and recovery snapshots protected",
+            "Secrets, webhooks, finance history and MissionChief data protected"
+          ],
+          "visual": "one-click-session-cleanup",
+          "tags": [
+            "settings",
+            "maintenance",
+            "privacy",
+            "recovery"
           ]
         },
         {

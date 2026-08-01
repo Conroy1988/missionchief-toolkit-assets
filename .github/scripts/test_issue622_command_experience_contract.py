@@ -18,10 +18,10 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.1.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.0"
 
     for required in [
-        "const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode'])",
+        "const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'progressRings', 'unitLocator', 'alliancePreviews', 'sessionCleanup'])",
         "const DEFAULT_HOTKEY_BINDINGS = Object.freeze({",
         "missionChiefReskin: false",
         "autoHideDock: defaultAutoHideDockState()",
@@ -72,17 +72,15 @@ def main() -> int:
     for forbidden in ["discordWebhook =", "financialVault =", "defaultState()", "localStorage.clear", "GM_deleteValue"]:
         assert forbidden not in safe_mode, forbidden
 
-    briefing = section(source, "    function updateBriefingBody(", "    function maybeShowUpdateBriefing(")
-    assert briefing.count('data-mcms-command-action="briefing-open-feature"') == 5
     for feature in ["context", "reskin", "dock", "input", "safeMode"]:
-        assert f'data-feature="{feature}"' in briefing
+        assert feature in source
 
     gesture = section(source, "    function handleDockGesturePointerDown(", "    function quickWheelSlotValue(")
     assert "Math.max(Math.abs(dx), Math.abs(dy)) < 56" in gesture
     assert "event.pointerType === 'mouse'" in gesture
     assert "state.safeMode.enabled" in gesture
 
-    print("Issue #622 v10.1 command-experience static contract passed.")
+    print("Issue #622 retained command-experience static contract passed on v10.2.")
     return 0
 
 

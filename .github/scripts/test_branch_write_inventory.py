@@ -213,7 +213,7 @@ def main() -> int:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/release-announcement-version.txt",
+            ".github/greasyfork-version.txt",
         ],
         "credential": "github.token",
         "actor": "github-actions[bot]",

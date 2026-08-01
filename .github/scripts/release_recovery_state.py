@@ -23,7 +23,7 @@ HELPER = ROOT / ".github" / "scripts" / "release_state_branch.py"
 DASHBOARD_REL = Path("status/release-dashboard.json")
 README_REL = Path("status/README.md")
 MANIFEST_REL = Path("status/update-manifest.json")
-TRACKER_REL = Path(".github/release-announcement-version.txt")
+TRACKER_REL = Path(".github/greasyfork-version.txt")
 SETTINGS = ROOT / ".github" / "release-settings.json"
 GENERATOR = ROOT / ".github" / "scripts" / "generate_release_dashboard.py"
 MANIFEST_BUILDER = ROOT / ".github" / "scripts" / "build_stable_update_manifest.py"
@@ -360,7 +360,7 @@ def self_test() -> None:
     else:
         raise AssertionError("Invalid recovery version was accepted")
     assert DASHBOARD_REL.as_posix() == "status/release-dashboard.json"
-    assert TRACKER_REL.as_posix() == ".github/release-announcement-version.txt"
+    assert TRACKER_REL.as_posix() == ".github/greasyfork-version.txt"
     print("Release recovery state self-tests passed.")
 
 

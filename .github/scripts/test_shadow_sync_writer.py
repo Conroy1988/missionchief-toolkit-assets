@@ -59,7 +59,7 @@ def main() -> int:
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/release-announcement-version.txt",
+        ".github/greasyfork-version.txt",
     ]
     if release_state.get("mirroredPaths") != []:
         raise AssertionError("release-state must have no manual mirror-copy paths")

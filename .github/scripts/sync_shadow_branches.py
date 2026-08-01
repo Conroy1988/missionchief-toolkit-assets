@@ -29,7 +29,7 @@ RELEASE_STATE_PATHS = [
     "status/release-dashboard.json",
     "status/README.md",
     "status/update-manifest.json",
-    ".github/release-announcement-version.txt",
+    ".github/greasyfork-version.txt",
 ]
 RELEASE_STATE_WRITERS = [
     ".github/workflows/release-recovery.yml",

@@ -22,7 +22,7 @@ The governed recovery ledger is stored on the `release-state` branch:
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `status/update-manifest.json`;
-- `.github/release-announcement-version.txt`.
+- `.github/greasyfork-version.txt` (legacy filename; announcement tracker only).
 
 `release-recovery.yml` never commits these files to public `main`. It prepares a detached release-state worktree, validates the branch role and mutable-path allowlist, then performs a normal non-force push through `.github/scripts/release_state_branch.py`.
 

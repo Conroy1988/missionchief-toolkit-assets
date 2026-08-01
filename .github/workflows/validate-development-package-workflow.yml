@@ -23,7 +23,7 @@ on:
       - ".github/scripts/verify_validation_candidate.py"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"
-      - ".github/release-announcement-version.txt"
+      - ".github/greasyfork-version.txt"
       - ".github/shadow-branch-policy.json"
       - ".github/scripts/test_automation_record_hygiene.py"
       - ".github/scripts/test_branch_write_inventory.py"

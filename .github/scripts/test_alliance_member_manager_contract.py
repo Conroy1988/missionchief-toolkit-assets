@@ -16,7 +16,9 @@ assert current_version >= (8, 1, 5)
 for marker in [
     "disposeAllianceMemberManager();",
     "allianceMemberManagerEnsureMountObserver",
-    "isAllianceMemberManagerRoute() || allianceMemberManagerHasDomContext()",
+    "!allianceMemberManagerHasDomContext()",
+    "Member route found; waiting for a confirmed member view",
+    "characterData: true",
     "allianceMemberManagerDisconnectMountObserver",
     "allianceMemberManagerMutationRelevant",
     "pageWindow.__MCMS_UI_MOUNTS__",

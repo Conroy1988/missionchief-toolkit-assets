@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-634-retire-progress-rings-chat-previews-v10-2-3",
-  "rationale": "Approve the measured Issue #634 retirement of Mission Progress Rings and Alliance Chat Mission Previews, including removal of their rendering, settings, styling and chat-specific observer routing with zero growth in runtime primitives.",
+  "revision": "2026-08-01-issue-636-alliance-member-manager-page-isolation-v10-2-4",
+  "rationale": "Approve the measured Issue #636 Alliance Member Manager active-view guard and cross-page teardown regression with zero growth in requests, observers or managed listeners.",
   "transitionApproval": {
-    "issue": 634,
-    "version": "10.2.3",
+    "issue": 636,
+    "version": "10.2.4",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Retire the progress-ring Leaflet surface and Alliance Chat preview cards while preserving native MissionChief markers, chat and the remaining v10.2 tools.",
+    "scope": "Require positive active Members/Mitglieder view evidence before mounting Alliance Member Manager and dispose it when the host switches to Applications or another alliance page.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 634,
+      "version": "10.2.3",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Retire the progress-ring Leaflet surface and Alliance Chat preview cards while preserving native MissionChief markers, chat and the remaining v10.2 tools.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 632,
       "version": "10.2.2",

@@ -11,6 +11,17 @@ const rendered = fs.readFileSync(".github/fixtures/issue553-alliance-member-mana
 const bodyMatch = rendered.match(/<body>([\s\S]*)<\/body>/iu);
 assert.ok(bodyMatch, "rendered member fixture body missing");
 const memberBody = bodyMatch[1];
+const applicationBody = `
+<main id="external-member-root">
+  <nav><a href="/verband/mitglieder/123">Members</a><a class="active" aria-current="page" href="/verband/bewerbungen">New Applicants</a></nav>
+  <h1>Application</h1>
+  <table class="table table-striped">
+    <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+    <tbody><tr><td><a href="/profile/99">M_Stewart</a></td><td><button>Accept</button><button>Deny</button></td></tr></tbody>
+  </table>
+</main>`;
+const APPLICATIONS_FAIL_CLOSED_SCENARIO = "applications-fail-closed";
+const MEMBER_TO_APPLICATIONS_TEARDOWN_SCENARIO = "member-to-applications-teardown";
 
 function extractFunction(name) {
   const marker = `    function ${name}(`;
@@ -39,10 +50,10 @@ assert.notEqual(blockStart, -1);
 assert.notEqual(blockEnd, -1);
 const managerBlock = source.slice(blockStart, blockEnd + "    // </mcms-alliance-member-manager>".length);
 
-function createScenario({ pathname, initialMemberDom, gmEnabled, localEnabled }) {
+function createScenario({ pathname, initialMemberDom, initialBody = null, gmEnabled, localEnabled }) {
   const url = `https://www.missionchief.co.uk${pathname}`;
   const dom = new JSDOM(
-    `<!doctype html><html><head></head><body>${initialMemberDom ? memberBody : '<main id="map-root"></main>'}</body></html>`,
+    `<!doctype html><html><head></head><body>${initialBody ?? (initialMemberDom ? memberBody : '<main id="map-root"></main>')}</body></html>`,
     { url, pretendToBeVisual: true }
   );
   const { window } = dom;
@@ -113,6 +124,18 @@ const direct = createScenario({ pathname: "/verband/mitglieder/123", initialMemb
 await flush();
 assertMounted("direct-route-static-dom", direct);
 
+const application = createScenario({
+  pathname: "/verband/mitglieder/123",
+  initialMemberDom: false,
+  initialBody: applicationBody,
+  gmEnabled: true,
+  localEnabled: null,
+});
+await flush();
+assert.equal(application.window.document.querySelector("#mcms-alliance-member-manager"), null, `${APPLICATIONS_FAIL_CLOSED_SCENARIO}: Applications view mounted the member manager`);
+assert.equal(application.sandbox.__probe.receipt()?.state, "watching", `${APPLICATIONS_FAIL_CLOSED_SCENARIO}: Applications view did not remain fail-closed`);
+assert.match(application.sandbox.__probe.receipt()?.detail || "", /confirmed member view/u, `${APPLICATIONS_FAIL_CLOSED_SCENARIO}: stale member route did not require DOM confirmation`);
+
 const delayed = createScenario({ pathname: "/", initialMemberDom: false, gmEnabled: true, localEnabled: null });
 await flush();
 assert.ok(delayed.sandbox.__probe.observer(), "enabled neutral route did not install mount observer");
@@ -132,6 +155,12 @@ await flush(24);
 assertMounted("framework-rerender", delayed);
 assert.notEqual(delayed.window.document.querySelector("#mcms-alliance-member-manager"), oldPanel, "rerender reused detached panel");
 
+delayed.window.document.querySelector("#external-member-root")?.remove();
+appendMemberBody(delayed.window.document, applicationBody);
+await flush(24);
+assert.equal(delayed.window.document.querySelector("#mcms-alliance-member-manager"), null, `${MEMBER_TO_APPLICATIONS_TEARDOWN_SCENARIO}: manager remained mounted`);
+assert.equal(delayed.sandbox.__probe.receipt()?.state, "watching", `${MEMBER_TO_APPLICATIONS_TEARDOWN_SCENARIO}: observer did not return to watching`);
+
 delayed.sandbox.__probe.setEnabled(false);
 await flush();
 assert.equal(delayed.gm.value, false, "userscript storage was not updated");
@@ -140,5 +169,6 @@ assert.equal(delayed.sandbox.__probe.observer(), null, "disable did not disconne
 assert.equal(delayed.sandbox.__probe.receipt()?.state, "disabled", "disable receipt missing");
 
 direct.dom.window.close();
+application.dom.window.close();
 delayed.dom.window.close();
-console.log("Full UI mount integration passed: direct mount, neutral-route delayed mount, framework rerender, cross-origin setting persistence and deterministic disable teardown.");
+console.log("Full UI mount integration passed: direct mount, Applications fail-closed guard, neutral-route delayed mount, framework rerender, cross-page teardown, cross-origin setting persistence and deterministic disable teardown.");

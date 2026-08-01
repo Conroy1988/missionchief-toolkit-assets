@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.3
+// @version      10.2.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -29,7 +29,7 @@
 // @connect      discordapp.com
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
-// @resource     mcmsMainStyles https://github.com/Conroy1988/missionchief-toolkit-assets/releases/download/v10.2.3/MissionChief_Map_Command_Toolkit.css#sha256=5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b
+// @resource     mcmsMainStyles https://github.com/Conroy1988/missionchief-toolkit-assets/releases/download/v10.2.4/MissionChief_Map_Command_Toolkit.css#sha256=5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b
 // @run-at       document-start
 // @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
 // @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js
@@ -469,7 +469,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.3',
+        version: '10.2.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -21525,11 +21525,29 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function allianceMemberManagerHasDomContext(doc = document) {
         const table = allianceMemberManagerTable(doc);
         if (!table) return false;
-        const heading = Array.from(doc.querySelectorAll('h1, h2'))
-            .map(node => String(node.textContent || '').replace(/\s+/gu, ' ').trim())
-            .join(' ');
-        return /\bmembers?\b|\bmitglieder\b/iu.test(heading)
-            || Boolean(doc.querySelector('a[href^="/verband/mitglieder/"]'));
+        const headingLabel = heading => {
+            const clone = heading.cloneNode(true);
+            clone.querySelectorAll('small, .badge, [data-member-page-summary]').forEach(node => node.remove());
+            return String(clone.textContent || '').replace(/\s+/gu, ' ').trim();
+        };
+        let viewRoot = table.parentElement;
+        for (let depth = 0; viewRoot && depth < 8; depth += 1, viewRoot = viewRoot.parentElement) {
+            const headings = Array.from(viewRoot.children || [])
+                .filter(node => node.matches?.('h1, h2'));
+            if (!headings.length) continue;
+            return headings.some(heading =>
+                /^(?:(?:alliance|verband)\s+)?(?:members?|mitglieder)\b/iu.test(headingLabel(heading))
+            );
+        }
+        return Array.from(doc.querySelectorAll('a[href]')).some(link => {
+            const href = String(link.getAttribute('href') || '');
+            const memberLink = /^\/verband\/mitglieder(?:\/|$)/iu.test(href)
+                || /^\/alliances?\/(?:\d+\/)?members(?:\/|$)/iu.test(href)
+                || /^\/alliance_members(?:\/|$)/iu.test(href);
+            if (!memberLink) return false;
+            return link.matches?.('.active, [aria-current="page"]')
+                || Boolean(link.closest?.('li.active, .active > a, [aria-current="page"]'));
+        });
     }
 
     function allianceMemberManagerMountTarget(table) {
@@ -21567,16 +21585,21 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function allianceMemberManagerMutationRelevant(records) {
         const ownedSelector = '[data-mcms-ui-owned="alliance-member-manager"]';
-        return records.some(record => Array.from(record.addedNodes || [])
-            .concat(Array.from(record.removedNodes || []))
-            .some(node => {
+        return records.some(record => {
+            if (record.type === 'characterData') {
+                return Boolean(record.target?.parentElement?.closest?.('h1, h2, [data-member-page-summary]'));
+            }
+            return Array.from(record.addedNodes || [])
+                .concat(Array.from(record.removedNodes || []))
+                .some(node => {
                 if (!node || ![1, 11].includes(node.nodeType)) return false;
                 if (node.nodeType === 1 && (node.matches?.(ownedSelector) || node.closest?.(ownedSelector))) return false;
                 if (node.nodeType === 1 && node.matches?.('table, h1, h2, [data-member-page-summary], #mcms-alliance-member-manager')) return true;
                 return Boolean(node.querySelector?.(
                     'table, h1, h2, a[href^="/profile/"], a[href*="/profile/"], #mcms-alliance-member-manager'
                 ));
-            }));
+                });
+        });
     }
 
     function allianceMemberManagerQueueReconcile(reason = 'dom-change') {
@@ -21609,7 +21632,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 allianceMemberManagerQueueReconcile('member-dom-mutation');
             }
         });
-        allianceMemberManagerMountObserver.observe(root, { childList: true, subtree: true });
+        allianceMemberManagerMountObserver.observe(root, { characterData: true, childList: true, subtree: true });
         return true;
     }
 
@@ -21907,7 +21930,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (
             allianceMemberManagerPage ||
             !allianceMemberManagerEnabled() ||
-            !(isAllianceMemberManagerRoute() || allianceMemberManagerHasDomContext()) ||
+            !allianceMemberManagerHasDomContext() ||
             allianceMemberManagerOtherOwnerPresent()
         ) return;
         const table = allianceMemberManagerTable(document);
@@ -22069,12 +22092,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const observing = allianceMemberManagerEnsureMountObserver();
         const routeMatch = isAllianceMemberManagerRoute();
         const domMatch = allianceMemberManagerHasDomContext();
-        if (!routeMatch && !domMatch) {
+        if (!domMatch) {
             allianceMemberManagerClearMountNotice();
             disposeAllianceMemberManager();
             allianceMemberManagerRecordMountState(
                 observing ? 'watching' : 'waiting',
-                'Enabled; waiting for an alliance member view'
+                routeMatch
+                    ? 'Member route found; waiting for a confirmed member view'
+                    : 'Enabled; waiting for an alliance member view'
             );
             return;
         }

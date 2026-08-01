@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.2.4] - 2026-08-01
+
+### Alliance Member Manager page isolation
+
+- Restricts Alliance Member Manager to a positively identified active Members or Mitglieder view instead of trusting the shared alliance navigation link.
+- Prevents Applications and every other alliance page from mounting the manager even when they contain profile rows or a stale member-route URL.
+- Removes an already-mounted manager immediately when in-page alliance navigation replaces the Members view, restoring the native table before returning to passive observation.
+- Adds rendered-DOM regressions for the reported Applications leak, stale-route rejection and Members-to-Applications teardown while preserving delayed member-page mounting and rerender recovery.
+
 ## [10.2.3] - 2026-08-01
 
 ### Cleaner mission map and Alliance Chat

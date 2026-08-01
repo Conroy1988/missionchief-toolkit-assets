@@ -16,8 +16,10 @@
       "mountReceipt": "window.__MCMS_UI_MOUNTS__.allianceMemberManager",
       "requiredScenarios": [
         "direct-route-static-dom",
+        "applications-fail-closed",
         "neutral-route-delayed-dom",
-        "framework-rerender"
+        "framework-rerender",
+        "member-to-applications-teardown"
       ]
     }
   }

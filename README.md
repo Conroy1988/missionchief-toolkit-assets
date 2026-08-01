@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v10.2.3
+## Current interface — v10.2.4
 
 ### One command system across desktop, tablet and iPhone
 
-Version `10.2.3` restores a cleaner native MissionChief map and Alliance Chat by retiring Mission Progress Rings and Alliance Chat Mission Previews completely. Their map layer, generated cards, settings, saved-state keys, observer branch and styling have been removed. **Unit Locator & Follow Mode** remains available to search personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected. **One-Click Session Cleanup** continues to preview an exact transient-state allowlist before confirmation and protects settings, device layouts, themes, profiles, bookmarks, recovery snapshots, Discord webhooks, secrets, Financial Archive history and MissionChief data.
+Version `10.2.4` confines **Alliance Member Manager** to a positively identified active Members or Mitglieder view. Shared alliance navigation links, Applications profile rows and stale member-route URLs can no longer make it appear on the wrong page, and in-page navigation away from Members removes it immediately. It retains the cleaner native MissionChief map and Alliance Chat introduced in v10.2.3. **Unit Locator & Follow Mode** remains available to search personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected. **One-Click Session Cleanup** continues to preview an exact transient-state allowlist before confirmation and protects settings, device layouts, themes, profiles, bookmarks, recovery snapshots, Discord webhooks, secrets, Financial Archive history and MissionChief data.
 
 Version `10.1.0` makes the command experience easier to discover, faster to reach and safer to recover. **What’s New & Feature Beacon** introduces each addition with a direct Open Feature action and leaves a `NEW` marker on its Settings route until viewed. Right-click a supported mission, vehicle or building—or long-press its marker on Tablet/iOS—for a contextual menu containing safe focus, native open and local search actions only.
 

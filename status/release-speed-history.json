@@ -862,6 +862,34 @@
         "discordAfterGitHubRelease": 11
       },
       "greasyForkAttempts": 6
+    },
+    {
+      "version": "10.2.1",
+      "pipelineVersion": 4,
+      "benchmarkClass": "normal",
+      "includeInHotfixBaseline": true,
+      "candidateCommit": "36c2b55284fbf3beb32bce8be7ef572816106f00",
+      "pullRequest": 630,
+      "prCreatedAt": "2026-08-01T15:44:36Z",
+      "mergedAt": "2026-08-01T15:46:26Z",
+      "implementationReadyAt": "2026-08-01T15:44:21Z",
+      "validationCompletedAt": "2026-08-01T15:45:53Z",
+      "releaseStartedAt": "2026-08-01T15:46:56Z",
+      "githubReleaseAt": "2026-08-01T15:47:04Z",
+      "discordPostedAt": "2026-08-01T15:48:41Z",
+      "verifiedAt": "2026-08-01T15:48:41Z",
+      "durationsSeconds": {
+        "implementationToGreen": 92,
+        "greenToMerge": 33,
+        "prToVerified": 245,
+        "mergeToGitHubRelease": 38,
+        "mergeToVerified": 135,
+        "releaseWorkflow": 105,
+        "greasyForkPropagation": 0,
+        "privateBackup": 5,
+        "discordAfterGitHubRelease": 97
+      },
+      "greasyForkAttempts": 18
     }
   ]
 }

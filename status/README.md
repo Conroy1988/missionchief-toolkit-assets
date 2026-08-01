@@ -2,14 +2,14 @@
 
 > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
 
-## Current version: `10.1.0`
+## Current version: `10.2.1`
 
 | System | Health | State |
 |---|:---:|---|
 | Canonical source | 🟢 | Validated Canonical Source |
 | Validation | 🟢 | Passed |
 | GitHub Release | 🟢 | Published |
-| Greasy Fork | 🟢 | Verified |
+| Greasy Fork | 🔵 | Delayed |
 | Private backup | 🟢 | Private Repository Verified |
 | Discord development | 🟢 | Configured |
 | Discord releases | 🟢 | Posted |
@@ -17,10 +17,10 @@
 
 ## Release state
 
-- **Latest recorded version:** `10.1.0`
+- **Latest recorded version:** `10.2.1`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `7e192b39af59341ea7ed2ca132613776e6a261d10acd211b83d712a9da2a1084`
+- **Validated SHA-256:** `91099941cf510ab506076cccc32c7255fba6f6b552c58c61848c5f5244578d7d`
 - **Candidate validation evidence:** immutable GitHub Actions artifact tied to the exact source commit
 
 ## Repository health
@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last release-state update:** `2026-08-01T02:52:02Z`
+- **Last release-state update:** `2026-08-01T15:48:41Z`
 
 ## Release channels
 

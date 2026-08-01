@@ -32,7 +32,6 @@ RELEASE_STATE_PATHS = [
     ".github/greasyfork-version.txt",
 ]
 RELEASE_STATE_WRITERS = [
-    ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/release-recovery.yml",
 ]
 

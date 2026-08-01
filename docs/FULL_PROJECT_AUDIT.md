@@ -168,11 +168,11 @@ The production workflow now updates together:
 
 This prevents the public control panel from showing a stale pre-release state after a successful release.
 
-### Fallback monitor retained
+### Fallback monitor retired
 
-The Greasy Fork fallback monitor remains scheduled every five minutes. It is intentionally retained while the improved primary command and reconciliation path accumulate more production history.
+The scheduled Greasy Fork fallback announcer was retired in v10.2.3 after TKB became the supported public channel. Greasy Fork remains a non-blocking discovery mirror, but it can no longer announce a Toolkit version or overwrite Discord release state.
 
-A future low-risk reduction to a 15–30 minute interval remains appropriate after several more successful releases. The fallback should not be removed until equivalent incident detection is proven.
+The controlled production workflow now verifies that the live TKB install, update and metadata endpoints all serve the exact candidate version before Discord publication.
 
 ### Development package workflow retained as recovery only
 

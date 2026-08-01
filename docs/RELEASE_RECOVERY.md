@@ -51,7 +51,7 @@ Both workflows use explicit confirmation phrases. Replace the angle-bracket plac
 
 Write operations in **Release Recovery** may target only the current latest GitHub Release. This prevents an archived version from replacing active distribution state.
 
-The workflow shares the `toolkit-production-release` concurrency lock with formal production and fallback monitoring. Recovery cannot overlap a production release or fallback announcement reconciliation.
+The workflow shares the `toolkit-production-release` concurrency lock with formal production. Recovery cannot overlap a production release.
 
 The workflow checks out `main` with `persist-credentials: false`. `main` supplies source code, reviewed settings and a compatibility seed when `release-state` does not yet contain the requested release. Every later ledger transition occurs on `release-state`.
 

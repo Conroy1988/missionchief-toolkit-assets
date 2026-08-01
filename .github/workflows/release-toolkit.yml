@@ -252,7 +252,7 @@ jobs:
           echo "created_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
           echo "created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-      - name: Verify first-party distribution and private backup
+      - name: Verify live TKB distribution and private backup
         id: external
         env:
           RELEASE_VERSION: ${{ inputs.version }}
@@ -274,6 +274,37 @@ jobs:
           test "$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$META" | head -n 1 | xargs)" = "$RELEASE_VERSION"
           test "$(sha256sum "$CSS" | awk '{print $1}')" = "$(jq -r '.distribution.stylesheetSha256' "$MANIFEST")"
           test "$(python3 -c 'from pathlib import Path; print(len(Path("release-bundle/MissionChief_Map_Command_Toolkit.greasyfork.user.js").read_text(encoding="utf-8")))')" -le "$(jq -r '.distribution.greasyForkLimit' "$MANIFEST")"
+
+          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
+          UPDATE_URL="$(jq -r '.distribution.updateUrl' .github/release-settings.json)"
+          META_URL="$(jq -r '.distribution.metadataUrl' .github/release-settings.json)"
+          TKB_VERIFIED=false
+          for attempt in $(seq 1 18); do
+            CACHE_BUST="$(date +%s%N)"
+            if curl --fail --silent --show-error --location --compressed --max-time 30 \
+                --header 'Cache-Control: no-cache' "${INSTALL_URL}?cache_bust=${CACHE_BUST}" \
+                --output "$RUNNER_TEMP/tkb-install.user.js" && \
+              curl --fail --silent --show-error --location --compressed --max-time 30 \
+                --header 'Cache-Control: no-cache' "${UPDATE_URL}?cache_bust=${CACHE_BUST}" \
+                --output "$RUNNER_TEMP/tkb-update.user.js" && \
+              curl --fail --silent --show-error --location --compressed --max-time 30 \
+                --header 'Cache-Control: no-cache' "${META_URL}?cache_bust=${CACHE_BUST}" \
+                --output "$RUNNER_TEMP/tkb-meta.js"; then
+              TKB_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$RUNNER_TEMP/tkb-meta.js" | head -n 1 | xargs)"
+              if [[ "$TKB_VERSION" == "$RELEASE_VERSION" ]] && \
+                cmp --silent "$FULL" "$RUNNER_TEMP/tkb-install.user.js" && \
+                cmp --silent "$FULL" "$RUNNER_TEMP/tkb-update.user.js"; then
+                TKB_VERIFIED=true
+                break
+              fi
+            fi
+            sleep 5
+          done
+          [[ "$TKB_VERIFIED" == "true" ]] || {
+            echo "::error::Live TKB install, update and metadata endpoints do not all serve Toolkit ${RELEASE_VERSION}."
+            exit 1
+          }
+
           GITHUB_OUTPUT="$BACKUP_OUTPUT" bash .github/scripts/backup_release_to_private_repo.sh
           date +%s > "$RUNNER_TEMP/private-backup-epoch"
           BACKUP_COMMIT="$(sed -n 's/^backup_commit=//p' "$BACKUP_OUTPUT" | tail -n 1)"

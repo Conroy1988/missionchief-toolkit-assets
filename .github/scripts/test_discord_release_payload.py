@@ -31,8 +31,6 @@ class DiscordReleasePayloadTests(unittest.TestCase):
             version="4.20.23",
             release_url="https://github.com/example/toolkit/releases/tag/v4.20.23",
             script_url="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/",
-            history_url="https://greasyfork.org/scripts/123-toolkit/versions",
-            previous_version="4.20.22",
             sha256="57b89188ab780a36dc1234567890abcdefabcdefabcdefabcdefabcdefabcd",
             backup_commit="6e81faa47f1234567890abcdef1234567890abcd",
         )
@@ -84,23 +82,6 @@ class DiscordReleasePayloadTests(unittest.TestCase):
         self.assertEqual(embed["fields"][2]["value"], "TKB Scripts\n**LIVE** ✅")
         self.assertNotIn("Greasy Fork", str(embed))
         self.assertEqual(len(embed["fields"]), 5)
-
-    def test_fallback_payload_retains_summary_links_and_distinct_state(self) -> None:
-        args = self.make_args()
-        brief = "**🛠️ Fixed**\n> **01**  Corrected Matrix counts."
-        payload = MODULE.build_fallback(args, brief)
-
-        MODULE.validate_payload(payload)
-        embed = payload["embeds"][0]
-
-        self.assertIn("PUBLIC VERSION DETECTED", embed["title"])
-        self.assertEqual(embed["color"], 0xF59E0B)
-        self.assertEqual(embed["fields"][0]["value"], brief)
-        self.assertIn("Version history", embed["fields"][1]["value"])
-        self.assertIn("Install / Update", embed["fields"][1]["value"])
-        self.assertIn("v4.20.22", embed["description"])
-        self.assertIn("v4.20.23", embed["description"])
-
 
 if __name__ == "__main__":
     unittest.main()

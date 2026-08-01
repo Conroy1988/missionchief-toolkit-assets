@@ -41,7 +41,6 @@
         ".github/greasyfork-version.txt"
       ],
       "operationalWriters": [
-        ".github/workflows/greasyfork-release-monitor.yml",
         ".github/workflows/release-recovery.yml"
       ],
       "externalConsumersEnabled": false

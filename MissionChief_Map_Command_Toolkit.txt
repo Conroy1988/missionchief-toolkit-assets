@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.2
+// @version      10.2.6
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.2',
+        version: '10.2.6',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1208,7 +1208,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         stuck: Object.freeze({ label: 'Stuck incident', icon: '!', title: 'Mission appears stuck' }),
         warning: Object.freeze({ label: 'Toolkit warning', icon: '⚠', title: 'Toolkit warning' })
     });
-    const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'progressRings', 'unitLocator', 'alliancePreviews', 'sessionCleanup']);
+    const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'unitLocator', 'sessionCleanup']);
     const INPUT_COMMAND_META = Object.freeze({
         menu: Object.freeze({ label: 'Toolkit Menu', action: 'menu' }),
         palette: Object.freeze({ label: 'Command Palette', action: 'palette' }),
@@ -1356,8 +1356,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let missionLockOnMoveEndHandler = null;
     let missionLockOnToken = 0;
     let missionProgressSaveTimer = null;
-    let missionProgressRingGroup = null;
-    const missionProgressRings = new Map();
     let followedVehicleId = '';
     let followedVehicleLabel = '';
     let followedVehicleMarker = null;
@@ -1723,8 +1721,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         layoutBuilder: defaultLayoutBuilderState(getLegacyPosition()),
         themeStudio: defaultThemeStudioState(),
         missionChiefReskin: false,
-        missionProgressRings: true,
-        allianceChatPreviews: true,
         autoHideDock: defaultAutoHideDockState(),
         inputStudio: defaultInputStudioState(),
         safeMode: normaliseSafeModeState(null),
@@ -1829,8 +1825,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.layoutBuilder = normaliseLayoutBuilderState(merged.layoutBuilder, merged.position);
         merged.themeStudio = normaliseThemeStudioState(merged.themeStudio);
         merged.missionChiefReskin = Boolean(merged.missionChiefReskin);
-        merged.missionProgressRings = merged.missionProgressRings !== false;
-        merged.allianceChatPreviews = merged.allianceChatPreviews !== false;
+        delete merged.missionProgressRings;
+        delete merged.allianceChatPreviews;
         merged.autoHideDock = normaliseAutoHideDockState(merged.autoHideDock);
         merged.inputStudio = normaliseInputStudioState(merged.inputStudio);
         merged.safeMode = normaliseSafeModeState(merged.safeMode);
@@ -12074,6 +12070,97 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         };
     }
 
+    function resolveDesktopDockWorkspace(mapRect, viewport = getViewportMetrics(), position = 'bl', margin = 8, obstructionRects = []) {
+        const finite = value => typeof value === 'number' && Number.isFinite(value);
+        if (!mapRect || !finite(mapRect.left) || !finite(mapRect.right) || !finite(mapRect.top) || !finite(mapRect.bottom) || mapRect.right <= mapRect.left || mapRect.bottom <= mapRect.top) return null;
+        const viewportLeft = finite(viewport?.offsetLeft) ? viewport.offsetLeft : 0;
+        const viewportTop = finite(viewport?.offsetTop) ? viewport.offsetTop : 0;
+        const viewportRight = viewportLeft + Math.max(1, finite(viewport?.width) ? viewport.width : 1);
+        const viewportBottom = viewportTop + Math.max(1, finite(viewport?.height) ? viewport.height : 1);
+        const safeMargin = Math.max(0, finite(margin) ? margin : 8);
+        const visibleLeft = Math.max(viewportLeft, mapRect.left);
+        const visibleRight = Math.min(viewportRight, mapRect.right);
+        const visibleTop = Math.max(viewportTop, mapRect.top);
+        const visibleBottom = Math.min(viewportBottom, mapRect.bottom);
+        if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) return null;
+
+        let safeTop = visibleTop + safeMargin;
+        for (const rect of Array.isArray(obstructionRects) ? obstructionRects : []) {
+        if (!rect || !finite(rect.left) || !finite(rect.right) || !finite(rect.top) || !finite(rect.bottom)) continue;
+        if (rect.right <= visibleLeft || rect.left >= visibleRight || rect.bottom <= visibleTop || rect.top >= visibleBottom) continue;
+        safeTop = Math.max(safeTop, Math.min(visibleBottom, rect.bottom + safeMargin));
+        }
+        const safeBottom = Math.max(safeTop, visibleBottom - safeMargin);
+        const bottomAnchored = String(position).startsWith('b');
+        const rightAnchored = String(position).endsWith('r');
+        const baseTop = position === 'tr' ? 48 : 10;
+        const baseLeft = position === 'tl' ? 54 : 12;
+        const top = Math.max(baseTop, safeTop - mapRect.top);
+        const bottom = Math.max(42, mapRect.bottom - safeBottom);
+        const left = Math.max(baseLeft, visibleLeft - mapRect.left + safeMargin);
+        const right = Math.max(12, mapRect.right - visibleRight + safeMargin);
+        const anchorTop = bottomAnchored ? safeTop : mapRect.top + top;
+        const anchorBottom = bottomAnchored ? mapRect.bottom - bottom : safeBottom;
+        const horizontalOffset = rightAnchored ? right : left;
+        return {
+        top: Math.round(top),
+        bottom: Math.round(bottom),
+        left: Math.round(left),
+        right: Math.round(right),
+        maxHeight: Math.max(1, Math.floor(anchorBottom - anchorTop)),
+        maxWidth: Math.max(1, Math.floor(visibleRight - visibleLeft - safeMargin - horizontalOffset))
+        };
+    }
+
+    function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
+        if (!control) return;
+        for (const property of ['--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        delete control.dataset.mcmsDesktopDockFit;
+    }
+
+    function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
+        if (!control || !mapEl || activeDeviceLayout !== 'desktop' || isTouchLayoutActive()) {
+        clearDesktopDockSizing(control);
+        return false;
+        }
+        let mapRect = null;
+        try { mapRect = mapEl.getBoundingClientRect?.() || null; } catch (err) {}
+        const viewport = getViewportMetrics();
+        const panel = document.querySelector?.(`#${SCRIPT.panelId}`);
+        const obstructionRects = collectDesktopWorkspaceObstructions(viewport, mapEl, panel).map(item => item.rect);
+        const position = activeDockPosition();
+        const workspace = resolveDesktopDockWorkspace(mapRect, viewport, position, 8, obstructionRects);
+        if (!workspace) {
+        clearDesktopDockSizing(control);
+        return false;
+        }
+
+        const launchRow = control.querySelector?.('.mcms-launch-row');
+        const filter = control.querySelector?.('.mcms-floating-filter');
+        const pins = control.querySelector?.('.mcms-screen-pins');
+        const launchHeight = Math.max(1, Math.ceil(launchRow?.getBoundingClientRect?.().height || launchRow?.offsetHeight || 56));
+        const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
+        const pinNaturalHeight = pinsVisible ? Math.max(29, Math.ceil(pins?.getBoundingClientRect?.().height || pins?.offsetHeight || 29)) : 0;
+        const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
+        const filterMargin = state.commandBarOpen === false ? 0 : 6;
+        const availableAfterLaunch = Math.max(1, workspace.maxHeight - launchHeight - filterMargin - nudgeY);
+        const pinHeight = pinsVisible ? Math.min(pinNaturalHeight, Math.max(0, availableAfterLaunch - 54)) : 0;
+        const pinMargin = pinHeight > 0 ? 6 : 0;
+        const filterHeight = Math.max(1, availableAfterLaunch - pinHeight - pinMargin);
+
+        control.style.setProperty('--mcms-desktop-dock-max-height', `${workspace.maxHeight}px`);
+        control.style.setProperty('--mcms-desktop-dock-max-width', `${workspace.maxWidth}px`);
+        control.style.setProperty('--mcms-desktop-dock-top', `${workspace.top}px`);
+        control.style.setProperty('--mcms-desktop-dock-bottom', `${workspace.bottom}px`);
+        control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
+        control.style.setProperty('--mcms-desktop-dock-right', `${workspace.right}px`);
+        control.style.setProperty('--mcms-desktop-filter-max-height', `${filterHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-max-height', `${pinHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-margin', `${pinMargin}px`);
+        control.dataset.mcmsDesktopDockFit = `${position}:${workspace.maxWidth}:${workspace.maxHeight}:${filterHeight}:${pinHeight}`;
+        return Boolean(filter);
+    }
+
     function stopDesktopPanelWorkspaceObservation() {
         if (desktopPanelResizeObserver) {
         for (const element of desktopPanelObservedElements) {
@@ -12102,9 +12189,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         if (!desktopPanelResizeObserver) {
         desktopPanelResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => {
             if (runtime.destroyed || activeDeviceLayout !== 'desktop') return;
+            const mapEl = getLargestLeafletMap();
+            applyDesktopDockLayout(mapEl);
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel) return;
-            applyDesktopPanelSizing(panel, getLargestLeafletMap());
+            applyDesktopPanelSizing(panel, mapEl);
             if (!dragState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
         }));
         }
@@ -12276,6 +12365,21 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{max-width:var(--mcms-desktop-dock-max-width,360px)!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:var(--mcms-desktop-dock-right,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{width:min(240px,var(--mcms-desktop-dock-max-width,240px))!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="fallout4"]{--mcms-page-bg:#071008;--mcms-page-surface:#102014;--mcms-page-surface-2:#193021;--mcms-page-text:#ecffd4;--mcms-page-muted:#b2ca9e;--mcms-page-accent:#b9ff72}
@@ -12291,16 +12395,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-missionchief-reskin="true"] body :is(.table>tbody>tr>td,.table>tbody>tr>th,.list-group-item){background-color:transparent!important;color:var(--mcms-page-text)!important;border-color:rgba(255,255,255,.1)!important}
         html[data-mcms-missionchief-reskin="true"] body :is(.form-control,.input-group-addon,.btn-default){background:var(--mcms-page-surface-2)!important;color:var(--mcms-page-text)!important;border-color:rgba(255,255,255,.18)!important}
         html[data-mcms-missionchief-reskin="true"] body :is(a:not(.btn-danger):not(.btn-success):not(.btn-warning),.text-muted){color:var(--mcms-page-accent)!important}
-        .mcms-mission-progress-icon{pointer-events:none!important;overflow:visible!important}
-        .mcms-mission-progress-ring{position:relative!important;width:46px!important;height:46px!important;display:grid!important;place-items:center!important;transform:translate(-23px,-23px)!important;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))!important}
-        .mcms-mission-progress-ring svg{position:absolute!important;inset:0!important;width:46px!important;height:46px!important;overflow:visible!important;transform:rotate(-90deg)!important}
-        .mcms-mission-progress-ring circle{fill:none!important;stroke-width:4!important}
-        .mcms-mission-progress-track{stroke:rgba(4,12,18,.78)!important}
-        .mcms-mission-progress-value{stroke:#74dcff!important;stroke-linecap:round!important;transition:stroke-dashoffset .22s ease!important}
-        .mcms-mission-progress-ring[data-source="transport"] .mcms-mission-progress-value{stroke:#ffbf4e!important}
-        .mcms-mission-progress-ring[data-source="unknown"] .mcms-mission-progress-value{stroke:#a8b6c0!important;stroke-dasharray:3 5!important}
-        .mcms-mission-progress-ring>span{position:absolute!important;z-index:1!important;left:50%!important;top:36px!important;transform:translateX(-50%)!important;min-width:26px!important;height:18px!important;display:grid!important;place-items:center!important;padding:0 3px!important;border:1px solid rgba(255,255,255,.42)!important;border-radius:999px!important;background:rgba(4,14,22,.9)!important;color:#fff!important;font:950 8px/16px Arial,Helvetica,sans-serif!important;text-shadow:0 1px 2px #000!important}
-        html[data-mcms-economy="true"] .mcms-mission-progress-value,html[data-mcms-safe-mode="true"] .mcms-mission-progress-icon{transition:none!important}
         #${SCRIPT.vehicleFollowId}{position:fixed!important;left:50%!important;bottom:max(18px,env(safe-area-inset-bottom))!important;z-index:2147483490!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;gap:10px!important;max-width:min(560px,calc(100vw - 24px))!important;min-height:48px!important;padding:8px 10px 8px 14px!important;border:1px solid rgba(112,211,255,.72)!important;border-radius:14px!important;background:linear-gradient(135deg,rgba(5,31,45,.97),rgba(6,15,24,.98))!important;color:#eaf8ff!important;box-shadow:0 16px 42px rgba(0,0,0,.58),0 0 22px rgba(68,192,255,.2)!important;font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important}
         #${SCRIPT.vehicleFollowId} span{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:11px!important;font-weight:850!important}
         #${SCRIPT.vehicleFollowId} b{color:#72d8ff!important}
@@ -12309,8 +12403,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;align-items:center!important;gap:7px!important;padding:9px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:10px!important;background:rgba(255,255,255,.035)!important}
         #${SCRIPT.commandExperienceModalId} .mcms-unit-locator-copy{min-width:0!important}.mcms-unit-locator-copy strong,.mcms-unit-locator-copy small{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.mcms-unit-locator-copy strong{color:#eef8ff!important;font-size:11px!important}.mcms-unit-locator-copy small{margin-top:3px!important;color:#94adbd!important;font-size:9px!important}
         #${SCRIPT.commandExperienceModalId} .mcms-cleanup-list{display:grid!important;gap:7px!important;margin:12px 0!important}.mcms-cleanup-row{display:flex!important;justify-content:space-between!important;gap:12px!important;padding:9px 11px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:9px!important;background:rgba(255,255,255,.035)!important;color:#b9cfdd!important;font-size:10px!important}.mcms-cleanup-row strong{color:#fff!important}
-        #mission_chat_messages .mcms-alliance-mission-preview{display:grid!important;gap:3px!important;margin:5px 0 3px 20px!important;padding:7px 9px!important;border:1px solid rgba(81,185,238,.34)!important;border-left:3px solid #5ec9ff!important;border-radius:8px!important;background:linear-gradient(120deg,rgba(16,58,78,.16),rgba(0,0,0,.05))!important;color:inherit!important;font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important;line-height:1.35!important}
-        #mission_chat_messages .mcms-alliance-mission-preview strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:10px!important}#mission_chat_messages .mcms-alliance-mission-preview span{color:inherit!important;opacity:.82!important;font-size:9px!important}#mission_chat_messages .mcms-alliance-mission-preview a{justify-self:start!important;font-size:9px!important;font-weight:850!important}
         #${SCRIPT.contextMenuId}{position:fixed!important;z-index:2147483646!important;width:min(260px,calc(100vw - 18px))!important;padding:7px!important;border:1px solid rgba(108,204,255,.58)!important;border-radius:12px!important;background:rgba(5,15,23,.97)!important;color:#eef8ff!important;box-shadow:0 18px 45px rgba(0,0,0,.62)!important;backdrop-filter:blur(12px)!important}
         #${SCRIPT.contextMenuId}>strong{display:block!important;padding:5px 7px 8px!important;color:#7dd6ff!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
         #${SCRIPT.contextMenuId} button{display:block!important;width:100%!important;min-height:42px!important;margin:3px 0!important;padding:8px 10px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:8px!important;background:rgba(255,255,255,.06)!important;color:#fff!important;text-align:left!important;font-size:11px!important;font-weight:800!important}
@@ -12321,7 +12413,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-tab-btn.mcms-active,.mcms-toggle-btn.mcms-on,.mcms-position-btn.mcms-active,.mcms-small-btn:hover),html[data-mcms-custom-theme="true"] body #${SCRIPT.controlId} :is(.mcms-float-btn,.mcms-economy-btn).mcms-on{border-color:${theme.accent}!important;background:${theme.accent}33!important;color:${theme.text}!important}
         html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-section-label,.mcms-title,.mcms-label),html[data-mcms-custom-theme="true"] #${SCRIPT.commandExperienceModalId} :is(h2,strong),html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId} .mcms-command-palette-title span{color:${theme.accent}!important}
         html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:${theme.accent};--mcms-palette-accent-rgb:${themeColourRgb(theme.accent)}}
-        @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}#mission_chat_messages .mcms-alliance-mission-preview{margin-left:4px!important}}
+        @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}}
         `;
     }
 
@@ -17308,7 +17400,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
         state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
         state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled ||
-        state.missionProgressRings || state.allianceChatPreviews ||
         (state.notifications.enabled && Object.values(state.notifications.events).some(Boolean)) ||
         operationalUiIsVisible()
         );
@@ -17324,7 +17415,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         layer.__mcmsResourceGapLabel || layer.__mcmsResourceGapLayer ||
         layer.__mcmsStuckMissionLabel || layer.__mcmsStuckMissionLayer ||
         layer.__mcmsMissionSpawnLabel || layer.__mcmsMissionSpawnRing || layer.__mcmsMissionSpawnLayer ||
-        layer.__mcmsMissionProgressRing || layer.__mcmsMissionProgressLayer ||
         layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer
         ));
     }
@@ -18333,6 +18423,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         majorIncidentFeedObservedElement = null;
         document.getElementById(SCRIPT.majorIncidentFeedId)?.remove();
         majorIncidentFeedRenderSignature = '';
+        fitControlToMap();
     }
 
     function majorIncidentFeedDomComplete(feed) {
@@ -18429,13 +18520,17 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         majorIncidentFeedLayoutFrame = null;
         const feed = document.getElementById(SCRIPT.majorIncidentFeedId);
         if (!feed || !state.majorIncidentFeed.enabled || !getLargestLeafletMap() || isAllianceBuildingsContext()) {
-        if (feed) feed.classList.remove('mcms-feed-visible');
+        if (feed) {
+            feed.classList.remove('mcms-feed-visible');
+            fitControlToMap();
+        }
         return false;
         }
 
         const { bar } = majorIncidentFeedHeaderContext();
         if (!bar) {
         feed.classList.remove('mcms-feed-visible');
+        fitControlToMap();
         return false;
         }
         const barRect = bar.getBoundingClientRect();
@@ -18459,6 +18554,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         feed.style.setProperty('top', `${Math.round(barRect.bottom + 1)}px`, 'important');
         feed.style.setProperty('width', `${Math.round(feedWidth)}px`, 'important');
         feed.classList.add('mcms-feed-visible');
+        fitControlToMap();
         scheduleMajorIncidentFeedMotion(feed, false, 35);
         return true;
     }
@@ -18587,7 +18683,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             resetMajorIncidentFeedObserver();
             majorIncidentFeedObservedElement = feed;
             majorIncidentFeedResizeObserver = runtimeTrackObserver(new pageWindow.ResizeObserver(() => {
-                if (feed.isConnected) scheduleMajorIncidentFeedMotion(feed, false, 70);
+                if (feed.isConnected) {
+                    scheduleMajorIncidentFeedMotion(feed, false, 70);
+                    fitControlToMap();
+                }
                 else recoverMajorIncidentFeed('header replacement');
             }));
             majorIncidentFeedResizeObserver.observe(feed);
@@ -18912,177 +19011,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return snapshot;
     }
 
-    function clearMissionProgressRings() {
-        if (missionProgressRingGroup) {
-        try { missionProgressRingGroup.clearLayers(); missionProgressRingGroup.remove(); } catch (err) {}
-        }
-        missionProgressRings.clear();
-        missionProgressRingGroup = null;
-    }
-
-    function missionProgressRingModel(snapshot) {
-        if (!snapshot) return null;
-        const liveValue = normaliseMissionLiveCurrentValue(snapshot.liveCurrentValue);
-        const components = [];
-        const transportDetails = [];
-        const addTransport = (label, remainingValue, possibleValue) => {
-        const possible = Number(possibleValue);
-        const remaining = Number(remainingValue);
-        if (!Number.isFinite(possible) || possible <= 0 || !Number.isFinite(remaining)) return;
-        const safeRemaining = clamp(remaining, 0, possible, possible);
-        components.push({ handled: possible - safeRemaining, possible });
-        transportDetails.push(`${label} ${safeRemaining}/${possible} remaining`);
-        };
-        addTransport('Patients', snapshot.patientsCount, snapshot.possiblePatientsCount);
-        addTransport('Prisoners', snapshot.prisonersCount, snapshot.possiblePrisonersCount);
-
-        if (liveValue !== null) {
-        const completion = Math.round(100 - liveValue);
-        const detail = [`Incident clearing ${completion}%`, ...transportDetails].join(' · ');
-        return { percent: completion, source: 'live', detail, label: `${completion}%` };
-        }
-        if (components.length) {
-        const handled = components.reduce((sum, item) => sum + item.handled, 0);
-        const possible = components.reduce((sum, item) => sum + item.possible, 0);
-        const percent = possible > 0 ? Math.round((handled / possible) * 100) : 0;
-        return { percent, source: 'transport', detail: `Transport progress ${percent}% · ${transportDetails.join(' · ')}`, label: `${percent}%` };
-        }
-        return null;
-    }
-
-    function makeMissionProgressRingIcon(model, caption) {
-        const radius = 17;
-        const circumference = 2 * Math.PI * radius;
-        const percent = clamp(model?.percent, 0, 100, 0);
-        const dashOffset = circumference * (1 - percent / 100);
-        const title = `${caption || 'Mission'} · ${model?.detail || `Progress ${percent}%`}`;
-        return pageWindow.L.divIcon({
-        className: 'mcms-mission-progress-icon',
-        html: `<span class="mcms-mission-progress-ring" data-source="${escapeHtml(model?.source || 'live')}" role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}"><svg viewBox="0 0 46 46" aria-hidden="true"><circle class="mcms-mission-progress-track" cx="23" cy="23" r="${radius}"></circle><circle class="mcms-mission-progress-value" cx="23" cy="23" r="${radius}" stroke-dasharray="${circumference.toFixed(2)}" stroke-dashoffset="${dashOffset.toFixed(2)}"></circle></svg><span>${escapeHtml(model?.label || `${percent}%`)}</span></span>`,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0]
-        });
-    }
-
-    function updateMissionProgressRings(snapshots = liveMissionSnapshots) {
-        if (!state.missionProgressRings || state.safeMode.enabled) {
-        clearMissionProgressRings();
-        return 0;
-        }
-        const map = findLeafletMapInstance(false);
-        if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
-        clearMissionProgressRings();
-        return 0;
-        }
-        const pane = ensureMissionFloatPane(map);
-        if (!pane) return 0;
-        try {
-        if (!missionProgressRingGroup || missionProgressRingGroup._map !== map) {
-            clearMissionProgressRings();
-            missionProgressRingGroup = pageWindow.L.layerGroup();
-            missionProgressRingGroup.__mcmsMissionProgressLayer = true;
-            missionProgressRingGroup.addTo(map);
-        }
-        const activeIds = new Set();
-        for (const snapshot of snapshots.values()) {
-            const model = missionProgressRingModel(snapshot);
-            if (!model || !snapshot?.marker) continue;
-            if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
-            if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
-            let latLng = null;
-            try { latLng = snapshot.marker.getLatLng?.() || null; } catch (err) {}
-            if (!latLng) continue;
-            try { if (typeof map.hasLayer === 'function' && !map.hasLayer(snapshot.marker)) continue; } catch (err) {}
-            const signature = `${model.source}:${model.percent}:${model.detail}:${snapshot.caption || ''}`;
-            activeIds.add(snapshot.missionId);
-            let ring = missionProgressRings.get(snapshot.missionId);
-            if (!ring) {
-            ring = pageWindow.L.marker(latLng, { interactive: false, keyboard: false, bubblingMouseEvents: false, pane, zIndexOffset: -20, icon: makeMissionProgressRingIcon(model, snapshot.caption) });
-            ring.__mcmsMissionProgressRing = true;
-            ring.__mcmsProgressSignature = signature;
-            ring.addTo(missionProgressRingGroup);
-            missionProgressRings.set(snapshot.missionId, ring);
-            } else {
-            try { ring.setLatLng(latLng); } catch (err) {}
-            if (ring.__mcmsProgressSignature !== signature) {
-                ring.__mcmsProgressSignature = signature;
-                try { ring.setIcon(makeMissionProgressRingIcon(model, snapshot.caption)); } catch (err) {}
-            }
-            }
-        }
-        for (const [missionId, ring] of missionProgressRings.entries()) {
-            if (activeIds.has(missionId)) continue;
-            missionProgressRings.delete(missionId);
-            try { missionProgressRingGroup.removeLayer(ring); } catch (err) {}
-        }
-        return missionProgressRings.size;
-        } catch (err) {
-        clearMissionProgressRings();
-        return 0;
-        }
-    }
-
-    function clearAllianceChatMissionPreviews() {
-        document.querySelectorAll('#mission_chat_messages .mcms-alliance-mission-preview').forEach(preview => preview.remove());
-    }
-
-    function allianceChatMissionSnapshot(missionId) {
-        const id = normaliseMissionId(missionId);
-        if (id === null) return null;
-        const live = liveMissionSnapshots.get(id);
-        if (live) return live;
-        const marker = getMissionMarkerIndex().byId.get(id) || null;
-        return marker ? missionSnapshotFromMarker(marker) : null;
-    }
-
-    function allianceChatPreviewHtml(snapshot, missionPath) {
-        const credits = Number(snapshot?.averageCredits);
-        const patientCount = Number(snapshot?.patientsCount);
-        const prisonerCount = Number(snapshot?.prisonersCount);
-        const units = Math.max(0, Number(snapshot?.units?.total) || 0);
-        const missing = summariseCriticalRequirement(snapshot?.missingText, 68);
-        const details = [
-        Number.isFinite(credits) && credits > 0 ? `≈${formatOperationalCompactCredits(credits)} CR` : '',
-        Number.isFinite(patientCount) && patientCount > 0 ? `${patientCount} patient${patientCount === 1 ? '' : 's'} waiting` : '',
-        Number.isFinite(prisonerCount) && prisonerCount > 0 ? `${prisonerCount} prisoner${prisonerCount === 1 ? '' : 's'} waiting` : '',
-        units ? `${units} personal unit${units === 1 ? '' : 's'} committed` : '',
-        missing ? `Needs ${missing}` : ''
-        ].filter(Boolean);
-        return `<span class="mcms-alliance-mission-preview-copy"><strong>${escapeHtml(snapshot.caption || `Mission ${snapshot.missionId}`)}</strong><small>${escapeHtml(details.join(' · ') || 'Live mission available on the map')}</small></span><a href="${escapeHtml(missionPath)}">Open</a>`;
-    }
-
-    function renderAllianceChatMissionPreviews() {
-        if (!state.allianceChatPreviews || state.safeMode.enabled) {
-        clearAllianceChatMissionPreviews();
-        return 0;
-        }
-        const root = document.querySelector('#mission_chat_messages');
-        if (!root) return 0;
-        root.querySelectorAll('.mcms-alliance-mission-preview .mcms-alliance-mission-preview').forEach(preview => preview.remove());
-        let rendered = 0;
-        for (const link of root.querySelectorAll('a[href*="/missions/"]')) {
-        if (link.closest('.mcms-alliance-mission-preview')) continue;
-        let url;
-        try { url = new URL(link.getAttribute('href') || link.href, pageWindow.location.href); } catch (err) { continue; }
-        if (url.origin !== pageWindow.location.origin) continue;
-        const match = url.pathname.match(/^\/missions\/(\d+)(?:\/|$)/u);
-        if (!match) continue;
-        const snapshot = allianceChatMissionSnapshot(match[1]);
-        let preview = link.nextElementSibling?.classList?.contains('mcms-alliance-mission-preview') ? link.nextElementSibling : null;
-        if (!snapshot) { preview?.remove(); continue; }
-        if (!preview) {
-            preview = document.createElement('span');
-            preview.className = 'mcms-alliance-mission-preview';
-            link.insertAdjacentElement('afterend', preview);
-        }
-        preview.dataset.mcmsMissionId = String(snapshot.missionId);
-        const path = `/missions/${encodeURIComponent(snapshot.missionId)}`;
-        setInnerHtmlIfChanged(preview, allianceChatPreviewHtml(snapshot, path));
-        rendered += 1;
-        }
-        return rendered;
-    }
-
     function refreshMissionSnapshots() {
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
@@ -19138,8 +19066,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
         liveMissionSnapshots = current;
         missionSnapshotReady = missionSnapshotReady || current.size > 0;
-        updateMissionProgressRings(current);
-        renderAllianceChatMissionPreviews();
 
         for (let index = recentCompletedMissions.length - 1; index >= 0; index -= 1) {
         const item = recentCompletedMissions[index];
@@ -20801,7 +20727,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openContextCommandMenu(element, point = null) {
-        if (state.safeMode.enabled) return false;
+        if (state.safeMode.enabled || !toolkitCommandShellContextActive()) return false;
         const record = contextCommandRecordFromElement(element);
         if (!record) return false;
         closeContextCommandMenu();
@@ -20843,7 +20769,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function handleContextCommandRequest(event) {
-        if (event.defaultPrevented || state.safeMode.enabled) return false;
+        if (event.defaultPrevented || state.safeMode.enabled || !toolkitCommandShellContextActive()) return false;
         const point = { x: Number(event.clientX), y: Number(event.clientY) };
         if (!openContextCommandMenu(event.target, point)) return false;
         event.preventDefault();
@@ -21404,7 +21330,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         else if (['reskin', 'dock', 'safeMode'].includes(key)) openPersonalisationStudio('shell');
         else if (key === 'unitLocator') openUnitLocator();
         else if (key === 'sessionCleanup') openSessionCleanup();
-        else if (key === 'progressRings' || key === 'alliancePreviews') commandPaletteOpenSetting('missions', 'mission-intelligence');
         return true;
     }
 
@@ -21428,8 +21353,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         removeMajorIncidentFeed();
         stopVehicleFollow(false);
         clearCoverageRings();
-        clearMissionProgressRings();
-        clearAllianceChatMissionPreviews();
         clearAllianceCreditLabels();
         clearMissionAgeLabels();
         clearUnitCommitmentLabels();
@@ -21460,6 +21383,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function executeInputCommand(command) {
+        if (!toolkitCommandShellContextActive()) {
+            teardownToolkitCommandShell('keyboard command outside canonical map context');
+            return false;
+        }
         const action = INPUT_COMMAND_META[command]?.action;
         if (!action || (state.safeMode.enabled && !['menu', 'safeMode'].includes(action))) return false;
         if (action === 'menu') { togglePanel(); return true; }
@@ -21539,6 +21466,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openTabletQuickWheel(point = null, { manual = false, returnFocus = null } = {}) {
+        if (!toolkitCommandShellContextActive()) return false;
         if (!manual && (activeDeviceLayout !== 'tablet' || !state.quickWheel.enabled)) return false;
         closeTabletQuickWheel();
         const viewport = getViewportMetrics();
@@ -22459,10 +22387,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
         '<article class="mcms-command-note"><b>Official updates have moved to TKB</b><p>TKB now provides the supported installer and automatic-update channel. GitHub remains the verified release archive; Greasy Fork is a non-blocking mirror.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
+        '<article class="mcms-command-note"><b>Cleaner mission map and Alliance Chat</b><p>Mission Progress Rings and Alliance Chat Mission Previews have been retired. Mission markers and Alliance Chat now remain in their native MissionChief form.</p></article>' +
         '<div class="mcms-update-grid">' +
-            '<article><b>Mission Progress Rings</b><p>See exact live MissionChief progress around supported mission markers, without guessed percentages.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="progressRings">Open Mission Intelligence</button></article>' +
             '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
-            '<article><b>Alliance Chat Previews</b><p>Expand mission links from the current alliance chat with live map data already available to the Toolkit.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="alliancePreviews">Open Mission Intelligence</button></article>' +
             '<article><b>Session Cleanup</b><p>Preview and clear only temporary Toolkit effects, searches, notification memory and rebuildable caches.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="sessionCleanup">Open Cleanup</button></article>' +
         '</div><p class="mcms-command-note">New Settings entries keep their NEW badge until you visit the relevant controls.</p>';
     }
@@ -27122,7 +27049,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         saveState();
         updateUI();
     }
-    // Issue #515: restore the generic Toolkit launcher shell removed during v7 retirement.
+    // Issue #515 restored the launcher; Issue #638 restricts ownership to the canonical map page.
     function toolkitTopLevelDocument(doc = document) {
         try {
             const view = doc?.defaultView;
@@ -27131,23 +27058,97 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             return true;
         }
     }
+    function toolkitDocumentPathname(doc = document) {
+        let pathname = '';
+        try { pathname = doc?.defaultView?.location?.pathname || ''; } catch (error) {}
+        if (!pathname) {
+            try { pathname = doc === document ? location.pathname : ''; } catch (error) {}
+        }
+        const decoded = decodedPathname(pathname).replace(/\/{2,}/gu, '/').replace(/\/+$/gu, '');
+        return decoded || '/';
+    }
+    function toolkitCommandShellRouteEligible(doc = document) {
+        return toolkitTopLevelDocument(doc) && toolkitDocumentPathname(doc) === '/';
+    }
     function toolkitPrimaryMapElement(mapEl, doc = document) {
+        if (!toolkitCommandShellRouteEligible(doc)) return null;
         const missionSelector = '#mission-form,.mission-window,.mission_window,.modal,.modal-content,.lightbox,[data-mission-id]';
+        const mapOuter = doc?.querySelector?.('#map_outer') || null;
         const candidates = [
             doc?.querySelector?.('#map'),
+            mapOuter?.querySelector?.('.leaflet-container,[data-leaflet-map="main"]'),
             mapEl,
-            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"],.leaflet-container') || [])
+            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"]') || [])
         ];
         for (const candidate of candidates) {
             if (!candidate || candidate.ownerDocument !== doc || candidate.isConnected === false) continue;
             if (candidate.closest?.(missionSelector)) continue;
+            const insideCanonicalShell = Boolean(mapOuter?.contains?.(candidate));
+            const explicitMainMap = candidate.id === 'map' && Boolean(
+                insideCanonicalShell
+                || candidate.classList?.contains?.('leaflet-container')
+                || candidate.matches?.('[data-leaflet-map="main"]')
+            );
+            const declaredMainMap = candidate.matches?.('[data-leaflet-map="main"]') && insideCanonicalShell;
+            const canonicalLeafletMap = insideCanonicalShell && candidate.classList?.contains?.('leaflet-container');
+            if (!explicitMainMap && !declaredMainMap && !canonicalLeafletMap) continue;
             return candidate;
         }
         return null;
     }
     function toolkitControlHost(mapEl, doc = document) {
-        if (!toolkitTopLevelDocument(doc)) return null;
-        return toolkitPrimaryMapElement(mapEl, doc) || doc?.body || doc?.documentElement || null;
+        return toolkitPrimaryMapElement(mapEl, doc);
+    }
+    function toolkitCommandShellContextActive(doc = document) {
+        if (!toolkitCommandShellRouteEligible(doc)) return false;
+        const discoveredMap = doc === document ? getLargestLeafletMap() : null;
+        return Boolean(toolkitPrimaryMapElement(discoveredMap, doc));
+    }
+    function teardownToolkitCommandShell(reason = 'ineligible command-shell context') {
+        disposeVersionStatus();
+        const nodeIds = [
+            SCRIPT.controlId,
+            SCRIPT.panelId,
+            SCRIPT.toastId,
+            SCRIPT.payoutFlashId,
+            SCRIPT.vehicleStatusId,
+            SCRIPT.pressureBoardId,
+            SCRIPT.majorIncidentFeedId,
+            SCRIPT.transportSweepHudId,
+            SCRIPT.helpCenterId,
+            SCRIPT.commandPaletteId,
+            SCRIPT.commandExperienceModalId,
+            SCRIPT.contextMenuId,
+            SCRIPT.quickWheelId,
+            SCRIPT.fullscreenExitId,
+            SCRIPT.vehicleFollowId,
+            SCRIPT.cleanExitId,
+        ];
+        let removed = 0;
+        for (const id of nodeIds) {
+            const node = document.querySelector?.(`[id="${id}"]`);
+            if (!node) continue;
+            node.remove();
+            removed += 1;
+        }
+        document.querySelectorAll?.('.mcms-map-fullscreen-target').forEach(element => element.classList.remove('mcms-map-fullscreen-target'));
+        fullscreenMapTarget?.classList?.remove?.('mcms-map-fullscreen-target');
+        fullscreenMapTarget = null;
+        autoHideDockRevealed = false;
+        settingsPanelActivated = false;
+        dragState = null;
+        contextCommandTarget = null;
+        commandPaletteEntries = [];
+        commandPaletteResults = [];
+        commandPaletteSelectedIndex = 0;
+        commandPaletteReturnFocus = null;
+        quickWheelReturnFocus = null;
+        quickWheelRestoreDragging = false;
+        document.documentElement?.removeAttribute?.('data-mcms-command-palette-open');
+        document.documentElement?.removeAttribute?.('data-mcms-help-open');
+        document.documentElement?.style?.removeProperty?.('cursor');
+        document.body?.style?.removeProperty?.('user-select');
+        return { reason, removed };
     }
     function toolkitApplyCommandBarState(control = null) {
         control ||= document.querySelector?.(`#${SCRIPT.controlId}`) || null;
@@ -27267,8 +27268,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
-        if (feature === 'missionProgressRings') state.missionProgressRings = !state.missionProgressRings;
-        if (feature === 'allianceChatPreviews') state.allianceChatPreviews = !state.allianceChatPreviews;
         if (state.cleanMode) closePanel();
         saveState();
         applyRootAttributes();
@@ -27312,16 +27311,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (feature === 'resourceGap') {
             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
         }
-        if (feature === 'missionProgressRings') {
-            markFeatureBeaconViewed('progressRings');
-            if (state.missionProgressRings) refreshMissionSnapshots(); else clearMissionProgressRings();
-            showToast(state.missionProgressRings ? 'Mission Progress Rings on · exact live values only' : 'Mission Progress Rings off');
-        }
-        if (feature === 'allianceChatPreviews') {
-            markFeatureBeaconViewed('alliancePreviews');
-            if (state.allianceChatPreviews) renderAllianceChatMissionPreviews(); else clearAllianceChatMissionPreviews();
-            showToast(state.allianceChatPreviews ? 'Alliance chat mission previews on' : 'Alliance chat mission previews off');
-        }
         if (feature === 'quickWheel') {
             if (!state.quickWheel.enabled) closeTabletQuickWheel();
             showToast(state.quickWheel.enabled ? 'Tablet Quick Wheel on' : 'Tablet Quick Wheel off');
@@ -27358,19 +27347,23 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const mapEl = getLargestLeafletMap();
             if (!mapEl) {
                 if (!isTouchLayoutActive()) {
+                    clearDesktopDockSizing();
                     observeDesktopPanelWorkspace(null);
                     applyDesktopPanelSizing(panel, null);
                 }
                 return;
             }
             if (mobileModeActive) {
+                clearDesktopDockSizing();
                 clearDesktopPanelSizing(panel);
                 applyMobileDockLayout(mapEl);
             } else if (tabletModeActive) {
+                clearDesktopDockSizing();
                 clearDesktopPanelSizing(panel);
                 applyTabletDockLayout(mapEl);
             } else {
                 clearTabletDockSizing();
+                applyDesktopDockLayout(mapEl);
                 observeDesktopPanelWorkspace(mapEl);
                 applyDesktopPanelSizing(panel, mapEl);
             }
@@ -27552,6 +27545,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openPanel() {
+        if (!toolkitCommandShellContextActive()) {
+            teardownToolkitCommandShell('menu request outside canonical map context');
+            return;
+        }
         const panel = document.getElementById(SCRIPT.panelId) || createPanel();
         if (!panel) return;
         applyRootAttributes();
@@ -27865,8 +27862,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         toggle('stuck', 'Stuck Mission Detection', state.stuckDetector.enabled, 'stuckDetector', 'stuck vehicles stalled incidents labels');
         toggle('major-feed', 'Major Incident Feed', state.majorIncidentFeed.enabled, 'majorIncidentFeed', 'ticker news wire');
         toggle('mission-age', 'Mission Age Labels', state.missionAge, 'missionAge', 'old incidents time');
-        toggle('mission-progress-rings', 'Mission Progress Rings', state.missionProgressRings, 'missionProgressRings', 'exact live clearing percentage map marker');
-        toggle('alliance-chat-previews', 'Alliance Chat Mission Previews', state.allianceChatPreviews, 'allianceChatPreviews', 'links cards patients requirements current page');
         toggle('transport', 'Transport Watcher', state.transportWatcher, 'transportWatcher', 'patients prisoners amber');
         toggle('unit-count', 'Unit Commitment Count', state.unitCommitment, 'unitCommitment', 'responding on scene');
         toggle('marker-focus', 'Marker Focus', state.markerFocus, 'markerFocus', 'dim buildings vehicles missions');
@@ -28154,6 +28149,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openCommandPalette({ returnFocus = null, initialQuery = '' } = {}) {
+        if (!toolkitCommandShellContextActive()) return null;
         if (state.safeMode.enabled) { showToast('Command Palette is suspended in Toolkit Safe Mode'); return null; }
         const existing = commandExperienceElement(SCRIPT.commandPaletteId);
         if (existing) {
@@ -28467,6 +28463,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function handleKeyboard(event) {
+        if (!toolkitCommandShellContextActive()) {
+            teardownToolkitCommandShell('keyboard event outside canonical map context');
+            return;
+        }
         if (event.key === 'Escape' && closeContextCommandMenu({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeCommandPalette({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeTabletQuickWheel({ restoreFocus: true })) { event.preventDefault(); return; }
@@ -28583,35 +28583,225 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         `;
     }
 
-    // Issue #153: stable live Toolkit version-status control.
-    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 30 * 60 * 1000, autoIntervalMs: 30 * 60 * 1000, failureCooldownMs: 10 * 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 15 * 1000, longPressMs: 650, styleId: 'mcms-version-status-style', buttonId: 'mcms-version-status-control' });
-    let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false;
+    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.
+    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
+    let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusRequestToken = 0; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false; let versionStatusInitialCheckQueued = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
     function versionStatusUrl(value, kind, version) { let url; try { url = new URL(String(value || '')); } catch (err) { throw new Error(`Invalid ${kind} URL.`); } if (url.protocol !== 'https:') throw new Error(`${kind} URL must use HTTPS.`); if (kind === 'release') { const expected = `/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`; if (url.hostname !== 'github.com' || url.pathname !== expected) throw new Error('Release URL is not canonical.'); } else if (url.hostname !== 'tkb-gaming.scot' || url.pathname !== '/mission-chief-scripts/map-command-toolkit/install/') throw new Error('Update URL is not canonical.'); return url.href; }
     function versionStatusValidateManifest(payload) { if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('Version manifest is not an object.'); if (Number(payload.schemaVersion) !== 1 || payload.channel !== 'stable') throw new Error('Version manifest channel is invalid.'); const version = String(payload.version || '').trim(); if (!versionStatusParse(version)) throw new Error('Version manifest does not contain a stable semantic version.'); return { schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: versionStatusUrl(payload.releaseNotesUrl, 'release', version), updateUrl: versionStatusUrl(payload.updateUrl, 'update', version), publishedAt: String(payload.publishedAt || '') }; }
-    function versionStatusPresentation(installedVersion, manifest) { const comparison = versionStatusCompare(manifest?.version, installedVersion); if (comparison === null) throw new Error('Installed or published version is malformed.'); return comparison > 0 ? { state: 'update', destination: manifest.updateUrl } : { state: 'latest', destination: manifest.releaseNotesUrl }; }
+    function versionStatusPresentation(installedVersion, manifest) { const comparison = versionStatusCompare(manifest?.version, installedVersion); if (comparison === null) throw new Error('Installed or published version is malformed.'); return { state: comparison > 0 ? 'update' : 'latest', destination: VERSION_STATUS.productUrl }; }
     function versionStatusCacheIsFresh(cache, now = Date.now()) { if (!cache || typeof cache !== 'object') return false; const checkedAt = Number(cache.checkedAt); if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt >= VERSION_STATUS.cacheMs) return false; try { versionStatusValidateManifest(cache.manifest); return true; } catch (err) { return false; } }
     function versionStatusFailureCooling(value, now = Date.now()) { const failedAt = Number(value?.failedAt ?? value); return Number.isFinite(failedAt) && failedAt <= now && now - failedAt < VERSION_STATUS.failureCooldownMs; }
     async function versionStatusStorageRead(key) { try { if (typeof GM_getValue === 'function') return await GM_getValue(key, null); } catch (err) {} try { const raw = pageWindow.localStorage?.getItem(key); return raw ? JSON.parse(raw) : null; } catch (err) { return null; } }
     async function versionStatusStorageWrite(key, value) { try { if (typeof GM_setValue === 'function') { await GM_setValue(key, value); return; } } catch (err) {} try { pageWindow.localStorage?.setItem(key, JSON.stringify(value)); } catch (err) {} }
     async function versionStatusStorageDelete(key) { try { if (typeof GM_deleteValue === 'function') { await GM_deleteValue(key); return; } } catch (err) {} try { pageWindow.localStorage?.removeItem(key); } catch (err) {} }
-    function versionStatusRender() { const button = document.getElementById(VERSION_STATUS.buttonId); if (!button) return; const installed = SCRIPT.version; const available = versionStatusModel.manifest?.version || ''; const stateName = versionStatusModel.state; const labels = { idle: 'CHECK', checking: 'CHECK', latest: 'LATEST', update: 'UPDATE', error: 'RETRY' }; const label = labels[stateName] || 'CHECK'; button.textContent = ''; button.dataset.label = label; button.dataset.state = stateName; button.setAttribute('aria-busy', String(stateName === 'checking')); let title = `Check Toolkit ${installed} against the verified production release.`; if (stateName === 'checking') title = `Checking Toolkit ${installed} for updates…`; if (stateName === 'latest') title = `Toolkit ${installed} is current — open release notes. Shift-click, right-click or long-press to recheck.`; if (stateName === 'update') title = `Toolkit ${installed} installed; ${available} available — open update page. Shift-click, right-click or long-press to recheck.`; if (stateName === 'error') title = 'Version check unavailable — activate to retry.'; button.title = title; button.setAttribute('aria-label', title); }
+    function versionStatusRender() { const button = document.getElementById(VERSION_STATUS.buttonId); if (!button) return; const installed = SCRIPT.version; const available = versionStatusModel.manifest?.version || ''; const stateName = versionStatusModel.state; const labels = { idle: 'CHECK', checking: 'CHECK', latest: 'LATEST', update: 'UPDATE', error: 'CHECK' }; const label = labels[stateName] || 'CHECK'; button.textContent = ''; button.dataset.label = label; button.dataset.state = stateName; button.classList.toggle('mcms-version-update-alert', stateName === 'update'); button.setAttribute('aria-busy', String(stateName === 'checking')); let title = `Toolkit ${installed} — open official Toolkit page`; if (stateName === 'checking') title = `Checking Toolkit ${installed} against the verified production release — open official Toolkit page`; if (stateName === 'latest') title = `Toolkit ${installed} is current — open official Toolkit page`; if (stateName === 'update') title = `Toolkit ${installed} installed; ${available} available — open official update page`; if (stateName === 'error') title = `Toolkit ${installed} update check unavailable — open official Toolkit page`; button.title = title; button.setAttribute('aria-label', title); }
     function ensureVersionStatusStyle() { if (document.getElementById(VERSION_STATUS.styleId)) return; const style = document.createElement('style'); style.id = VERSION_STATUS.styleId; style.textContent = `#${VERSION_STATUS.buttonId}{--mcms-version-accent:#6fb7ff;--mcms-version-accent-rgb:111,183,255;box-sizing:border-box!important;position:relative;display:inline-flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;align-self:flex-start;flex:0 0 48px!important;width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important;margin:0!important;padding:4px 3px 3px!important;overflow:hidden!important;border:1px solid rgba(255,255,255,.26)!important;border-radius:9px!important;background:linear-gradient(180deg,rgba(48,53,59,.98) 0%,rgba(15,19,23,.98) 100%)!important;color:#f5f7fa!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;box-shadow:0 3px 9px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(var(--mcms-version-accent-rgb),.11)!important;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}#${VERSION_STATUS.buttonId}::before{content:"•"!important;box-sizing:border-box;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important;padding:0!important;border:1px solid rgba(var(--mcms-version-accent-rgb),.72)!important;border-radius:50%!important;background:rgba(var(--mcms-version-accent-rgb),.16)!important;color:var(--mcms-version-accent)!important;font:900 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;box-shadow:0 0 7px rgba(var(--mcms-version-accent-rgb),.22),inset 0 1px 0 rgba(255,255,255,.1)!important}#${VERSION_STATUS.buttonId}::after{content:attr(data-label)!important;box-sizing:border-box;display:block!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;color:#f5f7fa!important;font:800 7.2px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;letter-spacing:.12px!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;text-overflow:clip!important}#${VERSION_STATUS.buttonId}:focus-visible{outline:2px solid var(--mcms-version-accent)!important;outline-offset:2px}#${VERSION_STATUS.buttonId}[data-state="latest"]{--mcms-version-accent:#5bd391;--mcms-version-accent-rgb:91,211,145}#${VERSION_STATUS.buttonId}[data-state="latest"]::before{content:"✓"!important}#${VERSION_STATUS.buttonId}[data-state="update"]{--mcms-version-accent:#ffc452;--mcms-version-accent-rgb:255,196,82}#${VERSION_STATUS.buttonId}[data-state="update"]::before{content:"↑"!important}#${VERSION_STATUS.buttonId}[data-state="checking"]{--mcms-version-accent:#76c7ff;--mcms-version-accent-rgb:118,199,255;cursor:progress;opacity:.88}#${VERSION_STATUS.buttonId}[data-state="checking"]::before{content:"…"!important}#${VERSION_STATUS.buttonId}[data-state="error"]{--mcms-version-accent:#ff7e7e;--mcms-version-accent-rgb:255,126,126}#${VERSION_STATUS.buttonId}[data-state="error"]::before{content:"!"!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}{flex-basis:44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding:3px 2px!important;border-radius:8px!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}::before{flex-basis:18px!important;width:18px!important;height:18px!important;font-size:11px!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}::after{font-size:6.7px!important;letter-spacing:0!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}{flex-basis:46px!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;padding:3px 2px!important;border-radius:9px!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}::before{flex-basis:19px!important;width:19px!important;height:19px!important;font-size:11px!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}::after{font-size:6.9px!important;letter-spacing:0!important}@media (prefers-reduced-motion:reduce){#${VERSION_STATUS.buttonId}{transition:none!important}}`; (document.head || document.documentElement).appendChild(style); }
-    function versionStatusOpen() { const manifest = versionStatusModel.manifest; if (!manifest) { scheduleVersionStatusCheck(0, true); return; } let destination; try { destination = versionStatusPresentation(SCRIPT.version, manifest).destination; } catch (err) { scheduleVersionStatusCheck(0, true); return; } const opened = pageWindow.open(destination, '_blank', 'noopener,noreferrer'); try { if (opened) opened.opener = null; } catch (err) {} }
-    function ensureVersionStatusButton() { ensureVersionStatusStyle(); const control = document.getElementById(SCRIPT.controlId); const row = control?.querySelector?.('.mcms-launch-row'); if (!control || !row) return null; let button = document.getElementById(VERSION_STATUS.buttonId); if (button && !control.contains(button)) { button.remove(); button = null; } if (!button) { button = document.createElement('button'); button.id = VERSION_STATUS.buttonId; button.type = 'button'; button.className = 'mcms-version-btn mcms-version-btn--unified'; button.dataset.variant = 'control-family'; button.setAttribute('aria-live', 'polite'); const economy = row.querySelector?.('.mcms-economy-btn') || null; row.insertBefore(button, economy); runtimeListen(button, 'click', event => { event.preventDefault(); if (versionStatusSuppressClick) { versionStatusSuppressClick = false; return; } if (event.shiftKey || versionStatusModel.state === 'idle' || versionStatusModel.state === 'error') { scheduleVersionStatusCheck(0, true); return; } if (versionStatusModel.state !== 'checking') versionStatusOpen(); }); runtimeListen(button, 'contextmenu', event => { event.preventDefault(); scheduleVersionStatusCheck(0, true); }); runtimeListen(button, 'pointerdown', event => { if (event.pointerType === 'mouse') return; runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = runtimeSetTimeout(() => { versionStatusSuppressClick = true; scheduleVersionStatusCheck(0, true); showToast('Checking Toolkit version…'); }, VERSION_STATUS.longPressMs); }); for (const eventName of ['pointermove', 'pointerup', 'pointercancel']) runtimeListen(button, eventName, () => { runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = null; }, { passive: true }); } versionStatusRender(); if (!versionStatusHydrationPromise) void hydrateVersionStatus(); return button; }
+    function ensureVersionStatusAlertStyle() {
+        if (document.querySelector(`#${VERSION_STATUS.alertStyleId}`)) return;
+        const style = document.createElement('style');
+        style.id = VERSION_STATUS.alertStyleId;
+        style.textContent = `
+            @keyframes mcmsVersionUpdateNeon {
+                0%,100% { box-shadow:0 0 5px rgba(57,255,207,.82),0 0 12px rgba(57,255,207,.62),0 0 22px rgba(57,210,255,.42),0 3px 9px rgba(0,0,0,.5),inset 0 0 8px rgba(57,255,207,.18); }
+                50% { box-shadow:0 0 8px rgba(57,255,207,1),0 0 20px rgba(57,255,207,.96),0 0 34px rgba(57,210,255,.78),0 3px 9px rgba(0,0,0,.5),inset 0 0 14px rgba(57,255,207,.32); }
+            }
+            #${VERSION_STATUS.buttonId}[data-state="update"] {
+                --mcms-version-accent:#39ffcf !important;
+                --mcms-version-accent-rgb:57,255,207 !important;
+                border-color:rgba(94,255,220,.96) !important;
+                background:linear-gradient(180deg,rgba(5,66,62,.99) 0%,rgba(2,23,28,.99) 100%) !important;
+                color:#fff !important;
+                box-shadow:0 0 5px rgba(57,255,207,.95),0 0 13px rgba(57,255,207,.78),0 0 24px rgba(57,210,255,.58),0 3px 9px rgba(0,0,0,.5),inset 0 0 10px rgba(57,255,207,.22) !important;
+                animation:mcmsVersionUpdateNeon 1.8s ease-in-out infinite !important;
+            }
+            @media (prefers-reduced-motion:reduce) {
+                #${VERSION_STATUS.buttonId}[data-state="update"] {
+                    animation:none !important;
+                    box-shadow:0 0 7px rgba(57,255,207,1),0 0 18px rgba(57,255,207,.9),0 0 30px rgba(57,210,255,.7),0 3px 9px rgba(0,0,0,.5),inset 0 0 12px rgba(57,255,207,.28) !important;
+                }
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    }
+    function versionStatusOpen() { const opened = pageWindow.open(VERSION_STATUS.productUrl, '_blank', 'noopener,noreferrer'); try { if (opened) opened.opener = null; } catch (err) {} }
+    function ensureVersionStatusButton() {
+        ensureVersionStatusStyle();
+        ensureVersionStatusAlertStyle();
+        const control = document.getElementById(SCRIPT.controlId);
+        const row = control?.querySelector?.('.mcms-launch-row');
+        if (!control || !row) return null;
+        let button = document.getElementById(VERSION_STATUS.buttonId);
+        if (button && !control.contains(button)) { button.remove(); button = null; }
+        if (!button) {
+            button = document.createElement('button');
+            button.id = VERSION_STATUS.buttonId;
+            button.type = 'button';
+            button.className = 'mcms-version-btn mcms-version-btn--unified';
+            button.dataset.variant = 'control-family';
+            button.setAttribute('aria-live', 'polite');
+            const economy = row.querySelector?.('.mcms-economy-btn') || null;
+            row.insertBefore(button, economy);
+            runtimeListen(button, 'click', event => {
+                event.preventDefault();
+                if (versionStatusSuppressClick) { versionStatusSuppressClick = false; return; }
+                if (event.shiftKey) { scheduleVersionStatusCheck(0, true); return; }
+                versionStatusOpen();
+            });
+            runtimeListen(button, 'contextmenu', event => { event.preventDefault(); scheduleVersionStatusCheck(0, true); });
+            runtimeListen(button, 'pointerdown', event => {
+                if (event.pointerType === 'mouse') return;
+                runtimeClearTimeout(versionStatusLongPressTimer);
+                versionStatusLongPressTimer = runtimeSetTimeout(() => {
+                    versionStatusSuppressClick = true;
+                    scheduleVersionStatusCheck(0, true);
+                    showToast('Checking Toolkit version…');
+                }, VERSION_STATUS.longPressMs);
+            });
+            for (const eventName of ['pointermove', 'pointerup', 'pointercancel']) {
+                runtimeListen(button, eventName, () => {
+                    runtimeClearTimeout(versionStatusLongPressTimer);
+                    versionStatusLongPressTimer = null;
+                }, { passive: true });
+            }
+        }
+        versionStatusRender();
+        if (!versionStatusHydrationPromise) void hydrateVersionStatus();
+        if (!versionStatusInitialCheckQueued && versionStatusTimer === null && !versionStatusCheckPromise) {
+            versionStatusInitialCheckQueued = true;
+            queueMicrotask(() => {
+                versionStatusInitialCheckQueued = false;
+                if (!runtime.destroyed && document.visibilityState !== 'hidden' && button?.isConnected && toolkitCommandShellContextActive() && versionStatusTimer === null && !versionStatusCheckPromise) {
+                    scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+                }
+            });
+        }
+        return button;
+    }
     async function hydrateVersionStatus() { if (versionStatusHydrationPromise) return versionStatusHydrationPromise; versionStatusHydrationPromise = (async () => { const now = Date.now(); const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); } })().finally(() => { versionStatusHydrationPromise = null; }); return versionStatusHydrationPromise; }
-    function versionStatusRequestManifest() { return new Promise((resolve, reject) => { let settled = false; let timeoutTimer = null; const finish = (error, text) => { if (settled) return; settled = true; runtimeClearTimeout(timeoutTimer); if (versionStatusRequest?.abort) runtime.requests?.delete?.(versionStatusRequest); versionStatusRequest = null; if (error) { reject(error); return; } try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); } catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); } }; const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}`; if (typeof GM_xmlhttpRequest === 'function') { try { versionStatusRequest = GM_xmlhttpRequest({ method: 'GET', url, timeout: VERSION_STATUS.requestTimeoutMs, responseType: 'text', headers: { Accept: 'application/json' }, onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300 ? finish(null, response.responseText) : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)), onerror: () => finish(new Error('Version endpoint could not be reached.')), ontimeout: () => finish(new Error('Version check timed out.')), onabort: () => finish(new Error('Version check was cancelled.')) }); if (versionStatusRequest?.abort) runtime.requests?.add?.(versionStatusRequest); } catch (err) { finish(err); } return; } const Controller = pageWindow.AbortController || globalThis.AbortController; const controller = typeof Controller === 'function' ? new Controller() : null; if (controller) runtime.fetchControllers?.add?.(controller); timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs); Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, { cache: 'no-store', credentials: 'omit', signal: controller?.signal, headers: { Accept: 'application/json' } })).then(response => { if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`); return response.text(); }).then(text => finish(null, text)).catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.'))).finally(() => { if (controller) runtime.fetchControllers?.delete?.(controller); }); }); }
-    async function runVersionStatusCheck(force = false) { ensureVersionStatusButton(); if (versionStatusCheckPromise) return versionStatusCheckPromise; versionStatusCheckPromise = (async () => { const now = Date.now(); if (!force) { const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return versionStatusModel; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); return versionStatusModel; } } versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, error: '' }; versionStatusRender(); try { const manifest = await versionStatusRequestManifest(); const checkedAt = Date.now(); const presentation = versionStatusPresentation(SCRIPT.version, manifest); versionStatusModel = { state: presentation.state, manifest, checkedAt, error: '' }; await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest }); await versionStatusStorageDelete(VERSION_STATUS.failureKey); } catch (err) { const failedAt = Date.now(); versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt, error: String(err?.message || err || 'failed') }; await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt }); } versionStatusRender(); return versionStatusModel; })().finally(() => { versionStatusCheckPromise = null; }); return versionStatusCheckPromise; }
+    function versionStatusRequestManifest() {
+        const requestToken = ++versionStatusRequestToken;
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            let timeoutTimer = null;
+            let requestHandle = null;
+            const finish = (error, text) => {
+                if (settled) return;
+                settled = true;
+                runtimeClearTimeout(timeoutTimer);
+                if (requestHandle?.abort) runtime.requests?.delete?.(requestHandle);
+                if (requestHandle) runtime.fetchControllers?.delete?.(requestHandle);
+                if (versionStatusRequest === requestHandle) versionStatusRequest = null;
+                if (runtime.destroyed || requestToken !== versionStatusRequestToken) {
+                    reject(new Error('Version check was superseded.'));
+                    return;
+                }
+                if (error) { reject(error); return; }
+                try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); }
+                catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); }
+            };
+            const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}-${requestToken}`;
+            if (typeof GM_xmlhttpRequest === 'function') {
+                try {
+                    requestHandle = GM_xmlhttpRequest({
+                        method: 'GET',
+                        url,
+                        timeout: VERSION_STATUS.requestTimeoutMs,
+                        responseType: 'text',
+                        headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                        onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
+                            ? finish(null, response.responseText)
+                            : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
+                        onerror: () => finish(new Error('Version endpoint could not be reached.')),
+                        ontimeout: () => finish(new Error('Version check timed out.')),
+                        onabort: () => finish(new Error('Version check was cancelled.')),
+                    });
+                    versionStatusRequest = requestHandle;
+                    if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
+                } catch (err) { finish(err); }
+                return;
+            }
+            const Controller = pageWindow.AbortController || globalThis.AbortController;
+            const controller = typeof Controller === 'function' ? new Controller() : null;
+            requestHandle = controller;
+            versionStatusRequest = controller;
+            if (controller) runtime.fetchControllers?.add?.(controller);
+            timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
+            Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
+                cache: 'no-store',
+                credentials: 'omit',
+                signal: controller?.signal,
+                headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+            }))
+                .then(response => {
+                    if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
+                    return response.text();
+                })
+                .then(text => finish(null, text))
+                .catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
+        });
+    }
+    async function runVersionStatusCheck(force = false) {
+        ensureVersionStatusButton();
+        if (versionStatusCheckPromise) return versionStatusCheckPromise;
+        const pendingCheck = (async () => {
+            const now = Date.now();
+            if (!force) {
+                const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey);
+                if (versionStatusCacheIsFresh(cache, now)) {
+                    const manifest = versionStatusValidateManifest(cache.manifest);
+                    versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), failedAt: 0, error: '' };
+                    versionStatusRender();
+                    return versionStatusModel;
+                }
+                const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey);
+                if (versionStatusFailureCooling(failure, now)) {
+                    if (!versionStatusModel.manifest || !['latest', 'update'].includes(versionStatusModel.state)) {
+                        versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' };
+                        versionStatusRender();
+                    }
+                    return versionStatusModel;
+                }
+            }
+            const previousVerified = versionStatusModel.manifest && ['latest', 'update'].includes(versionStatusModel.state)
+                ? { ...versionStatusModel }
+                : null;
+            if (!previousVerified) {
+                versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, failedAt: 0, error: '' };
+                versionStatusRender();
+            }
+            try {
+                const manifest = await versionStatusRequestManifest();
+                const checkedAt = Date.now();
+                const presentation = versionStatusPresentation(SCRIPT.version, manifest);
+                versionStatusModel = { state: presentation.state, manifest, checkedAt, failedAt: 0, error: '' };
+                await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest });
+                await versionStatusStorageDelete(VERSION_STATUS.failureKey);
+            } catch (err) {
+                if (String(err?.message || err) === 'Version check was superseded.') return versionStatusModel;
+                const failedAt = Date.now();
+                const error = String(err?.message || err || 'failed');
+                versionStatusModel = previousVerified
+                    ? { ...previousVerified, failedAt, error }
+                    : { state: 'error', manifest: null, checkedAt: 0, failedAt, error };
+                await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt });
+            }
+            versionStatusRender();
+            return versionStatusModel;
+        })();
+        const trackedCheck = pendingCheck.finally(() => {
+            if (versionStatusCheckPromise === trackedCheck) versionStatusCheckPromise = null;
+        });
+        versionStatusCheckPromise = trackedCheck;
+        return trackedCheck;
+    }
     function versionStatusAutomaticDelay(now = Date.now()) {
         const current = Number(now) || Date.now();
-        if (versionStatusModel.state === 'error') {
-            const failedAt = Number(versionStatusModel.failedAt) || 0;
-            if (failedAt > 0) {
-                const elapsed = Math.max(0, current - failedAt);
-                return Math.max(1000, VERSION_STATUS.failureCooldownMs - Math.min(VERSION_STATUS.failureCooldownMs, elapsed));
-            }
-            return VERSION_STATUS.failureCooldownMs;
+        const failedAt = Number(versionStatusModel.failedAt) || 0;
+        if (failedAt > 0) {
+            const elapsed = Math.max(0, current - failedAt);
+            return Math.max(1000, VERSION_STATUS.failureCooldownMs - Math.min(VERSION_STATUS.failureCooldownMs, elapsed));
         }
         const checkedAt = Number(versionStatusModel.checkedAt) || 0;
         if (checkedAt > 0 && versionStatusModel.manifest) {
@@ -28621,7 +28811,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return VERSION_STATUS.autoIntervalMs;
     }
     function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false) {
-        if (runtime.destroyed) return;
+        if (runtime.destroyed || !toolkitCommandShellContextActive()) {
+            disposeVersionStatus();
+            return;
+        }
         ensureVersionStatusButton();
         if (versionStatusTimer !== null) {
             if (!force && Number(delay) === VERSION_STATUS.bootDelayMs) return;
@@ -28629,20 +28822,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         versionStatusTimer = runtimeSetTimeout(async () => {
             versionStatusTimer = null;
-            if (runtime.destroyed) return;
+            if (runtime.destroyed || !toolkitCommandShellContextActive()) {
+                disposeVersionStatus();
+                return;
+            }
             if (!force && document.visibilityState === 'hidden') return;
             try {
                 await runVersionStatusCheck(force);
             } finally {
-                if (!runtime.destroyed && document.visibilityState !== 'hidden') {
+                if (!runtime.destroyed && toolkitCommandShellContextActive() && document.visibilityState !== 'hidden') {
                     scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false);
                 }
             }
         }, Math.max(0, Number(delay) || 0));
     }
-    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); }
+    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; versionStatusInitialCheckQueued = false; versionStatusRequestToken += 1; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; versionStatusCheckPromise = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); document.querySelector(`#${VERSION_STATUS.alertStyleId}`)?.remove(); }
 
     function createCleanExit() {
+        if (!toolkitCommandShellContextActive()) return null;
         if (document.getElementById(SCRIPT.cleanExitId)) return;
         const button = document.createElement('button');
         button.id = SCRIPT.cleanExitId;
@@ -28660,7 +28857,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const existing = document.getElementById(SCRIPT.controlId);
         if (existing) {
             if (existing.parentElement !== host) host.appendChild(existing);
-            existing.classList.toggle('mcms-control-fallback', !primaryMap);
+            existing.classList.remove('mcms-control-fallback');
             toolkitApplyCommandBarState(existing);
             return existing;
         }
@@ -28759,7 +28956,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
         toolkitApplyCommandBarState(control);
         host.appendChild(control);
-        control.classList.toggle('mcms-control-fallback', !primaryMap);
+        control.classList.remove('mcms-control-fallback');
         renderScreenPins();
         updateUI();
         return control;
@@ -28920,6 +29117,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function createPanel() {
+        if (!toolkitCommandShellContextActive()) return null;
         const existingPanel = document.getElementById(SCRIPT.panelId);
         if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
         const panelStartedAt = startupClock();
@@ -28999,7 +29197,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
-                    ${makeToggleButton('missionProgressRings', '◔', 'Progress Rings', 'Show exact MissionChief progress around supported mission markers. Unknown progress is never guessed.', 'progressRings')}
                 </div>
                 <div class="mcms-row" style="margin-top:8px">
                     <span class="mcms-row-label">Ring radius</span>
@@ -29057,7 +29254,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeToggleButton('customVehicleBadges', '▣', 'Custom Vehicle Badges', 'Show custom vehicle categories in available vehicles list.')}
                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
-                    ${makeToggleButton('allianceChatPreviews', '▤', 'Chat Previews', 'Expand alliance-chat mission links using only live mission data already available on this page.', 'alliancePreviews')}
                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
                     ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Play a short synthesized tracking cue during mission zoom and target acquisition.')}
                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
@@ -29885,8 +30081,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             missionAge: state.missionAge,
             transportWatcher: state.transportWatcher,
             unitCommitment: state.unitCommitment,
-            missionProgressRings: state.missionProgressRings,
-            allianceChatPreviews: state.allianceChatPreviews,
         };
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
@@ -29989,9 +30183,16 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         updateCommandInterfaceHeader(panel);
     }
     function ensureUi() {
-        if (!toolkitTopLevelDocument(document)) return true;
+        if (!toolkitCommandShellRouteEligible(document)) {
+            teardownToolkitCommandShell('route is not the canonical top-level map');
+            return true;
+        }
         const discoveredMap = getLargestLeafletMap();
         const mapEl = toolkitPrimaryMapElement(discoveredMap, document);
+        if (!mapEl) {
+            teardownToolkitCommandShell('canonical map has not been positively identified');
+            return false;
+        }
         const control = createControl(mapEl);
         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
         if (control) ensureVersionStatusButton();
@@ -30007,6 +30208,52 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         toolkitApplyCommandBarState(control);
         if (!maybeShowSetupWizard()) maybeShowUpdateBriefing();
         return Boolean(control || document.getElementById(SCRIPT.controlId));
+    }
+
+    let toolkitCommandShellRouteReconcileQueued = false;
+    function reconcileToolkitCommandShellRoute(reason = 'navigation') {
+        invalidateMapElementCache();
+        if (!toolkitCommandShellRouteEligible(document)) {
+            teardownToolkitCommandShell(`${reason}: ineligible route`);
+            return true;
+        }
+        return ensureUi();
+    }
+    function queueToolkitCommandShellRouteReconcile(reason = 'history') {
+        if (toolkitCommandShellRouteReconcileQueued || runtime.destroyed) return;
+        toolkitCommandShellRouteReconcileQueued = true;
+        queueMicrotask(() => {
+            toolkitCommandShellRouteReconcileQueued = false;
+            if (!runtime.destroyed) reconcileToolkitCommandShellRoute(reason);
+        });
+    }
+    function installToolkitCommandShellNavigationHooks() {
+        const historyObject = pageWindow.history;
+        if (!historyObject || historyObject.__mcmsCommandShellNavigationHooks === SCRIPT.version) return true;
+        for (const method of ['pushState', 'replaceState']) {
+            const original = historyObject[method];
+            if (typeof original !== 'function') continue;
+            const wrapped = function (...args) {
+                const result = original.apply(this, args);
+                queueToolkitCommandShellRouteReconcile(`history.${method}`);
+                return result;
+            };
+            try {
+                historyObject[method] = wrapped;
+                runtime.hookRestorers.push(() => {
+                    if (historyObject[method] === wrapped) historyObject[method] = original;
+                });
+            } catch (error) {}
+        }
+        try { historyObject.__mcmsCommandShellNavigationHooks = SCRIPT.version; } catch (error) {}
+        runtime.hookRestorers.push(() => {
+            try {
+                if (historyObject.__mcmsCommandShellNavigationHooks === SCRIPT.version) {
+                    delete historyObject.__mcmsCommandShellNavigationHooks;
+                }
+            } catch (error) {}
+        });
+        return true;
     }
 
     function mutationBelongsToToolkit(mutation) {
@@ -30037,7 +30284,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 target.closest?.(`#${SCRIPT.commandExperienceModalId}`) ||
                 target.closest?.(`#${SCRIPT.quickWheelId}`) ||
                 target.closest?.(`#${SCRIPT.fullscreenExitId}`) ||
-                target.closest?.('.mcms-alliance-mission-preview,.mcms-mission-progress-icon') ||
                 false
             )
         );
@@ -30047,7 +30293,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (String(className).startsWith('mcms-')) return true;
             }
         }
-        const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label, .mcms-mission-progress-icon, .mcms-mission-progress-ring, .mcms-alliance-mission-preview';
+        const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
         let elementCount = 0;
         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
             if (!collection?.length) continue;
@@ -30064,7 +30310,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
         for (const node of mutation.addedNodes) {
             if (!node || node.nodeType !== 1) continue;
-            if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon, .mcms-mission-progress-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon, .mcms-mission-progress-icon')) continue;
+            if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
             if (node.matches?.('.leaflet-marker-icon')) return true;
             if (node.querySelector?.('.leaflet-marker-icon')) return true;
         }
@@ -30095,10 +30341,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function mutationAffectsMissionData(mutation) {
         return mutationTouchesSelector(mutation, '.leaflet-marker-pane, .leaflet-marker-icon, [id^="mission_"], #missions, #mission_list, .missionSideBarEntry, .mission-side-bar-entry, [data-mission-id]');
-    }
-
-    function mutationAffectsAllianceChat(mutation) {
-        return mutationTouchesSelector(mutation, '#mission_chat_messages');
     }
 
     function mutationAffectsMapLayout(mutation) {
@@ -30285,10 +30527,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const mapElement = getLargestLeafletMap();
         const mapRoot = mapElement?.closest?.('#map_outer') || mapElement?.parentElement || mapElement;
         const missionRoot = document.querySelector('#missions, #mission_list, .missions-panel, .mission-list');
-        const chatRoot = document.querySelector('#mission_chat_messages');
         if (mapRoot?.isConnected) roots.add(mapRoot);
         if (missionRoot?.isConnected) roots.add(missionRoot);
-        if (chatRoot?.isConnected) roots.add(chatRoot);
         if (!roots.size) {
             mainMutationObserverFallbackActive = true;
             mainMutationObserver.observe(document.body, { childList: true, subtree: true });
@@ -30322,7 +30562,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
         if (missionSnapshotsNeeded()) refreshMissionSnapshots();
-        else renderAllianceChatMissionPreviews();
         if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector();
         if (!state.safeMode.enabled) {
         if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(180);
@@ -30623,11 +30862,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             attempts += 1;
             const ready = Boolean(runBootIntegration('core UI mount', ensureUi));
             const mapReady = Boolean(runBootIntegration('map discovery', getLargestLeafletMap));
+            const commandShellRouteEligible = toolkitCommandShellRouteEligible(document);
             runBootIntegration('mission marker hook', installMissionMarkerAddHook);
             runBootIntegration('radio message hook', installRadioMessageHook);
             runBootIntegration('credits update hook', installCreditsUpdateHook);
             runBootIntegration('credits observer', observeCreditValue);
-            if (ready && (mapReady || attempts >= 12)) {
+            if (ready && (!commandShellRouteEligible || mapReady || attempts >= 12)) {
                 complete = true;
                 runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
                 runBootIntegration('marker state sync', () => {
@@ -30711,6 +30951,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         bootStartedAt = Date.now();
         const bootPerformanceStartedAt = startupClock();
         const allianceBuildingsOnly = isAllianceBuildingsPath() && state.allianceBuildingsMap === false;
+        runBootIntegration('command-shell route lifecycle', installToolkitCommandShellNavigationHooks);
         if (!allianceBuildingsOnly) startBootAttemptCoordinator(bootPerformanceStartedAt);
         runBootIntegration('root attributes', applyRootAttributes);
         runBootIntegration('Alliance Buildings optimisation', installAllianceBuildingsPageOptimisation);
@@ -30731,7 +30972,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let externalMutationFound = false;
             let addedLeafletMarker = false;
             let missionChanged = false;
-            let chatChanged = false;
             let layoutChanged = false;
             let toolkitUiRemoved = false;
             for (const mutation of mutations) {
@@ -30744,14 +30984,13 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     missionChanged = true;
                 }
                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
-                if (!chatChanged && mutationAffectsAllianceChat(mutation)) chatChanged = true;
                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
                 if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
-                if (addedLeafletMarker && missionChanged && chatChanged && layoutChanged && toolkitUiRemoved) break;
+                if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
             }
             if (!externalMutationFound) return;
             missionChanged ||= addedLeafletMarker;
-            if (!missionChanged && !chatChanged && !layoutChanged && !toolkitUiRemoved) return;
+            if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
@@ -30770,7 +31009,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
-                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list, #mission_chat_messages'))) {
+                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
                     connectMainMutationObserver();
                 }
                 if (layoutChanged) {
@@ -30781,7 +31020,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (missionChanged) {
                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
                 }
-                if (chatChanged) renderAllianceChatMissionPreviews();
             }, mutationDelay);
         }));
         mainMutationObserver = observer;
@@ -30847,8 +31085,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const recoverUiAfterNavigation = event => {
             runtimeSetTimeout(() => {
                 if (runtime.destroyed || document.hidden) return;
-                invalidateMapElementCache();
-                ensureUi();
+                reconcileToolkitCommandShellRoute(event?.type || 'navigation');
                 connectMainMutationObserver();
                 recoverMajorIncidentFeed(event?.type || 'navigation');
             }, 120);
@@ -30906,8 +31143,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             removeMajorIncidentFeed();
             clearMissionLockOnEffect();
             stopVehicleFollow(false);
-            clearMissionProgressRings();
-            clearAllianceChatMissionPreviews();
             clearAllianceCreditLabels();
             clearMissionAgeLabels();
             clearUnitCommitmentLabels();
@@ -31124,11 +31359,29 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function allianceMemberManagerHasDomContext(doc = document) {
         const table = allianceMemberManagerTable(doc);
         if (!table) return false;
-        const heading = Array.from(doc.querySelectorAll('h1, h2'))
-            .map(node => String(node.textContent || '').replace(/\s+/gu, ' ').trim())
-            .join(' ');
-        return /\bmembers?\b|\bmitglieder\b/iu.test(heading)
-            || Boolean(doc.querySelector('a[href^="/verband/mitglieder/"]'));
+        const headingLabel = heading => {
+            const clone = heading.cloneNode(true);
+            clone.querySelectorAll('small, .badge, [data-member-page-summary]').forEach(node => node.remove());
+            return String(clone.textContent || '').replace(/\s+/gu, ' ').trim();
+        };
+        let viewRoot = table.parentElement;
+        for (let depth = 0; viewRoot && depth < 8; depth += 1, viewRoot = viewRoot.parentElement) {
+            const headings = Array.from(viewRoot.children || [])
+                .filter(node => node.matches?.('h1, h2'));
+            if (!headings.length) continue;
+            return headings.some(heading =>
+                /^(?:(?:alliance|verband)\s+)?(?:members?|mitglieder)\b/iu.test(headingLabel(heading))
+            );
+        }
+        return Array.from(doc.querySelectorAll('a[href]')).some(link => {
+            const href = String(link.getAttribute('href') || '');
+            const memberLink = /^\/verband\/mitglieder(?:\/|$)/iu.test(href)
+                || /^\/alliances?\/(?:\d+\/)?members(?:\/|$)/iu.test(href)
+                || /^\/alliance_members(?:\/|$)/iu.test(href);
+            if (!memberLink) return false;
+            return link.matches?.('.active, [aria-current="page"]')
+                || Boolean(link.closest?.('li.active, .active > a, [aria-current="page"]'));
+        });
     }
 
     function allianceMemberManagerMountTarget(table) {
@@ -31166,16 +31419,21 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function allianceMemberManagerMutationRelevant(records) {
         const ownedSelector = '[data-mcms-ui-owned="alliance-member-manager"]';
-        return records.some(record => Array.from(record.addedNodes || [])
-            .concat(Array.from(record.removedNodes || []))
-            .some(node => {
+        return records.some(record => {
+            if (record.type === 'characterData') {
+                return Boolean(record.target?.parentElement?.closest?.('h1, h2, [data-member-page-summary]'));
+            }
+            return Array.from(record.addedNodes || [])
+                .concat(Array.from(record.removedNodes || []))
+                .some(node => {
                 if (!node || ![1, 11].includes(node.nodeType)) return false;
                 if (node.nodeType === 1 && (node.matches?.(ownedSelector) || node.closest?.(ownedSelector))) return false;
                 if (node.nodeType === 1 && node.matches?.('table, h1, h2, [data-member-page-summary], #mcms-alliance-member-manager')) return true;
                 return Boolean(node.querySelector?.(
                     'table, h1, h2, a[href^="/profile/"], a[href*="/profile/"], #mcms-alliance-member-manager'
                 ));
-            }));
+                });
+        });
     }
 
     function allianceMemberManagerQueueReconcile(reason = 'dom-change') {
@@ -31208,7 +31466,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 allianceMemberManagerQueueReconcile('member-dom-mutation');
             }
         });
-        allianceMemberManagerMountObserver.observe(root, { childList: true, subtree: true });
+        allianceMemberManagerMountObserver.observe(root, { characterData: true, childList: true, subtree: true });
         return true;
     }
 
@@ -31506,7 +31764,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (
             allianceMemberManagerPage ||
             !allianceMemberManagerEnabled() ||
-            !(isAllianceMemberManagerRoute() || allianceMemberManagerHasDomContext()) ||
+            !allianceMemberManagerHasDomContext() ||
             allianceMemberManagerOtherOwnerPresent()
         ) return;
         const table = allianceMemberManagerTable(document);
@@ -31668,12 +31926,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const observing = allianceMemberManagerEnsureMountObserver();
         const routeMatch = isAllianceMemberManagerRoute();
         const domMatch = allianceMemberManagerHasDomContext();
-        if (!routeMatch && !domMatch) {
+        if (!domMatch) {
             allianceMemberManagerClearMountNotice();
             disposeAllianceMemberManager();
             allianceMemberManagerRecordMountState(
                 observing ? 'watching' : 'waiting',
-                'Enabled; waiting for an alliance member view'
+                routeMatch
+                    ? 'Member route found; waiting for a confirmed member view'
+                    : 'Enabled; waiting for an alliance member view'
             );
             return;
         }

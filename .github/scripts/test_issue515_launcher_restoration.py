@@ -22,8 +22,12 @@ def main() -> int:
 
     helpers = [
         "toolkitTopLevelDocument",
+        "toolkitDocumentPathname",
+        "toolkitCommandShellRouteEligible",
         "toolkitPrimaryMapElement",
         "toolkitControlHost",
+        "toolkitCommandShellContextActive",
+        "teardownToolkitCommandShell",
         "toolkitApplyCommandBarState",
     ]
     for helper in helpers:
@@ -42,13 +46,16 @@ def main() -> int:
     assert "host.appendChild(control);" in create
 
     ensure = section(source, "    function ensureUi()", "    function mutationBelongsToToolkit")
-    assert "if (!toolkitTopLevelDocument(document)) return true;" in ensure
+    assert "if (!toolkitCommandShellRouteEligible(document))" in ensure
+    assert "teardownToolkitCommandShell('route is not the canonical top-level map')" in ensure
     assert "const mapEl = toolkitPrimaryMapElement(discoveredMap, document);" in ensure
+    assert "if (!mapEl)" in ensure
     assert "const control = createControl(mapEl);" in ensure
     assert "toolkitApplyCommandBarState(control);" in ensure
     assert "return Boolean(control || document.getElementById(SCRIPT.controlId));" in ensure
 
-    assert "return toolkitPrimaryMapElement(mapEl, doc) || doc?.body || doc?.documentElement || null;" in source
+    assert "return toolkitPrimaryMapElement(mapEl, doc);" in source
+    assert "return toolkitPrimaryMapElement(mapEl, doc) || doc?.body" not in source
     assert "#mission-form,.mission-window,.mission_window,.modal,.modal-content,.lightbox,[data-mission-id]" in source
     token = "ls" + "sm"
     assert token not in source.lower(), "retired integration reference returned"

@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 636,
-    "version": "10.2.4",
-    "sourceBytes": 2094959,
-    "sourceLines": 31549,
-    "sourceSha256": "4215da7303a07a321726fe08314de675a5704336498716042fce3caf2f0b3b4a",
+    "issue": 638,
+    "version": "10.2.5",
+    "sourceBytes": 2107830,
+    "sourceLines": 31889,
+    "sourceSha256": "1db321a814fd795a46dffcfca5a9cbfb09cdd28692c27a2f3a8337396164111f",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2129504,
     "maxSourceLines": 32048,
     "minTemplateBytes": 500000,
-    "baseline": "10.2.3",
+    "baseline": "10.2.4",
     "approvedGrowth": {
-      "sourceBytes": 1339,
-      "sourceLines": 25,
+      "sourceBytes": 12871,
+      "sourceLines": 340,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #636 Alliance Member Manager active-view isolation and cross-page teardown"
+    "scope": "Issues #638 and #639 canonical-map command-shell ownership and verified 60-second release alert"
   }
 }

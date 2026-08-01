@@ -1,10 +1,12 @@
 # MissionChief Map Command Toolkit
 
-## v10.2.4 — Alliance Member Manager page isolation
+## v10.2.5 — Map-only command shell and live update alert
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 10.2.4 confines Alliance Member Manager to a positively identified active Members or Mitglieder view. Shared alliance navigation links, Applications profile rows and stale member-route URLs can no longer mount it, and in-page navigation away from Members removes it immediately. The cleaner native MissionChief map and Alliance Chat from v10.2.3 remain unchanged. Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported. The official install and automatic-update channel remains TKB, while Greasy Fork is a non-blocking discovery mirror. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
+**The One We Knew Before** keeps MissionChief's native pages in control while adding the command layer only where it belongs.
+
+Version 10.2.5 keeps the global launcher, dock, command menu and map overlays exclusively on the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native while supported page-specific enhancements continue independently. The compact release-status button checks the guarded GitHub stable manifest every 60 seconds, displays LATEST when current and a conspicuous neon UPDATE when a newer verified release exists, and always opens the official TKB Toolkit page. Alliance Member Manager remains isolated to the active Members or Mitglieder view. Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported. TKB remains the official install and automatic-update channel; Greasy Fork is a non-blocking discovery mirror.
 
 ### Retained native systems
 

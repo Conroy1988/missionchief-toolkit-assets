@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-636-alliance-member-manager-page-isolation-v10-2-4",
-  "rationale": "Approve the measured Issue #636 Alliance Member Manager active-view guard and cross-page teardown regression with zero growth in requests, observers or managed listeners.",
+  "revision": "2026-08-01-issues-638-639-map-shell-update-alert-v10-2-5",
+  "rationale": "Approve the measured Issues #638 and #639 canonical map command-shell ownership plus one existing-timer 60-second verified release check, with zero growth in request sites, observers, managed timers or managed listeners.",
   "transitionApproval": {
-    "issue": 636,
-    "version": "10.2.4",
+    "issue": 638,
+    "version": "10.2.5",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Require positive active Members/Mitglieder view evidence before mounting Alliance Member Manager and dispose it when the host switches to Applications or another alliance page.",
+    "scope": "Issues #638 and #639: require positive canonical top-level map ownership for the global command shell and reuse the existing version-status timer/request lifecycle for 60-second verified release discovery with a reduced-motion-safe neon alert.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 636,
+      "version": "10.2.4",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Require positive active Members/Mitglieder view evidence before mounting Alliance Member Manager and dispose it when the host switches to Applications or another alliance page.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 634,
       "version": "10.2.3",

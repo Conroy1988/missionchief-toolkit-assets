@@ -18,39 +18,42 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.3"
 
     for required in [
-        "missionProgressRings: true",
-        "allianceChatPreviews: true",
-        "merged.missionProgressRings = merged.missionProgressRings !== false",
-        "merged.allianceChatPreviews = merged.allianceChatPreviews !== false",
-        "function missionProgressRingModel(",
+        "delete merged.missionProgressRings",
+        "delete merged.allianceChatPreviews",
         "function openUnitLocator(",
-        "function renderAllianceChatMissionPreviews(",
         "function openSessionCleanup(",
         "function performSessionCleanup(",
-        "makeToggleButton('missionProgressRings'",
-        "makeToggleButton('allianceChatPreviews'",
         'data-action="open-unit-locator"',
         'data-action="open-session-cleanup"',
-        "#mission_chat_messages",
+        "Cleaner mission map and Alliance Chat",
         "runtimeListen(document, 'click'",
     ]:
         assert required in source, required
 
-    progress = section(source, "    function clearMissionProgressRings(", "    function clearAllianceChatMissionPreviews(")
-    for required in [
-        "const completion = Math.round(100 - liveValue)",
-        "possible - safeRemaining",
-        "__mcmsMissionProgressLayer",
-        "__mcmsMissionProgressRing",
-        "interactive: false",
-        "role=\"img\"",
+    for retired in [
+        "state.missionProgressRings",
+        "state.allianceChatPreviews",
+        "function clearMissionProgressRings(",
+        "function missionProgressRingModel(",
+        "function makeMissionProgressRingIcon(",
+        "function updateMissionProgressRings(",
+        "function clearAllianceChatMissionPreviews(",
+        "function allianceChatMissionSnapshot(",
+        "function allianceChatPreviewHtml(",
+        "function renderAllianceChatMissionPreviews(",
+        "makeToggleButton('missionProgressRings'",
+        "makeToggleButton('allianceChatPreviews'",
+        ".mcms-mission-progress-icon",
+        ".mcms-alliance-mission-preview",
+        "function mutationAffectsAllianceChat(",
+        "#mission_chat_messages",
+        'data-feature="progressRings"',
+        'data-feature="alliancePreviews"',
     ]:
-        assert required in progress, required
-    for forbidden in ["fetch(", "GM_xmlhttpRequest(", "setInterval(", "runtimeSetInterval("]:
-        assert forbidden not in progress, forbidden
+        assert retired not in source, retired
 
     locator = section(source, "    function vehicleMarkerForId(", "    function commandPaletteOpenSetting(")
     for required in [
@@ -64,20 +67,6 @@ def main() -> int:
         assert required in locator, required
     for forbidden in ["dispatch", "vehicleSelection", "clickVehicle", "fetch(", "GM_xmlhttpRequest("]:
         assert forbidden not in locator, forbidden
-
-    chat = section(source, "    function clearAllianceChatMissionPreviews(", "    function refreshMissionSnapshots(")
-    for required in [
-        "#mission_chat_messages",
-        "url.origin !== pageWindow.location.origin",
-        "allianceChatMissionSnapshot",
-        "liveMissionSnapshots.get(id)",
-        ".mcms-alliance-mission-preview .mcms-alliance-mission-preview",
-        "link.closest('.mcms-alliance-mission-preview')",
-        "link.insertAdjacentElement('afterend', preview)",
-    ]:
-        assert required in chat, required
-    for forbidden in ["fetch(", "GM_xmlhttpRequest(", "localStorage", "textContent = link", "innerText"]:
-        assert forbidden not in chat, forbidden
 
     cleanup = section(source, "    function sessionCleanupSpawnLayers(", "    function dismissUpdateBriefing(")
     for required in [
@@ -104,17 +93,12 @@ def main() -> int:
     ]:
         assert forbidden not in cleanup, forbidden
 
-    observer = section(source, "    function mutationBelongsToToolkit(", "    const ALLIANCE_BUILDINGS_MAP_NOTICE_ID")
-    assert "function mutationAffectsAllianceChat(" in observer
-    assert "const chatRoot = document.querySelector('#mission_chat_messages')" in source
-    assert "if (chatRoot?.isConnected) roots.add(chatRoot)" in source
-
     briefing = section(source, "    function updateBriefingBody(", "    function openUpdateBriefing(")
-    assert briefing.count('data-mcms-command-action="briefing-open-feature"') == 4
-    for feature in ["progressRings", "unitLocator", "alliancePreviews", "sessionCleanup"]:
+    assert briefing.count('data-mcms-command-action="briefing-open-feature"') == 2
+    for feature in ["unitLocator", "sessionCleanup"]:
         assert f'data-feature="{feature}"' in briefing
 
-    print("Issue #624 v10.2 operational-map-flow static contract passed.")
+    print("Issue #624 v10.2.3 retirement contract passed: progress rings and Alliance Chat previews are absent.")
     return 0
 
 

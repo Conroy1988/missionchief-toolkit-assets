@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 632,
-    "version": "10.2.2",
-    "sourceBytes": 2109707,
-    "sourceLines": 31750,
-    "sourceSha256": "d09df85749a2f28ccdbfc7b9e628d87375422cdc87cf270f7448e42afeb4bf84",
+    "issue": 634,
+    "version": "10.2.3",
+    "sourceBytes": 2093620,
+    "sourceLines": 31524,
+    "sourceSha256": "f8b147c24aacccf39e50c1f6ce0d1ae1f890b562bae1c519063154e355a7fe54",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2129504,
     "maxSourceLines": 32048,
     "minTemplateBytes": 500000,
-    "baseline": "10.2.1",
+    "baseline": "10.2.2",
     "approvedGrowth": {
-      "sourceBytes": 203,
-      "sourceLines": 2,
+      "sourceBytes": -16087,
+      "sourceLines": -226,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #632 Alliance Chat preview ownership and recursive-card cleanup hotfix"
+    "scope": "Issue #634 retirement of Mission Progress Rings and Alliance Chat Mission Previews"
   }
 }

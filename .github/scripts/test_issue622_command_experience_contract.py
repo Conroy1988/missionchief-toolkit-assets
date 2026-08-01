@@ -18,10 +18,10 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.3"
 
     for required in [
-        "const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'progressRings', 'unitLocator', 'alliancePreviews', 'sessionCleanup'])",
+        "const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'unitLocator', 'sessionCleanup'])",
         "const DEFAULT_HOTKEY_BINDINGS = Object.freeze({",
         "missionChiefReskin: false",
         "autoHideDock: defaultAutoHideDockState()",

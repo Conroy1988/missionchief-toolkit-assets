@@ -58,13 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v10.2.2
+## Current interface — v10.2.3
 
 ### One command system across desktop, tablet and iPhone
 
-Version `10.2.2` fixes recursive Alliance Chat Mission Previews: Toolkit-owned **Open** links are never reprocessed, any cards already nested by v10.2.1 are collapsed automatically and repeated refreshes retain one preview per native chat mission link. It retains the complete v10.2 Operational Map Flow through the official TKB install and automatic-update channel. Separate verified packages measure new installs and update downloads, while Greasy Fork remains an optional, non-blocking mirror. **Mission Progress Rings** show an exact clearing percentage only when MissionChief exposes a live remaining value or exact patient/prisoner totals; unknown progress stays unknown and native markers are never replaced. **Unit Locator & Follow Mode** searches personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected.
-
-**Alliance Chat Mission Previews** expand mission links already present in the current alliance chat using mission data already live on the page. They do not fetch linked missions or store chat messages or user identities. **One-Click Session Cleanup** previews an exact transient-state allowlist before confirmation and protects settings, device layouts, themes, profiles, bookmarks, recovery snapshots, Discord webhooks, secrets, Financial Archive history and MissionChief data.
+Version `10.2.3` restores a cleaner native MissionChief map and Alliance Chat by retiring Mission Progress Rings and Alliance Chat Mission Previews completely. Their map layer, generated cards, settings, saved-state keys, observer branch and styling have been removed. **Unit Locator & Follow Mode** remains available to search personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected. **One-Click Session Cleanup** continues to preview an exact transient-state allowlist before confirmation and protects settings, device layouts, themes, profiles, bookmarks, recovery snapshots, Discord webhooks, secrets, Financial Archive history and MissionChief data.
 
 Version `10.1.0` makes the command experience easier to discover, faster to reach and safer to recover. **What’s New & Feature Beacon** introduces each addition with a direct Open Feature action and leaves a `NEW` marker on its Settings route until viewed. Right-click a supported mission, vehicle or building—or long-press its marker on Tablet/iOS—for a contextual menu containing safe focus, native open and local search actions only.
 
@@ -116,9 +114,7 @@ Toolkit settings survive normal page refreshes and userscript updates through a 
 | **Personalisation Studio** | Builds independent device layouts, custom themes, a four-to-eight-slot Quick Wheel, protected backups, setup guidance and opt-in alerts |
 | **MissionChief Reskin, Smart Dock and Input Studio** | Extends the active theme across the game, auto-hides the dock and remaps every Toolkit hotkey or opt-in touch gesture |
 | **What’s New & Toolkit Safe Mode** | Makes new features discoverable and supplies a settings-preserving recovery state with Doctor, export and recovery access |
-| **Mission Progress Rings** | Draws accessible exact-progress rings without guessing unknown mission state or replacing native markers |
 | **Unit Locator & Follow Mode** | Searches personal vehicles locally and follows one explicitly selected live marker with visible cancellation |
-| **Alliance Chat Mission Previews** | Adds privacy-safe live mission context beside existing alliance-chat mission links without fetching them |
 | **One-Click Session Cleanup** | Previews and clears only allowlisted transient Toolkit state while protecting settings, secrets and history |
 | **Full-Screen Map and Tablet Quick Wheel** | Maximises the map with guaranteed recovery and exposes configurable long-press actions on Tablet |
 | **Operational SITREP** | Manually posts the current board snapshot to the saved Discord webhook with mention suppression and no automatic dispatch or posting |

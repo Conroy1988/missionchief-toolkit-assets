@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.2.3] - 2026-08-01
+
+### Cleaner mission map and Alliance Chat
+
+- Retires Mission Progress Rings and removes their Leaflet layer, marker renderer, settings controls, saved-state keys and styling.
+- Retires Alliance Chat Mission Previews and removes their cards, renderer, settings controls, chat-specific observer branch and styling.
+- Migrates existing saved settings by discarding both retired keys, so an earlier enabled choice cannot restore either feature.
+- Keeps MissionChief mission markers and Alliance Chat in their native form while retaining Unit Locator & Follow Mode and One-Click Session Cleanup.
+
 ## [10.2.2] - 2026-08-01
 
 ### Alliance Chat preview recursion hotfix

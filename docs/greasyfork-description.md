@@ -1,16 +1,14 @@
 # MissionChief Map Command Toolkit
 
-## v10.2.2 — Alliance Chat preview hotfix
+## v10.2.3 — Cleaner mission map and Alliance Chat
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 10.2.2 prevents Alliance Chat Mission Previews from recursively processing their own generated Open links. Any cards already nested by v10.2.1 are collapsed automatically, and repeated refreshes retain one preview per native mission link. It preserves the complete v10.2 Operational Map Flow and the supported TKB install and automatic-update channel. Greasy Fork remains a non-blocking discovery mirror. Existing Greasy Fork users should open the official TKB installer once to move future updates to the first-party channel. Chat previews continue to use only mission evidence already live on the current page and never fetch linked missions or store chat messages or user identities. Unknown mission progress is never guessed, Follow Mode never selects or dispatches a unit, and cleanup retains its strict transient-state allowlist. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
+Version 10.2.3 retires Mission Progress Rings and Alliance Chat Mission Previews completely. Their map layer, generated cards, settings controls, saved-state keys, chat-specific observer path and styling have been removed, leaving native MissionChief mission markers and Alliance Chat untouched. Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported. The official install and automatic-update channel remains TKB, while Greasy Fork is a non-blocking discovery mirror. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
 
 ### Retained native systems
 
-- Mission Progress Rings from exact live remaining-progress or patient/prisoner totals
 - Unit Locator & Follow Mode with explicit start, visible Stop and deterministic cancellation
-- Alliance Chat Mission Previews without linked-mission requests or chat/user storage
 - One-Click Session Cleanup with exact preview and protected settings, secrets and history
 - What’s New & Feature Beacon with direct feature routes and persistent per-feature NEW markers
 - Contextual Command Menus by right-click or touch long-press for missions, vehicles and buildings

@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.2.0] - 2026-08-01
+
+### Operational Map Flow
+
+- Adds accessible **Mission Progress Rings** from exact live MissionChief remaining-progress values or exact patient/prisoner totals; unknown progress is never guessed and native markers remain unchanged.
+- Adds **Unit Locator & Follow Mode** for personal vehicle caption, ID, type, station and FMS/status search, with explicit follow start and immediate cancellation on manual map movement, lost markers, Safe Mode or teardown.
+- Adds **Alliance Chat Mission Previews** for mission links already present in the current chat using only live/cache/DOM mission evidence already available on the page; no linked-mission fetch, chat-message storage or user-identity storage is introduced.
+- Adds **One-Click Session Cleanup** with an exact preview and confirmation over a strict transient-state allowlist; settings, layouts, themes, profiles, bookmarks, recovery snapshots, secrets, webhooks, finance history and MissionChief data remain protected.
+- Reuses the existing mission-snapshot, Leaflet-pane and bounded MutationObserver lifecycles with no new network request, broad observer, background poller or interval.
+- Adds Issue #624 static and runtime contracts covering exact progress semantics, local vehicle search, privacy-safe chat cards, cleanup boundaries and deterministic teardown.
+
 ## [10.1.0] - 2026-08-01
 
 ### Command Experience

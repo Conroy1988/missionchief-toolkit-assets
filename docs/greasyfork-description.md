@@ -1,13 +1,17 @@
 # MissionChief Map Command Toolkit
 
-## v10.1.0 candidate — Command Experience
+## v10.2.0 candidate — Operational Map Flow
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 10.1.0 adds What’s New feature beacons, safe right-click/long-press contextual menus, complete optional MissionChief reskinning, a Smart Auto-Hiding Dock, remappable hotkeys and opt-in touch gestures, and Toolkit Safe Mode. Safe Mode suspends optional modules without overwriting settings, Discord webhook or Financial Archive data; Settings, Toolkit Doctor, export, recovery and the exit remain available. Context menus never select or dispatch units. Existing v10 users upgrade without interruption, and the release adds no request, poller, interval, observer or animation-frame scheduler. Personalisation Studio, Command Palette, Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
+Version 10.2.0 adds exact Mission Progress Rings, local Unit Locator & Follow Mode, privacy-safe Alliance Chat Mission Previews and a confirmation-led One-Click Session Cleanup. Unknown mission progress is never guessed. Follow Mode never selects or dispatches a unit and stops on manual map movement, lost markers, Safe Mode or teardown. Chat previews use only mission evidence already live on the current page and never fetch linked missions or store chat messages or user identities. Cleanup has a strict transient-state allowlist and never removes settings, layouts, themes, profiles, bookmarks, recovery snapshots, secrets, webhooks, Financial Archive history or MissionChief data. Existing v10 users upgrade without interruption, and the release adds no network request, broad observer, background poller or interval. The complete v10.1 Command Experience, Personalisation Studio, Command Palette, Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
 
 ### Retained native systems
 
+- Mission Progress Rings from exact live remaining-progress or patient/prisoner totals
+- Unit Locator & Follow Mode with explicit start, visible Stop and deterministic cancellation
+- Alliance Chat Mission Previews without linked-mission requests or chat/user storage
+- One-Click Session Cleanup with exact preview and protected settings, secrets and history
 - What’s New & Feature Beacon with direct feature routes and persistent per-feature NEW markers
 - Contextual Command Menus by right-click or touch long-press for missions, vehicles and buildings
 - Complete MissionChief Reskinning plus reversible Smart Auto-Hiding Dock

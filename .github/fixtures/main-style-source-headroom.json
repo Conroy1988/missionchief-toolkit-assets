@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 622,
-    "version": "10.1.0",
-    "sourceBytes": 2072545,
-    "sourceLines": 31247,
-    "sourceSha256": "7e192b39af59341ea7ed2ca132613776e6a261d10acd211b83d712a9da2a1084",
+    "issue": 624,
+    "version": "10.2.0",
+    "sourceBytes": 2108794,
+    "sourceLines": 31744,
+    "sourceSha256": "2d3b6c994ffbb4b5fb2d0c1a6d6b38645a8c465c36ead15338186d5c4636df20",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
     "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
-    "maxSourceBytes": 2092545,
-    "maxSourceLines": 31547,
+    "maxSourceBytes": 2128794,
+    "maxSourceLines": 32044,
     "minTemplateBytes": 500000,
-    "baseline": "10.0.0",
+    "baseline": "10.1.0",
     "approvedGrowth": {
-      "sourceBytes": 38317,
-      "sourceLines": 414,
+      "sourceBytes": 36249,
+      "sourceLines": 497,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #622 feature beacons, contextual actions, reversible MissionChief reskinning, smart dock, remappable inputs and settings-preserving Safe Mode"
+    "scope": "Issue #624 exact Mission Progress Rings, explicit Unit Locator and Follow Mode, current-page Alliance Chat Mission Previews and protected One-Click Session Cleanup"
   }
 }

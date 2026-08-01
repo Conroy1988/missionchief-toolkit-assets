@@ -39,6 +39,7 @@ def main() -> int:
     generator = DASHBOARD_GENERATOR.read_text(encoding="utf-8")
     reconciler = RETIRED_RECONCILER.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
+    manifest = json.loads((ROOT / "dist/release-manifest.json").read_text(encoding="utf-8"))
 
     require(validation, [
         "permissions:\n  contents: read",
@@ -49,6 +50,11 @@ def main() -> int:
         "headCommit: $headCommit",
         "pullRequest: $pullRequest",
         "missionchief-toolkit-validation-candidate-${{ github.sha }}",
+        "dist/MissionChief_Map_Command_Toolkit.install.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.update.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.meta.js",
+        "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.css",
         "publicMainChanged: false",
         "releaseDashboardChanged: false",
         "verify_validation_candidate.py --self-test",
@@ -70,6 +76,16 @@ def main() -> int:
         "github-actions[bot]",
         "  push:\n",
     ], "Canonical validation workflow")
+    expected_candidate_files = {
+        *manifest["distributionFiles"],
+        "dist/SHA256SUMS.txt",
+        "dist/release-manifest.json",
+    }
+    if set(manifest.get("validationCandidateFiles", [])) != expected_candidate_files:
+        raise AssertionError("Release manifest validation-candidate inventory is incomplete")
+    for path in expected_candidate_files:
+        if path not in validation:
+            raise AssertionError(f"Canonical validation artifact omits declared file: {path}")
 
     require(automatic, [
         "types:\n      - closed",

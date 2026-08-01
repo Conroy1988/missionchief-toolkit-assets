@@ -1,12 +1,12 @@
 # MissionChief Map Command Toolkit
 
-## v10.2.5 — Map-only command shell and live update alert
+## v10.2.6 — Desktop command-dock containment
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
 **The One We Knew Before** keeps MissionChief's native pages in control while adding the command layer only where it belongs.
 
-Version 10.2.5 keeps the global launcher, dock, command menu and map overlays exclusively on the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native while supported page-specific enhancements continue independently. The compact release-status button checks the guarded GitHub stable manifest every 60 seconds, displays LATEST when current and a conspicuous neon UPDATE when a newer verified release exists, and always opens the official TKB Toolkit page. Alliance Member Manager remains isolated to the active Members or Mitglieder view. Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported. TKB remains the official install and automatic-update channel; Greasy Fork is a non-blocking discovery mirror.
+Version 10.2.6 keeps the expanded Desktop launcher and command dock inside the visible map workspace at every supported position, including with the Major Incident Wire active and at 80–200% browser zoom. When height is constrained, command groups scroll inside the dock while the launcher stays reachable. The global command shell remains exclusive to the positively identified top-level MissionChief map, the compact release-status button retains its verified 60-second TKB-first update check, and Alliance Member Manager remains isolated to the active Members or Mitglieder view. Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported. TKB remains the official install and automatic-update channel; Greasy Fork is a non-blocking discovery mirror.
 
 ### Retained native systems
 

@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 638,
-    "version": "10.2.5",
-    "sourceBytes": 2107830,
-    "sourceLines": 31889,
-    "sourceSha256": "1db321a814fd795a46dffcfca5a9cbfb09cdd28692c27a2f3a8337396164111f",
+    "issue": 641,
+    "version": "10.2.6",
+    "sourceBytes": 2118054,
+    "sourceLines": 32010,
+    "sourceSha256": "7ab40a8bd896ff429d4377bc920487a1b12b13ea0be23790981392863c3a2b91",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2129504,
     "maxSourceLines": 32048,
     "minTemplateBytes": 500000,
-    "baseline": "10.2.4",
+    "baseline": "10.2.5",
     "approvedGrowth": {
-      "sourceBytes": 12871,
-      "sourceLines": 340,
+      "sourceBytes": 10224,
+      "sourceLines": 121,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issues #638 and #639 canonical-map command-shell ownership and verified 60-second release alert"
+    "scope": "Issue #641 visible-map Desktop dock containment with Major Incident Wire reservation and internal command scrolling"
   }
 }

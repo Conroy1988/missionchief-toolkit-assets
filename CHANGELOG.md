@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.2.6] - 2026-08-01
+
+### Critical Desktop command-dock containment
+
+- Keeps the expanded Desktop launcher and command dock inside the actually visible Leaflet map workspace instead of allowing stacked groups to escape above the page.
+- Reserves the Major Incident Wire and other verified top-of-map obstructions, along with safe map margins and any off-viewport map edge.
+- Pins the launcher in reach while the command groups and screen pins gain bounded internal scrolling only when the available map height requires it.
+- Recalculates through the existing fit timer and Desktop resize observer after viewport zoom or resize, map geometry changes, feed placement or removal, layout changes and dock open or close.
+- Supports all four Desktop dock positions and clears every Desktop sizing override when switching to Tablet, iOS or a non-map route.
+- Adds static, geometry and rendered-DOM regressions reproducing the reported 007-theme layout and 80–200% browser-zoom cases without adding a timer, listener, network request or observer.
+
 ## [10.2.5] - 2026-08-01
 
 ### Map-only command shell and live update alert

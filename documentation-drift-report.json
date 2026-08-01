@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "10.2.1",
+  "userscriptVersion": "10.2.2",
   "versionState": "source-transition",
   "documentedThemes": [
     "Map Command",
@@ -60,6 +60,6 @@
   "publicDocumentCount": 3,
   "failures": [],
   "warnings": [
-    "Validated guarded source transition 10.2.1 is ahead of dashboard version 10.1.0."
+    "Validated guarded source transition 10.2.2 is ahead of dashboard version 10.2.1."
   ]
 }

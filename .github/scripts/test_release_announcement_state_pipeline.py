@@ -90,10 +90,10 @@ def main() -> int:
         "startsWith(github.event.comment.body, '/refresh-release-card ')",
         "Only the current verified release card can be refreshed.",
         "'.distribution.productUrl'",
-        "'.distribution.installUrl'",
         '--request PATCH --header "Content-Type: application/json"',
         '"${DISCORD_WEBHOOK_URL}/messages/${MESSAGE_ID}"',
     ], "Discord release-card operations workflow")
+    forbid(card_operations, ["'.distribution.installUrl'", "--install-url"], "Discord release-card operations workflow")
 
     print("Release announcement state passed: atomic release commit and read-only verification.")
     return 0

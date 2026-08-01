@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.1
+// @version      10.2.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.1',
+        version: '10.2.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -19058,8 +19058,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         const root = document.querySelector('#mission_chat_messages');
         if (!root) return 0;
+        root.querySelectorAll('.mcms-alliance-mission-preview .mcms-alliance-mission-preview').forEach(preview => preview.remove());
         let rendered = 0;
         for (const link of root.querySelectorAll('a[href*="/missions/"]')) {
+        if (link.closest('.mcms-alliance-mission-preview')) continue;
         let url;
         try { url = new URL(link.getAttribute('href') || link.href, pageWindow.location.href); } catch (err) { continue; }
         if (url.origin !== pageWindow.location.origin) continue;

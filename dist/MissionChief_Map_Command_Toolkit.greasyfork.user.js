@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.1
+// @version      10.2.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -29,7 +29,7 @@
 // @connect      discordapp.com
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
-// @resource     mcmsMainStyles https://github.com/Conroy1988/missionchief-toolkit-assets/releases/download/v10.2.1/MissionChief_Map_Command_Toolkit.css#sha256=5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b
+// @resource     mcmsMainStyles https://github.com/Conroy1988/missionchief-toolkit-assets/releases/download/v10.2.2/MissionChief_Map_Command_Toolkit.css#sha256=5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b
 // @run-at       document-start
 // @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
 // @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js
@@ -469,7 +469,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.1',
+        version: '10.2.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -9685,8 +9685,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         const root = document.querySelector('#mission_chat_messages');
         if (!root) return 0;
+        root.querySelectorAll('.mcms-alliance-mission-preview .mcms-alliance-mission-preview').forEach(preview => preview.remove());
         let rendered = 0;
         for (const link of root.querySelectorAll('a[href*="/missions/"]')) {
+        if (link.closest('.mcms-alliance-mission-preview')) continue;
         let url;
         try { url = new URL(link.getAttribute('href') || link.href, pageWindow.location.href); } catch (err) { continue; }
         if (url.origin !== pageWindow.location.origin) continue;

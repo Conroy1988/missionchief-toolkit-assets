@@ -48,7 +48,6 @@ jobs:
 
           VERSION="$(jq -r '.currentVersion' status/release-dashboard.json)"
           SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
           HASH="$(jq -r '.latestRelease.sha256 // empty' status/release-dashboard.json)"
           BACKUP_COMMIT="$(jq -r '.latestRelease.privateBackupCommit // empty' status/release-dashboard.json)"
@@ -85,7 +84,6 @@ jobs:
             --output discord-release-preview.json \
             --release-url "$RELEASE_URL" \
             --script-url "$SCRIPT_URL" \
-            --install-url "$INSTALL_URL" \
             --sha256 "$HASH" \
             --backup-commit "$BACKUP_COMMIT"
 
@@ -225,7 +223,6 @@ jobs:
           }
 
           SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
           python3 .github/scripts/build_discord_release_payload.py \
             --mode primary \
@@ -234,7 +231,6 @@ jobs:
             --output discord-release-refresh.json \
             --release-url "$RELEASE_URL" \
             --script-url "$SCRIPT_URL" \
-            --install-url "$INSTALL_URL" \
             --sha256 "$HASH" \
             --backup-commit "$BACKUP_COMMIT"
           jq --arg releasedAt "$RELEASED_AT" '.embeds[0].timestamp=$releasedAt' \

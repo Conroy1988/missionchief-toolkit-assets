@@ -1,10 +1,10 @@
 # MissionChief Map Command Toolkit
 
-## v10.2.1 — Operational Map Flow
+## v10.2.2 — Alliance Chat preview hotfix
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 10.2.1 publishes the complete v10.2 Operational Map Flow and moves the supported install and automatic-update channel to TKB. Greasy Fork remains a non-blocking discovery mirror. Existing Greasy Fork users should open the official TKB installer once to move future updates to the first-party channel. The release adds exact Mission Progress Rings, local Unit Locator & Follow Mode, privacy-safe Alliance Chat Mission Previews and a confirmation-led One-Click Session Cleanup. Unknown mission progress is never guessed. Follow Mode never selects or dispatches a unit and stops on manual map movement, lost markers, Safe Mode or teardown. Chat previews use only mission evidence already live on the current page and never fetch linked missions or store chat messages or user identities. Cleanup has a strict transient-state allowlist and never removes settings, layouts, themes, profiles, bookmarks, recovery snapshots, secrets, webhooks, Financial Archive history or MissionChief data. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
+Version 10.2.2 prevents Alliance Chat Mission Previews from recursively processing their own generated Open links. Any cards already nested by v10.2.1 are collapsed automatically, and repeated refreshes retain one preview per native mission link. It preserves the complete v10.2 Operational Map Flow and the supported TKB install and automatic-update channel. Greasy Fork remains a non-blocking discovery mirror. Existing Greasy Fork users should open the official TKB installer once to move future updates to the first-party channel. Chat previews continue to use only mission evidence already live on the current page and never fetch linked missions or store chat messages or user identities. Unknown mission progress is never guessed, Follow Mode never selects or dispatches a unit, and cleanup retains its strict transient-state allowlist. This preserves The One We Knew Before: MissionChief remains authoritative and every Toolkit surface keeps deterministic teardown.
 
 ### Retained native systems
 

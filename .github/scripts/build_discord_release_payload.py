@@ -153,11 +153,11 @@ def utc_timestamp() -> str:
     )
 
 
-def command_links(install_url: str, release_url: str, script_url: str) -> str:
+def command_links(product_url: str, release_url: str) -> str:
     return (
-        f"**[⬇️ Install / Update]({install_url})**"
+        f"**[⬇️ Install / Update]({product_url})**"
         f"  •  [📋 Release notes]({release_url})"
-        f"  •  [🧰 TKB Scripts]({script_url})"
+        f"  •  [🧰 TKB Scripts]({product_url})"
     )
 
 
@@ -185,9 +185,8 @@ def build_primary(args: argparse.Namespace, brief: str) -> dict:
             {
                 "name": "🔗 COMMAND LINKS",
                 "value": command_links(
-                    args.install_url,
-                    args.release_url,
                     args.script_url,
+                    args.release_url,
                 ),
                 "inline": False,
             },
@@ -251,9 +250,8 @@ def build_fallback(args: argparse.Namespace, brief: str) -> dict:
             {
                 "name": "🔗 COMMAND LINKS",
                 "value": command_links(
-                    args.install_url,
-                    history_url,
                     args.script_url,
+                    history_url,
                 ).replace("Release notes", "Version history"),
                 "inline": False,
             },
@@ -335,7 +333,6 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--release-url", default="")
     parser.add_argument("--script-url", required=True)
-    parser.add_argument("--install-url", required=True)
     parser.add_argument("--history-url", default="")
     parser.add_argument("--previous-version", default="")
     parser.add_argument("--sha256", default="")

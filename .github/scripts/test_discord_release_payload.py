@@ -31,7 +31,6 @@ class DiscordReleasePayloadTests(unittest.TestCase):
             version="4.20.23",
             release_url="https://github.com/example/toolkit/releases/tag/v4.20.23",
             script_url="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/",
-            install_url="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
             history_url="https://greasyfork.org/scripts/123-toolkit/versions",
             previous_version="4.20.22",
             sha256="57b89188ab780a36dc1234567890abcdefabcdefabcdefabcdefabcdefabcd",
@@ -77,6 +76,8 @@ class DiscordReleasePayloadTests(unittest.TestCase):
         self.assertEqual(embed["fields"][0]["value"], brief)
         self.assertEqual(embed["fields"][1]["name"], "🔗 COMMAND LINKS")
         self.assertIn("Install / Update", embed["fields"][1]["value"])
+        self.assertIn("[⬇️ Install / Update](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)", embed["fields"][1]["value"])
+        self.assertNotIn("/map-command-toolkit/install/", embed["fields"][1]["value"])
         self.assertIn("Release notes", embed["fields"][1]["value"])
         self.assertIn("TKB Scripts", embed["fields"][1]["value"])
         self.assertIn("available now through TKB Scripts", embed["description"])

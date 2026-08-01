@@ -175,9 +175,8 @@ jobs:
             exit 1
           fi
 
-          SCRIPT_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
-          HISTORY_URL="${SCRIPT_URL}/versions"
-          INSTALL_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+          SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
+          HISTORY_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions"
 
           python3 .github/scripts/build_discord_release_payload.py \
             --mode fallback \
@@ -187,7 +186,6 @@ jobs:
             --output discord-payload.json \
             --script-url "$SCRIPT_URL" \
             --history-url "$HISTORY_URL" \
-            --install-url "$INSTALL_URL"
 
           curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
             --request POST --header 'Content-Type: application/json' \

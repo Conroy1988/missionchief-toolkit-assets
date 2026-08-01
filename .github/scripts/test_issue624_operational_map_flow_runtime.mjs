@@ -42,9 +42,39 @@ const records = [
   { id: 44, caption: "Rescue Pump 44", vehicle_type_caption: "Rescue Pump", building_caption: "Fife Central", fms_real: 3 },
 ];
 const marker12 = { id: 12 };
+const previewClassList = { contains: value => value === "mcms-alliance-mission-preview" };
+const nestedPreview = { removed: false, remove() { this.removed = true; }, classList: previewClassList };
+const outerPreview = { dataset: {}, removed: false, remove() { this.removed = true; }, classList: previewClassList };
+const nativeMissionLink = {
+  href: "/missions/7",
+  nextElementSibling: outerPreview,
+  getAttribute: () => "/missions/7",
+  closest: () => null,
+  insertAdjacentElement() { throw new Error("idempotent render must reuse the existing preview"); },
+};
+const generatedOpenLink = {
+  href: "/missions/7",
+  getAttribute: () => "/missions/7",
+  closest: selector => selector === ".mcms-alliance-mission-preview" ? outerPreview : null,
+};
+const nestedOpenLink = {
+  href: "/missions/7",
+  getAttribute: () => "/missions/7",
+  closest: selector => selector === ".mcms-alliance-mission-preview" ? nestedPreview : null,
+};
+const chatRoot = {
+  querySelectorAll(selector) {
+    if (selector === ".mcms-alliance-mission-preview .mcms-alliance-mission-preview") return nestedPreview.removed ? [] : [nestedPreview];
+    if (selector === 'a[href*="/missions/"]') return [nativeMissionLink, generatedOpenLink, nestedOpenLink];
+    return [];
+  },
+};
 const sandbox = {
   console,
   Math,
+  URL,
+  state: { allianceChatPreviews: true, safeMode: { enabled: false } },
+  pageWindow: { location: { href: "https://www.missionchief.co.uk/", origin: "https://www.missionchief.co.uk" } },
   SCRIPT: { commandPaletteId: "palette", contextMenuId: "context", quickWheelId: "wheel" },
   getPersonalVehicleRecords: () => records,
   getVehicleMarkerLayers: () => [marker12],
@@ -76,17 +106,24 @@ const sandbox = {
   scheduleMajorIncidentFeedRender() {},
   missionSnapshotsNeeded: () => true,
   showToast(message) { sandbox.toast = message; },
-  document: { querySelectorAll: () => [], getElementById: () => null },
+  allianceChatMissionSnapshot: missionId => String(missionId) === "7" ? { missionId: 7, caption: "Uninsured Heavy Goods Vehicle", units: { total: 1 } } : null,
+  setInnerHtmlIfChanged(element, html) { element.renderedHtml = html; },
+  document: {
+    querySelector: selector => selector === "#mission_chat_messages" ? chatRoot : null,
+    querySelectorAll: () => [],
+    getElementById: () => null,
+    createElement() { throw new Error("idempotent render must not create a second preview"); },
+  },
 };
 vm.createContext(sandbox);
 vm.runInContext(
-  ["missionProgressRingModel", "unitLocatorRecords", "allianceChatPreviewHtml", "sessionCleanupPlan", "performSessionCleanup"].map(extractFunction).join("\n") +
+  ["missionProgressRingModel", "unitLocatorRecords", "allianceChatPreviewHtml", "clearAllianceChatMissionPreviews", "renderAllianceChatMissionPreviews", "sessionCleanupPlan", "performSessionCleanup"].map(extractFunction).join("\n") +
   "\nlet unitLocatorQuery='';var followedVehicleId='12';let missionLockOnMarker={};let missionLockOnTravelOverlay=null;let missionLockOnTimer=null;" +
   "let commandSearchQuery='abc';let majorIncidentFeedManualPaused=true;let majorIncidentFeedExpanded=false;let majorIncidentFeedInteractionPauseUntil=123;" +
   "const notificationEventSeen=new Map([['a',1]]);const notificationActiveEvents=new Set(['b']);const recentCompletedMissions=[{id:1}];" +
   "const missionSnapshotCache=new Map([[1,{}]]);const missionPanelCache=new Map([[1,{}]]);const markerRegistryCache=new Map([[1,{}]]);const resourceGapAnalysisCache=new Map([[1,{}]]);" +
   "let resourceGapVehicleContextCache={key:'x',createdAt:1,available:[1]};let operationalPressureCache={key:'x',snapshot:{}};" +
-  "this.__probe={ring:missionProgressRingModel,units:unitLocatorRecords,preview:allianceChatPreviewHtml,plan:sessionCleanupPlan,clean:performSessionCleanup,state(){return {followedVehicleId,commandSearchQuery,unitLocatorQuery,majorIncidentFeedManualPaused,majorIncidentFeedExpanded,notificationSeen:notificationEventSeen.size,notificationActive:notificationActiveEvents.size,recent:recentCompletedMissions.length,caches:missionSnapshotCache.size+missionPanelCache.size+markerRegistryCache.size+resourceGapAnalysisCache.size,resource:resourceGapVehicleContextCache,pressure:operationalPressureCache}}};",
+  "this.__probe={ring:missionProgressRingModel,units:unitLocatorRecords,preview:allianceChatPreviewHtml,renderPreviews:renderAllianceChatMissionPreviews,plan:sessionCleanupPlan,clean:performSessionCleanup,state(){return {followedVehicleId,commandSearchQuery,unitLocatorQuery,majorIncidentFeedManualPaused,majorIncidentFeedExpanded,notificationSeen:notificationEventSeen.size,notificationActive:notificationActiveEvents.size,recent:recentCompletedMissions.length,caches:missionSnapshotCache.size+missionPanelCache.size+markerRegistryCache.size+resourceGapAnalysisCache.size,resource:resourceGapVehicleContextCache,pressure:operationalPressureCache}}};",
   sandbox,
   { filename: "issue624-operational-map-flow-runtime.js" },
 );
@@ -104,6 +141,11 @@ assert.ok(preview.includes("&lt;Major &amp; Incident&gt;"));
 assert.ok(preview.includes("12500 CR"));
 assert.ok(preview.includes("2 patients waiting"));
 assert.ok(preview.includes('href="/missions/7"'));
+
+assert.equal(sandbox.__probe.renderPreviews(), 1, "only the native chat mission link may produce a preview");
+assert.equal(nestedPreview.removed, true, "an already-recursive preview must be collapsed on the next render");
+assert.equal(outerPreview.dataset.mcmsMissionId, "7");
+assert.equal(sandbox.__probe.renderPreviews(), 1, "repeated preview rendering must remain idempotent");
 
 const protectedState = { profiles: [{ name: "Keep" }], bookmarks: [{ name: "Keep" }], webhook: "secret", finance: [{ amount: 1 }] };
 const plan = sandbox.__probe.plan();

@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 627,
-    "version": "10.2.1",
-    "sourceBytes": 2109504,
-    "sourceLines": 31748,
-    "sourceSha256": "91099941cf510ab506076cccc32c7255fba6f6b552c58c61848c5f5244578d7d",
+    "issue": 632,
+    "version": "10.2.2",
+    "sourceBytes": 2109707,
+    "sourceLines": 31750,
+    "sourceSha256": "d09df85749a2f28ccdbfc7b9e628d87375422cdc87cf270f7448e42afeb4bf84",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2129504,
     "maxSourceLines": 32048,
     "minTemplateBytes": 500000,
-    "baseline": "10.2.0",
+    "baseline": "10.2.1",
     "approvedGrowth": {
-      "sourceBytes": 710,
-      "sourceLines": 4,
+      "sourceBytes": 203,
+      "sourceLines": 2,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #627 first-party TKB distribution metadata, migration briefing and canonical update route"
+    "scope": "Issue #632 Alliance Chat preview ownership and recursive-card cleanup hotfix"
   }
 }

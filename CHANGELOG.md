@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.2.2] - 2026-08-01
+
+### Alliance Chat preview recursion hotfix
+
+- Prevents Alliance Chat Mission Previews from treating their own generated **Open** links as new MissionChief chat links.
+- Collapses preview cards already nested by an affected v10.2.1 session and restores one card per native mission link on the next render.
+- Adds an executable repeated-render regression covering the reported recursive DOM state.
+- Retains current-page-only mission evidence, native link behaviour and the zero-request, zero-poller, zero-observer privacy boundary.
+
 ## [10.2.1] - 2026-08-01
 
 ### First-party TKB distribution

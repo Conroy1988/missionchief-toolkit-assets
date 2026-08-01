@@ -18,7 +18,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.2.2"
 
     for required in [
         "missionProgressRings: true",
@@ -71,6 +71,8 @@ def main() -> int:
         "url.origin !== pageWindow.location.origin",
         "allianceChatMissionSnapshot",
         "liveMissionSnapshots.get(id)",
+        ".mcms-alliance-mission-preview .mcms-alliance-mission-preview",
+        "link.closest('.mcms-alliance-mission-preview')",
         "link.insertAdjacentElement('afterend', preview)",
     ]:
         assert required in chat, required

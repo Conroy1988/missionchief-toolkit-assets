@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.0
+// @version      10.2.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
+// @homepageURL  https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/
+// @supportURL   https://github.com/Conroy1988/missionchief-toolkit-assets/issues
 // @match        *://missionchief.co.uk/*
 // @match        *://www.missionchief.co.uk/*
 // @match        *://*.missionchief.co.uk/*
@@ -27,8 +29,8 @@
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
 // @run-at       document-start
-// @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
-// @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js
+// @downloadURL  https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/
+// @updateURL    https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/
 // ==/UserScript==
 
 /*
@@ -465,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.0',
+        version: '10.2.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22454,6 +22456,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
+        '<article class="mcms-command-note"><b>Official updates have moved to TKB</b><p>TKB now provides the supported installer and automatic-update channel. GitHub remains the verified release archive; Greasy Fork is a non-blocking mirror.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
         '<div class="mcms-update-grid">' +
             '<article><b>Mission Progress Rings</b><p>See exact live MissionChief progress around supported mission markers, without guessed percentages.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="progressRings">Open Mission Intelligence</button></article>' +
             '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
@@ -22467,7 +22470,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         openCommandExperienceModal({
         kind: 'Update Briefing',
         title: 'What’s New & Feature Beacon',
-        subtitle: 'Discover every v10.2 feature and open it directly.',
+        subtitle: 'Move to the official TKB update channel and review every v10.2 feature.',
         body: updateBriefingBody(),
         actions: '<button type="button" data-mcms-command-action="briefing-disable">Don’t Show Again</button><button class="mcms-primary" type="button" data-mcms-command-action="briefing-dismiss">Got It</button>'
         });
@@ -22579,6 +22582,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         event.stopPropagation();
         const action = button.dataset.mcmsCommandAction;
         if (action === 'modal-close') { closeCommandExperienceModal(); return true; }
+        if (action === 'open-tkb-installer') { pageWindow.open('https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', '_blank', 'noopener,noreferrer'); return true; }
         if (action === 'fullscreen-exit') { setMapFullscreen(false); return true; }
         if (action === 'quick-wheel-close') { closeTabletQuickWheel({ restoreFocus: true }); return true; }
         if (action === 'quick-wheel-command') { executeQuickWheelSlot(Number(button.dataset.slotIndex)); return true; }
@@ -28582,7 +28586,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
-    function versionStatusUrl(value, kind, version) { let url; try { url = new URL(String(value || '')); } catch (err) { throw new Error(`Invalid ${kind} URL.`); } if (url.protocol !== 'https:') throw new Error(`${kind} URL must use HTTPS.`); if (kind === 'release') { const expected = `/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`; if (url.hostname !== 'github.com' || url.pathname !== expected) throw new Error('Release URL is not canonical.'); } else if (url.hostname !== 'update.greasyfork.org' || !/^\/scripts\/586018\/.+\.user\.js$/u.test(url.pathname)) throw new Error('Update URL is not canonical.'); return url.href; }
+    function versionStatusUrl(value, kind, version) { let url; try { url = new URL(String(value || '')); } catch (err) { throw new Error(`Invalid ${kind} URL.`); } if (url.protocol !== 'https:') throw new Error(`${kind} URL must use HTTPS.`); if (kind === 'release') { const expected = `/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`; if (url.hostname !== 'github.com' || url.pathname !== expected) throw new Error('Release URL is not canonical.'); } else if (url.hostname !== 'tkb-gaming.scot' || url.pathname !== '/mission-chief-scripts/map-command-toolkit/install/') throw new Error('Update URL is not canonical.'); return url.href; }
     function versionStatusValidateManifest(payload) { if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('Version manifest is not an object.'); if (Number(payload.schemaVersion) !== 1 || payload.channel !== 'stable') throw new Error('Version manifest channel is invalid.'); const version = String(payload.version || '').trim(); if (!versionStatusParse(version)) throw new Error('Version manifest does not contain a stable semantic version.'); return { schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: versionStatusUrl(payload.releaseNotesUrl, 'release', version), updateUrl: versionStatusUrl(payload.updateUrl, 'update', version), publishedAt: String(payload.publishedAt || '') }; }
     function versionStatusPresentation(installedVersion, manifest) { const comparison = versionStatusCompare(manifest?.version, installedVersion); if (comparison === null) throw new Error('Installed or published version is malformed.'); return comparison > 0 ? { state: 'update', destination: manifest.updateUrl } : { state: 'latest', destination: manifest.releaseNotesUrl }; }
     function versionStatusCacheIsFresh(cache, now = Date.now()) { if (!cache || typeof cache !== 'object') return false; const checkedAt = Number(cache.checkedAt); if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt >= VERSION_STATUS.cacheMs) return false; try { versionStatusValidateManifest(cache.manifest); return true; } catch (err) { return false; } }

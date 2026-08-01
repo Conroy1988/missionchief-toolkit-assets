@@ -63,14 +63,14 @@ Focus, Open and Pin are navigation actions. The board and palette do not select 
 
 ---
 
-## Live command contract — v10.2.6
+## Live command contract — v10.2.7
 
 > [!TIP]
 > The global launcher, dock, command menu and map overlays now belong only to the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native, while supported page-specific enhancements continue independently.
 
 The compact release-status button checks the guarded stable manifest every 60 seconds. It shows `LATEST` when the installed release is current and a clear neon `UPDATE` when a newer verified release is available; both states open the official TKB Toolkit page.
 
-On Desktop, the launcher now remains inside the visible map workspace at every supported dock position. The Major Incident Wire and short or zoomed viewports are reserved automatically; if vertical space runs short, command groups scroll inside the dock while the launcher stays reachable.
+On Desktop, the command bar now uses the safe horizontal map workspace instead of stacking every control into a narrow column. Its compact 36px buttons arrange themselves into responsive operational groups, pinned locations occupy a separate row, and the launcher remains reachable at every dock position. The Major Incident Wire and zoomed or short viewports are reserved automatically; internal scrolling is kept only as an emergency fallback.
 
 ---
 

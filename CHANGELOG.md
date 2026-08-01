@@ -1,5 +1,17 @@
 # Changelog
 
+## [10.2.7] - 2026-08-01
+
+### Adaptive Desktop command workspace
+
+- Replaces the narrow 240px Desktop command column with an adaptive map-width deck that uses up to 1,180px of safe horizontal workspace.
+- Keeps Desktop controls compact at 36px high while preserving readable labels, keyboard badges, operational state text and clear active styling.
+- Arranges Visibility, Intelligence, Dashboard and Performance into one to four responsive group columns, with each group independently choosing the best button grid for the available width.
+- Moves pinned Quick Places and bookmarks into a compact responsive row beneath the command groups without horizontal scrolling.
+- Uses the full safe width on standard and narrow Desktop windows, including the reported forced-Desktop layout, while retaining bounded internal scrolling only for genuinely short workspaces.
+- Preserves all four dock positions, Major Incident Wire reservation, browser zoom from 80–200%, auto-hide, collapse/reopen, custom control order and visibility, themes, reduced motion and canonical-map-only lifecycle ownership.
+- Adds static, geometry and rendered-DOM regressions across 2560×1440, 1920×1080, 1366×768, 1024×768 and narrow forced-Desktop workspaces without adding a request, timer, listener or observer.
+
 ## [10.2.6] - 2026-08-01
 
 ### Critical Desktop command-dock containment

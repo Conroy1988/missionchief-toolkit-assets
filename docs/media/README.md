@@ -2,6 +2,16 @@
 
 This directory is reserved for reviewed screenshots and short demonstrations used by GitHub, Greasy Fork and the public documentation site.
 
+## Repository landing visuals
+
+The root README uses three original, text-free editorial images:
+
+- `readme-hero-operations.webp` — coordinated UK multi-agency city response
+- `readme-field-command.webp` — wide incident and fleet coordination view
+- `readme-control-room.webp` — map-led emergency operations room
+
+All three images are 1600 × 900 WebP assets, contain no product copy, and keep typography in native Markdown so the landing page remains readable and responsive.
+
 ## Required capture set
 
 - `map-before-after`

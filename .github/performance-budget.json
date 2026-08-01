@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-627-tkb-distribution-v10-2-1",
-  "rationale": "Approve the measured Issue #627 first-party distribution metadata and migration briefing changes while retaining zero growth in requests, schedulers, listeners, DOM ID lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-08-01-issue-632-alliance-chat-preview-hotfix-v10-2-2",
+  "rationale": "Approve the measured Issue #632 Alliance Chat preview ownership guards while retaining zero growth in requests, schedulers, listeners, DOM ID lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 627,
-    "version": "10.2.1",
+    "issue": 632,
+    "version": "10.2.2",
     "approvedNetworkRequestDelta": 0,
-    "scope": "First-party TKB install/update metadata, migration briefing and non-blocking Greasy Fork mirror.",
+    "scope": "Idempotent Alliance Chat preview rendering that excludes Toolkit-owned links and removes already-recursive preview descendants.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 627,
+      "version": "10.2.1",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "First-party TKB install/update metadata, migration briefing and non-blocking Greasy Fork mirror.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 622,
       "version": "10.1.0",

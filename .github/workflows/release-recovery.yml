@@ -257,7 +257,6 @@ jobs:
         run: |
           set -euo pipefail
           SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           python3 .github/scripts/build_discord_release_payload.py \
             --mode primary \
@@ -266,7 +265,6 @@ jobs:
             --output /tmp/discord-release-payload.json \
             --release-url "$RELEASE_URL" \
             --script-url "$SCRIPT_URL" \
-            --install-url "$INSTALL_URL" \
             --sha256 "$HASH" \
             --backup-commit "$BACKUP_COMMIT"
 

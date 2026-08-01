@@ -323,7 +323,6 @@ jobs:
           [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || { echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."; exit 1; }
           [[ -n "${BACKUP_COMMIT:-}" ]] || { echo "::error::Private backup commit was not recorded."; exit 1; }
           SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
-          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
 
           python3 .github/scripts/build_discord_release_payload.py \
@@ -333,7 +332,6 @@ jobs:
             --output discord-release-payload.json \
             --release-url "$RELEASE_URL" \
             --script-url "$SCRIPT_URL" \
-            --install-url "$INSTALL_URL" \
             --sha256 "$HASH" \
             --backup-commit "$BACKUP_COMMIT"
 

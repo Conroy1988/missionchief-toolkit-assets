@@ -65,7 +65,7 @@ const sandbox = {
     Notification: BrowserNotification,
   },
   globalThis: {},
-  SCRIPT: { version: "10.2.1", settingsSnapshotsState: "snapshots" },
+  SCRIPT: { version: "10.2.2", settingsSnapshotsState: "snapshots" },
   POSITIONS: { bl: { label: "Bottom left" }, tr: { label: "Top right" } },
   LAYOUT_DEVICE_KEYS: ["desktop", "tablet", "mobile"],
   DEFAULT_LAYOUT_GROUP_ORDER: ["visibility", "intelligence", "dashboard", "performance"],

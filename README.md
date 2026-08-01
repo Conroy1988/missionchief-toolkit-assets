@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v10.2.1
+## Current interface — v10.2.2
 
 ### One command system across desktop, tablet and iPhone
 
-Version `10.2.1` publishes the complete v10.2 Operational Map Flow through the official TKB install and automatic-update channel. Separate verified packages measure new installs and update downloads, while Greasy Fork remains an optional, non-blocking mirror. **Mission Progress Rings** show an exact clearing percentage only when MissionChief exposes a live remaining value or exact patient/prisoner totals; unknown progress stays unknown and native markers are never replaced. **Unit Locator & Follow Mode** searches personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected.
+Version `10.2.2` fixes recursive Alliance Chat Mission Previews: Toolkit-owned **Open** links are never reprocessed, any cards already nested by v10.2.1 are collapsed automatically and repeated refreshes retain one preview per native chat mission link. It retains the complete v10.2 Operational Map Flow through the official TKB install and automatic-update channel. Separate verified packages measure new installs and update downloads, while Greasy Fork remains an optional, non-blocking mirror. **Mission Progress Rings** show an exact clearing percentage only when MissionChief exposes a live remaining value or exact patient/prisoner totals; unknown progress stays unknown and native markers are never replaced. **Unit Locator & Follow Mode** searches personal vehicles by caption, ID, type, station or FMS/status and follows only the explicitly selected live marker until the map is moved manually, the marker disappears, Safe Mode starts or Stop is selected.
 
 **Alliance Chat Mission Previews** expand mission links already present in the current alliance chat using mission data already live on the page. They do not fetch linked missions or store chat messages or user identities. **One-Click Session Cleanup** previews an exact transient-state allowlist before confirmation and protects settings, device layouts, themes, profiles, bookmarks, recovery snapshots, Discord webhooks, secrets, Financial Archive history and MissionChief data.
 

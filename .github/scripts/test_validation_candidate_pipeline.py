@@ -81,11 +81,13 @@ def main() -> int:
         "dist/SHA256SUMS.txt",
         "dist/release-manifest.json",
     }
-    if set(manifest.get("validationCandidateFiles", [])) != expected_candidate_files:
-        raise AssertionError("Release manifest validation-candidate inventory is incomplete")
+    if set(manifest.get("candidateArtifactFiles", [])) != expected_candidate_files:
+        raise AssertionError("Release manifest candidate-artifact inventory is incomplete")
     for path in expected_candidate_files:
         if path not in validation:
             raise AssertionError(f"Canonical validation artifact omits declared file: {path}")
+        if path not in automatic:
+            raise AssertionError(f"Promoted validation artifact omits declared file: {path}")
 
     require(automatic, [
         "types:\n      - closed",

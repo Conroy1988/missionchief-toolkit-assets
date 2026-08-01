@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-632-alliance-chat-preview-hotfix-v10-2-2",
-  "rationale": "Approve the measured Issue #632 Alliance Chat preview ownership guards while retaining zero growth in requests, schedulers, listeners, DOM ID lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-08-01-issue-634-retire-progress-rings-chat-previews-v10-2-3",
+  "rationale": "Approve the measured Issue #634 retirement of Mission Progress Rings and Alliance Chat Mission Previews, including removal of their rendering, settings, styling and chat-specific observer routing with zero growth in runtime primitives.",
   "transitionApproval": {
-    "issue": 632,
-    "version": "10.2.2",
+    "issue": 634,
+    "version": "10.2.3",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Idempotent Alliance Chat preview rendering that excludes Toolkit-owned links and removes already-recursive preview descendants.",
+    "scope": "Retire the progress-ring Leaflet surface and Alliance Chat preview cards while preserving native MissionChief markers, chat and the remaining v10.2 tools.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 632,
+      "version": "10.2.2",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Idempotent Alliance Chat preview rendering that excludes Toolkit-owned links and removes already-recursive preview descendants.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 627,
       "version": "10.2.1",

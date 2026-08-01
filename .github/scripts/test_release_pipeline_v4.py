@@ -26,7 +26,7 @@ assert '[[ "$EVIDENCE_PR" == "$PR_NUMBER" ]]' in a
 assert 'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"' not in a
 for token in ("implementation_ready_at","validation_completed_at","pull_request_number","pr_created_at","pr_merged_at"):
     assert token in a, token
-for token in ("Resolve exact immutable release candidate","Verify first-party distribution and private backup","Verify Greasy Fork mirror without blocking production","greasyForkStatus","tkbDistribution","sleep 5","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
+for token in ("Resolve exact immutable release candidate","Verify live TKB distribution and private backup","TKB_VERSION","Verify Greasy Fork mirror without blocking production","greasyForkStatus","tkbDistribution","sleep 5","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
     assert token in p, token
 assert "gh run watch" not in p
 assert 'validated_sha: ${{ needs.authorize.outputs.expected_main }}' in o

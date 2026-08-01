@@ -32,7 +32,7 @@ on:
       - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_release_announcement_state_pipeline.py"
       - ".github/scripts/test_release_recovery_state_pipeline.py"
-      - ".github/scripts/test_release_state_monitor_pipeline.py"
+      - ".github/scripts/test_release_authority_pipeline.py"
       - ".github/scripts/test_shadow_branch_parity.py"
       - ".github/scripts/test_shadow_sync_writer.py"
       - ".github/scripts/test_update_manifest_pipeline.py"
@@ -74,7 +74,7 @@ jobs:
             python3 .github/scripts/test_validation_candidate_pipeline.py
             python3 .github/scripts/test_greasyfork_parity_pipeline.py
             python3 .github/scripts/test_release_announcement_state_pipeline.py
-            python3 .github/scripts/test_release_state_monitor_pipeline.py
+            python3 .github/scripts/test_release_authority_pipeline.py
             python3 .github/scripts/test_release_recovery_state_pipeline.py
             python3 .github/scripts/test_shadow_branch_parity.py
             python3 .github/scripts/test_shadow_sync_writer.py

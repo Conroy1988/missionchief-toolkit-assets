@@ -122,21 +122,6 @@
   ],
   "releaseStateBranchWriters": [
     {
-      "workflow": ".github/workflows/greasyfork-release-monitor.yml",
-      "helper": ".github/scripts/release_state_branch.py",
-      "sourceAuthority": "main release dashboard",
-      "target": "release-state",
-      "writes": [
-        ".github/greasyfork-version.txt"
-      ],
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "mainMutationAllowed": false,
-      "forcePushAllowed": false,
-      "liveConsumerCutoverAllowed": false,
-      "migrationState": "transitional fallback-tracker authority"
-    },
-    {
       "workflow": ".github/workflows/release-recovery.yml",
       "helper": ".github/scripts/release_recovery_state.py",
       "branchHelper": ".github/scripts/release_state_branch.py",
@@ -199,7 +184,6 @@
   ],
   "contentsWriteAuthority": [
     ".github/workflows/auto-release-after-validation.yml",
-    ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/owner-release-command.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml"

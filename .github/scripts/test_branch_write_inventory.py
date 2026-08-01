@@ -109,7 +109,6 @@ def main() -> int:
         ".github/workflows/publish-update-manifest.yml",
     }
     expected_state_writers = {
-        ".github/workflows/greasyfork-release-monitor.yml",
         ".github/workflows/release-recovery.yml",
     }
     if direct != expected_direct:
@@ -201,25 +200,11 @@ def main() -> int:
         require(text, ["permissions:\n  contents: read", "persist-credentials: false", marker], workflow)
         forbid(text, ["contents: write", "git push origin HEAD:main", "git push origin HEAD:refs/heads/main"], workflow)
 
-    if len(state_entries) != 2:
-        fail(f"Expected two release-state writers, found {len(state_entries)}")
+    if len(state_entries) != 1:
+        fail(f"Expected one release-state writer, found {len(state_entries)}")
     entries_by_workflow = {entry["workflow"]: entry for entry in state_entries}
-    monitor_entry = entries_by_workflow[".github/workflows/greasyfork-release-monitor.yml"]
     recovery_entry = entries_by_workflow[".github/workflows/release-recovery.yml"]
 
-    expected_monitor = {
-        "workflow": ".github/workflows/greasyfork-release-monitor.yml",
-        "helper": ".github/scripts/release_state_branch.py",
-        "sourceAuthority": "main release dashboard",
-        "target": "release-state",
-        "writes": [".github/greasyfork-version.txt"],
-        "credential": "github.token",
-        "actor": "github-actions[bot]",
-        "mainMutationAllowed": False,
-        "forcePushAllowed": False,
-        "liveConsumerCutoverAllowed": False,
-        "migrationState": "transitional fallback-tracker authority",
-    }
     expected_recovery = {
         "workflow": ".github/workflows/release-recovery.yml",
         "helper": ".github/scripts/release_recovery_state.py",
@@ -239,27 +224,13 @@ def main() -> int:
         "liveConsumerCutoverAllowed": False,
         "migrationState": "operational recovery ledger authority",
     }
-    if monitor_entry != expected_monitor:
-        fail("Fallback-monitor release-state inventory changed")
     if recovery_entry != expected_recovery:
         fail("Release-recovery state inventory changed")
 
-    monitor = (ROOT / monitor_entry["workflow"]).read_text(encoding="utf-8")
     recovery = (ROOT / recovery_entry["workflow"]).read_text(encoding="utf-8")
     branch_helper = (ROOT / recovery_entry["branchHelper"]).read_text(encoding="utf-8")
     recovery_helper = (ROOT / recovery_entry["helper"]).read_text(encoding="utf-8")
 
-    require(
-        monitor,
-        [
-            "Check out latest main authority",
-            "persist-credentials: false",
-            "Prepare governed release-state worktree",
-            "release_state_branch.py prepare",
-            "Record announced version on release-state",
-        ],
-        "Greasy Fork fallback monitor",
-    )
     require(
         recovery,
         [
@@ -278,7 +249,6 @@ def main() -> int:
         "Release recovery workflow",
     )
     for label, text in {
-        "monitor": monitor,
         "recovery": recovery,
         "branch helper": branch_helper,
         "recovery helper": recovery_helper,
@@ -349,7 +319,8 @@ def main() -> int:
 
     for claim in [
         "one workflow that can commit directly to public `main`",
-        "two workflows write governed operational state to `release-state`",
+        "one workflow writes governed operational state to `release-state`",
+        "Greasy Fork fallback announcement monitor is retired",
         "release recovery ledger is now written only to `release-state`",
         "seven workflows use read-only repository access",
     ]:

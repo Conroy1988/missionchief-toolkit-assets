@@ -256,6 +256,37 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          FULL="release-bundle/MissionChief_Map_Command_Toolkit.user.js"
+          INSTALL_URL="$(jq -r '.distribution.installUrl' .github/release-settings.json)"
+          UPDATE_URL="$(jq -r '.distribution.updateUrl' .github/release-settings.json)"
+          META_URL="$(jq -r '.distribution.metadataUrl' .github/release-settings.json)"
+          TKB_VERIFIED=false
+          for attempt in $(seq 1 18); do
+            CACHE_BUST="$(date +%s%N)"
+            if curl --fail --silent --show-error --location --compressed --max-time 30 \
+                --header 'Cache-Control: no-cache' "${INSTALL_URL}?cache_bust=${CACHE_BUST}" \
+                --output "$RUNNER_TEMP/tkb-recovery-install.user.js" && \
+              curl --fail --silent --show-error --location --compressed --max-time 30 \
+                --header 'Cache-Control: no-cache' "${UPDATE_URL}?cache_bust=${CACHE_BUST}" \
+                --output "$RUNNER_TEMP/tkb-recovery-update.user.js" && \
+              curl --fail --silent --show-error --location --compressed --max-time 30 \
+                --header 'Cache-Control: no-cache' "${META_URL}?cache_bust=${CACHE_BUST}" \
+                --output "$RUNNER_TEMP/tkb-recovery-meta.js"; then
+              TKB_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$RUNNER_TEMP/tkb-recovery-meta.js" | head -n 1 | xargs)"
+              if [[ "$TKB_VERSION" == "$RELEASE_VERSION" ]] && \
+                cmp --silent "$FULL" "$RUNNER_TEMP/tkb-recovery-install.user.js" && \
+                cmp --silent "$FULL" "$RUNNER_TEMP/tkb-recovery-update.user.js"; then
+                TKB_VERIFIED=true
+                break
+              fi
+            fi
+            sleep 5
+          done
+          [[ "$TKB_VERIFIED" == "true" ]] || {
+            echo "::error::Discord recovery refused because live TKB endpoints do not all serve Toolkit ${RELEASE_VERSION}."
+            exit 1
+          }
+
           SCRIPT_URL="$(jq -r '.distribution.productUrl' .github/release-settings.json)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           python3 .github/scripts/build_discord_release_payload.py \

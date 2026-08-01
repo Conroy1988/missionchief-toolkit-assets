@@ -2,12 +2,13 @@
 
 Version 10.2 adds four deliberately bounded, reversible tools to the existing v10.1 command experience.
 
+> **v10.2.3 retirement:** Mission Progress Rings and Alliance Chat Mission Previews were removed at the user's request. Their settings, rendering, styles and lifecycle work no longer exist. Unit Locator & Follow Mode and One-Click Session Cleanup remain supported.
+
 ## Mission Progress Rings
 
-- An independent Mission Intelligence toggle draws an accessible ring only when MissionChief exposes an exact live clearing value or exact patient/prisoner totals.
-- `liveCurrentValue` is treated as MissionChief's remaining value, so the displayed completion is `100 - liveCurrentValue`.
-- Unknown progress is not estimated. Native mission markers remain untouched.
-- The overlay uses the existing mission-snapshot lifecycle and shared Leaflet pane; it adds no request, timer, poller or observer.
+- Retired in v10.2.3.
+- The Leaflet layer, marker renderer, settings controls, saved-state key and styling were removed.
+- MissionChief's native mission markers are now left unchanged.
 
 ## Unit Locator & Follow Mode
 
@@ -18,10 +19,9 @@ Version 10.2 adds four deliberately bounded, reversible tools to the existing v1
 
 ## Alliance Chat Mission Previews
 
-- Mission links already present under `#mission_chat_messages` gain a compact, accessible preview when their live mission snapshot is already available on the page.
-- Previews may show caption, approximate credits, current patients/prisoners, personal unit commitment and known missing requirements.
-- The feature never fetches a chat-linked mission, stores chat text/user identity or modifies the native mission link.
-- It reuses the existing bounded MutationObserver and debounce path.
+- Retired in v10.2.3.
+- Generated cards, settings controls, saved-state key, styling and chat-specific MutationObserver routing were removed.
+- Alliance Chat is now left in its native MissionChief form.
 
 ## One-Click Session Cleanup
 
@@ -32,6 +32,6 @@ Version 10.2 adds four deliberately bounded, reversible tools to the existing v1
 ## Release gates
 
 - The five release copies must be byte-identical.
-- No new network request, broad MutationObserver, background poller or interval is permitted.
+- No new network request, broad MutationObserver, background poller or interval is permitted; the v10.2.3 retirement reduces observer work.
 - Existing v10 settings migrate without reset or secret-bearing export changes.
 - Static and runtime Issue #624 contracts join the complete retained userscript preflight.

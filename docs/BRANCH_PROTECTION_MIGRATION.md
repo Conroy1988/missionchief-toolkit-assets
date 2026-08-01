@@ -12,7 +12,7 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - `.github/scripts/test_greasyfork_parity_pipeline.py`;
 - `.github/scripts/test_release_announcement_state_pipeline.py`;
 - `.github/scripts/test_update_manifest_pipeline.py`;
-- `.github/scripts/test_release_state_monitor_pipeline.py`;
+- `.github/scripts/test_release_authority_pipeline.py`;
 - `.github/scripts/test_release_recovery_state_pipeline.py`;
 - `.github/scripts/test_shadow_branch_parity.py`;
 - `.github/scripts/test_shadow_sync_writer.py`.
@@ -94,11 +94,11 @@ The connected administrator identity completed:
 - post-write role and content verification;
 - no force push, history rewrite, public-main mutation or live-consumer change.
 
-### Fallback tracker moved to release-state ✅
+### Fallback announcer retired ✅
 
-`greasyfork-release-monitor.yml` no longer commits to public `main`.
+The former `greasyfork-release-monitor.yml` first moved off public `main`, then was retired completely in v10.2.3 after TKB became the supported public channel.
 
-It reads verified compatibility state from `main`, reads and writes the tracker on `release-state`, rechecks both remote refs before posting and records only the reviewed tracker path.
+Greasy Fork is still checked as a non-blocking discovery mirror, but it cannot post a release or define the public version. The controlled production workflow verifies the exact live TKB install, update and metadata version before it posts to Discord.
 
 ### Release recovery ledger moved to release-state ✅
 
@@ -197,7 +197,7 @@ The final protection design must retain fast owner operation:
 4. ✅ Fold stable update-manifest publication into the same atomic release commit — PR #505.
 5. ✅ Create and verify non-live `release-state` and `distribution` branches — PR #506.
 6. ✅ Introduce the constrained shadow writer and rehearse plan/write access — PR #507 and Issue #41 evidence.
-7. ✅ Move fallback announcement tracking to `release-state` — PR #508.
+7. ✅ Move fallback announcement tracking to `release-state` — PR #508; retire it in v10.2.3 once TKB becomes authoritative.
 8. ✅ Move release recovery state to `release-state`.
 9. Move primary production dashboard, manifest and announcement authority to `release-state`.
 10. Publish a versioned Toolkit migration that reads the manifest from `release-state` with a reviewed compatibility fallback.

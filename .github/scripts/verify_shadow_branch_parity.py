@@ -106,7 +106,6 @@ def validate_path_classes(branch: str, policy: dict) -> None:
             ".github/greasyfork-version.txt",
         ]
         expected_writers = [
-            ".github/workflows/greasyfork-release-monitor.yml",
             ".github/workflows/release-recovery.yml",
         ]
         if mirrored != [] or operational != expected_operational:
@@ -343,7 +342,6 @@ def self_test() -> None:
             ".github/greasyfork-version.txt",
         ],
         "operationalWriters": [
-            ".github/workflows/greasyfork-release-monitor.yml",
             ".github/workflows/release-recovery.yml",
         ],
         "externalConsumersEnabled": False,

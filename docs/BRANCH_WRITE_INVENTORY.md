@@ -9,10 +9,11 @@ Strict pull-request-only protection is **not yet safe to enable**.
 
 The repository now has one workflow that can commit directly to public `main`: `release-toolkit.yml`. It still publishes the stable distribution and writes a temporary compatibility copy of release state required by existing v5.0.7 installations.
 
-At this stage, two workflows write governed operational state to `release-state`:
+At this stage, one workflow writes governed operational state to `release-state`:
 
-- `greasyfork-release-monitor.yml` — fallback announcement tracker;
 - `release-recovery.yml` — recovery dashboard, rendered status, stable manifest and announcement tracker.
+
+The Greasy Fork fallback announcement monitor is retired. Greasy Fork remains a non-blocking discovery mirror and has no authority to publish a version to Discord.
 
 Two release orchestrators invoke the reusable production writer but contain no direct public-main push.
 
@@ -36,10 +37,9 @@ The executable public-main helper `.github/scripts/sync_greasyfork_root_mirror.s
 
 | Workflow | Operational authority | Source evidence | Public-main effect |
 |---|---|---|---|
-| `greasyfork-release-monitor.yml` | `.github/greasyfork-version.txt` | live Greasy Fork version and verified compatibility dashboard | None |
 | `release-recovery.yml` | dashboard JSON, rendered Markdown, stable manifest and tracker | verified GitHub Release bundle plus explicit recovery inputs | None |
 
-Both use `.github/scripts/release_state_branch.py` for branch transactions. That helper:
+Release Recovery uses `.github/scripts/release_state_branch.py` for branch transactions. That helper:
 
 - prepares a detached `release-state` worktree;
 - validates `.github/branch-role.json` before every operation;
@@ -52,9 +52,9 @@ Both use `.github/scripts/release_state_branch.py` for branch transactions. That
 - requires `GH_TOKEN` only for the final governed push;
 - contains executable self-tests that reject `main` and allowlist expansion.
 
-### Fallback monitor
+### Retired fallback monitor
 
-The monitor checks out `main` with `persist-credentials: false`, reads the verified compatibility dashboard from `main`, reads the announcement tracker from `release-state`, rechecks both refs before posting, and commits only the tracker to `release-state`.
+The scheduled Greasy Fork monitor and fallback Discord payload were removed in v10.2.3. Only the controlled TKB production release or an explicitly guarded recovery retry may post a Toolkit release. Production now verifies the live TKB install, update and metadata endpoints all serve the exact release version before Discord is called.
 
 ### Release recovery
 
@@ -156,7 +156,7 @@ That URL remains valid until a later versioned Toolkit release migrates the runt
 7. Dashboard JSON, rendered Markdown, stable update manifest and announcement tracker are committed atomically as compatibility state.
 8. GitHub Pages is dispatched and awaited.
 9. Dashboard, Greasy Fork, announcement and update-manifest workflows verify only.
-10. Fallback and recovery operations write their governed ledger to `release-state` only.
+10. Recovery operations write their governed ledger to `release-state` only.
 
 ## Indirect release orchestrators
 
@@ -174,7 +174,6 @@ Neither orchestrator contains a direct public-main push. Their `contents: write`
 | `apply-development-package.yml` | Existing owner PR branch | `DEVELOPMENT_PR_TOKEN` | Review branch only. |
 | `prepare-release-rollback.yml` | Recovery branch and PR | `DEVELOPMENT_PR_TOKEN` | Review branch only. |
 | `sync-shadow-branches.yml` | `release-state` access probe and `distribution` mirrors | `DEVELOPMENT_PR_TOKEN` | Manual rehearsal; no `main` or consumer cutover. |
-| `greasyfork-release-monitor.yml` | `release-state` tracker only | `github.token` | Scheduled operational writer; no `main`. |
 | `release-recovery.yml` | complete `release-state` recovery ledger | `github.token` | Manually confirmed recovery writer; no `main`. |
 | `backup_release_to_private_repo.sh` | private recovery repository `main` | `MIGRATION_REPO_TOKEN` | Separate repository. |
 
@@ -195,7 +194,7 @@ Neither orchestrator contains a direct public-main push. Their `contents: write`
 6. ✅ Fold stable update-manifest publication into the atomic release commit — PR #505.
 7. ✅ Create and validate `release-state` and `distribution` branches — PR #506.
 8. ✅ Add the constrained writer and rehearse access — PR #507 and Issue #41 evidence.
-9. ✅ Move fallback announcement tracking to `release-state` — PR #508.
+9. ✅ Move fallback announcement tracking to `release-state` — PR #508; retired completely in v10.2.3 after TKB became authoritative.
 10. ✅ Move the release recovery ledger to `release-state`.
 11. Move primary production state authority to `release-state`.
 12. Migrate a versioned Toolkit runtime to the release-state manifest URL.
@@ -210,7 +209,7 @@ Neither orchestrator contains a direct public-main push. Their `contents: write`
 - PR #505 reduced direct public-main writers from **4 to 3**.
 - PR #508 reduced direct public-main writers from **3 to 2**.
 - This migration reduces direct public-main writers from **2 to 1**.
-- Two workflows write governed operational state to `release-state`.
+- One workflow writes governed operational state to `release-state`.
 - The release recovery ledger is now written only to `release-state`.
 - Seven workflows use read-only repository access for immutable verification evidence.
 - Existing v5.0.7 installations retain their exact manifest URL.

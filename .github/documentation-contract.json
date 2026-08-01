@@ -90,9 +90,7 @@
     "Smart auto-hiding dock",
     "Hotkey Studio",
     "Toolkit Safe Mode",
-    "Mission Progress Rings",
     "Unit Locator & Follow Mode",
-    "Alliance Chat Mission Previews",
     "One-Click Session Cleanup"
   ],
   "installUrls": [
@@ -122,9 +120,7 @@
     "Smart Auto-Hiding Dock",
     "Hotkey & Gesture Studio",
     "Toolkit Safe Mode",
-    "Mission Progress Rings",
     "Unit Locator & Follow Mode",
-    "Alliance Chat Mission Previews",
     "One-Click Session Cleanup"
   ],
   "publicDocumentation": {
@@ -147,9 +143,7 @@
       "Smart Auto-Hiding Dock",
       "Hotkey & Gesture Studio",
       "Toolkit Safe Mode",
-      "Mission Progress Rings",
       "Unit Locator & Follow Mode",
-      "Alliance Chat Mission Previews",
       "One-Click Session Cleanup"
     ],
     "readmeForbiddenTokens": [
@@ -184,9 +178,7 @@
       "Smart Auto-Hiding Dock",
       "Hotkey & Gesture Studio",
       "Toolkit Safe Mode",
-      "Mission Progress Rings",
       "Unit Locator & Follow Mode",
-      "Alliance Chat Mission Previews",
       "One-Click Session Cleanup"
     ],
     "helpForbiddenTokens": [
@@ -221,9 +213,7 @@
       "Smart Auto-Hiding Dock",
       "Hotkey & Gesture Studio",
       "Toolkit Safe Mode",
-      "Mission Progress Rings",
       "Unit Locator & Follow Mode",
-      "Alliance Chat Mission Previews",
       "One-Click Session Cleanup"
     ],
     "greasyForkForbiddenTokens": [

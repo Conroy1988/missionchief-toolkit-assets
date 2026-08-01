@@ -66,7 +66,6 @@ def main() -> int:
     if release_state.get("operationalPaths") != expected["writes"]:
         raise AssertionError("Release-state recovery path authority changed")
     if release_state.get("operationalWriters") != [
-        ".github/workflows/greasyfork-release-monitor.yml",
         ".github/workflows/release-recovery.yml",
     ]:
         raise AssertionError("Release-state recovery writers changed")

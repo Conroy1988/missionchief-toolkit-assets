@@ -66,7 +66,6 @@ def main() -> int:
     if release_state.get("operationalPaths") != expected_state_paths:
         raise AssertionError("release-state operational ledger changed")
     if release_state.get("operationalWriters") != [
-        ".github/workflows/greasyfork-release-monitor.yml",
         ".github/workflows/release-recovery.yml",
     ]:
         raise AssertionError("release-state operational writers changed")

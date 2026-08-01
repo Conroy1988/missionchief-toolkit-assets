@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.2
+// @version      10.2.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.2',
+        version: '10.2.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1208,7 +1208,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         stuck: Object.freeze({ label: 'Stuck incident', icon: '!', title: 'Mission appears stuck' }),
         warning: Object.freeze({ label: 'Toolkit warning', icon: '⚠', title: 'Toolkit warning' })
     });
-    const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'progressRings', 'unitLocator', 'alliancePreviews', 'sessionCleanup']);
+    const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'unitLocator', 'sessionCleanup']);
     const INPUT_COMMAND_META = Object.freeze({
         menu: Object.freeze({ label: 'Toolkit Menu', action: 'menu' }),
         palette: Object.freeze({ label: 'Command Palette', action: 'palette' }),
@@ -1356,8 +1356,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let missionLockOnMoveEndHandler = null;
     let missionLockOnToken = 0;
     let missionProgressSaveTimer = null;
-    let missionProgressRingGroup = null;
-    const missionProgressRings = new Map();
     let followedVehicleId = '';
     let followedVehicleLabel = '';
     let followedVehicleMarker = null;
@@ -1723,8 +1721,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         layoutBuilder: defaultLayoutBuilderState(getLegacyPosition()),
         themeStudio: defaultThemeStudioState(),
         missionChiefReskin: false,
-        missionProgressRings: true,
-        allianceChatPreviews: true,
         autoHideDock: defaultAutoHideDockState(),
         inputStudio: defaultInputStudioState(),
         safeMode: normaliseSafeModeState(null),
@@ -1829,8 +1825,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.layoutBuilder = normaliseLayoutBuilderState(merged.layoutBuilder, merged.position);
         merged.themeStudio = normaliseThemeStudioState(merged.themeStudio);
         merged.missionChiefReskin = Boolean(merged.missionChiefReskin);
-        merged.missionProgressRings = merged.missionProgressRings !== false;
-        merged.allianceChatPreviews = merged.allianceChatPreviews !== false;
+        delete merged.missionProgressRings;
+        delete merged.allianceChatPreviews;
         merged.autoHideDock = normaliseAutoHideDockState(merged.autoHideDock);
         merged.inputStudio = normaliseInputStudioState(merged.inputStudio);
         merged.safeMode = normaliseSafeModeState(merged.safeMode);
@@ -12291,16 +12287,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-missionchief-reskin="true"] body :is(.table>tbody>tr>td,.table>tbody>tr>th,.list-group-item){background-color:transparent!important;color:var(--mcms-page-text)!important;border-color:rgba(255,255,255,.1)!important}
         html[data-mcms-missionchief-reskin="true"] body :is(.form-control,.input-group-addon,.btn-default){background:var(--mcms-page-surface-2)!important;color:var(--mcms-page-text)!important;border-color:rgba(255,255,255,.18)!important}
         html[data-mcms-missionchief-reskin="true"] body :is(a:not(.btn-danger):not(.btn-success):not(.btn-warning),.text-muted){color:var(--mcms-page-accent)!important}
-        .mcms-mission-progress-icon{pointer-events:none!important;overflow:visible!important}
-        .mcms-mission-progress-ring{position:relative!important;width:46px!important;height:46px!important;display:grid!important;place-items:center!important;transform:translate(-23px,-23px)!important;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))!important}
-        .mcms-mission-progress-ring svg{position:absolute!important;inset:0!important;width:46px!important;height:46px!important;overflow:visible!important;transform:rotate(-90deg)!important}
-        .mcms-mission-progress-ring circle{fill:none!important;stroke-width:4!important}
-        .mcms-mission-progress-track{stroke:rgba(4,12,18,.78)!important}
-        .mcms-mission-progress-value{stroke:#74dcff!important;stroke-linecap:round!important;transition:stroke-dashoffset .22s ease!important}
-        .mcms-mission-progress-ring[data-source="transport"] .mcms-mission-progress-value{stroke:#ffbf4e!important}
-        .mcms-mission-progress-ring[data-source="unknown"] .mcms-mission-progress-value{stroke:#a8b6c0!important;stroke-dasharray:3 5!important}
-        .mcms-mission-progress-ring>span{position:absolute!important;z-index:1!important;left:50%!important;top:36px!important;transform:translateX(-50%)!important;min-width:26px!important;height:18px!important;display:grid!important;place-items:center!important;padding:0 3px!important;border:1px solid rgba(255,255,255,.42)!important;border-radius:999px!important;background:rgba(4,14,22,.9)!important;color:#fff!important;font:950 8px/16px Arial,Helvetica,sans-serif!important;text-shadow:0 1px 2px #000!important}
-        html[data-mcms-economy="true"] .mcms-mission-progress-value,html[data-mcms-safe-mode="true"] .mcms-mission-progress-icon{transition:none!important}
         #${SCRIPT.vehicleFollowId}{position:fixed!important;left:50%!important;bottom:max(18px,env(safe-area-inset-bottom))!important;z-index:2147483490!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;gap:10px!important;max-width:min(560px,calc(100vw - 24px))!important;min-height:48px!important;padding:8px 10px 8px 14px!important;border:1px solid rgba(112,211,255,.72)!important;border-radius:14px!important;background:linear-gradient(135deg,rgba(5,31,45,.97),rgba(6,15,24,.98))!important;color:#eaf8ff!important;box-shadow:0 16px 42px rgba(0,0,0,.58),0 0 22px rgba(68,192,255,.2)!important;font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important}
         #${SCRIPT.vehicleFollowId} span{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:11px!important;font-weight:850!important}
         #${SCRIPT.vehicleFollowId} b{color:#72d8ff!important}
@@ -12309,8 +12295,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;align-items:center!important;gap:7px!important;padding:9px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:10px!important;background:rgba(255,255,255,.035)!important}
         #${SCRIPT.commandExperienceModalId} .mcms-unit-locator-copy{min-width:0!important}.mcms-unit-locator-copy strong,.mcms-unit-locator-copy small{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.mcms-unit-locator-copy strong{color:#eef8ff!important;font-size:11px!important}.mcms-unit-locator-copy small{margin-top:3px!important;color:#94adbd!important;font-size:9px!important}
         #${SCRIPT.commandExperienceModalId} .mcms-cleanup-list{display:grid!important;gap:7px!important;margin:12px 0!important}.mcms-cleanup-row{display:flex!important;justify-content:space-between!important;gap:12px!important;padding:9px 11px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:9px!important;background:rgba(255,255,255,.035)!important;color:#b9cfdd!important;font-size:10px!important}.mcms-cleanup-row strong{color:#fff!important}
-        #mission_chat_messages .mcms-alliance-mission-preview{display:grid!important;gap:3px!important;margin:5px 0 3px 20px!important;padding:7px 9px!important;border:1px solid rgba(81,185,238,.34)!important;border-left:3px solid #5ec9ff!important;border-radius:8px!important;background:linear-gradient(120deg,rgba(16,58,78,.16),rgba(0,0,0,.05))!important;color:inherit!important;font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important;line-height:1.35!important}
-        #mission_chat_messages .mcms-alliance-mission-preview strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:10px!important}#mission_chat_messages .mcms-alliance-mission-preview span{color:inherit!important;opacity:.82!important;font-size:9px!important}#mission_chat_messages .mcms-alliance-mission-preview a{justify-self:start!important;font-size:9px!important;font-weight:850!important}
         #${SCRIPT.contextMenuId}{position:fixed!important;z-index:2147483646!important;width:min(260px,calc(100vw - 18px))!important;padding:7px!important;border:1px solid rgba(108,204,255,.58)!important;border-radius:12px!important;background:rgba(5,15,23,.97)!important;color:#eef8ff!important;box-shadow:0 18px 45px rgba(0,0,0,.62)!important;backdrop-filter:blur(12px)!important}
         #${SCRIPT.contextMenuId}>strong{display:block!important;padding:5px 7px 8px!important;color:#7dd6ff!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
         #${SCRIPT.contextMenuId} button{display:block!important;width:100%!important;min-height:42px!important;margin:3px 0!important;padding:8px 10px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:8px!important;background:rgba(255,255,255,.06)!important;color:#fff!important;text-align:left!important;font-size:11px!important;font-weight:800!important}
@@ -12321,7 +12305,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-tab-btn.mcms-active,.mcms-toggle-btn.mcms-on,.mcms-position-btn.mcms-active,.mcms-small-btn:hover),html[data-mcms-custom-theme="true"] body #${SCRIPT.controlId} :is(.mcms-float-btn,.mcms-economy-btn).mcms-on{border-color:${theme.accent}!important;background:${theme.accent}33!important;color:${theme.text}!important}
         html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-section-label,.mcms-title,.mcms-label),html[data-mcms-custom-theme="true"] #${SCRIPT.commandExperienceModalId} :is(h2,strong),html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId} .mcms-command-palette-title span{color:${theme.accent}!important}
         html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:${theme.accent};--mcms-palette-accent-rgb:${themeColourRgb(theme.accent)}}
-        @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}#mission_chat_messages .mcms-alliance-mission-preview{margin-left:4px!important}}
+        @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}}
         `;
     }
 
@@ -17308,7 +17292,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
         state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
         state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled ||
-        state.missionProgressRings || state.allianceChatPreviews ||
         (state.notifications.enabled && Object.values(state.notifications.events).some(Boolean)) ||
         operationalUiIsVisible()
         );
@@ -17324,7 +17307,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         layer.__mcmsResourceGapLabel || layer.__mcmsResourceGapLayer ||
         layer.__mcmsStuckMissionLabel || layer.__mcmsStuckMissionLayer ||
         layer.__mcmsMissionSpawnLabel || layer.__mcmsMissionSpawnRing || layer.__mcmsMissionSpawnLayer ||
-        layer.__mcmsMissionProgressRing || layer.__mcmsMissionProgressLayer ||
         layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer
         ));
     }
@@ -18912,177 +18894,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return snapshot;
     }
 
-    function clearMissionProgressRings() {
-        if (missionProgressRingGroup) {
-        try { missionProgressRingGroup.clearLayers(); missionProgressRingGroup.remove(); } catch (err) {}
-        }
-        missionProgressRings.clear();
-        missionProgressRingGroup = null;
-    }
-
-    function missionProgressRingModel(snapshot) {
-        if (!snapshot) return null;
-        const liveValue = normaliseMissionLiveCurrentValue(snapshot.liveCurrentValue);
-        const components = [];
-        const transportDetails = [];
-        const addTransport = (label, remainingValue, possibleValue) => {
-        const possible = Number(possibleValue);
-        const remaining = Number(remainingValue);
-        if (!Number.isFinite(possible) || possible <= 0 || !Number.isFinite(remaining)) return;
-        const safeRemaining = clamp(remaining, 0, possible, possible);
-        components.push({ handled: possible - safeRemaining, possible });
-        transportDetails.push(`${label} ${safeRemaining}/${possible} remaining`);
-        };
-        addTransport('Patients', snapshot.patientsCount, snapshot.possiblePatientsCount);
-        addTransport('Prisoners', snapshot.prisonersCount, snapshot.possiblePrisonersCount);
-
-        if (liveValue !== null) {
-        const completion = Math.round(100 - liveValue);
-        const detail = [`Incident clearing ${completion}%`, ...transportDetails].join(' · ');
-        return { percent: completion, source: 'live', detail, label: `${completion}%` };
-        }
-        if (components.length) {
-        const handled = components.reduce((sum, item) => sum + item.handled, 0);
-        const possible = components.reduce((sum, item) => sum + item.possible, 0);
-        const percent = possible > 0 ? Math.round((handled / possible) * 100) : 0;
-        return { percent, source: 'transport', detail: `Transport progress ${percent}% · ${transportDetails.join(' · ')}`, label: `${percent}%` };
-        }
-        return null;
-    }
-
-    function makeMissionProgressRingIcon(model, caption) {
-        const radius = 17;
-        const circumference = 2 * Math.PI * radius;
-        const percent = clamp(model?.percent, 0, 100, 0);
-        const dashOffset = circumference * (1 - percent / 100);
-        const title = `${caption || 'Mission'} · ${model?.detail || `Progress ${percent}%`}`;
-        return pageWindow.L.divIcon({
-        className: 'mcms-mission-progress-icon',
-        html: `<span class="mcms-mission-progress-ring" data-source="${escapeHtml(model?.source || 'live')}" role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}"><svg viewBox="0 0 46 46" aria-hidden="true"><circle class="mcms-mission-progress-track" cx="23" cy="23" r="${radius}"></circle><circle class="mcms-mission-progress-value" cx="23" cy="23" r="${radius}" stroke-dasharray="${circumference.toFixed(2)}" stroke-dashoffset="${dashOffset.toFixed(2)}"></circle></svg><span>${escapeHtml(model?.label || `${percent}%`)}</span></span>`,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0]
-        });
-    }
-
-    function updateMissionProgressRings(snapshots = liveMissionSnapshots) {
-        if (!state.missionProgressRings || state.safeMode.enabled) {
-        clearMissionProgressRings();
-        return 0;
-        }
-        const map = findLeafletMapInstance(false);
-        if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
-        clearMissionProgressRings();
-        return 0;
-        }
-        const pane = ensureMissionFloatPane(map);
-        if (!pane) return 0;
-        try {
-        if (!missionProgressRingGroup || missionProgressRingGroup._map !== map) {
-            clearMissionProgressRings();
-            missionProgressRingGroup = pageWindow.L.layerGroup();
-            missionProgressRingGroup.__mcmsMissionProgressLayer = true;
-            missionProgressRingGroup.addTo(map);
-        }
-        const activeIds = new Set();
-        for (const snapshot of snapshots.values()) {
-            const model = missionProgressRingModel(snapshot);
-            if (!model || !snapshot?.marker) continue;
-            if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
-            if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
-            let latLng = null;
-            try { latLng = snapshot.marker.getLatLng?.() || null; } catch (err) {}
-            if (!latLng) continue;
-            try { if (typeof map.hasLayer === 'function' && !map.hasLayer(snapshot.marker)) continue; } catch (err) {}
-            const signature = `${model.source}:${model.percent}:${model.detail}:${snapshot.caption || ''}`;
-            activeIds.add(snapshot.missionId);
-            let ring = missionProgressRings.get(snapshot.missionId);
-            if (!ring) {
-            ring = pageWindow.L.marker(latLng, { interactive: false, keyboard: false, bubblingMouseEvents: false, pane, zIndexOffset: -20, icon: makeMissionProgressRingIcon(model, snapshot.caption) });
-            ring.__mcmsMissionProgressRing = true;
-            ring.__mcmsProgressSignature = signature;
-            ring.addTo(missionProgressRingGroup);
-            missionProgressRings.set(snapshot.missionId, ring);
-            } else {
-            try { ring.setLatLng(latLng); } catch (err) {}
-            if (ring.__mcmsProgressSignature !== signature) {
-                ring.__mcmsProgressSignature = signature;
-                try { ring.setIcon(makeMissionProgressRingIcon(model, snapshot.caption)); } catch (err) {}
-            }
-            }
-        }
-        for (const [missionId, ring] of missionProgressRings.entries()) {
-            if (activeIds.has(missionId)) continue;
-            missionProgressRings.delete(missionId);
-            try { missionProgressRingGroup.removeLayer(ring); } catch (err) {}
-        }
-        return missionProgressRings.size;
-        } catch (err) {
-        clearMissionProgressRings();
-        return 0;
-        }
-    }
-
-    function clearAllianceChatMissionPreviews() {
-        document.querySelectorAll('#mission_chat_messages .mcms-alliance-mission-preview').forEach(preview => preview.remove());
-    }
-
-    function allianceChatMissionSnapshot(missionId) {
-        const id = normaliseMissionId(missionId);
-        if (id === null) return null;
-        const live = liveMissionSnapshots.get(id);
-        if (live) return live;
-        const marker = getMissionMarkerIndex().byId.get(id) || null;
-        return marker ? missionSnapshotFromMarker(marker) : null;
-    }
-
-    function allianceChatPreviewHtml(snapshot, missionPath) {
-        const credits = Number(snapshot?.averageCredits);
-        const patientCount = Number(snapshot?.patientsCount);
-        const prisonerCount = Number(snapshot?.prisonersCount);
-        const units = Math.max(0, Number(snapshot?.units?.total) || 0);
-        const missing = summariseCriticalRequirement(snapshot?.missingText, 68);
-        const details = [
-        Number.isFinite(credits) && credits > 0 ? `≈${formatOperationalCompactCredits(credits)} CR` : '',
-        Number.isFinite(patientCount) && patientCount > 0 ? `${patientCount} patient${patientCount === 1 ? '' : 's'} waiting` : '',
-        Number.isFinite(prisonerCount) && prisonerCount > 0 ? `${prisonerCount} prisoner${prisonerCount === 1 ? '' : 's'} waiting` : '',
-        units ? `${units} personal unit${units === 1 ? '' : 's'} committed` : '',
-        missing ? `Needs ${missing}` : ''
-        ].filter(Boolean);
-        return `<span class="mcms-alliance-mission-preview-copy"><strong>${escapeHtml(snapshot.caption || `Mission ${snapshot.missionId}`)}</strong><small>${escapeHtml(details.join(' · ') || 'Live mission available on the map')}</small></span><a href="${escapeHtml(missionPath)}">Open</a>`;
-    }
-
-    function renderAllianceChatMissionPreviews() {
-        if (!state.allianceChatPreviews || state.safeMode.enabled) {
-        clearAllianceChatMissionPreviews();
-        return 0;
-        }
-        const root = document.querySelector('#mission_chat_messages');
-        if (!root) return 0;
-        root.querySelectorAll('.mcms-alliance-mission-preview .mcms-alliance-mission-preview').forEach(preview => preview.remove());
-        let rendered = 0;
-        for (const link of root.querySelectorAll('a[href*="/missions/"]')) {
-        if (link.closest('.mcms-alliance-mission-preview')) continue;
-        let url;
-        try { url = new URL(link.getAttribute('href') || link.href, pageWindow.location.href); } catch (err) { continue; }
-        if (url.origin !== pageWindow.location.origin) continue;
-        const match = url.pathname.match(/^\/missions\/(\d+)(?:\/|$)/u);
-        if (!match) continue;
-        const snapshot = allianceChatMissionSnapshot(match[1]);
-        let preview = link.nextElementSibling?.classList?.contains('mcms-alliance-mission-preview') ? link.nextElementSibling : null;
-        if (!snapshot) { preview?.remove(); continue; }
-        if (!preview) {
-            preview = document.createElement('span');
-            preview.className = 'mcms-alliance-mission-preview';
-            link.insertAdjacentElement('afterend', preview);
-        }
-        preview.dataset.mcmsMissionId = String(snapshot.missionId);
-        const path = `/missions/${encodeURIComponent(snapshot.missionId)}`;
-        setInnerHtmlIfChanged(preview, allianceChatPreviewHtml(snapshot, path));
-        rendered += 1;
-        }
-        return rendered;
-    }
-
     function refreshMissionSnapshots() {
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
@@ -19138,8 +18949,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
         liveMissionSnapshots = current;
         missionSnapshotReady = missionSnapshotReady || current.size > 0;
-        updateMissionProgressRings(current);
-        renderAllianceChatMissionPreviews();
 
         for (let index = recentCompletedMissions.length - 1; index >= 0; index -= 1) {
         const item = recentCompletedMissions[index];
@@ -21404,7 +21213,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         else if (['reskin', 'dock', 'safeMode'].includes(key)) openPersonalisationStudio('shell');
         else if (key === 'unitLocator') openUnitLocator();
         else if (key === 'sessionCleanup') openSessionCleanup();
-        else if (key === 'progressRings' || key === 'alliancePreviews') commandPaletteOpenSetting('missions', 'mission-intelligence');
         return true;
     }
 
@@ -21428,8 +21236,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         removeMajorIncidentFeed();
         stopVehicleFollow(false);
         clearCoverageRings();
-        clearMissionProgressRings();
-        clearAllianceChatMissionPreviews();
         clearAllianceCreditLabels();
         clearMissionAgeLabels();
         clearUnitCommitmentLabels();
@@ -22459,10 +22265,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
         '<article class="mcms-command-note"><b>Official updates have moved to TKB</b><p>TKB now provides the supported installer and automatic-update channel. GitHub remains the verified release archive; Greasy Fork is a non-blocking mirror.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
+        '<article class="mcms-command-note"><b>Cleaner mission map and Alliance Chat</b><p>Mission Progress Rings and Alliance Chat Mission Previews have been retired. Mission markers and Alliance Chat now remain in their native MissionChief form.</p></article>' +
         '<div class="mcms-update-grid">' +
-            '<article><b>Mission Progress Rings</b><p>See exact live MissionChief progress around supported mission markers, without guessed percentages.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="progressRings">Open Mission Intelligence</button></article>' +
             '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
-            '<article><b>Alliance Chat Previews</b><p>Expand mission links from the current alliance chat with live map data already available to the Toolkit.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="alliancePreviews">Open Mission Intelligence</button></article>' +
             '<article><b>Session Cleanup</b><p>Preview and clear only temporary Toolkit effects, searches, notification memory and rebuildable caches.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="sessionCleanup">Open Cleanup</button></article>' +
         '</div><p class="mcms-command-note">New Settings entries keep their NEW badge until you visit the relevant controls.</p>';
     }
@@ -27267,8 +27072,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
-        if (feature === 'missionProgressRings') state.missionProgressRings = !state.missionProgressRings;
-        if (feature === 'allianceChatPreviews') state.allianceChatPreviews = !state.allianceChatPreviews;
         if (state.cleanMode) closePanel();
         saveState();
         applyRootAttributes();
@@ -27311,16 +27114,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         if (feature === 'resourceGap') {
             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
-        }
-        if (feature === 'missionProgressRings') {
-            markFeatureBeaconViewed('progressRings');
-            if (state.missionProgressRings) refreshMissionSnapshots(); else clearMissionProgressRings();
-            showToast(state.missionProgressRings ? 'Mission Progress Rings on · exact live values only' : 'Mission Progress Rings off');
-        }
-        if (feature === 'allianceChatPreviews') {
-            markFeatureBeaconViewed('alliancePreviews');
-            if (state.allianceChatPreviews) renderAllianceChatMissionPreviews(); else clearAllianceChatMissionPreviews();
-            showToast(state.allianceChatPreviews ? 'Alliance chat mission previews on' : 'Alliance chat mission previews off');
         }
         if (feature === 'quickWheel') {
             if (!state.quickWheel.enabled) closeTabletQuickWheel();
@@ -27865,8 +27658,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         toggle('stuck', 'Stuck Mission Detection', state.stuckDetector.enabled, 'stuckDetector', 'stuck vehicles stalled incidents labels');
         toggle('major-feed', 'Major Incident Feed', state.majorIncidentFeed.enabled, 'majorIncidentFeed', 'ticker news wire');
         toggle('mission-age', 'Mission Age Labels', state.missionAge, 'missionAge', 'old incidents time');
-        toggle('mission-progress-rings', 'Mission Progress Rings', state.missionProgressRings, 'missionProgressRings', 'exact live clearing percentage map marker');
-        toggle('alliance-chat-previews', 'Alliance Chat Mission Previews', state.allianceChatPreviews, 'allianceChatPreviews', 'links cards patients requirements current page');
         toggle('transport', 'Transport Watcher', state.transportWatcher, 'transportWatcher', 'patients prisoners amber');
         toggle('unit-count', 'Unit Commitment Count', state.unitCommitment, 'unitCommitment', 'responding on scene');
         toggle('marker-focus', 'Marker Focus', state.markerFocus, 'markerFocus', 'dim buildings vehicles missions');
@@ -28999,7 +28790,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
-                    ${makeToggleButton('missionProgressRings', '◔', 'Progress Rings', 'Show exact MissionChief progress around supported mission markers. Unknown progress is never guessed.', 'progressRings')}
                 </div>
                 <div class="mcms-row" style="margin-top:8px">
                     <span class="mcms-row-label">Ring radius</span>
@@ -29057,7 +28847,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeToggleButton('customVehicleBadges', '▣', 'Custom Vehicle Badges', 'Show custom vehicle categories in available vehicles list.')}
                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
-                    ${makeToggleButton('allianceChatPreviews', '▤', 'Chat Previews', 'Expand alliance-chat mission links using only live mission data already available on this page.', 'alliancePreviews')}
                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
                     ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Play a short synthesized tracking cue during mission zoom and target acquisition.')}
                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
@@ -29885,8 +29674,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             missionAge: state.missionAge,
             transportWatcher: state.transportWatcher,
             unitCommitment: state.unitCommitment,
-            missionProgressRings: state.missionProgressRings,
-            allianceChatPreviews: state.allianceChatPreviews,
         };
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
@@ -30037,7 +29824,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 target.closest?.(`#${SCRIPT.commandExperienceModalId}`) ||
                 target.closest?.(`#${SCRIPT.quickWheelId}`) ||
                 target.closest?.(`#${SCRIPT.fullscreenExitId}`) ||
-                target.closest?.('.mcms-alliance-mission-preview,.mcms-mission-progress-icon') ||
                 false
             )
         );
@@ -30047,7 +29833,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (String(className).startsWith('mcms-')) return true;
             }
         }
-        const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label, .mcms-mission-progress-icon, .mcms-mission-progress-ring, .mcms-alliance-mission-preview';
+        const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
         let elementCount = 0;
         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
             if (!collection?.length) continue;
@@ -30064,7 +29850,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
         for (const node of mutation.addedNodes) {
             if (!node || node.nodeType !== 1) continue;
-            if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon, .mcms-mission-progress-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon, .mcms-mission-progress-icon')) continue;
+            if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
             if (node.matches?.('.leaflet-marker-icon')) return true;
             if (node.querySelector?.('.leaflet-marker-icon')) return true;
         }
@@ -30095,10 +29881,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function mutationAffectsMissionData(mutation) {
         return mutationTouchesSelector(mutation, '.leaflet-marker-pane, .leaflet-marker-icon, [id^="mission_"], #missions, #mission_list, .missionSideBarEntry, .mission-side-bar-entry, [data-mission-id]');
-    }
-
-    function mutationAffectsAllianceChat(mutation) {
-        return mutationTouchesSelector(mutation, '#mission_chat_messages');
     }
 
     function mutationAffectsMapLayout(mutation) {
@@ -30285,10 +30067,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const mapElement = getLargestLeafletMap();
         const mapRoot = mapElement?.closest?.('#map_outer') || mapElement?.parentElement || mapElement;
         const missionRoot = document.querySelector('#missions, #mission_list, .missions-panel, .mission-list');
-        const chatRoot = document.querySelector('#mission_chat_messages');
         if (mapRoot?.isConnected) roots.add(mapRoot);
         if (missionRoot?.isConnected) roots.add(missionRoot);
-        if (chatRoot?.isConnected) roots.add(chatRoot);
         if (!roots.size) {
             mainMutationObserverFallbackActive = true;
             mainMutationObserver.observe(document.body, { childList: true, subtree: true });
@@ -30322,7 +30102,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
         if (missionSnapshotsNeeded()) refreshMissionSnapshots();
-        else renderAllianceChatMissionPreviews();
         if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector();
         if (!state.safeMode.enabled) {
         if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(180);
@@ -30731,7 +30510,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let externalMutationFound = false;
             let addedLeafletMarker = false;
             let missionChanged = false;
-            let chatChanged = false;
             let layoutChanged = false;
             let toolkitUiRemoved = false;
             for (const mutation of mutations) {
@@ -30744,14 +30522,13 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     missionChanged = true;
                 }
                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
-                if (!chatChanged && mutationAffectsAllianceChat(mutation)) chatChanged = true;
                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
                 if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
-                if (addedLeafletMarker && missionChanged && chatChanged && layoutChanged && toolkitUiRemoved) break;
+                if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
             }
             if (!externalMutationFound) return;
             missionChanged ||= addedLeafletMarker;
-            if (!missionChanged && !chatChanged && !layoutChanged && !toolkitUiRemoved) return;
+            if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
@@ -30770,7 +30547,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
-                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list, #mission_chat_messages'))) {
+                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
                     connectMainMutationObserver();
                 }
                 if (layoutChanged) {
@@ -30781,7 +30558,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (missionChanged) {
                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
                 }
-                if (chatChanged) renderAllianceChatMissionPreviews();
             }, mutationDelay);
         }));
         mainMutationObserver = observer;
@@ -30906,8 +30682,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             removeMajorIncidentFeed();
             clearMissionLockOnEffect();
             stopVehicleFollow(false);
-            clearMissionProgressRings();
-            clearAllianceChatMissionPreviews();
             clearAllianceCreditLabels();
             clearMissionAgeLabels();
             clearUnitCommitmentLabels();

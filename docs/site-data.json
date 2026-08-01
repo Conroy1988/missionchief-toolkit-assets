@@ -108,40 +108,6 @@
             "discord",
             "shortcut"
           ]
-        },
-        {
-          "name": "Mission Progress Rings",
-          "summary": "Shows accessible exact clearing progress around supported live mission markers without replacing them.",
-          "details": [
-            "Exact MissionChief remaining-progress values",
-            "Exact patient and prisoner fallback totals",
-            "Unknown progress is never guessed",
-            "Independent Mission Intelligence toggle"
-          ],
-          "visual": "mission-progress-rings",
-          "tags": [
-            "missions",
-            "map",
-            "progress",
-            "accessibility"
-          ]
-        },
-        {
-          "name": "Alliance Chat Mission Previews",
-          "summary": "Adds live mission context beside existing alliance-chat mission links without fetching or storing chat content.",
-          "details": [
-            "Current-page live mission evidence only",
-            "Native mission links preserved",
-            "No chat message or user identity storage",
-            "No linked-mission request"
-          ],
-          "visual": "alliance-chat-mission-previews",
-          "tags": [
-            "missions",
-            "alliance",
-            "chat",
-            "privacy"
-          ]
         }
       ]
     },

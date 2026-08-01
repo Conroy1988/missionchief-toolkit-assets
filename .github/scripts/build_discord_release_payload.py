@@ -222,68 +222,6 @@ def build_primary(args: argparse.Namespace, brief: str) -> dict:
     }
 
 
-def build_fallback(args: argparse.Namespace, brief: str) -> dict:
-    history_url = args.history_url or f"{args.script_url.rstrip('/')}/versions"
-    previous = args.previous_version or "unknown"
-    previous_label = f"v{previous}" if previous != "unknown" else "Unknown"
-
-    embed = {
-        "author": {
-            "name": "MISSIONCHIEF // RELEASE WATCH",
-            "url": args.script_url,
-        },
-        "title": f"📡 TOOLKIT v{args.version} // PUBLIC VERSION DETECTED",
-        "description": (
-            "**FALLBACK RELEASE SIGNAL**\n"
-            "Greasy Fork published a new public version before the normal release "
-            "announcement completed.\n\n"
-            f"`{previous_label}`  →  `v{args.version}`"
-        ),
-        "url": args.script_url,
-        "color": 0xF59E0B,
-        "fields": [
-            {
-                "name": "⚡ MISSION BRIEF",
-                "value": brief,
-                "inline": False,
-            },
-            {
-                "name": "🔗 COMMAND LINKS",
-                "value": command_links(
-                    args.script_url,
-                    history_url,
-                ).replace("Release notes", "Version history"),
-                "inline": False,
-            },
-            {
-                "name": "SOURCE",
-                "value": "Greasy Fork\n**LIVE** ✅",
-                "inline": True,
-            },
-            {
-                "name": "SIGNAL",
-                "value": "Fallback monitor\n**CONFIRMED**",
-                "inline": True,
-            },
-            {
-                "name": "VERSION",
-                "value": f"**v{args.version}**",
-                "inline": True,
-            },
-        ],
-        "footer": {
-            "text": "Fallback release signal • Verification may still be running",
-        },
-        "timestamp": utc_timestamp(),
-    }
-
-    return {
-        "username": "MissionChief Toolkit Releases",
-        "allowed_mentions": {"parse": []},
-        "embeds": [embed],
-    }
-
-
 def validate_payload(payload: dict) -> None:
     encoded = json.dumps(payload, ensure_ascii=False)
     if len(encoded.encode("utf-8")) > 20_000:
@@ -325,7 +263,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--mode",
-        choices=("primary", "fallback"),
+        choices=("primary",),
         required=True,
     )
     parser.add_argument("--version", required=True)
@@ -333,8 +271,6 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--release-url", default="")
     parser.add_argument("--script-url", required=True)
-    parser.add_argument("--history-url", default="")
-    parser.add_argument("--previous-version", default="")
     parser.add_argument("--sha256", default="")
     parser.add_argument("--backup-commit", default="")
     args = parser.parse_args()
@@ -342,26 +278,22 @@ def main() -> int:
     if not args.changelog.is_file():
         raise SystemExit(f"Changelog file not found: {args.changelog}")
 
-    if args.mode == "primary":
-        missing = [
-            name
-            for name, value in (
-                ("release URL", args.release_url),
-                ("SHA-256", args.sha256),
-                ("backup commit", args.backup_commit),
-            )
-            if not value
-        ]
-        if missing:
-            raise SystemExit(
-                "Missing primary release values: " + ", ".join(missing),
-            )
+    missing = [
+        name
+        for name, value in (
+            ("release URL", args.release_url),
+            ("SHA-256", args.sha256),
+            ("backup commit", args.backup_commit),
+        )
+        if not value
+    ]
+    if missing:
+        raise SystemExit(
+            "Missing primary release values: " + ", ".join(missing),
+        )
 
     brief = parse_changelog(args.changelog)
-    if args.mode == "primary":
-        payload = build_primary(args, brief)
-    else:
-        payload = build_fallback(args, brief)
+    payload = build_primary(args, brief)
 
     validate_payload(payload)
     args.output.write_text(

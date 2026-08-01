@@ -1,5 +1,17 @@
 # Changelog
 
+## [10.2.7] - 2026-08-01
+
+### Wide responsive Desktop command grid
+
+- Replaces the tall 240px Desktop command column with a map-aware grid that uses up to 920px of available map width without resizing or displacing MissionChief.
+- Presents Visibility, Intelligence, Dashboard and Performance side by side on wide screens, then steps cleanly through three, two and one column as the visible map narrows or browser zoom increases.
+- Keeps the proven compact control density while improving full-label readability, ON/OFF clarity, keyboard focus and pinned-shortcut alignment.
+- Reduces normal Desktop dock height substantially and reserves internal vertical scrolling for genuinely short workspaces only.
+- Preserves the v10.2.6 Major Incident Wire clearance, permanently reachable launcher, all four dock positions, auto-hide behaviour, saved nudges and command-bar collapse.
+- Leaves Tablet/iPad and iOS/mobile geometry unchanged and adds no request, timer, listener or observer.
+- Adds static and rendered-DOM regressions for wide, medium, supplied narrow-screen, forced one-column, pins, collapse and touch-layout exit cases.
+
 ## [10.2.6] - 2026-08-01
 
 ### Critical Desktop command-dock containment

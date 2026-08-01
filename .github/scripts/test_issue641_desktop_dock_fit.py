@@ -13,7 +13,7 @@ def section(start: str, end: str) -> str:
 
 
 def main() -> int:
-    for helper in ("resolveDesktopDockWorkspace", "clearDesktopDockSizing", "applyDesktopDockLayout"):
+    for helper in ("resolveDesktopDockWorkspace", "resolveDesktopDockPresentation", "clearDesktopDockSizing", "applyDesktopDockLayout"):
         assert SOURCE.count(f"function {helper}(") == 1, f"{helper} declaration count changed"
 
     layout = section("    function applyDesktopDockLayout(", "    function stopDesktopPanelWorkspaceObservation(")

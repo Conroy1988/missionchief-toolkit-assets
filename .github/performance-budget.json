@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-641-desktop-dock-containment-v10-2-6",
-  "rationale": "Approve the measured Issue #641 Desktop command-dock geometry containment using the existing fit timer and Desktop resize observer, with zero growth in request sites, observers, managed timers or managed listeners.",
+  "revision": "2026-08-01-issue-643-responsive-desktop-command-grid-v10-2-7",
+  "rationale": "Approve the measured Issue #643 responsive Desktop command-grid presentation using the existing fit timer and Desktop resize observer, with zero growth in request sites, observers, managed timers or managed listeners.",
   "transitionApproval": {
-    "issue": 641,
-    "version": "10.2.6",
+    "issue": 643,
+    "version": "10.2.7",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Issue #641: constrain every Desktop dock position to the visible map workspace, reserve the Major Incident Wire, and keep the launcher reachable while command groups scroll internally when height is limited.",
+    "scope": "Issue #643: replace the tall narrow Desktop command column with a width-aware four, three, two or one-column compact grid while preserving v10.2.6 containment and all touch layouts.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 641,
+      "version": "10.2.6",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Constrain every Desktop dock position to the visible map workspace, reserve the Major Incident Wire, and keep the launcher reachable while command groups scroll internally when height is limited.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 638,
       "version": "10.2.5",

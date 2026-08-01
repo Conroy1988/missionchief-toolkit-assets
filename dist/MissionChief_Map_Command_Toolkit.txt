@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.6
+// @version      10.2.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.6',
+        version: '10.2.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12112,10 +12112,22 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         };
     }
 
+    function resolveDesktopDockPresentation(maxWidth) {
+        const availableWidth = Math.max(1, Math.floor(Number(maxWidth) || 1));
+        const launchWidth = 109;
+        const columnGap = 6;
+        const dockWidth = Math.min(920, availableWidth);
+        const contentWidth = Math.max(1, dockWidth - launchWidth - columnGap);
+        const filterColumns = contentWidth >= 720 ? 4 : contentWidth >= 560 ? 3 : contentWidth >= 400 ? 2 : 1;
+        const pinColumns = Math.max(1, Math.min(8, Math.floor((contentWidth + 5) / 80)));
+        return { dockWidth, contentWidth, filterColumns, pinColumns, launchWidth, columnGap };
+    }
+
     function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
         if (!control) return;
-        for (const property of ['--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const property of ['--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-width', '--mcms-desktop-dock-content-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-filter-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
         delete control.dataset.mcmsDesktopDockFit;
+        delete control.dataset.mcmsDesktopDockColumns;
     }
 
     function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
@@ -12138,18 +12150,23 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const launchRow = control.querySelector?.('.mcms-launch-row');
         const filter = control.querySelector?.('.mcms-floating-filter');
         const pins = control.querySelector?.('.mcms-screen-pins');
-        const launchHeight = Math.max(1, Math.ceil(launchRow?.getBoundingClientRect?.().height || launchRow?.offsetHeight || 56));
-        const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
-        const pinNaturalHeight = pinsVisible ? Math.max(29, Math.ceil(pins?.getBoundingClientRect?.().height || pins?.offsetHeight || 29)) : 0;
-        const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
-        const filterMargin = state.commandBarOpen === false ? 0 : 6;
-        const availableAfterLaunch = Math.max(1, workspace.maxHeight - launchHeight - filterMargin - nudgeY);
-        const pinHeight = pinsVisible ? Math.min(pinNaturalHeight, Math.max(0, availableAfterLaunch - 54)) : 0;
-        const pinMargin = pinHeight > 0 ? 6 : 0;
-        const filterHeight = Math.max(1, availableAfterLaunch - pinHeight - pinMargin);
-
+        const presentation = resolveDesktopDockPresentation(workspace.maxWidth);
         control.style.setProperty('--mcms-desktop-dock-max-height', `${workspace.maxHeight}px`);
         control.style.setProperty('--mcms-desktop-dock-max-width', `${workspace.maxWidth}px`);
+        control.style.setProperty('--mcms-desktop-dock-width', `${presentation.dockWidth}px`);
+        control.style.setProperty('--mcms-desktop-dock-content-width', `${presentation.contentWidth}px`);
+        control.style.setProperty('--mcms-desktop-filter-columns', String(presentation.filterColumns));
+        control.style.setProperty('--mcms-desktop-pin-columns', String(presentation.pinColumns));
+        control.dataset.mcmsDesktopDockColumns = String(presentation.filterColumns);
+        const launchHeight = Math.max(1, Math.ceil(launchRow?.getBoundingClientRect?.().height || launchRow?.offsetHeight || 56));
+        const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
+        const pinNaturalHeight = pinsVisible ? Math.max(29, Math.ceil(pins?.scrollHeight || pins?.getBoundingClientRect?.().height || pins?.offsetHeight || 29)) : 0;
+        const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
+        const availableContentHeight = Math.max(1, workspace.maxHeight - nudgeY);
+        const pinHeight = pinsVisible ? Math.min(pinNaturalHeight, Math.max(0, availableContentHeight - Math.max(54, launchHeight))) : 0;
+        const pinMargin = pinHeight > 0 ? 6 : 0;
+        const filterHeight = Math.max(1, availableContentHeight - pinHeight - pinMargin);
+
         control.style.setProperty('--mcms-desktop-dock-top', `${workspace.top}px`);
         control.style.setProperty('--mcms-desktop-dock-bottom', `${workspace.bottom}px`);
         control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
@@ -12157,7 +12174,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         control.style.setProperty('--mcms-desktop-filter-max-height', `${filterHeight}px`);
         control.style.setProperty('--mcms-desktop-pin-max-height', `${pinHeight}px`);
         control.style.setProperty('--mcms-desktop-pin-margin', `${pinMargin}px`);
-        control.dataset.mcmsDesktopDockFit = `${position}:${workspace.maxWidth}:${workspace.maxHeight}:${filterHeight}:${pinHeight}`;
+        control.dataset.mcmsDesktopDockFit = `${position}:${presentation.dockWidth}:${workspace.maxHeight}:${filterHeight}:${pinHeight}:${presentation.filterColumns}`;
         return Boolean(filter);
     }
 
@@ -12365,21 +12382,39 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{max-width:var(--mcms-desktop-dock-max-width,360px)!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:109px minmax(0,1fr)!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;column-gap:6px!important;row-gap:6px!important;max-width:var(--mcms-desktop-dock-max-width,920px)!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-launch-row{grid-area:menu!important;width:109px!important;max-width:109px!important;gap:5px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-floating-filter,.mcms-screen-pins){pointer-events:auto!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:var(--mcms-desktop-dock-right,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit],
+        html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit],
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within),
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit],
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{width:var(--mcms-desktop-dock-width,min(920px,var(--mcms-desktop-dock-max-width,920px)))!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{width:109px!important;max-width:109px!important;grid-template-columns:109px!important;grid-template-areas:"menu"!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{width:min(240px,var(--mcms-desktop-dock-max-width,240px))!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{grid-area:filters!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-filter-columns,4),minmax(0,1fr))!important;align-items:start!important;align-content:start!important;gap:6px!important;width:var(--mcms-desktop-dock-content-width,805px)!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;margin:0!important;padding:0 2px 0 0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-content:start!important;gap:4px!important;min-width:0!important;padding:5px!important;border-radius:10px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group:is([data-control-group="dashboard"],[data-control-group="performance"]){grid-template-columns:1fr!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group-label{grid-column:1/-1!important;padding:0 2px 2px!important;font-size:7px!important;line-height:1!important;letter-spacing:.55px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn){grid-template-columns:20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;gap:5px!important;padding:3px 6px!important;border-radius:8px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-icon{display:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-label-desktop{display:block!important;font-size:8.5px!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-state{margin-top:3px!important;font-size:6.5px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn):not(.mcms-on){opacity:.84!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn).mcms-on{opacity:1!important;background:linear-gradient(145deg,rgba(8,101,73,.98),rgba(10,72,94,.98) 58%,rgba(14,49,82,.98))!important;border-color:#63f2b1!important;color:#fff!important;box-shadow:0 0 0 1px rgba(99,242,177,.18),0 0 12px rgba(34,211,153,.30),0 4px 12px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.16)!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{grid-area:pins!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-pin-columns,8),minmax(0,1fr))!important;gap:5px!important;width:var(--mcms-desktop-dock-content-width,805px)!important;max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin:var(--mcms-desktop-pin-margin,6px) 0 0!important;padding:0 2px 0 0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pin-btn{width:100%!important;min-width:0!important;max-width:none!important;height:29px!important;padding:0 8px!important;font-size:9px!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="fallout4"]{--mcms-page-bg:#071008;--mcms-page-surface:#102014;--mcms-page-surface-2:#193021;--mcms-page-text:#ecffd4;--mcms-page-muted:#b2ca9e;--mcms-page-accent:#b9ff72}

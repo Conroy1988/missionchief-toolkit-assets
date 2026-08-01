@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 641,
-    "version": "10.2.6",
-    "sourceBytes": 2118054,
-    "sourceLines": 32010,
-    "sourceSha256": "7ab40a8bd896ff429d4377bc920487a1b12b13ea0be23790981392863c3a2b91",
+    "issue": 643,
+    "version": "10.2.7",
+    "sourceBytes": 2124480,
+    "sourceLines": 32045,
+    "sourceSha256": "0d89ea4da673662e8bfb4179b6c2e7e579de8d989baacdacba55ec4823bd3810",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
     "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
-    "maxSourceBytes": 2129504,
-    "maxSourceLines": 32048,
+    "maxSourceBytes": 2134480,
+    "maxSourceLines": 32125,
     "minTemplateBytes": 500000,
-    "baseline": "10.2.5",
+    "baseline": "10.2.6",
     "approvedGrowth": {
-      "sourceBytes": 10224,
-      "sourceLines": 121,
+      "sourceBytes": 6426,
+      "sourceLines": 35,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #641 visible-map Desktop dock containment with Major Incident Wire reservation and internal command scrolling"
+    "scope": "Issue #643 width-aware four, three, two or one-column compact Desktop command grid preserving v10.2.6 containment"
   }
 }

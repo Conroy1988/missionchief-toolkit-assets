@@ -88,12 +88,14 @@ const layoutSandbox = {
   activeDockPosition: () => "bl",
 };
 vm.createContext(layoutSandbox);
-vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\n${extractFunction("clearDesktopDockSizing")}\n${extractFunction("applyDesktopDockLayout")}\nthis.apply = applyDesktopDockLayout;`, layoutSandbox);
+vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\n${extractFunction("resolveDesktopDockPresentation")}\n${extractFunction("clearDesktopDockSizing")}\n${extractFunction("applyDesktopDockLayout")}\nthis.apply = applyDesktopDockLayout;`, layoutSandbox);
 assert.equal(layoutSandbox.apply(mapElement, control), true, "Desktop fit did not apply");
 assert.match(control.dataset.mcmsDesktopDockFit, /^bl:/);
 assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-max-height"), "743px");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-max-height"), "611px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-max-height"), "673px");
 assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-max-height"), "64px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-width"), "617px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-columns"), "2");
 layoutSandbox.activeDeviceLayout = "tablet";
 assert.equal(layoutSandbox.apply(mapElement, control), false, "touch layout accepted Desktop sizing");
 assert.equal(control.dataset.mcmsDesktopDockFit, undefined, "Desktop sizing survived layout exit");

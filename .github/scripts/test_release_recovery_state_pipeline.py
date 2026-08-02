@@ -79,7 +79,7 @@ def main() -> int:
         workflow,
         [
             "name: Release Recovery",
-            "permissions:\n  contents: write",
+            "permissions:\n  actions: write\n  contents: write",
             "group: toolkit-production-release",
             "Check out latest main authority",
             "ref: main",
@@ -100,9 +100,12 @@ def main() -> int:
             "finalize-discord",
             "Rebuild verified release dashboard on release-state",
             "rebuild-dashboard",
+            "Refresh Pages after release-state recovery",
+            "gh workflow run github-pages.yml --ref main",
             "Repair stable GitHub Release assets",
             "Recovery ledger: \\`release-state\\`",
             "Public main changed: no",
+            "Pages refresh follows successful release-state recovery: yes",
         ],
         "Release recovery workflow",
     )

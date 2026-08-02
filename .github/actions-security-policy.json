@@ -35,6 +35,7 @@
       "issues"
     ],
     ".github/workflows/release-recovery.yml": [
+      "actions",
       "contents"
     ],
     ".github/workflows/release-toolkit.yml": [

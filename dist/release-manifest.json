@@ -1,6 +1,6 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "version": "10.2.6",
+  "version": "10.3.2",
   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
   "distributionFiles": [
     "dist/MissionChief_Map_Command_Toolkit.user.js",
@@ -8,7 +8,6 @@
     "dist/MissionChief_Map_Command_Toolkit.install.user.js",
     "dist/MissionChief_Map_Command_Toolkit.update.user.js",
     "dist/MissionChief_Map_Command_Toolkit.meta.js",
-    "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
     "dist/MissionChief_Map_Command_Toolkit.css"
   ],
   "candidateArtifactFiles": [
@@ -17,17 +16,16 @@
     "dist/MissionChief_Map_Command_Toolkit.install.user.js",
     "dist/MissionChief_Map_Command_Toolkit.update.user.js",
     "dist/MissionChief_Map_Command_Toolkit.meta.js",
-    "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
     "dist/MissionChief_Map_Command_Toolkit.css",
     "dist/SHA256SUMS.txt",
     "dist/release-manifest.json"
   ],
-  "sha256": "7ab40a8bd896ff429d4377bc920487a1b12b13ea0be23790981392863c3a2b91",
-  "bytes": 2118054,
-  "lines": 32011,
+  "sha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
+  "bytes": 2135435,
+  "lines": 32255,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",
-    "runtimeVersion": "10.2.6",
+    "runtimeVersion": "10.3.2",
     "author": "Conroy1988",
     "license": "MIT",
     "missionChiefRules": [
@@ -43,10 +41,8 @@
     "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
     "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
     "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
-    "greasyForkMirror": "non-blocking",
-    "greasyForkCharacters": 1331982,
-    "greasyForkLimit": 2097152,
+    "authority": "tkb-website-only",
     "stylesheetSha256": "5a6a56eb8e509c19d64d888f6195dc89d1ec1855ce90ac2d79ee7dc47dae994b"
   },
-  "distributionStatus": "dry-run-first-party-and-mirror-assets"
+  "distributionStatus": "dry-run-first-party-assets"
 }

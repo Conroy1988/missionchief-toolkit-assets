@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.6
+// @version      10.3.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.6',
+        version: '10.3.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -504,6 +504,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         financeRulesCacheState: 'mc_map_command_toolkit_finance_rules_v450',
         financePolicyCacheState: 'mc_map_command_toolkit_finance_policy_v460',
         ukKnowledgeCacheState: 'mc_map_command_toolkit_uk_knowledge_v1',
+        analyticsState: 'mc_map_command_toolkit_analytics_v1',
         oldStorageKeys: [
         'mc_map_command_toolkit_state_v149',
         'mc_map_command_toolkit_state_v148',
@@ -784,6 +785,132 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         Object.assign(metrics, extra);
         pageWindow.__MCMS_STARTUP_METRICS__ = metrics;
         return elapsedMs;
+    }
+
+    const TOOLKIT_ANALYTICS_ENDPOINT = 'https://tkb-gaming.scot/api/toolkit-analytics.php';
+    const TOOLKIT_ANALYTICS_FEATURES = new Set([
+        'markerFocus', 'missionPulse', 'roadPriority', 'coverage', 'allianceMissions',
+        'myMissions', 'vehicles', 'buildings', 'missionValue', 'customVehicleBadges',
+        'missionLockAudio', 'payoutFlash', 'payoutSound', 'stuckDetector', 'missionSpawn',
+        'clean', 'shortcuts', 'compactDock', 'quickWheel', 'autoLoadAllVehicles',
+        'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
+        'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
+        'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
+        'financialIntelligence', 'toolkitDoctor', 'safeMode', 'sessionCleanup'
+    ]);
+    const toolkitAnalyticsSessionSignals = new Set();
+
+    function toolkitAnalyticsAllowed() {
+        try {
+        return pageWindow.navigator?.globalPrivacyControl !== true &&
+            pageWindow.navigator?.doNotTrack !== '1' &&
+            pageWindow.doNotTrack !== '1';
+        } catch (err) { return false; }
+    }
+
+    function toolkitAnalyticsDevice() {
+        const width = Math.max(0, Number(pageWindow.innerWidth) || Number(document.documentElement?.clientWidth) || 0);
+        if (width <= 760) return 'mobile';
+        if (width <= 1180 || pageWindow.matchMedia?.('(pointer: coarse)')?.matches) return 'tablet';
+        return 'desktop';
+    }
+
+    function toolkitAnalyticsRoute() {
+        const path = String(location.pathname || '').toLowerCase();
+        if (/^\/(?:$|missions\/?$)/u.test(path)) return 'map';
+        if (path.startsWith('/missions/')) return 'mission';
+        if (path.includes('/alliance') || path.includes('/verband')) return 'alliance';
+        if (path.includes('/buildings') || path.includes('/gebauede') || path.includes('/gebaeude')) return 'buildings';
+        if (path.includes('/credits')) return 'credits';
+        return 'other';
+    }
+
+    function toolkitAnalyticsPerformance(elapsedMs) {
+        const value = Math.max(0, Number(elapsedMs) || 0);
+        if (value < 750) return 'fast';
+        if (value < 2000) return 'normal';
+        if (value < 5000) return 'slow';
+        return 'very_slow';
+    }
+
+    function toolkitAnalyticsSend(event, dimensions = {}) {
+        if (!toolkitAnalyticsAllowed() || runtime.destroyed) return false;
+        const allowedEvents = new Set(['telemetry_enrolled', 'install_confirmed', 'update_confirmed', 'active_daily', 'active_7d', 'active_30d', 'core_ready', 'feature_toggle', 'feature_use', 'runtime_error']);
+        if (!allowedEvents.has(event)) return false;
+        const payload = new URLSearchParams({ event, version: SCRIPT.version });
+        for (const key of ['previousVersion', 'device', 'route', 'feature', 'performance', 'error']) {
+        const value = String(dimensions[key] || '');
+        if (value) payload.set(key, value);
+        }
+        try {
+        void runtimeFetch(TOOLKIT_ANALYTICS_ENDPOINT, {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: payload.toString(),
+            credentials: 'omit',
+            referrerPolicy: 'no-referrer'
+        }).catch(() => {});
+        return true;
+        } catch (err) { return false; }
+    }
+
+    function toolkitAnalyticsReadState() {
+        const raw = gmGetValueSafe(SCRIPT.analyticsState, null);
+        if (!raw) return null;
+        try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!parsed || Number(parsed.schema) !== 1) return null;
+        return parsed;
+        } catch (err) { return null; }
+    }
+
+    function toolkitAnalyticsConfirmLifecycle(coreReadyMs) {
+        if (!toolkitAnalyticsAllowed()) return false;
+        const now = Date.now();
+        const day = new Date(now).toISOString().slice(0, 10);
+        const week = String(Math.floor(now / (7 * 86400000)));
+        const month = String(Math.floor(now / (30 * 86400000)));
+        const previous = toolkitAnalyticsReadState();
+        const next = {
+        schema: 1,
+        lastVersion: SCRIPT.version,
+        lastDay: day,
+        lastWeek: week,
+        lastMonth: month,
+        lastCoreReadyDay: day
+        };
+        if (!gmSetValueSafe(SCRIPT.analyticsState, JSON.stringify(next))) return false;
+
+        if (!previous) {
+        toolkitAnalyticsSend(toolkitFreshInstallAtLoad ? 'install_confirmed' : 'telemetry_enrolled');
+        } else if (String(previous.lastVersion || '') !== SCRIPT.version) {
+        toolkitAnalyticsSend('update_confirmed', { previousVersion: String(previous.lastVersion || '') });
+        }
+        const activity = { device: toolkitAnalyticsDevice(), route: toolkitAnalyticsRoute() };
+        if (previous?.lastDay !== day) toolkitAnalyticsSend('active_daily', activity);
+        if (previous?.lastWeek !== week) toolkitAnalyticsSend('active_7d', activity);
+        if (previous?.lastMonth !== month) toolkitAnalyticsSend('active_30d', activity);
+        if (previous?.lastCoreReadyDay !== day) toolkitAnalyticsSend('core_ready', { performance: toolkitAnalyticsPerformance(coreReadyMs) });
+        return true;
+    }
+
+    function toolkitAnalyticsRecordFeature(feature, event = 'feature_use') {
+        const safeFeature = String(feature || '');
+        const safeEvent = event === 'feature_toggle' ? event : 'feature_use';
+        const signal = `${safeEvent}:${safeFeature}`;
+        if (!TOOLKIT_ANALYTICS_FEATURES.has(safeFeature) || toolkitAnalyticsSessionSignals.has(signal)) return false;
+        toolkitAnalyticsSessionSignals.add(signal);
+        return toolkitAnalyticsSend(safeEvent, { feature: safeFeature });
+    }
+
+    function toolkitAnalyticsRecordError(error) {
+        const safeError = ['boot_integration', 'operational_startup'].includes(error) ? error : '';
+        const signal = `runtime_error:${safeError}`;
+        if (!safeError || toolkitAnalyticsSessionSignals.has(signal)) return false;
+        toolkitAnalyticsSessionSignals.add(signal);
+        return toolkitAnalyticsSend('runtime_error', { error: safeError });
     }
 
     function runtimeFetch(input, init = {}) {
@@ -1513,6 +1640,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let commandPaletteSelectedIndex = 0;
     let commandPaletteReturnFocus = null;
     state = loadState();
+    const toolkitFreshInstallAtLoad = settingsPersistenceMeta.source === 'defaults';
 
     function defaultLayoutDeviceState(position = 'bl', device = 'desktop') {
         const safePosition = POSITIONS[position] ? position : 'bl';
@@ -12112,10 +12240,70 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         };
     }
 
+    function resolveDesktopDockGrid(availableWidth, maxHeight, groupControlCounts = [], pinCount = 0, launchWidth = 117, gap = 6) {
+        const finite = value => typeof value === 'number' && Number.isFinite(value);
+        const safeWidth = Math.max(1, Math.floor(finite(availableWidth) ? availableWidth : 1));
+        const safeHeight = Math.max(1, Math.floor(finite(maxHeight) ? maxHeight : 1));
+        const safeGap = Math.max(0, Math.floor(finite(gap) ? gap : 6));
+        const dockWidth = Math.min(1180, safeWidth);
+        const safeLaunchWidth = Math.min(dockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
+        const contentWidth = Math.max(1, dockWidth - safeLaunchWidth - safeGap);
+        const groupColumns = contentWidth >= 900 ? 4 : contentWidth >= 620 ? 3 : contentWidth >= 360 ? 2 : 1;
+        const groupWidth = Math.max(1, Math.floor((contentWidth - (safeGap * Math.max(0, groupColumns - 1))) / groupColumns));
+        const minimumButtonWidth = groupWidth >= 330 ? 92 : groupWidth >= 220 ? 88 : 82;
+        const counts = Array.isArray(groupControlCounts) && groupControlCounts.length
+        ? groupControlCounts.map(count => Math.max(0, Math.floor(Number(count) || 0)))
+        : [4, 5, 3, 1];
+        const groupButtonColumns = counts.map(count => Math.max(1, Math.min(Math.max(1, count), Math.floor((Math.max(1, groupWidth - 10) + 4) / (minimumButtonWidth + 4)) || 1)));
+        const groupHeights = counts.map((count, index) => {
+        if (!count) return 0;
+        const rows = Math.max(1, Math.ceil(count / groupButtonColumns[index]));
+        return 18 + (rows * 36) + (Math.max(0, rows - 1) * 4);
+        });
+        let naturalFilterHeight = 0;
+        for (let index = 0; index < groupHeights.length; index += groupColumns) {
+        const rowHeight = Math.max(0, ...groupHeights.slice(index, index + groupColumns));
+        if (!rowHeight) continue;
+        if (naturalFilterHeight) naturalFilterHeight += safeGap;
+        naturalFilterHeight += rowHeight;
+        }
+        naturalFilterHeight = Math.max(1, naturalFilterHeight);
+
+        const safePinCount = Math.max(0, Math.floor(Number(pinCount) || 0));
+        const pinColumns = safePinCount
+        ? Math.max(1, Math.min(safePinCount, Math.floor((contentWidth + safeGap) / (72 + safeGap)) || 1))
+        : 1;
+        const pinRows = safePinCount ? Math.max(1, Math.ceil(safePinCount / pinColumns)) : 0;
+        const naturalPinHeight = pinRows ? (pinRows * 30) + (Math.max(0, pinRows - 1) * 4) : 0;
+        const pinMargin = naturalPinHeight ? safeGap : 0;
+        const filterMaxHeight = Math.max(1, safeHeight - Math.min(naturalPinHeight + pinMargin, Math.max(0, safeHeight - 1)));
+        const estimatedFilterHeight = Math.min(naturalFilterHeight, filterMaxHeight);
+        const pinMaxHeight = naturalPinHeight ? Math.max(0, Math.min(naturalPinHeight, safeHeight - estimatedFilterHeight - pinMargin)) : 0;
+        const naturalHeight = Math.max(56, naturalFilterHeight + naturalPinHeight + pinMargin);
+        return {
+        dockWidth,
+        launchWidth: safeLaunchWidth,
+        contentWidth,
+        groupColumns,
+        groupButtonColumns,
+        pinColumns,
+        naturalFilterHeight,
+        naturalPinHeight,
+        filterMaxHeight,
+        pinMaxHeight,
+        pinMargin,
+        scrollFallback: naturalHeight > safeHeight,
+        size: dockWidth >= 1000 ? 'wide' : dockWidth >= 760 ? 'standard' : dockWidth >= 520 ? 'compact' : 'tight'
+        };
+    }
+
     function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
         if (!control) return;
-        for (const property of ['--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const property of ['--mcms-desktop-dock-width', '--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-launch-width', '--mcms-desktop-group-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const group of control.querySelectorAll?.('.mcms-control-group') || []) group.style.removeProperty('--mcms-desktop-button-columns');
         delete control.dataset.mcmsDesktopDockFit;
+        delete control.dataset.mcmsDesktopDockSize;
+        delete control.dataset.mcmsDesktopDockScroll;
     }
 
     function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
@@ -12138,26 +12326,32 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const launchRow = control.querySelector?.('.mcms-launch-row');
         const filter = control.querySelector?.('.mcms-floating-filter');
         const pins = control.querySelector?.('.mcms-screen-pins');
-        const launchHeight = Math.max(1, Math.ceil(launchRow?.getBoundingClientRect?.().height || launchRow?.offsetHeight || 56));
+        const launchRect = launchRow?.getBoundingClientRect?.() || {};
+        const launchWidth = Math.max(56, Math.ceil(launchRect.width || launchRow?.offsetWidth || 117));
+        const groups = Array.from(filter?.querySelectorAll?.(':scope > .mcms-control-group:not(.mcms-layout-group-hidden)') || []);
+        const groupControlCounts = groups.map(group => group.querySelectorAll(':scope > button:not(.mcms-layout-hidden)').length);
         const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
-        const pinNaturalHeight = pinsVisible ? Math.max(29, Math.ceil(pins?.getBoundingClientRect?.().height || pins?.offsetHeight || 29)) : 0;
-        const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
-        const filterMargin = state.commandBarOpen === false ? 0 : 6;
-        const availableAfterLaunch = Math.max(1, workspace.maxHeight - launchHeight - filterMargin - nudgeY);
-        const pinHeight = pinsVisible ? Math.min(pinNaturalHeight, Math.max(0, availableAfterLaunch - 54)) : 0;
-        const pinMargin = pinHeight > 0 ? 6 : 0;
-        const filterHeight = Math.max(1, availableAfterLaunch - pinHeight - pinMargin);
+        const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
+        const grid = resolveDesktopDockGrid(Math.max(1, workspace.maxWidth - nudgeX), workspace.maxHeight, groupControlCounts, pinsVisible ? pins.childElementCount : 0, launchWidth, 6);
 
+        groups.forEach((group, index) => group.style.setProperty('--mcms-desktop-button-columns', String(grid.groupButtonColumns[index] || 1)));
+
+        control.style.setProperty('--mcms-desktop-dock-width', `${grid.dockWidth}px`);
         control.style.setProperty('--mcms-desktop-dock-max-height', `${workspace.maxHeight}px`);
         control.style.setProperty('--mcms-desktop-dock-max-width', `${workspace.maxWidth}px`);
         control.style.setProperty('--mcms-desktop-dock-top', `${workspace.top}px`);
         control.style.setProperty('--mcms-desktop-dock-bottom', `${workspace.bottom}px`);
         control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
         control.style.setProperty('--mcms-desktop-dock-right', `${workspace.right}px`);
-        control.style.setProperty('--mcms-desktop-filter-max-height', `${filterHeight}px`);
-        control.style.setProperty('--mcms-desktop-pin-max-height', `${pinHeight}px`);
-        control.style.setProperty('--mcms-desktop-pin-margin', `${pinMargin}px`);
-        control.dataset.mcmsDesktopDockFit = `${position}:${workspace.maxWidth}:${workspace.maxHeight}:${filterHeight}:${pinHeight}`;
+        control.style.setProperty('--mcms-desktop-launch-width', `${grid.launchWidth}px`);
+        control.style.setProperty('--mcms-desktop-group-columns', String(grid.groupColumns));
+        control.style.setProperty('--mcms-desktop-filter-max-height', `${grid.filterMaxHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-columns', String(grid.pinColumns));
+        control.style.setProperty('--mcms-desktop-pin-max-height', `${grid.pinMaxHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-margin', `${grid.pinMargin}px`);
+        control.dataset.mcmsDesktopDockFit = `${position}:${grid.dockWidth}:${workspace.maxHeight}:${grid.groupColumns}:${grid.pinColumns}`;
+        control.dataset.mcmsDesktopDockSize = grid.size;
+        control.dataset.mcmsDesktopDockScroll = grid.scrollFallback ? 'true' : 'false';
         return Boolean(filter);
     }
 
@@ -12365,21 +12559,35 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{max-width:var(--mcms-desktop-dock-max-width,360px)!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:var(--mcms-desktop-launch-width,117px) minmax(0,1fr)!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;column-gap:6px!important;row-gap:0!important;width:var(--mcms-desktop-dock-width,min(1180px,calc(100vw - 24px)))!important;max-width:min(var(--mcms-desktop-dock-max-width,calc(100vw - 24px)),var(--mcms-desktop-dock-width,1180px))!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;pointer-events:none!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:var(--mcms-desktop-dock-right,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-launch-row{grid-area:menu!important;width:var(--mcms-desktop-launch-width,117px)!important;max-width:100%!important;margin:0!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{grid-template-columns:var(--mcms-desktop-launch-width,117px)!important;grid-template-areas:"menu"!important;width:var(--mcms-desktop-launch-width,117px)!important;max-width:var(--mcms-desktop-launch-width,117px)!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{width:min(240px,var(--mcms-desktop-dock-max-width,240px))!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{grid-area:filters!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-group-columns,4),minmax(0,1fr))!important;align-items:start!important;gap:6px!important;width:100%!important;max-width:none!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;margin:0!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-floating-filter{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group{grid-template-columns:repeat(var(--mcms-desktop-button-columns,2),minmax(0,1fr))!important;gap:4px!important;min-width:0!important;padding:5px!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group-label{padding:0 2px 2px!important;font-size:7px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn){grid-template-columns:20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;gap:5px!important;padding:3px 6px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-icon{display:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-label-desktop{display:block!important;font-size:9px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-state{font-size:6.5px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-desktop{display:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-tablet{display:block!important;font-size:8.5px!important;line-height:1!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{grid-area:pins!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-pin-columns,6),minmax(0,1fr))!important;gap:4px!important;width:100%!important;max-width:none!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-screen-pins{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pin-btn{width:100%!important;min-width:0!important;max-width:none!important;height:30px!important;min-height:30px!important;padding:0 8px!important;font-size:9px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-floating-filter,.mcms-screen-pins){display:none!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="fallout4"]{--mcms-page-bg:#071008;--mcms-page-surface:#102014;--mcms-page-surface-2:#193021;--mcms-page-text:#ecffd4;--mcms-page-muted:#b2ca9e;--mcms-page-accent:#b9ff72}
@@ -15705,6 +15913,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
 The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control or Cancel Transport control. Your own verified vehicle IDs are always excluded. Continue?`);
         if (!confirmed) return;
+        toolkitAnalyticsRecordFeature('patientTransportSweep');
         transportSweepRuntime.running = true;
         transportSweepRuntime.stopRequested = false;
         transportSweepRuntime.currentMissionId = null;
@@ -19921,6 +20130,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             closeOperationalPressureBoard();
             return;
         }
+        toolkitAnalyticsRecordFeature('pressureBoard');
         const vehicleStatus = document.querySelector(`[id="${SCRIPT.vehicleStatusId}"]`);
         if (vehicleStatus?.classList.contains('mcms-open')) {
             vehicleStatus.classList.remove('mcms-open');
@@ -21340,6 +21550,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function setToolkitSafeMode(enabled, announce = true) {
         const next = Boolean(enabled);
         if (state.safeMode.enabled === next) return false;
+        toolkitAnalyticsRecordFeature('safeMode');
         captureSettingsSnapshot(state, { reason: next ? 'Before entering Toolkit Safe Mode' : 'Before leaving Toolkit Safe Mode', force: true });
         if (next) {
         state.safeMode = { enabled: true, since: Date.now(), previousTab: state.activeTab };
@@ -22311,6 +22522,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     async function runToolkitDoctor() {
+        toolkitAnalyticsRecordFeature('toolkitDoctor');
         closeCommandExperienceModal({ restoreFocus: false });
         const responsiveStatus = toolkitDoctorResponsiveStatus();
         const overlayConflicts = toolkitDoctorOverlayConflictCount();
@@ -22386,7 +22598,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
-        '<article class="mcms-command-note"><b>Official updates have moved to TKB</b><p>TKB now provides the supported installer and automatic-update channel. GitHub remains the verified release archive; Greasy Fork is a non-blocking mirror.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
+        '<article class="mcms-command-note"><b>Official updates are delivered by TKB</b><p>The TKB Website is the only supported installer and automatic-update channel. GitHub remains the verified source and immutable release archive.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
         '<article class="mcms-command-note"><b>Cleaner mission map and Alliance Chat</b><p>Mission Progress Rings and Alliance Chat Mission Previews have been retired. Mission markers and Alliance Chat now remain in their native MissionChief form.</p></article>' +
         '<div class="mcms-update-grid">' +
             '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
@@ -22434,6 +22646,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openSessionCleanup() {
+        toolkitAnalyticsRecordFeature('sessionCleanup');
         markFeatureBeaconViewed('sessionCleanup');
         const plan = sessionCleanupPlan();
         const list = plan.items.length
@@ -27021,6 +27234,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function setActiveTab(tab) {
         if (!COMMAND_SECTION_ORDER.includes(tab)) return;
+        if (tab === 'finance') toolkitAnalyticsRecordFeature('financialIntelligence');
         state.activeTab = tab;
         saveState();
         updateUI();
@@ -27315,6 +27529,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             if (!state.quickWheel.enabled) closeTabletQuickWheel();
             showToast(state.quickWheel.enabled ? 'Tablet Quick Wheel on' : 'Tablet Quick Wheel off');
         }
+        toolkitAnalyticsRecordFeature(feature, 'feature_toggle');
     }
     function parseTime(value, fallback) {
         const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
@@ -27703,6 +27918,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function openUnitLocator() {
         if (state.safeMode.enabled) { showToast('Exit Toolkit Safe Mode to use vehicle follow'); return false; }
+        toolkitAnalyticsRecordFeature('unitLocator');
         markFeatureBeaconViewed('unitLocator');
         const overlay = openCommandExperienceModal({
         kind: 'Unit Locator',
@@ -28156,6 +28372,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             existing.querySelector('[data-command-palette-input]')?.focus?.({ preventScroll: true });
             return existing;
         }
+        toolkitAnalyticsRecordFeature('commandPalette');
         commandPaletteReturnFocus = returnFocus instanceof HTMLElement ? returnFocus : document.activeElement instanceof HTMLElement ? document.activeElement : null;
         closeTabletQuickWheel({ restoreFocus: false });
         closeCommandExperienceModal({ restoreFocus: false });
@@ -28583,8 +28800,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         `;
     }
 
-    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.
-    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
+    // Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.
+    const VERSION_STATUS = Object.freeze({ manifestUrls: Object.freeze(['https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json', 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json']), productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
     let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusRequestToken = 0; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false; let versionStatusInitialCheckQueued = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
@@ -28686,60 +28903,84 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let settled = false;
             let timeoutTimer = null;
             let requestHandle = null;
-            const finish = (error, text) => {
-                if (settled) return;
-                settled = true;
+            let attemptToken = 0;
+            let endpointIndex = 0;
+            let lastError = null;
+            const finish = (currentAttempt, error, text) => {
+                if (settled || currentAttempt !== attemptToken) return;
                 runtimeClearTimeout(timeoutTimer);
                 if (requestHandle?.abort) runtime.requests?.delete?.(requestHandle);
                 if (requestHandle) runtime.fetchControllers?.delete?.(requestHandle);
                 if (versionStatusRequest === requestHandle) versionStatusRequest = null;
                 if (runtime.destroyed || requestToken !== versionStatusRequestToken) {
+                    settled = true;
                     reject(new Error('Version check was superseded.'));
                     return;
                 }
-                if (error) { reject(error); return; }
-                try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); }
-                catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); }
+                let manifest = null;
+                if (!error) {
+                    try { manifest = versionStatusValidateManifest(JSON.parse(String(text || ''))); }
+                    catch (err) { error = err instanceof Error ? err : new Error('Version manifest is invalid.'); }
+                }
+                if (manifest) {
+                    settled = true;
+                    resolve(manifest);
+                    return;
+                }
+                lastError = error instanceof Error ? error : new Error('Version endpoint could not be reached.');
+                if (endpointIndex < VERSION_STATUS.manifestUrls.length) {
+                    requestNext();
+                    return;
+                }
+                settled = true;
+                reject(lastError);
             };
-            const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}-${requestToken}`;
-            if (typeof GM_xmlhttpRequest === 'function') {
-                try {
-                    requestHandle = GM_xmlhttpRequest({
-                        method: 'GET',
-                        url,
-                        timeout: VERSION_STATUS.requestTimeoutMs,
-                        responseType: 'text',
-                        headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-                        onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
-                            ? finish(null, response.responseText)
-                            : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
-                        onerror: () => finish(new Error('Version endpoint could not be reached.')),
-                        ontimeout: () => finish(new Error('Version check timed out.')),
-                        onabort: () => finish(new Error('Version check was cancelled.')),
-                    });
-                    versionStatusRequest = requestHandle;
-                    if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
-                } catch (err) { finish(err); }
-                return;
-            }
-            const Controller = pageWindow.AbortController || globalThis.AbortController;
-            const controller = typeof Controller === 'function' ? new Controller() : null;
-            requestHandle = controller;
-            versionStatusRequest = controller;
-            if (controller) runtime.fetchControllers?.add?.(controller);
-            timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
-            Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
-                cache: 'no-store',
-                credentials: 'omit',
-                signal: controller?.signal,
-                headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-            }))
-                .then(response => {
-                    if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
-                    return response.text();
-                })
-                .then(text => finish(null, text))
-                .catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
+            const requestNext = () => {
+                const currentAttempt = ++attemptToken;
+                const endpoint = VERSION_STATUS.manifestUrls[endpointIndex++];
+                const url = `${endpoint}?cache_bust=${Date.now()}-${requestToken}-${endpointIndex}`;
+                timeoutTimer = null;
+                requestHandle = null;
+                if (typeof GM_xmlhttpRequest === 'function') {
+                    try {
+                        requestHandle = GM_xmlhttpRequest({
+                            method: 'GET',
+                            url,
+                            timeout: VERSION_STATUS.requestTimeoutMs,
+                            responseType: 'text',
+                            headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                            onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
+                                ? finish(currentAttempt, null, response.responseText)
+                                : finish(currentAttempt, new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
+                            onerror: () => finish(currentAttempt, new Error('Version endpoint could not be reached.')),
+                            ontimeout: () => finish(currentAttempt, new Error('Version check timed out.')),
+                            onabort: () => finish(currentAttempt, new Error('Version check was cancelled.')),
+                        });
+                        versionStatusRequest = requestHandle;
+                        if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
+                    } catch (err) { finish(currentAttempt, err); }
+                    return;
+                }
+                const Controller = pageWindow.AbortController || globalThis.AbortController;
+                const controller = typeof Controller === 'function' ? new Controller() : null;
+                requestHandle = controller;
+                versionStatusRequest = controller;
+                if (controller) runtime.fetchControllers?.add?.(controller);
+                timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
+                Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
+                    cache: 'no-store',
+                    credentials: 'omit',
+                    signal: controller?.signal,
+                    headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                }))
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
+                        return response.text();
+                    })
+                    .then(text => finish(currentAttempt, null, text))
+                    .catch(error => finish(currentAttempt, error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
+            };
+            requestNext();
         });
     }
     async function runVersionStatusCheck(force = false) {
@@ -30582,6 +30823,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (operationalStartupStarted || runtime.destroyed) return;
         runtimeSetTimeout(() => runtimeRunWhenIdle(() => {
             runDeferredOperationalStartup().catch(err => {
+                toolkitAnalyticsRecordError('operational_startup');
                 operationalStartupComplete = true;
                 startupDataPassActive = false;
                 console.debug(`[${SCRIPT.name}] Deferred startup recovered after an operational initialisation error.`, err);
@@ -30845,6 +31087,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         try {
             return callback();
         } catch (error) {
+            toolkitAnalyticsRecordError('boot_integration');
             console.warn(`[${SCRIPT.name}] ${label} failed without blocking the Toolkit launcher.`, error);
             return null;
         }
@@ -30869,7 +31112,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             runBootIntegration('credits observer', observeCreditValue);
             if (ready && (!commandShellRouteEligible || mapReady || attempts >= 12)) {
                 complete = true;
-                runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                const coreReadyMs = runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                runBootIntegration('privacy-safe analytics confirmation', () => toolkitAnalyticsConfirmLifecycle(coreReadyMs));
                 runBootIntegration('marker state sync', () => {
                     scheduleMarkerStateSync(0, false);
                 });

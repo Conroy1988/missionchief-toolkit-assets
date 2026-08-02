@@ -402,6 +402,8 @@ jobs:
              .status.backup="private-repository-verified" |
              .status.discordRelease="posted" |
              .status.releaseReadiness="passed" |
+             .source.validatedSha256=$hash |
+             .source.state="validated-canonical-source" |
              .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",publicReleaseCreated:true,completedAt:$now} |
              .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",privateBackupCommit:$backupCommit,discordMessageId:$discordMessageId,discordChannelId:$discordChannelId,discordPosted:true,completedAt:$now} |
              .lastUpdated=$now' \

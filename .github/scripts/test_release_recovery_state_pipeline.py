@@ -139,6 +139,7 @@ def main() -> int:
             "render_dashboard(state_root)",
             "build_manifest(state_root)",
             "commit_state",
+            'status.pop("greasyForkSync", None)',
             "Discord recovery claim changed before finalization",
             "Release recovery state self-tests passed.",
         ],
@@ -152,6 +153,8 @@ def main() -> int:
             "git reset --hard origin/main",
             "force-with-lease",
             "DEVELOPMENT_PR_TOKEN",
+            '"greasyForkMetadataVerified"',
+            '"greasyForkVerified"',
         ],
         "Release recovery state helper",
     )

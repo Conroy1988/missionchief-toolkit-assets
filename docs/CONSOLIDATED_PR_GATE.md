@@ -7,7 +7,7 @@ Pipeline v5.2 consolidates release-critical pull-request validation into the exi
 1. **Runtime** — deterministic contracts, JavaScript syntax and distribution parity.
 2. **Integrity** — canonical validation, structural audit, code integrity, static analysis, ESLint and immutable release-candidate packaging.
 3. **Performance** — absolute/differential budgets and deep AST performance analysis.
-4. **Repository** — workflow/security policy, documentation, Pages, assets, stable manifest, Greasy Fork parity and advisory release planning.
+4. **Repository** — workflow/security policy, documentation, Pages, assets, the stable TKB manifest and advisory release planning.
 
 The final **Toolkit Hotfix Gate** job succeeds only when every classifier-required lane succeeds. Lanes that are explicitly unnecessary are skipped without leaving the required aggregate check pending.
 

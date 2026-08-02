@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.3.2] - 2026-08-02
+
+### TKB-only release-state compatibility bridge
+
+- Moves the Toolkit's live version-status check to the seeded `release-state` manifest while retaining the frozen `main` manifest as a temporary compatibility fallback.
+- Tries the fallback only when the authoritative endpoint fails or returns an invalid manifest, preserving the existing 60-second non-overlapping request lifecycle and last-verified state.
+- Keeps every install, update and user-facing navigation destination on the official TKB Website; Greasy Fork remains fully retired from publication, verification, recovery and discovery.
+- Re-baselines Issue #41 from the obsolete v5.0.7/Greasy-era design and prepares strict `main` protection without changing any gameplay feature or saved setting.
+- Adds deterministic primary, fallback, failure, overlap and teardown coverage for the release-state bridge.
+
 ## [10.3.1] - 2026-08-02
 
 ### Adaptive Desktop command workspace

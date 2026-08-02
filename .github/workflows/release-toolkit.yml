@@ -375,16 +375,16 @@ jobs:
           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
              --arg releaseUrl "$RELEASE_URL" --arg backupCommit "$BACKUP_COMMIT" \
              --arg discordMessageId "$DISCORD_MESSAGE_ID" --arg discordChannelId "$DISCORD_CHANNEL_ID" \
-            '.currentVersion=$version |
+            'del(.status.greasyForkSync) |
+             .currentVersion=$version |
              .status.validation="passed" |
              .status.githubRelease="published" |
              .status.tkbDistribution="verified" |
-             .status.greasyForkSync="retired" |
              .status.backup="private-repository-verified" |
              .status.discordRelease="posted" |
              .status.releaseReadiness="passed" |
-             .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",greasyForkMetadataVerified:false,publicReleaseCreated:true,completedAt:$now} |
-             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",greasyForkVerified:false,privateBackupCommit:$backupCommit,discordMessageId:$discordMessageId,discordChannelId:$discordChannelId,discordPosted:true,completedAt:$now} |
+             .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",publicReleaseCreated:true,completedAt:$now} |
+             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",privateBackupCommit:$backupCommit,discordMessageId:$discordMessageId,discordChannelId:$discordChannelId,discordPosted:true,completedAt:$now} |
              .lastUpdated=$now' \
             status/release-dashboard.json > status/release-dashboard.tmp
           mv status/release-dashboard.tmp status/release-dashboard.json

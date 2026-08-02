@@ -1,6 +1,6 @@
 # Release Planning Workflow
 
-`Prepare Release Plan` is a read-only operator aid. It never creates a tag, GitHub Release, Greasy Fork update, private backup or Discord announcement.
+`Prepare Release Plan` is a read-only operator aid. It never creates a tag, GitHub Release, TKB Website update, private backup or Discord announcement.
 
 ## Inputs
 

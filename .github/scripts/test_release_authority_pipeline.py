@@ -83,6 +83,9 @@ def main() -> int:
             "sync_greasyfork_root_mirror.sh",
             "Verify Greasy Fork mirror",
             ".greasyFork.metadataUrl",
+            ".status.greasyForkSync=",
+            "greasyForkMetadataVerified",
+            "greasyForkVerified",
         ],
         "Production release workflow",
     )
@@ -96,6 +99,11 @@ def main() -> int:
             "--mode primary",
             "'.distribution.productUrl'",
         ],
+        "Release recovery workflow",
+    )
+    forbid(
+        recovery,
+        ["RETRY GREASYFORK", ".greasyFork.metadataUrl", "record-greasyfork"],
         "Release recovery workflow",
     )
 

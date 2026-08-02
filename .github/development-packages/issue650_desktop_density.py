@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -8,6 +10,7 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 CHANGELOG = ROOT / "CHANGELOG.md"
 RUNTIME_TEST = ROOT / ".github" / "scripts" / "test_issue645_desktop_command_workspace_runtime.mjs"
 STATIC_TEST = ROOT / ".github" / "scripts" / "test_issue645_desktop_command_workspace.py"
+HEADROOM = ROOT / ".github" / "fixtures" / "main-style-source-headroom.json"
 
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
@@ -107,6 +110,42 @@ def main() -> int:
 """
     changelog = replace_once(changelog, "# Changelog\n\n", "# Changelog\n\n" + section, "changelog insertion")
     CHANGELOG.write_text(changelog, encoding="utf-8")
+
+    fixture = json.loads(HEADROOM.read_text(encoding="utf-8"))
+    candidate = fixture["v10Candidate"]
+    template_start = source.index("addStyle(`", source.index("function installMainStyles()")) + len("addStyle(`")
+    metric = source.index("recordStartupMetric('stylesheetInstallMs'", template_start)
+    template_end = source.rfind("`);", template_start, metric)
+    raw_template = source[template_start:template_end]
+    canonical = "\n".join(
+        line
+        for index, line in enumerate(raw_template.split("\n"))
+        if not (0 < index < len(raw_template.split("\n")) - 1 and not line.strip())
+    )
+    import re
+    canonical = re.sub(r"\n[\t ]*}", "}", canonical)
+    previous_bytes = int(candidate["sourceBytes"])
+    previous_lines = int(candidate["sourceLines"])
+    candidate.update({
+        "issue": 650,
+        "version": "10.3.2",
+        "sourceBytes": len(source.encode()),
+        "sourceLines": len(source.splitlines()),
+        "sourceSha256": hashlib.sha256(source.encode()).hexdigest(),
+        "templateBytes": len(raw_template.encode()),
+        "templateLines": len(raw_template.split("\n")),
+        "templateSha256": hashlib.sha256(raw_template.encode()).hexdigest(),
+        "canonicalCssSha256": hashlib.sha256(canonical.encode()).hexdigest(),
+        "baseline": "10.3.1",
+        "approvedGrowth": {
+            "sourceBytes": len(source.encode()) - previous_bytes,
+            "sourceLines": len(source.splitlines()) - previous_lines,
+            "templateBytes": 0,
+            "templateLines": 0,
+        },
+        "scope": "Issue #650 compact content-sized Desktop command workspace tracks and aligned pinned shortcuts",
+    })
+    HEADROOM.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
 
     print("Applied Issue #650 compact Desktop workspace package for v10.3.2")
     return 0

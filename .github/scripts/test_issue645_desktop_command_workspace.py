@@ -28,16 +28,19 @@ def main() -> int:
     assert "ResizeObserver" not in layout and "setInterval" not in layout
 
     resolver = section("    function resolveDesktopDockGrid(", "    function clearDesktopDockSizing(")
-    for fragment in ("preferredGroupWidth", "availableContentWidth"):
+    for fragment in ("preferredGroupWidth", "availableContentWidth", "groupWidthForColumns", "measurePinTrack", "pinsInline"):
         assert fragment in resolver, f"compact Desktop grid resolver is missing {fragment}"
 
     for fragment in (
         'grid-template-areas:"menu filters" ". pins"',
-        "repeat(var(--mcms-desktop-group-columns,4),minmax(0,1fr))",
+        "repeat(var(--mcms-desktop-group-columns,4),max-content)",
         "repeat(var(--mcms-desktop-button-columns,2),minmax(0,1fr))",
         "height:36px!important",
         "font-size:9px!important",
         "repeat(var(--mcms-desktop-pin-columns,6),minmax(0,1fr))",
+        '[data-mcms-desktop-pins-inline="true"]',
+        "--mcms-desktop-group-width",
+        "--mcms-desktop-pin-width",
         '[data-mcms-desktop-dock-size="tight"]',
         '[data-mcms-desktop-dock-scroll="true"]',
     ):

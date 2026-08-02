@@ -27,6 +27,10 @@ def main() -> int:
         assert fragment in layout, f"adaptive Desktop layout is missing {fragment}"
     assert "ResizeObserver" not in layout and "setInterval" not in layout
 
+    resolver = section("    function resolveDesktopDockGrid(", "    function clearDesktopDockSizing(")
+    for fragment in ("preferredGroupWidth", "availableContentWidth"):
+        assert fragment in resolver, f"compact Desktop grid resolver is missing {fragment}"
+
     for fragment in (
         'grid-template-areas:"menu filters" ". pins"',
         "repeat(var(--mcms-desktop-group-columns,4),minmax(0,1fr))",

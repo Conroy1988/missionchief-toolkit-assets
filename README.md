@@ -63,7 +63,7 @@ Focus, Open and Pin are navigation actions. The board and palette do not select 
 
 ---
 
-## Live command contract — v10.3.3
+## Live command contract — v10.3.4
 
 > [!TIP]
 > The global launcher, dock, command menu and map overlays now belong only to the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native, while supported page-specific enhancements continue independently.

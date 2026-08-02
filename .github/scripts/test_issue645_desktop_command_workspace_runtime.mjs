@@ -49,6 +49,16 @@ for (const scenario of scenarios) {
   assert.ok(grid.dockWidth > 240, `${scenario.name} retained the old narrow column`);
   assert.ok(grid.dockWidth <= scenario.width, `${scenario.name} exceeded the visible map width`);
   assert.equal(grid.groupColumns, scenario.columns, `${scenario.name} chose the wrong group grid`);
+  assert.ok(grid.groupWidth > 0, `${scenario.name} lost its command-group width`);
+  if (scenario.columns >= 3) {
+    assert.ok(grid.groupWidth <= 210, `${scenario.name} spread command groups beyond the compact Desktop track`);
+    assert.equal(
+      grid.contentWidth,
+      (grid.groupWidth * grid.groupColumns) + (6 * (grid.groupColumns - 1)),
+      `${scenario.name} left unused horizontal space inside the command cluster`,
+    );
+  }
+  if (scenario.width >= 1200) assert.ok(grid.dockWidth <= 981, `${scenario.name} retained the over-wide Desktop deck`);
   assert.equal(grid.size, scenario.size, `${scenario.name} chose the wrong density tier`);
   assert.equal(grid.scrollFallback, false, `${scenario.name} scrolls during normal use`);
   assert.ok(grid.groupButtonColumns.every(columns => columns >= 1), `${scenario.name} produced an empty button grid`);

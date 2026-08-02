@@ -37,7 +37,10 @@ def git(*args: str, cwd: Path = ROOT, capture: bool = True) -> str:
     if result.returncode != 0:
         detail = (result.stderr or result.stdout or "git command failed").strip()
         raise ReleaseStateError(f"git {' '.join(args)} failed: {detail}")
-    return result.stdout.strip() if capture else ""
+    # Preserve leading porcelain status columns and dot-prefixed paths.  Only
+    # line terminators are disposable; generic whitespace stripping corrupts
+    # entries such as `` M .github/release-announcement-version.txt``.
+    return result.stdout.rstrip("\r\n") if capture else ""
 
 
 def load_role(worktree: Path) -> dict:
@@ -132,8 +135,7 @@ def prepare(worktree: Path) -> None:
     print(f"Prepared governed {TARGET_BRANCH} worktree at {worktree} ({before})")
 
 
-def status_paths(worktree: Path) -> set[str]:
-    raw = git("status", "--porcelain=v1", "-z", cwd=worktree)
+def parse_status_paths(raw: str) -> set[str]:
     if not raw:
         return set()
     entries = raw.split("\0")
@@ -155,6 +157,10 @@ def status_paths(worktree: Path) -> set[str]:
             index += 1
         paths.add(path)
     return paths
+
+
+def status_paths(worktree: Path) -> set[str]:
+    return parse_status_paths(git("status", "--porcelain=v1", "-z", cwd=worktree))
 
 
 def authorization_header(token: str) -> str:
@@ -293,6 +299,13 @@ def self_test() -> None:
 
     assert PUSH_REF == "HEAD:refs/heads/release-state"
     assert "main" not in PUSH_REF
+    assert parse_status_paths(
+        " M .github/release-announcement-version.txt\0"
+        "?? status/new-release-state.json\0"
+    ) == {
+        ".github/release-announcement-version.txt",
+        "status/new-release-state.json",
+    }
     print("Release-state branch writer self-tests passed.")
 
 

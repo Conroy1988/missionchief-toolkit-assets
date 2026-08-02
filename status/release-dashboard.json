@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "10.3.0",
+  "currentVersion": "10.3.1",
   "sourceOfTruth": "GitHub",
   "distribution": "TKB Scripts",
   "status": {
@@ -25,10 +25,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-08-02T00:19:55Z",
+  "lastUpdated": "2026-08-02T10:54:24Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "6ef3e1fa6d2bdba16cd191a5b6bb42c2497bfa964c715945244521dcb3869d18",
+    "validatedSha256": "b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -38,7 +38,7 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "10.3.0",
+    "version": "10.3.1",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
@@ -46,19 +46,19 @@
     "distributionAuthority": "tkb-website-only",
     "greasyForkMetadataVerified": false,
     "publicReleaseCreated": true,
-    "completedAt": "2026-08-02T00:19:55Z"
+    "completedAt": "2026-08-02T10:54:24Z"
   },
   "latestRelease": {
-    "version": "10.3.0",
-    "sha256": "6ef3e1fa6d2bdba16cd191a5b6bb42c2497bfa964c715945244521dcb3869d18",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.0",
+    "version": "10.3.1",
+    "sha256": "b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.1",
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
     "greasyForkVerified": false,
-    "privateBackupCommit": "8f510ff1b1a314227185c984f2e5cf6b42e4aeef",
-    "discordMessageId": "1533268071517782058",
+    "privateBackupCommit": "3c3c376ed0cf0957dc4c12f149f8f184cc8b0029",
+    "discordMessageId": "1533427745659293889",
     "discordChannelId": "1264992613845565440",
     "discordPosted": true,
-    "completedAt": "2026-08-02T00:19:55Z"
+    "completedAt": "2026-08-02T10:54:24Z"
   }
 }

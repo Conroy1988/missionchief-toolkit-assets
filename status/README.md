@@ -2,14 +2,14 @@
 
 > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
 
-## Current version: `5.0.7`
+## Current version: `10.3.1`
 
 | System | Health | State |
 |---|:---:|---|
 | Canonical source | 🟢 | Validated Canonical Source |
 | Validation | 🟢 | Passed |
 | GitHub Release | 🟢 | Published |
-| Greasy Fork | 🟢 | Verified |
+| TKB Scripts | 🟢 | Verified |
 | Private backup | 🟢 | Private Repository Verified |
 | Discord development | 🟢 | Configured |
 | Discord releases | 🟢 | Posted |
@@ -17,10 +17,10 @@
 
 ## Release state
 
-- **Latest recorded version:** `5.0.7`
+- **Latest recorded version:** `10.3.1`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da`
+- **Validated SHA-256:** `b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829`
 - **Candidate validation evidence:** immutable GitHub Actions artifact tied to the exact source commit
 
 ## Repository health
@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last release-state update:** `2026-07-24T13:13:57Z`
+- **Last release-state update:** `2026-08-02T10:54:24Z`
 
 ## Release channels
 
@@ -46,7 +46,7 @@ Release readiness and bundle rebuild
       ↓
 Stable distribution publication
       ↓
-GitHub Release and Greasy Fork verification
+GitHub Release and TKB Scripts verification
       ↓
 Private migration backup
       ↓

@@ -33,8 +33,9 @@ function extractFunction(name) {
 
 const sandbox = { Math, Number, String, Array, getViewportMetrics: () => ({ width: 1, height: 1, offsetLeft: 0, offsetTop: 0 }) };
 vm.createContext(sandbox);
-vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\nthis.resolve = resolveDesktopDockWorkspace;`, sandbox);
+vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\n${extractFunction("resolveDesktopDockGrid")}\nthis.resolve = resolveDesktopDockWorkspace;\nthis.resolveGrid = resolveDesktopDockGrid;`, sandbox);
 const resolve = sandbox.resolve;
+const resolveGrid = sandbox.resolveGrid;
 
 const screenshotMap = { left: 23, right: 660, top: 194, bottom: 1031 };
 const screenshotViewport = { width: 660, height: 1289, offsetLeft: 0, offsetTop: 0 };
@@ -50,6 +51,22 @@ const tallMap = { left: 0, right: 900, top: 120, bottom: 900 };
 const short = resolve(tallMap, shortViewport, "br", 8, [{ left: 0, right: 900, top: 120, bottom: 170 }]);
 assert.equal(short.bottom, 308, "off-viewport map bottom was not pulled into view");
 assert.ok(short.maxHeight > 0 && tallMap.bottom - short.bottom <= shortViewport.height - 8);
+
+const wideGrid = resolveGrid(1180, 600, [4, 5, 3, 1], 4, 117, 6);
+assert.equal(wideGrid.dockWidth, 1180);
+assert.equal(wideGrid.groupColumns, 4);
+assert.deepEqual(Array.from(wideGrid.groupButtonColumns), [2, 2, 2, 1]);
+assert.equal(wideGrid.naturalFilterHeight, 134);
+assert.equal(wideGrid.naturalPinHeight, 30);
+assert.equal(wideGrid.scrollFallback, false);
+
+const compactGrid = resolveGrid(617, 743, [4, 5, 3, 1], 2, 117, 6);
+assert.equal(compactGrid.groupColumns, 2);
+assert.equal(compactGrid.size, "compact");
+assert.equal(compactGrid.naturalFilterHeight, 234);
+assert.equal(compactGrid.filterMaxHeight, 707);
+assert.equal(compactGrid.pinMaxHeight, 30);
+assert.equal(compactGrid.scrollFallback, false);
 
 for (const scale of [0.8, 1, 1.25, 1.5, 2]) {
   const viewport = { width: 1366 / scale, height: 768 / scale, offsetLeft: 0, offsetTop: 0 };
@@ -69,10 +86,11 @@ for (const scale of [0.8, 1, 1.25, 1.5, 2]) {
 assert.equal(resolve(null, screenshotViewport), null, "missing map must fail closed");
 assert.equal(resolve({ left: 1, right: 1, top: 1, bottom: 2 }, screenshotViewport), null, "empty map must fail closed");
 
-const dom = new JSDOM('<!doctype html><html><body><div id="map"><div id="dock"><div class="mcms-launch-row"></div><div class="mcms-floating-filter"></div><div class="mcms-screen-pins"><button></button><button></button></div></div><div id="panel"></div></div></body></html>');
+const group = (name, count) => `<div class="mcms-control-group" data-control-group="${name}">${Array.from({ length: count }, (_, index) => `<button data-index="${index}"></button>`).join("")}</div>`;
+const dom = new JSDOM(`<!doctype html><html><body><div id="map"><div id="dock"><div class="mcms-launch-row"></div><div class="mcms-floating-filter">${group("visibility", 4)}${group("intelligence", 5)}${group("dashboard", 3)}${group("performance", 1)}</div><div class="mcms-screen-pins"><button></button><button></button></div></div><div id="panel"></div></div></body></html>`);
 const control = dom.window.document.getElementById("dock");
 const mapElement = dom.window.document.getElementById("map");
-control.querySelector(".mcms-launch-row").getBoundingClientRect = () => ({ height: 56 });
+control.querySelector(".mcms-launch-row").getBoundingClientRect = () => ({ width: 117, height: 56 });
 control.querySelector(".mcms-screen-pins").getBoundingClientRect = () => ({ height: 64 });
 mapElement.getBoundingClientRect = () => screenshotMap;
 const layoutSandbox = {
@@ -88,14 +106,21 @@ const layoutSandbox = {
   activeDockPosition: () => "bl",
 };
 vm.createContext(layoutSandbox);
-vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\n${extractFunction("clearDesktopDockSizing")}\n${extractFunction("applyDesktopDockLayout")}\nthis.apply = applyDesktopDockLayout;`, layoutSandbox);
+vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\n${extractFunction("resolveDesktopDockGrid")}\n${extractFunction("clearDesktopDockSizing")}\n${extractFunction("applyDesktopDockLayout")}\nthis.apply = applyDesktopDockLayout;`, layoutSandbox);
 assert.equal(layoutSandbox.apply(mapElement, control), true, "Desktop fit did not apply");
 assert.match(control.dataset.mcmsDesktopDockFit, /^bl:/);
 assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-max-height"), "743px");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-max-height"), "611px");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-max-height"), "64px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-width"), "617px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-group-columns"), "2");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-max-height"), "707px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-max-height"), "30px");
+assert.equal(control.dataset.mcmsDesktopDockSize, "compact");
+assert.equal(control.dataset.mcmsDesktopDockScroll, "false");
+assert.equal(control.querySelector('[data-control-group="intelligence"]').style.getPropertyValue("--mcms-desktop-button-columns"), "2");
 layoutSandbox.activeDeviceLayout = "tablet";
 assert.equal(layoutSandbox.apply(mapElement, control), false, "touch layout accepted Desktop sizing");
 assert.equal(control.dataset.mcmsDesktopDockFit, undefined, "Desktop sizing survived layout exit");
 assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-max-height"), "");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-width"), "");
+assert.equal(control.querySelector('[data-control-group="intelligence"]').style.getPropertyValue("--mcms-desktop-button-columns"), "");
 console.log("Issue #641 Desktop dock containment runtime regression passed.");

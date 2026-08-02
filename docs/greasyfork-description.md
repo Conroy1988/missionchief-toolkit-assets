@@ -6,7 +6,7 @@ A native MissionChief map command and operational-support userscript for Desktop
 
 **The One We Knew Before** keeps MissionChief's native pages in control while adding the command layer only where it belongs.
 
-This listing is retired and no longer receives Toolkit releases. The TKB Website is the only supported installation and automatic-update channel. Version 10.3.0 adds privacy-safe aggregate lifecycle, adoption, feature, performance and bounded error analytics while sending no visitor identifier, player, alliance or gameplay data. The contained Desktop command dock, map-only command shell, Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported.
+This listing is retired and no longer receives Toolkit releases. The TKB Website is the only supported installation and automatic-update channel. Version 10.3.1 replaces the narrow Desktop column with an adaptive map-width command deck whose compact 36px controls reorganise into one to four readable groups, with pinned locations on their own row and bounded scrolling only for genuinely short maps. It retains v10.3.0's privacy-safe aggregate lifecycle, adoption, feature, performance and bounded error analytics without visitor identifiers or player, alliance or gameplay data. All four dock positions, Major Incident Wire reservation, 80–200% browser zoom, map-only command ownership, Unit Locator & Follow Mode and One-Click Session Cleanup remain supported.
 
 ### Retained native systems
 

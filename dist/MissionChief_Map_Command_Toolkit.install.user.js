@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.0
+// @version      10.3.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.0',
+        version: '10.3.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12240,10 +12240,70 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         };
     }
 
+    function resolveDesktopDockGrid(availableWidth, maxHeight, groupControlCounts = [], pinCount = 0, launchWidth = 117, gap = 6) {
+        const finite = value => typeof value === 'number' && Number.isFinite(value);
+        const safeWidth = Math.max(1, Math.floor(finite(availableWidth) ? availableWidth : 1));
+        const safeHeight = Math.max(1, Math.floor(finite(maxHeight) ? maxHeight : 1));
+        const safeGap = Math.max(0, Math.floor(finite(gap) ? gap : 6));
+        const dockWidth = Math.min(1180, safeWidth);
+        const safeLaunchWidth = Math.min(dockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
+        const contentWidth = Math.max(1, dockWidth - safeLaunchWidth - safeGap);
+        const groupColumns = contentWidth >= 900 ? 4 : contentWidth >= 620 ? 3 : contentWidth >= 360 ? 2 : 1;
+        const groupWidth = Math.max(1, Math.floor((contentWidth - (safeGap * Math.max(0, groupColumns - 1))) / groupColumns));
+        const minimumButtonWidth = groupWidth >= 330 ? 92 : groupWidth >= 220 ? 88 : 82;
+        const counts = Array.isArray(groupControlCounts) && groupControlCounts.length
+        ? groupControlCounts.map(count => Math.max(0, Math.floor(Number(count) || 0)))
+        : [4, 5, 3, 1];
+        const groupButtonColumns = counts.map(count => Math.max(1, Math.min(Math.max(1, count), Math.floor((Math.max(1, groupWidth - 10) + 4) / (minimumButtonWidth + 4)) || 1)));
+        const groupHeights = counts.map((count, index) => {
+        if (!count) return 0;
+        const rows = Math.max(1, Math.ceil(count / groupButtonColumns[index]));
+        return 18 + (rows * 36) + (Math.max(0, rows - 1) * 4);
+        });
+        let naturalFilterHeight = 0;
+        for (let index = 0; index < groupHeights.length; index += groupColumns) {
+        const rowHeight = Math.max(0, ...groupHeights.slice(index, index + groupColumns));
+        if (!rowHeight) continue;
+        if (naturalFilterHeight) naturalFilterHeight += safeGap;
+        naturalFilterHeight += rowHeight;
+        }
+        naturalFilterHeight = Math.max(1, naturalFilterHeight);
+
+        const safePinCount = Math.max(0, Math.floor(Number(pinCount) || 0));
+        const pinColumns = safePinCount
+        ? Math.max(1, Math.min(safePinCount, Math.floor((contentWidth + safeGap) / (72 + safeGap)) || 1))
+        : 1;
+        const pinRows = safePinCount ? Math.max(1, Math.ceil(safePinCount / pinColumns)) : 0;
+        const naturalPinHeight = pinRows ? (pinRows * 30) + (Math.max(0, pinRows - 1) * 4) : 0;
+        const pinMargin = naturalPinHeight ? safeGap : 0;
+        const filterMaxHeight = Math.max(1, safeHeight - Math.min(naturalPinHeight + pinMargin, Math.max(0, safeHeight - 1)));
+        const estimatedFilterHeight = Math.min(naturalFilterHeight, filterMaxHeight);
+        const pinMaxHeight = naturalPinHeight ? Math.max(0, Math.min(naturalPinHeight, safeHeight - estimatedFilterHeight - pinMargin)) : 0;
+        const naturalHeight = Math.max(56, naturalFilterHeight + naturalPinHeight + pinMargin);
+        return {
+        dockWidth,
+        launchWidth: safeLaunchWidth,
+        contentWidth,
+        groupColumns,
+        groupButtonColumns,
+        pinColumns,
+        naturalFilterHeight,
+        naturalPinHeight,
+        filterMaxHeight,
+        pinMaxHeight,
+        pinMargin,
+        scrollFallback: naturalHeight > safeHeight,
+        size: dockWidth >= 1000 ? 'wide' : dockWidth >= 760 ? 'standard' : dockWidth >= 520 ? 'compact' : 'tight'
+        };
+    }
+
     function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
         if (!control) return;
-        for (const property of ['--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const property of ['--mcms-desktop-dock-width', '--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-launch-width', '--mcms-desktop-group-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const group of control.querySelectorAll?.('.mcms-control-group') || []) group.style.removeProperty('--mcms-desktop-button-columns');
         delete control.dataset.mcmsDesktopDockFit;
+        delete control.dataset.mcmsDesktopDockSize;
+        delete control.dataset.mcmsDesktopDockScroll;
     }
 
     function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
@@ -12266,26 +12326,32 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const launchRow = control.querySelector?.('.mcms-launch-row');
         const filter = control.querySelector?.('.mcms-floating-filter');
         const pins = control.querySelector?.('.mcms-screen-pins');
-        const launchHeight = Math.max(1, Math.ceil(launchRow?.getBoundingClientRect?.().height || launchRow?.offsetHeight || 56));
+        const launchRect = launchRow?.getBoundingClientRect?.() || {};
+        const launchWidth = Math.max(56, Math.ceil(launchRect.width || launchRow?.offsetWidth || 117));
+        const groups = Array.from(filter?.querySelectorAll?.(':scope > .mcms-control-group:not(.mcms-layout-group-hidden)') || []);
+        const groupControlCounts = groups.map(group => group.querySelectorAll(':scope > button:not(.mcms-layout-hidden)').length);
         const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
-        const pinNaturalHeight = pinsVisible ? Math.max(29, Math.ceil(pins?.getBoundingClientRect?.().height || pins?.offsetHeight || 29)) : 0;
-        const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
-        const filterMargin = state.commandBarOpen === false ? 0 : 6;
-        const availableAfterLaunch = Math.max(1, workspace.maxHeight - launchHeight - filterMargin - nudgeY);
-        const pinHeight = pinsVisible ? Math.min(pinNaturalHeight, Math.max(0, availableAfterLaunch - 54)) : 0;
-        const pinMargin = pinHeight > 0 ? 6 : 0;
-        const filterHeight = Math.max(1, availableAfterLaunch - pinHeight - pinMargin);
+        const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
+        const grid = resolveDesktopDockGrid(Math.max(1, workspace.maxWidth - nudgeX), workspace.maxHeight, groupControlCounts, pinsVisible ? pins.childElementCount : 0, launchWidth, 6);
 
+        groups.forEach((group, index) => group.style.setProperty('--mcms-desktop-button-columns', String(grid.groupButtonColumns[index] || 1)));
+
+        control.style.setProperty('--mcms-desktop-dock-width', `${grid.dockWidth}px`);
         control.style.setProperty('--mcms-desktop-dock-max-height', `${workspace.maxHeight}px`);
         control.style.setProperty('--mcms-desktop-dock-max-width', `${workspace.maxWidth}px`);
         control.style.setProperty('--mcms-desktop-dock-top', `${workspace.top}px`);
         control.style.setProperty('--mcms-desktop-dock-bottom', `${workspace.bottom}px`);
         control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
         control.style.setProperty('--mcms-desktop-dock-right', `${workspace.right}px`);
-        control.style.setProperty('--mcms-desktop-filter-max-height', `${filterHeight}px`);
-        control.style.setProperty('--mcms-desktop-pin-max-height', `${pinHeight}px`);
-        control.style.setProperty('--mcms-desktop-pin-margin', `${pinMargin}px`);
-        control.dataset.mcmsDesktopDockFit = `${position}:${workspace.maxWidth}:${workspace.maxHeight}:${filterHeight}:${pinHeight}`;
+        control.style.setProperty('--mcms-desktop-launch-width', `${grid.launchWidth}px`);
+        control.style.setProperty('--mcms-desktop-group-columns', String(grid.groupColumns));
+        control.style.setProperty('--mcms-desktop-filter-max-height', `${grid.filterMaxHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-columns', String(grid.pinColumns));
+        control.style.setProperty('--mcms-desktop-pin-max-height', `${grid.pinMaxHeight}px`);
+        control.style.setProperty('--mcms-desktop-pin-margin', `${grid.pinMargin}px`);
+        control.dataset.mcmsDesktopDockFit = `${position}:${grid.dockWidth}:${workspace.maxHeight}:${grid.groupColumns}:${grid.pinColumns}`;
+        control.dataset.mcmsDesktopDockSize = grid.size;
+        control.dataset.mcmsDesktopDockScroll = grid.scrollFallback ? 'true' : 'false';
         return Boolean(filter);
     }
 
@@ -12493,21 +12559,35 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{max-width:var(--mcms-desktop-dock-max-width,360px)!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:var(--mcms-desktop-launch-width,117px) minmax(0,1fr)!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;column-gap:6px!important;row-gap:0!important;width:var(--mcms-desktop-dock-width,min(1180px,calc(100vw - 24px)))!important;max-width:min(var(--mcms-desktop-dock-max-width,calc(100vw - 24px)),var(--mcms-desktop-dock-width,1180px))!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;pointer-events:none!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:var(--mcms-desktop-dock-right,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-launch-row{grid-area:menu!important;width:var(--mcms-desktop-launch-width,117px)!important;max-width:100%!important;margin:0!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{grid-template-columns:var(--mcms-desktop-launch-width,117px)!important;grid-template-areas:"menu"!important;width:var(--mcms-desktop-launch-width,117px)!important;max-width:var(--mcms-desktop-launch-width,117px)!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{width:min(240px,var(--mcms-desktop-dock-max-width,240px))!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{grid-area:filters!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-group-columns,4),minmax(0,1fr))!important;align-items:start!important;gap:6px!important;width:100%!important;max-width:none!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;margin:0!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-floating-filter{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group{grid-template-columns:repeat(var(--mcms-desktop-button-columns,2),minmax(0,1fr))!important;gap:4px!important;min-width:0!important;padding:5px!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group-label{padding:0 2px 2px!important;font-size:7px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn){grid-template-columns:20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;gap:5px!important;padding:3px 6px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-icon{display:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-label-desktop{display:block!important;font-size:9px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-state{font-size:6.5px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-desktop{display:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-tablet{display:block!important;font-size:8.5px!important;line-height:1!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{grid-area:pins!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-pin-columns,6),minmax(0,1fr))!important;gap:4px!important;width:100%!important;max-width:none!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-screen-pins{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pin-btn{width:100%!important;min-width:0!important;max-width:none!important;height:30px!important;min-height:30px!important;padding:0 8px!important;font-size:9px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-floating-filter,.mcms-screen-pins){display:none!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="fallout4"]{--mcms-page-bg:#071008;--mcms-page-surface:#102014;--mcms-page-surface-2:#193021;--mcms-page-text:#ecffd4;--mcms-page-muted:#b2ca9e;--mcms-page-accent:#b9ff72}

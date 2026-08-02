@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-first-party-analytics-v10-3-0",
-  "rationale": "Approve bounded first-party aggregate analytics using the existing lifecycle-managed fetch path, with no new request primitive, poller, observer, timer or listener and with local daily/session deduplication.",
+  "revision": "2026-08-02-issue-645-adaptive-desktop-workspace-v10-3-1",
+  "rationale": "Approve the measured Issue #645 adaptive Desktop command workspace using the existing fit timer and Desktop resize observer, with zero growth in request sites, observers, managed timers or managed listeners.",
   "transitionApproval": {
-    "issue": "first-party-analytics",
-    "version": "10.3.0",
+    "issue": 645,
+    "version": "10.3.1",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Record confirmed Toolkit lifecycle, coarse activity, version adoption, bounded feature demand, startup band and bounded failures through TKB without identifiers, player data or a new network primitive.",
+    "scope": "Issue #645: replace the narrow Desktop command column with a map-width adaptive deck, compact responsive command groups and a dedicated pinned-shortcut row while retaining bounded short-map fallback.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": "first-party-analytics",
+      "version": "10.3.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Record confirmed Toolkit lifecycle, coarse activity, version adoption, bounded feature demand, startup band and bounded failures through TKB without identifiers, player data or a new network primitive.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": 641,
       "version": "10.2.6",

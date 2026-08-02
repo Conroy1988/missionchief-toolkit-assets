@@ -33,6 +33,7 @@ on:
         type: string
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -290,6 +291,19 @@ jobs:
             --backup-commit "$BACKUP_COMMIT" \
             --discord-state "$DISCORD_STATE"
 
+      - name: Refresh Pages after release-state recovery
+        if: >-
+          inputs.operation == 'retry-private-backup' ||
+          inputs.operation == 'retry-discord' ||
+          inputs.operation == 'rebuild-dashboard'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run github-pages.yml --ref main
+          echo "GitHub Pages refresh dispatched from the recovered release-state ledger."
+
       - name: Repair stable GitHub Release assets
         if: inputs.operation == 'repair-stable-assets'
         env:
@@ -341,4 +355,5 @@ jobs:
             echo "- Recovery ledger: \`release-state\`"
             echo "- Public main changed: no"
             echo "- No new GitHub Release was created"
+            echo "- Pages refresh follows successful release-state recovery: yes"
           } >> "$GITHUB_STEP_SUMMARY"

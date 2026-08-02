@@ -30,6 +30,8 @@ def main() -> int:
         "release_state_sha=$RELEASE_STATE_SHA",
         'grep -Fq "${{ steps.production.outputs.release_version }}" _site/index.html',
         ".github/scripts/test_pages_release_deploy_contract.py",
+        '".github/scripts/release_recovery_state.py"',
+        '".github/workflows/release-recovery.yml"',
     ]
     missing = [fragment for fragment in required if fragment not in pages]
     assert not missing, f"Pages production deployment contract fragments missing: {missing}"

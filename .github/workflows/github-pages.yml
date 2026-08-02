@@ -11,8 +11,10 @@ on:
     paths:
       - ".github/scripts/build_pages_site.py"
       - ".github/scripts/build_download_stats.py"
+      - ".github/scripts/release_recovery_state.py"
       - ".github/scripts/test_pages_release_deploy_contract.py"
       - ".github/workflows/github-pages.yml"
+      - ".github/workflows/release-recovery.yml"
       - ".github/release-settings.json"
       - "docs/site-data.json"
       - "docs/site-assets/**"

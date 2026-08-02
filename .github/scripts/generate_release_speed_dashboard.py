@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import json, math, statistics
+import argparse, json, math, statistics
 from pathlib import Path
 root=Path(__file__).resolve().parents[2]
-data=json.loads((root/"status/release-speed-history.json").read_text(encoding="utf-8"))
+parser=argparse.ArgumentParser()
+parser.add_argument("--history", type=Path, default=root/"status/release-speed-history.json")
+parser.add_argument("--output", type=Path, default=root/"status/RELEASE_SPEED.md")
+args=parser.parse_args()
+data=json.loads(args.history.read_text(encoding="utf-8"))
 def vals(records,key): return [r.get("durationsSeconds",{}).get(key) for r in records if isinstance(r.get("durationsSeconds",{}).get(key),int)]
 def pct(v,p):
     if not v:return None
@@ -39,4 +43,5 @@ for r in reversed(data["releases"]):
     d=r.get("durationsSeconds",{})
     lines.append(f"| {r.get('version')} | v{r.get('pipelineVersion')} | {r.get('benchmarkClass')} | {fmt(d.get('implementationToGreen'))} | {fmt(d.get('greenToMerge'))} | {fmt(d.get('prToVerified'))} | {fmt(d.get('mergeToGitHubRelease'))} | {fmt(d.get('mergeToVerified'))} | {fmt(d.get('firstPartyPropagation', d.get('greasyForkPropagation')))} | {fmt(d.get('privateBackup'))} |")
 lines += ["","The v8.0.2 binary-transfer exception is retained for transparency but excluded from the normal-hotfix baseline. GitHub Pages is asynchronous and does not block userscript delivery. Null historical fields are displayed as em dashes rather than inferred.",""]
-(root/"status/RELEASE_SPEED.md").write_text("\n".join(lines),encoding="utf-8")
+args.output.parent.mkdir(parents=True, exist_ok=True)
+args.output.write_text("\n".join(lines),encoding="utf-8")

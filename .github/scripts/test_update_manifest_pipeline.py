@@ -56,6 +56,8 @@ def main() -> int:
             "name: Verify Toolkit Update Manifest",
             "permissions:\n  contents: read",
             "persist-credentials: false",
+            "Overlay authoritative release-state ledger",
+            "+refs/heads/release-state:refs/remotes/origin/release-state",
             "Validate stable manifest builder self-tests",
             "Verify committed manifest against release ledger",
             "--check",
@@ -85,10 +87,11 @@ def main() -> int:
             "Record successful release, manifest, announcement and speed state",
             "python3 .github/scripts/build_stable_update_manifest.py",
             "status/update-manifest.json",
-            'git commit -m "Record Toolkit ${RELEASE_VERSION} verified release state"',
+            "release_state_branch.py commit",
+            "--path status/update-manifest.json",
             "- name: Dispatch GitHub Pages asynchronously",
             "gh workflow run github-pages.yml --ref main",
-            "Dashboard, release-speed telemetry and stable update manifest updated atomically",
+            "Authoritative release-state dashboard, telemetry, announcement tracker and stable manifest updated atomically",
         ],
         "Production release workflow",
     )
@@ -106,16 +109,14 @@ def main() -> int:
 
     state_index = release.index("Record successful release, manifest, announcement and speed state")
     builder_index = release.index("python3 .github/scripts/build_stable_update_manifest.py", state_index)
-    add_index = release.index("git add", builder_index)
-    push_index = release.index("git push origin HEAD:main", add_index)
-    pages_index = release.index("- name: Dispatch GitHub Pages asynchronously", push_index)
-    assert state_index < builder_index < add_index < push_index < pages_index
+    commit_index = release.index("release_state_branch.py commit", builder_index)
+    pages_index = release.index("- name: Dispatch GitHub Pages asynchronously", commit_index)
+    assert "git push origin HEAD:main" not in release
+    assert state_index < builder_index < commit_index < pages_index
 
     primary_url = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json"
-    compatibility_url = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json"
     assert primary_url in source, "Authoritative release-state manifest consumer is missing"
-    assert compatibility_url in source, "Frozen main compatibility manifest consumer is missing"
-    assert source.index(primary_url) < source.index(compatibility_url)
+    assert "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json" not in source
     assert manifest["version"] == dashboard["latestRelease"]["version"]
     assert manifest["sha256"] == dashboard["latestRelease"]["sha256"]
 
@@ -127,7 +128,7 @@ def main() -> int:
         if result.returncode != 0:
             raise AssertionError(f"Stable update-manifest command failed: {' '.join(command)}")
 
-    print("Atomic update-manifest pipeline passed: release-state-first bridge, frozen main fallback, asynchronous Pages dispatch and read-only verification.")
+    print("Atomic update-manifest pipeline passed: release-state-only authority, asynchronous Pages dispatch and read-only verification.")
     return 0
 
 

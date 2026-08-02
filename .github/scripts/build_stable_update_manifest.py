@@ -3,7 +3,7 @@
 
 The stable manifest is derived only from the verified release dashboard and
 reviewed release settings. The same implementation is used by production and
-read-only verification so the public compatibility URL cannot drift.
+read-only verification so the authoritative release-state endpoint cannot drift.
 """
 
 from __future__ import annotations

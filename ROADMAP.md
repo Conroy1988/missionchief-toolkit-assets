@@ -6,7 +6,7 @@ This roadmap separates verified infrastructure, active Toolkit development and r
 
 - Canonical userscript source and byte-identical distribution generation
 - Release Readiness and production publication workflows
-- GitHub Release, Greasy Fork, private migration backup and Discord coordination
+- GitHub Release, TKB Website distribution, private migration backup and Discord coordination
 - Duplicate-announcement protection and partial release recovery
 - Reviewed rollback-candidate preparation
 - Performance regression budgets

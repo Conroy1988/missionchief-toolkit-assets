@@ -42,13 +42,11 @@ def assert_workflow_trigger_contract() -> None:
     pull_request = event_block(workflow, "pull_request")
     workflow_run = event_block(workflow, "workflow_run")
 
-    assert RELEASE_DASHBOARD_PATH in push, (
-        "A verified release dashboard update must trigger the production monitor directly; "
-        "otherwise an existing incident can remain frozen on the previous expected version."
-    )
-    assert RELEASE_DASHBOARD_PATH in pull_request, (
-        "Pull requests that change the release dashboard must validate the monitor contract."
-    )
+    assert RELEASE_DASHBOARD_PATH not in push
+    assert RELEASE_DASHBOARD_PATH not in pull_request
+    assert "Overlay authoritative release-state dashboard" in workflow
+    assert "+refs/heads/release-state:refs/remotes/origin/release-state" in workflow
+    assert "git restore --source=refs/remotes/origin/release-state" in workflow
     assert "GitHub Pages Documentation" in workflow_run, (
         "The production monitor must also reconcile after the corresponding Pages deployment."
     )

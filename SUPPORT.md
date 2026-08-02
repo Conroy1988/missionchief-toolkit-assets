@@ -2,7 +2,7 @@
 
 ## Installation and updates
 
-Use the verified installation link on the documentation site or Greasy Fork. The latest supported version and deployment health are published on the Toolkit status page.
+Use the verified TKB Website installation link. The TKB Website is the sole supported install and automatic-update channel; the latest supported version and deployment health are published on the Toolkit status page.
 
 ## Bug and performance reports
 

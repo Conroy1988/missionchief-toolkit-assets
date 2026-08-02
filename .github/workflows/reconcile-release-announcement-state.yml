@@ -43,6 +43,15 @@ jobs:
           persist-credentials: false
           show-progress: false
 
+      - name: Overlay authoritative release-state dashboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin \
+            +refs/heads/release-state:refs/remotes/origin/release-state
+          git restore --source=refs/remotes/origin/release-state -- \
+            status/release-dashboard.json
+
       - name: Verify dashboard and first-party authority
         id: state
         continue-on-error: true

@@ -1,215 +1,118 @@
 # Protected-branch write inventory
 
-**Reviewed:** 24 July 2026  
-**Issue:** #41 — Migrate release state for strict main-branch protection
+**Reviewed:** 2 August 2026
+**Issue:** #41 — TKB-only release-state cutover and strict `main` protection
 
 ## Current conclusion
 
-Strict pull-request-only protection is **not yet safe to enable**.
+No workflow can commit directly to public `main`; in machine-checked terms, no workflow can commit directly to public `main`. Production release recording and recovery state are isolated on the authoritative `release-state` branch, while source, workflows and reviewed distribution inputs remain pull-request-only on `main`.
 
-The repository now has one workflow that can commit directly to public `main`: `release-toolkit.yml`. It records a temporary compatibility copy of verified release state required by existing v5.0.7 installations after first-party publication succeeds.
+Two workflows write governed operational state to `release-state`:
 
-At this stage, one workflow writes governed operational state to `release-state`:
+The enforced inventory therefore records that two workflows write governed operational state to `release-state`.
 
-- `release-recovery.yml` — recovery dashboard, rendered status, stable manifest and announcement tracker.
+- `release-toolkit.yml` records the verified production dashboard, rendered status, stable manifest, release-speed telemetry and announcement version.
+- `release-recovery.yml` performs guarded dashboard, backup, Discord and manifest recovery transitions.
 
-All external userscript distribution and parity monitoring is retired. The TKB Website is the sole operational install and update channel.
+The release and recovery ledgers are written only to `release-state`. Both writers use `.github/scripts/release_state_branch.py`, which validates the branch role and exact mutable-path allowlist, rejects force pushes and role mutations, detects concurrent branch movement and can never target `main`.
 
-Two release orchestrators invoke the reusable production writer but contain no direct public-main push.
+All external userscript distribution and parity monitoring is retired. The TKB Website is the sole install and automatic-update channel. Greasy Fork has no publication, verification, recovery, discovery or announcement role.
 
-Canonical validation, release dry runs, repository audits, dashboard projection, announcement-state verification and stable update-manifest verification are artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
+`.github/branch-write-inventory.json` is the machine-readable writer authority. `.github/shadow-branch-policy.json` declares the live release-state role and the still non-live distribution mirror.
 
-The release recovery ledger is now written only to `release-state`. GitHub Release verification and asset repair, private backup and Discord HTTP side effects remain controlled API operations, but their ledger reconciliation cannot commit to `main`.
+## Public `main`
 
-The `release-state` and `distribution` branches remain non-live operational branches. External consumers and strict protection remain disabled. Administrator recovery access has been rehearsed successfully.
+The direct writer inventory and direct-main push-source inventory are empty. Release automation checks out the exact validated `main` candidate with persisted credentials disabled, performs external publication, then commits operational evidence only through the constrained release-state helper.
 
-`.github/branch-write-inventory.json` is the machine-readable authority. `.github/shadow-branch-policy.json` governs branch roles, path classes and operational writers. Permanent contracts fail closed when any writer, permission, branch target, mutable path or consumer boundary changes.
+The `status/` files retained on `main` are a frozen historical snapshot. They are not the version-check, Pages or release-recovery authority and are not rewritten after releases.
 
-## Sole direct public `main` writer
+The two reusable-release orchestrators remain:
 
-| Workflow | Current mutation | Required migration |
+| Workflow | Role | Direct branch mutation |
 |---|---|---|
-| `release-toolkit.yml` | atomic dashboard, manifest and release-speed compatibility state after first-party publication | Move primary state to the dedicated release-state branch under a scoped GitHub App. |
+| `auto-release-after-validation.yml` | Promotes the exact successful PR validation tree | None |
+| `owner-release-command.yml` | Owner-authorized fresh validation and release invocation | None |
 
-`.github/scripts/build_stable_update_manifest.py` generates the compatibility manifest inside the same guarded release commit.
+## Authoritative `release-state`
 
-## Governed `release-state` writers
-
-| Workflow | Operational authority | Source evidence | Public-main effect |
-|---|---|---|---|
-| `release-recovery.yml` | dashboard JSON, rendered Markdown, stable manifest and tracker | verified GitHub Release bundle plus explicit recovery inputs | None |
-
-Release Recovery uses `.github/scripts/release_state_branch.py` for branch transactions. That helper:
-
-- prepares a detached `release-state` worktree;
-- validates `.github/branch-role.json` before every operation;
-- requires the exact reviewed mutable-path allowlist;
-- rejects role-file changes and unapproved paths;
-- fails if the remote branch moves after preparation;
-- performs normal fast-forward pushes only;
-- never rebases, force-pushes or rewrites branch history;
-- pushes only `HEAD:refs/heads/release-state`;
-- requires `GH_TOKEN` only for the final governed push;
-- contains executable self-tests that reject `main` and allowlist expansion.
-
-### Retired external distribution
-
-The scheduled external parity monitor, mirror build and fallback Discord payload are removed. Only the controlled TKB production release or an explicitly guarded recovery retry may post a Toolkit release. Production verifies the live TKB install, update and metadata endpoints all serve the exact release version before Discord is called.
-
-### Release recovery
-
-`.github/scripts/release_recovery_state.py` owns recovery-ledger transitions:
-
-- seeds `release-state` from a newer verified `main` compatibility snapshot when necessary;
-- records private-backup recovery;
-- claims a Discord retry before posting;
-- finalises Discord state only when the expected claim nonce still matches;
-- rebuilds the verified dashboard from GitHub Release and private-backup evidence;
-- regenerates the rendered dashboard;
-- regenerates the stable manifest only when the recovered release state is complete;
-- delegates every commit to the constrained branch helper.
-
-The recovery workflow preserves every exact confirmation phrase and the shared `toolkit-production-release` lock. `verify-release` and `repair-stable-assets` remain API/read-only with respect to repository state.
-
-## Artifact-only evidence workflows
-
-| Workflow | Permission | Evidence | Branch effect |
-|---|---|---|---|
-| `validate-userscript.yml` | `contents: read` | exact candidate source/ref/hash bundle | No branch or dashboard change. |
-| `release-toolkit-dry-run.yml` | `contents: read` | release bundle plus dry-run report | No publication-channel change. |
-| `repository-audit.yml` | `contents: read` | repository audit JSON/Markdown | No branch or dashboard change. |
-| `update-release-dashboard.yml` | `contents: read` | rendered dashboard, diff and log | No branch change. |
-| `reconcile-release-announcement-state.yml` | `contents: read` | dashboard/tracker consistency evidence | No dashboard or tracker change. |
-| `publish-update-manifest.yml` | `contents: read` | manifest projection JSON/Markdown/log | No manifest, dashboard or branch change. |
-
-## Operational branch topology
-
-| Branch | Governed paths | Current authority | External consumers |
-|---|---|---|---|
-| `release-state` | dashboard JSON/Markdown, stable update manifest, announcement tracker | Operational recovery ledger | Disabled |
-| `distribution` | stable `dist/` files and root userscript mirrors | Mirrored from `main` | Disabled |
-
-Each branch contains `.github/branch-role.json` declaring:
-
-- `mode: shadow-rehearsal`;
-- `liveConsumersEnabled: false`;
-- `strictProtectionEnabled: false`;
-- administrator recovery is mandatory;
-- Issue #41 controls cutover;
-- only reviewed operational paths may become mutable.
-
-`.github/workflows/verify-shadow-branch-parity.yml` remains read-only. It validates:
-
-- role declarations;
-- JSON and Markdown schemas;
-- dashboard/Markdown version equality;
-- manifest and tracker versions never ahead of the recovery dashboard;
-- distribution files remain byte-identical to `main`;
-- external consumers remain disabled.
-
-## Manual shadow synchronizer
-
-`.github/workflows/sync-shadow-branches.yml` remains a manual owner-authenticated rehearsal utility.
-
-The manual synchronizer has no file-copy authority on `release-state`. All four release-state paths are operational and are preserved byte-for-byte by the synchronizer. It may only record an idempotent empty access probe on that branch.
-
-The synchronizer may still copy reviewed mirror files from `main` to `distribution`. Its contract remains:
-
-- manual `workflow_dispatch` only;
-- authorized actor fixed to `Conroy1988`;
-- source fixed to exact current `main`;
-- targets restricted to `release-state`, `distribution` or both;
-- `PLAN SHADOW SYNC` and `SYNC SHADOWS` confirmation phrases;
-- workflow-level `contents: read`;
-- temporary `DEVELOPMENT_PR_TOKEN` only for reviewed apply operations;
-- `.github/branch-role.json` immutable;
-- normal non-force pushes only;
-- public `main` rejected as a target;
-- live consumer cutover forbidden;
-- replacement by a narrowly scoped GitHub App required before final cutover.
-
-## Compatibility state on `main`
-
-After TKB Website verification, private backup and Discord publication, `release-toolkit.yml` writes these together in one compatibility commit:
+The live governed paths are:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `status/update-manifest.json`;
 - `status/release-speed-history.json`;
-- `status/RELEASE_SPEED.md`.
+- `status/RELEASE_SPEED.md`;
+- `.github/release-announcement-version.txt`.
 
-Existing v5.0.7 installations still read:
+The branch role declares `mode: operational-release-state`, enables live consumers and states that release-state is authoritative for verified production status. Administrator recovery remains mandatory. Normal writers perform fast-forward-only `HEAD:refs/heads/release-state` pushes using `github.token`; the role file remains immutable to those writers.
 
-`raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json`
+The Toolkit runtime reads only:
 
-That URL remains valid until a later versioned Toolkit release migrates the runtime consumer to `release-state`. Recovery actions do not rewrite this compatibility copy; only the next normal production release does.
+`raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json`
+
+There is no `main` manifest fallback.
 
 ## Production release sequence
 
 1. Canonical validation uploads exact immutable candidate evidence.
-2. Automatic release verifies the exact run and rejects stale commits.
-3. Release Readiness independently rebuilds and validates distribution.
-4. Production publishes the immutable GitHub Release archive and verifies the TKB Website install/update routes.
-5. The TKB Website is confirmed as the sole live distribution authority.
-6. The release is backed up privately and announced to Discord.
-7. Dashboard JSON, rendered Markdown, stable update manifest and release-speed history are committed atomically as compatibility state.
-8. GitHub Pages is dispatched and awaited.
-9. Dashboard, announcement and update-manifest workflows verify only.
-10. Recovery operations write their governed ledger to `release-state` only.
+2. Automatic release verifies that evidence and the exact merged `main` SHA.
+3. The release workflow validates the live release-state role before public side effects.
+4. GitHub Release and TKB Website publication complete and the live TKB install, update and metadata endpoints are byte/version verified.
+5. Private backup and Discord release announcement complete.
+6. Dashboard, manifest, telemetry and announcement state are generated in a detached release-state worktree.
+7. The constrained helper commits the complete operational transaction to `release-state`; public `main` is unchanged.
+8. GitHub Pages is dispatched asynchronously and overlays its status inputs from release-state.
 
-## Indirect release orchestrators
+## Release recovery
 
-| Workflow | Delegated writer | Role |
+`.github/scripts/release_recovery_state.py` owns recovery-ledger transitions on the current authoritative branch state. It no longer seeds from a compatibility snapshot on `main`.
+
+Recovery can:
+
+- record a verified private-backup retry;
+- claim a Discord retry before posting and finalise only the matching nonce;
+- rebuild the dashboard from verified GitHub Release, TKB and private-backup evidence;
+- regenerate the stable manifest only after complete evidence;
+- repair stable GitHub Release assets without repository-state mutation.
+
+The release recovery ledger is now written only to `release-state`, and every state commit is delegated to `release_state_branch.py`.
+
+## Pages and read-only verification
+
+Pages checks out reviewed site code from `main`, then overlays dashboard, manifest and telemetry files from the exact current release-state ref before validation and deployment. The production monitor applies the same overlay before comparing live pages with the verified version.
+
+Canonical validation, release dry runs, repository audits, dashboard projection, announcement-state verification and stable update-manifest verification remain artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
+
+The exact artifact-only workflows are `validate-userscript.yml`, `release-toolkit-dry-run.yml`, `repository-audit.yml`, `update-release-dashboard.yml`, `reconcile-release-announcement-state.yml` and `publish-update-manifest.yml`.
+
+## Distribution branch rehearsal
+
+The `distribution` branch remains non-live and mirror-only. `.github/workflows/sync-shadow-branches.yml` may synchronize only `distribution` from an exact reviewed `main` SHA, using the temporary `DEVELOPMENT_PR_TOKEN` in an owner-confirmed manual rehearsal.
+
+The manual synchronizer has no file-copy authority on `release-state`; that branch is excluded as a synchronization target. Its remaining contract keeps public `main` rejected as a target, uses normal non-force pushes, preserves `.github/branch-role.json` and forbids live distribution cutover.
+
+The read-only `verify-shadow-branch-parity.yml` still validates both branch roles. It schema-checks live release-state operational files and verifies distribution mirrors against `main`.
+
+## Writer inventory
+
+| Class | Workflows | Target |
 |---|---|---|
-| `auto-release-after-validation.yml` | `release-toolkit.yml` | Consumes exact successful validation evidence and invokes the guarded production writer. |
-| `owner-release-command.yml` | `release-toolkit.yml` | Performs owner authorization, fresh validation and guarded release invocation. |
+| Direct public-main writers | None | — |
+| Release-state writers | `release-toolkit.yml`, `release-recovery.yml` | `release-state` |
+| Release orchestrators | `auto-release-after-validation.yml`, `owner-release-command.yml` | Reusable workflow invocation |
+| Artifact-only evidence | Six read-only workflows | Workflow artifacts |
+| Review-branch writers | Development-package and rollback workflows | Owner PR branches only |
+| Distribution rehearsal | `sync-shadow-branches.yml` | `distribution` only |
+| External backup | `backup_release_to_private_repo.sh` | Private repository `main` |
 
-Neither orchestrator contains a direct public-main push. Their `contents: write` authority remains transitional because the reusable production workflow still writes public compatibility state and stable distribution.
+## Migration evidence
 
-## Other non-public-main writers
+- PRs #498–#504 reduced direct public-main writers from 10 to 4.
+- PR #505 reduced them from 4 to 3.
+- PR #508 reduced them from 3 to 2.
+- The recovery-ledger migration reduced them from 2 to 1.
+- PR #653 released the `v10.3.2` release-state-first compatibility bridge and seeded its exact verified production state.
+- This cutover removes the final main writer, removes the runtime fallback and makes release-state the sole production-state authority.
+- TKB Website remains the sole distribution authority throughout.
 
-| Automation | Target | Credential | Protection posture |
-|---|---|---|---|
-| `apply-development-package.yml` | Existing owner PR branch | `DEVELOPMENT_PR_TOKEN` | Review branch only. |
-| `prepare-release-rollback.yml` | Recovery branch and PR | `DEVELOPMENT_PR_TOKEN` | Review branch only. |
-| `sync-shadow-branches.yml` | `release-state` access probe and `distribution` mirrors | `DEVELOPMENT_PR_TOKEN` | Manual rehearsal; no `main` or consumer cutover. |
-| `release-recovery.yml` | complete `release-state` recovery ledger | `github.token` | Manually confirmed recovery writer; no `main`. |
-| `backup_release_to_private_repo.sh` | private recovery repository `main` | `MIGRATION_REPO_TOKEN` | Separate repository. |
-
-## Target architecture
-
-- **Public `main`:** reviewed source, workflows, tests, policy and temporary compatibility configuration.
-- **Distribution branch:** stable `dist/` and root mirrors, written by a scoped release App.
-- **Release-state branch:** primary dashboard, manifest, announcement, fallback-monitor and recovery state.
-- **Immutable evidence:** validation, synchronization plans, bundles, audits and handovers.
-
-## Migration order
-
-1. ✅ Inventory and enforce every public-main writer.
-2. ✅ Convert dry runs, audits and validation to immutable evidence.
-3. ✅ Convert dashboard refresh to read-only projection.
-4. ✅ Retire automatic Greasy Fork importing.
-5. ✅ Make primary announcement state atomic and reconciliation read-only.
-6. ✅ Fold stable update-manifest publication into the atomic release commit — PR #505.
-7. ✅ Create and validate `release-state` and `distribution` branches — PR #506.
-8. ✅ Add the constrained writer and rehearse access — PR #507 and Issue #41 evidence.
-9. ✅ Move fallback announcement tracking to `release-state` — PR #508; retired completely in v10.2.3 after TKB became authoritative.
-10. ✅ Move the release recovery ledger to `release-state`.
-11. Move primary production state authority to `release-state`.
-12. Migrate a versioned Toolkit runtime to the release-state manifest URL.
-13. Cut stable distribution over to `distribution`.
-14. Replace temporary credentials with a narrowly scoped GitHub App.
-15. Rehearse production release, recovery and administrator access.
-16. Enable strict protection only after all rehearsals pass.
-
-## Current migration evidence
-
-- PRs #498–#504 reduced direct public-main writers from **10 to 4**.
-- PR #505 reduced direct public-main writers from **4 to 3**.
-- PR #508 reduced direct public-main writers from **3 to 2**.
-- This migration reduces direct public-main writers from **2 to 1**.
-- One workflow writes governed operational state to `release-state`.
-- The release recovery ledger is now written only to `release-state`.
-- Six workflows use read-only repository access for immutable verification evidence.
-- Existing v5.0.7 installations retain their exact manifest URL.
-- No userscript, production version, release object, external URL or protection setting changes in this step.
+Strict `main` protection is the remaining repository-setting action after the production cutover is verified.

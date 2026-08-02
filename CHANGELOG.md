@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.3.3] - 2026-08-02
+
+### Authoritative release-state cutover
+
+- Makes `release-state/status/update-manifest.json` the Toolkit's sole verified production-version authority and removes the temporary `main` fallback.
+- Moves production dashboard, manifest, release-speed and announcement recording out of public `main` into the constrained fast-forward-only `release-state` transaction.
+- Makes GitHub Pages and its production monitor overlay live status from `release-state` while continuing to build reviewed site code from `main`.
+- Removes recovery seeding from the frozen `main/status/` snapshot and requires every recovery transition to start from the current authoritative release-state version.
+- Replaces the last Greasy-era tracker filename with `.github/release-announcement-version.txt`; Greasy Fork remains fully retired.
+- Removes release-state from manual shadow synchronization, records zero direct public-main writers and prepares strict pull-request-only protection for `main`.
+
 ## [10.3.2] - 2026-08-02
 
 ### TKB-only release-state compatibility bridge

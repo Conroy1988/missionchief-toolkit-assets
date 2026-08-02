@@ -2,7 +2,7 @@
 
 Pipeline v4 builds one immutable release-ready candidate, resolves the exact successful head run, requires exactly one non-expired candidate artifact from that run, verifies its embedded PR head, PR number and repository tree against the exact current `main` commit, reuses it without rebuilding, verifies the live TKB Website assets, writes a private recovery backup, posts Discord only after both succeed, records timing telemetry, and dispatches GitHub Pages asynchronously.
 
-The automatic path passes authoritative PR creation/merge timestamps plus implementation-ready and validation-completion timestamps directly into production. The release workflow also captures the candidate commit before the stable mirror commit, so telemetry cannot be attributed to release-state writes. The manual readiness workflow remains available for recovery releases where no immutable validation candidate is supplied.
+The automatic path passes authoritative PR creation/merge timestamps plus implementation-ready and validation-completion timestamps directly into production. The release workflow captures the candidate commit before the operational release-state transaction, so telemetry remains attributed to the reviewed `main` source rather than the later state commit. Public `main` is not rewritten by release recording. The manual readiness workflow remains available for recovery releases where no immutable validation candidate is supplied.
 
 ## Targets
 
@@ -11,7 +11,7 @@ The automatic path passes authoritative PR creation/merge timestamps plus implem
 - Merge → GitHub Release median: 40 seconds.
 - Merge → fully verified release median: 60 seconds.
 
-See `status/RELEASE_SPEED.md` for live measurements.
+See the [`release-state` speed dashboard](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/RELEASE_SPEED.md) for live measurements.
 
 ## Telemetry attribution
 

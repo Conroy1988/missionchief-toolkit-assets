@@ -2,11 +2,12 @@
 import argparse, json
 from pathlib import Path
 p=argparse.ArgumentParser()
+p.add_argument("--history", type=Path, default=Path("status/release-speed-history.json"))
 for name in ("version","source","pr","pr_created","merged","implementation_ready","validation_completed","release_started","github_release","discord","verified","implementation_to_green","green_to_merge","pr_to_verified","merge_to_github","merge_to_verified","release_workflow","first_party","backup","discord_seconds","attempts"):
     p.add_argument("--"+name.replace("_","-"), dest=name, default="")
 a=p.parse_args()
 def n(v): return None if v in ("","null") else int(v)
-path=Path("status/release-speed-history.json")
+path=a.history
 data=json.loads(path.read_text(encoding="utf-8"))
 data["schemaVersion"]=2
 for previous in data.get("releases",[]):

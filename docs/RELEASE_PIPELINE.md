@@ -22,6 +22,7 @@ Private recovery backup
 Discord release announcement
         ↓
 Governed release dashboard, manifest and telemetry
+on authoritative release-state; public main unchanged
 ```
 
 ## Release channels
@@ -47,6 +48,7 @@ A production release is blocked unless:
 - the live TKB metadata route reports the requested version;
 - the private recovery archive is verified;
 - the operator enters the explicit `RELEASE` confirmation.
+- the `release-state` role and governed mutable-path allowlist are valid before publication begins.
 
 Discord is notified only after the live TKB distribution and private backup are verified. No retired external channel participates in release success.
 
@@ -58,7 +60,7 @@ Discord is notified only after the live TKB distribution and private backup are 
 4. Allow the exact-head validation workflow to pass.
 5. Run **Actions → Release Toolkit** or the guarded owner release command.
 6. Enter the version and type `RELEASE`.
-7. Review the workflow summary, TKB routes, GitHub Release, private backup, release ledger and Discord post.
+7. Review the workflow summary, TKB routes, GitHub Release, private backup, authoritative release-state ledger and Discord post.
 
 ## Recovery behaviour
 

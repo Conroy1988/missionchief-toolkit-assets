@@ -123,10 +123,10 @@
   },
   "v10Candidate": {
     "issue": 41,
-    "version": "10.3.2",
-    "sourceBytes": 2135435,
-    "sourceLines": 32254,
-    "sourceSha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
+    "version": "10.3.3",
+    "sourceBytes": 2134039,
+    "sourceLines": 32230,
+    "sourceSha256": "892d1fe930eb2d363c28686e480cf67f12d2ede6695cf970dda5e2c6cb0fac6e",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -136,11 +136,11 @@
     "minTemplateBytes": 500000,
     "baseline": "10.3.1",
     "approvedGrowth": {
-      "sourceBytes": 1435,
-      "sourceLines": 24,
+      "sourceBytes": 39,
+      "sourceLines": 0,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #41 TKB-only release-state manifest compatibility bridge"
+    "scope": "Issue #41 TKB-only release-state authority cutover"
   }
 }

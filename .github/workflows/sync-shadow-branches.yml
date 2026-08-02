@@ -1,4 +1,4 @@
-name: Rehearse Shadow Branch Synchronization
+name: Rehearse Distribution Branch Synchronization
 
 on:
   workflow_dispatch:
@@ -11,12 +11,10 @@ on:
           - plan
           - apply
       target:
-        description: "Reviewed shadow target"
+        description: "Reviewed non-live distribution target"
         required: true
         type: choice
         options:
-          - both
-          - release-state
           - distribution
       source_sha:
         description: "Exact current main commit to synchronize"
@@ -72,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::source_sha must be a full lowercase commit SHA."; exit 1; }
-          [[ "$TARGET" == "both" || "$TARGET" == "release-state" || "$TARGET" == "distribution" ]] || { echo "::error::Unapproved shadow target."; exit 1; }
+          [[ "$TARGET" == "distribution" ]] || { echo "::error::Only the non-live distribution branch may be synchronized."; exit 1; }
           [[ "$TARGET" != "main" ]] || { echo "::error::main can never be a shadow synchronization target."; exit 1; }
           if [[ "$MODE" == "plan" ]]; then
             [[ "$CONFIRMATION" == "PLAN SHADOW SYNC" ]] || { echo "::error::Type PLAN SHADOW SYNC exactly."; exit 1; }

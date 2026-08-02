@@ -49,6 +49,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
 
+      - name: Fetch authoritative release-state dashboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin \
+            +refs/heads/release-state:refs/remotes/origin/release-state
+          git show refs/remotes/origin/release-state:status/release-dashboard.json \
+            > "$RUNNER_TEMP/release-dashboard.json"
+
       - name: Validate rollback request
         id: request
         env:
@@ -66,7 +75,7 @@ jobs:
             echo "::error::Confirmation mismatch. Enter exactly: $EXPECTED"
             exit 1
           }
-          CURRENT_VERSION="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
+          CURRENT_VERSION="$(jq -r '.latestRelease.version // empty' "$RUNNER_TEMP/release-dashboard.json")"
           [[ -n "$CURRENT_VERSION" ]] || { echo "::error::Dashboard has no verified latest release."; exit 1; }
           [[ "$SOURCE_VERSION" != "$CURRENT_VERSION" ]] || {
             echo "::error::Source version is already the current release; this is not a rollback."

@@ -13,7 +13,6 @@ import argparse
 import json
 import os
 import re
-import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,7 +22,7 @@ HELPER = ROOT / ".github" / "scripts" / "release_state_branch.py"
 DASHBOARD_REL = Path("status/release-dashboard.json")
 README_REL = Path("status/README.md")
 MANIFEST_REL = Path("status/update-manifest.json")
-TRACKER_REL = Path(".github/greasyfork-version.txt")
+TRACKER_REL = Path(".github/release-announcement-version.txt")
 SETTINGS = ROOT / ".github" / "release-settings.json"
 GENERATOR = ROOT / ".github" / "scripts" / "generate_release_dashboard.py"
 MANIFEST_BUILDER = ROOT / ".github" / "scripts" / "build_stable_update_manifest.py"
@@ -90,10 +89,6 @@ def dashboard_version(dashboard: dict) -> str:
     return str((dashboard.get("latestRelease") or {}).get("version") or "").strip()
 
 
-def main_dashboard() -> dict:
-    return read_json(ROOT / DASHBOARD_REL)
-
-
 def render_dashboard(state_root: Path) -> None:
     state = paths(state_root)
     run(
@@ -133,40 +128,6 @@ def commit_state(state_root: Path, message: str, changed_paths: list[Path]) -> N
     for path in changed_paths:
         arguments.extend(["--path", path.as_posix()])
     run(*arguments)
-
-
-def seed_from_main(state_root: Path, version: str, allow_missing: bool = False) -> None:
-    version = validate_version(version)
-    state = paths(state_root)
-    current = read_json(state["dashboard"])
-    if dashboard_version(current) == version:
-        print(f"release-state already records Toolkit v{version}")
-        return
-
-    source = main_dashboard()
-    if dashboard_version(source) != version:
-        if allow_missing:
-            print(
-                f"No v{version} dashboard seed exists on main; the requested rebuild will construct it."
-            )
-            return
-        raise RecoveryStateError(
-            f"Neither release-state nor main records the requested latest release v{version}"
-        )
-
-    for relative in [DASHBOARD_REL, README_REL, MANIFEST_REL, TRACKER_REL]:
-        source_path = ROOT / relative
-        target_path = state_root / relative
-        if not source_path.is_file():
-            raise RecoveryStateError(f"Main compatibility state is missing {relative}")
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source_path, target_path)
-
-    commit_state(
-        state_root,
-        f"Seed Toolkit {version} recovery state from main",
-        [DASHBOARD_REL, README_REL, MANIFEST_REL, TRACKER_REL],
-    )
 
 
 def require_release(dashboard: dict, version: str) -> dict:
@@ -359,7 +320,7 @@ def self_test() -> None:
     else:
         raise AssertionError("Invalid recovery version was accepted")
     assert DASHBOARD_REL.as_posix() == "status/release-dashboard.json"
-    assert TRACKER_REL.as_posix() == ".github/greasyfork-version.txt"
+    assert TRACKER_REL.as_posix() == ".github/release-announcement-version.txt"
     print("Release recovery state self-tests passed.")
 
 
@@ -367,11 +328,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     subcommands = parser.add_subparsers(dest="command")
-
-    seed = subcommands.add_parser("seed")
-    seed.add_argument("--state-root", type=Path, required=True)
-    seed.add_argument("--version", required=True)
-    seed.add_argument("--allow-missing", action="store_true")
 
     backup = subcommands.add_parser("record-backup")
     backup.add_argument("--state-root", type=Path, required=True)
@@ -403,9 +359,7 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
-    if args.command == "seed":
-        seed_from_main(args.state_root, args.version, args.allow_missing)
-    elif args.command == "record-backup":
+    if args.command == "record-backup":
         record_backup(args.state_root, args.version, args.backup_commit)
     elif args.command == "claim-discord":
         claim_discord(args.state_root, args.version, args.nonce)

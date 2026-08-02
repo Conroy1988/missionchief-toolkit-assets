@@ -25,4 +25,4 @@ A credible report will be triaged against the current canonical userscript and r
 
 ## Release integrity
 
-Official releases are distributed through the repository's verified GitHub Release, Greasy Fork publication, private migration archive, manifest and SHA-256 records. Do not trust userscript copies from unrelated mirrors.
+Official releases are distributed through the verified TKB Website installer and automatic-update channel. GitHub Releases, the private migration archive, the authoritative release manifest and SHA-256 records provide the immutable verification trail. Do not trust userscript copies from unrelated mirrors.

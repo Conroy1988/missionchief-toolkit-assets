@@ -20,7 +20,7 @@ def main() -> int:
         "git reset --hard origin/main",
         "latestRelease.version // empty",
         "status.githubRelease // empty",
-        "status.tkbDistribution // .status.greasyForkSync // empty",
+        "status.tkbDistribution // empty",
         '[[ -n "$EXPECTED_VERSION" && "$DASHBOARD_VERSION" == "$EXPECTED_VERSION" && "$RELEASE_STATE" == "published" && "$DISTRIBUTION_STATE" == "verified" ]]',
         '.github/scripts/build_download_stats.py --self-test',
         '--output _site/data/download-stats.json',

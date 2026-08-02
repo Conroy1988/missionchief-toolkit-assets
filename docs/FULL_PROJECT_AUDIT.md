@@ -17,8 +17,8 @@ The following remain release-blocking:
 5. Desktop, Tablet and iOS modes retain their controls and placement rules.
 6. Every existing interface theme and payout presentation remains selectable.
 7. Public image and audio paths remain stable.
-8. Greasy Fork is not considered released until live metadata reports the requested version.
-9. Discord release announcements remain downstream of Greasy Fork verification and private backup.
+8. The TKB Website is the sole supported install and automatic-update authority.
+9. Discord release announcements remain downstream of exact live TKB asset verification and private backup.
 10. No code is removed solely because a heuristic reports it as unused.
 
 ## Verified audit baseline
@@ -28,7 +28,7 @@ The following remain release-blocking:
 - Source scale: **1,750,881 bytes**, **28,710 lines**
 - Named function-like blocks: **664**
 - Distribution state: canonical source, `.user.js` and `.txt` byte-identical
-- Release state: GitHub Release published, Greasy Fork verified, private backup committed and Discord announcement posted
+- Historical release state at audit time: GitHub Release published, then-current external mirror verified, private backup committed and Discord announcement posted
 
 ## Audit evidence
 
@@ -156,7 +156,7 @@ It now:
 5. records readiness and production run IDs;
 6. exits after dispatch.
 
-The permanent production workflow alone owns GitHub Release publication, Greasy Fork verification, private backup, Discord announcement and dashboard reconciliation.
+The permanent production workflow alone owns GitHub Release publication, live TKB verification, private backup, Discord announcement and dashboard reconciliation.
 
 ### Release state reconciled
 
@@ -170,7 +170,7 @@ This prevents the public control panel from showing a stale pre-release state af
 
 ### Fallback monitor retired
 
-The scheduled Greasy Fork fallback announcer was retired in v10.2.3 after TKB became the supported public channel. Greasy Fork remains a non-blocking discovery mirror, but it can no longer announce a Toolkit version or overwrite Discord release state.
+The scheduled Greasy Fork fallback announcer was retired in v10.2.3. Greasy Fork is now fully retired: it is not a publication, discovery, verification, monitoring, recovery or announcement channel.
 
 The controlled production workflow now verifies that the live TKB install, update and metadata endpoints all serve the exact candidate version before Discord publication.
 
@@ -189,7 +189,7 @@ complete implementation → focused branch → pull request → targeted gates �
 The README has been rebuilt as a premium project landing page with:
 
 - a custom command-centre hero;
-- dynamic release and Greasy Fork badges;
+- dynamic release and TKB installation badges;
 - direct installation calls to action;
 - feature and operating-mode matrices;
 - Hyrule Command artwork;

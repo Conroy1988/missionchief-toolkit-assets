@@ -29,11 +29,11 @@ def main() -> int:
     builder = BUILDER.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
-    start = source.index("    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.")
+    start = source.index("    // Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.")
     end = source.index("    function createCleanExit() {", start)
     block = source[start:end]
 
-    assert source.count("// Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.") == 1
+    assert source.count("// Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.") == 1
     assert "productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/'" in block
     assert "cacheMs: 60 * 1000" in block
     assert "autoIntervalMs: 60 * 1000" in block
@@ -82,7 +82,13 @@ def main() -> int:
         "toolkitCommandShellContextActive()",
     ]:
         assert marker in block, f"version-status runtime marker missing: {marker}"
-    assert "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json" in block
+    primary_manifest = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json"
+    compatibility_manifest = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json"
+    assert primary_manifest in block
+    assert compatibility_manifest in block
+    assert block.index(primary_manifest) < block.index(compatibility_manifest)
+    assert "manifestUrls: Object.freeze([" in block
+    assert "endpointIndex < VERSION_STATUS.manifestUrls.length" in block
     assert "pageWindow.open(VERSION_STATUS.productUrl" in block
     assert "pageWindow.open(destination" not in block
     assert "versionStatusPresentation(SCRIPT.version, manifest).destination" not in block

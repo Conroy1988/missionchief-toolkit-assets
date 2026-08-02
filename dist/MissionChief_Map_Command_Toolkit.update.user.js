@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.1
+// @version      10.3.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.1',
+        version: '10.3.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -28800,8 +28800,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         `;
     }
 
-    // Issue #153 introduced the control; Issue #639 makes verified release discovery live and TKB-first.
-    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
+    // Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.
+    const VERSION_STATUS = Object.freeze({ manifestUrls: Object.freeze(['https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json', 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json']), productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
     let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusRequestToken = 0; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false; let versionStatusInitialCheckQueued = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
@@ -28903,60 +28903,84 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let settled = false;
             let timeoutTimer = null;
             let requestHandle = null;
-            const finish = (error, text) => {
-                if (settled) return;
-                settled = true;
+            let attemptToken = 0;
+            let endpointIndex = 0;
+            let lastError = null;
+            const finish = (currentAttempt, error, text) => {
+                if (settled || currentAttempt !== attemptToken) return;
                 runtimeClearTimeout(timeoutTimer);
                 if (requestHandle?.abort) runtime.requests?.delete?.(requestHandle);
                 if (requestHandle) runtime.fetchControllers?.delete?.(requestHandle);
                 if (versionStatusRequest === requestHandle) versionStatusRequest = null;
                 if (runtime.destroyed || requestToken !== versionStatusRequestToken) {
+                    settled = true;
                     reject(new Error('Version check was superseded.'));
                     return;
                 }
-                if (error) { reject(error); return; }
-                try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); }
-                catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); }
+                let manifest = null;
+                if (!error) {
+                    try { manifest = versionStatusValidateManifest(JSON.parse(String(text || ''))); }
+                    catch (err) { error = err instanceof Error ? err : new Error('Version manifest is invalid.'); }
+                }
+                if (manifest) {
+                    settled = true;
+                    resolve(manifest);
+                    return;
+                }
+                lastError = error instanceof Error ? error : new Error('Version endpoint could not be reached.');
+                if (endpointIndex < VERSION_STATUS.manifestUrls.length) {
+                    requestNext();
+                    return;
+                }
+                settled = true;
+                reject(lastError);
             };
-            const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}-${requestToken}`;
-            if (typeof GM_xmlhttpRequest === 'function') {
-                try {
-                    requestHandle = GM_xmlhttpRequest({
-                        method: 'GET',
-                        url,
-                        timeout: VERSION_STATUS.requestTimeoutMs,
-                        responseType: 'text',
-                        headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-                        onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
-                            ? finish(null, response.responseText)
-                            : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
-                        onerror: () => finish(new Error('Version endpoint could not be reached.')),
-                        ontimeout: () => finish(new Error('Version check timed out.')),
-                        onabort: () => finish(new Error('Version check was cancelled.')),
-                    });
-                    versionStatusRequest = requestHandle;
-                    if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
-                } catch (err) { finish(err); }
-                return;
-            }
-            const Controller = pageWindow.AbortController || globalThis.AbortController;
-            const controller = typeof Controller === 'function' ? new Controller() : null;
-            requestHandle = controller;
-            versionStatusRequest = controller;
-            if (controller) runtime.fetchControllers?.add?.(controller);
-            timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
-            Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
-                cache: 'no-store',
-                credentials: 'omit',
-                signal: controller?.signal,
-                headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-            }))
-                .then(response => {
-                    if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
-                    return response.text();
-                })
-                .then(text => finish(null, text))
-                .catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
+            const requestNext = () => {
+                const currentAttempt = ++attemptToken;
+                const endpoint = VERSION_STATUS.manifestUrls[endpointIndex++];
+                const url = `${endpoint}?cache_bust=${Date.now()}-${requestToken}-${endpointIndex}`;
+                timeoutTimer = null;
+                requestHandle = null;
+                if (typeof GM_xmlhttpRequest === 'function') {
+                    try {
+                        requestHandle = GM_xmlhttpRequest({
+                            method: 'GET',
+                            url,
+                            timeout: VERSION_STATUS.requestTimeoutMs,
+                            responseType: 'text',
+                            headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                            onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
+                                ? finish(currentAttempt, null, response.responseText)
+                                : finish(currentAttempt, new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
+                            onerror: () => finish(currentAttempt, new Error('Version endpoint could not be reached.')),
+                            ontimeout: () => finish(currentAttempt, new Error('Version check timed out.')),
+                            onabort: () => finish(currentAttempt, new Error('Version check was cancelled.')),
+                        });
+                        versionStatusRequest = requestHandle;
+                        if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
+                    } catch (err) { finish(currentAttempt, err); }
+                    return;
+                }
+                const Controller = pageWindow.AbortController || globalThis.AbortController;
+                const controller = typeof Controller === 'function' ? new Controller() : null;
+                requestHandle = controller;
+                versionStatusRequest = controller;
+                if (controller) runtime.fetchControllers?.add?.(controller);
+                timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
+                Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
+                    cache: 'no-store',
+                    credentials: 'omit',
+                    signal: controller?.signal,
+                    headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                }))
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
+                        return response.text();
+                    })
+                    .then(text => finish(currentAttempt, null, text))
+                    .catch(error => finish(currentAttempt, error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
+            };
+            requestNext();
         });
     }
     async function runVersionStatusCheck(force = false) {

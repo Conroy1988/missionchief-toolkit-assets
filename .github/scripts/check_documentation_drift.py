@@ -110,7 +110,6 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     readme = (root / "README.md").read_text(encoding="utf-8")
     help_centre = (root / "help/index.html").read_text(encoding="utf-8")
-    greasy_fork = (root / "docs/greasyfork-description.md").read_text(encoding="utf-8")
 
     failures: list[str] = []
     warnings: list[str] = []
@@ -161,7 +160,6 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
         for path in [
             root / "README.md",
             root / "help/index.html",
-            root / "docs/greasyfork-description.md",
             root / "docs/site-data.json",
             root / ".github/release-settings.json",
         ]
@@ -203,7 +201,6 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
     document_contracts = [
         ("README", readme, public_docs.get("readmeRequiredTokens", []), []),
         ("Help Centre", help_centre, public_docs.get("helpRequiredTokens", []), public_docs.get("helpForbiddenTokens", [])),
-        ("Greasy Fork description", greasy_fork, public_docs.get("greasyForkRequiredTokens", []), public_docs.get("greasyForkForbiddenTokens", [])),
     ]
     for document_name, document_text, required_tokens, forbidden_tokens in document_contracts:
         document_lower = document_text.lower()
@@ -232,7 +229,7 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
         "documentedModes": modes,
         "documentedShortcuts": shortcuts,
         "featureCount": len(feature_names),
-        "publicDocumentCount": 3,
+        "publicDocumentCount": 2,
         "failures": failures,
         "warnings": warnings,
     }

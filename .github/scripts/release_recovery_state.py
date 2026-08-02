@@ -298,11 +298,12 @@ def rebuild_dashboard(
     completed = now()
     dashboard["currentVersion"] = version
     status = dashboard.setdefault("status", {})
+    status.pop("greasyForkSync", None)
     status.update(
         {
             "validation": "passed",
             "githubRelease": "published",
-            "greasyForkSync": "retired",
+            "tkbDistribution": "verified",
             "backup": "private-repository-verified",
             "discordRelease": "posted" if discord_posted else "not-posted",
             "assetAudit": "passed",
@@ -316,7 +317,6 @@ def rebuild_dashboard(
         "privateRepositoryReadWrite": True,
         "tkbDistributionVerified": True,
         "distributionAuthority": "tkb-website-only",
-        "greasyForkMetadataVerified": False,
         "publicReleaseCreated": False,
         "completedAt": completed,
     }
@@ -326,7 +326,6 @@ def rebuild_dashboard(
         "githubRelease": release_url,
         "tkbDistributionVerified": True,
         "distributionAuthority": "tkb-website-only",
-        "greasyForkVerified": False,
         "privateBackupCommit": backup_commit,
         "discordPosted": discord_posted,
         "completedAt": completed,

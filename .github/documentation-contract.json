@@ -192,42 +192,6 @@
       "Mission Inspector",
       "Coverage Heat Map",
       "Automatic day / night"
-    ],
-    "greasyForkRequiredTokens": [
-      "The One We Knew Before",
-      "Patient Transport Sweep",
-      "Mission Value",
-      "Resource Gap",
-      "Operational Pressure Board",
-      "Operational SITREP",
-      "Economy Mode",
-      "saved Discord webhook",
-      "eight complete interface systems",
-      "The Godfather",
-      "Toolkit Command Palette",
-      "Personalisation Studio",
-      "What’s New & Feature Beacon",
-      "Contextual Command Menus",
-      "Complete MissionChief Reskinning",
-      "Smart Auto-Hiding Dock",
-      "Hotkey & Gesture Studio",
-      "Toolkit Safe Mode",
-      "Unit Locator & Follow Mode",
-      "One-Click Session Cleanup"
-    ],
-    "greasyForkForbiddenTokens": [
-      "non-blocking discovery mirror",
-      "Operational Window Suite",
-      "Enhanced Operational Requirements",
-      "Extended Call Window",
-      "Extended Call List",
-      "Enhanced Transport Requests",
-      "Mission Requirements Matrix",
-      "Mission Age Watch",
-      "Critical View",
-      "Mission Inspector",
-      "Coverage Heat Map",
-      "Automatic day / night"
     ]
   }
 }

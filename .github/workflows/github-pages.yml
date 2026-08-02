@@ -147,7 +147,7 @@ jobs:
             git reset --hard origin/main
             DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
             RELEASE_STATE="$(jq -r '.status.githubRelease // empty' status/release-dashboard.json)"
-            DISTRIBUTION_STATE="$(jq -r '.status.tkbDistribution // .status.greasyForkSync // empty' status/release-dashboard.json)"
+            DISTRIBUTION_STATE="$(jq -r '.status.tkbDistribution // empty' status/release-dashboard.json)"
             if [[ -z "$EXPECTED_VERSION" ]]; then
               EXPECTED_VERSION="$DASHBOARD_VERSION"
             fi

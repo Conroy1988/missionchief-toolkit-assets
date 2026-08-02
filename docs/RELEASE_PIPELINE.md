@@ -1,29 +1,27 @@
 # Release Pipeline
 
-The MissionChief Map Command Toolkit uses GitHub as the canonical source and immutable package archive. TKB owns the supported public install/update URLs. Greasy Fork is a non-blocking discovery mirror.
+The MissionChief Map Command Toolkit uses GitHub as its canonical source and immutable package archive. The TKB Website is the sole supported public installation and automatic-update authority. Greasy Fork is fully retired and is not generated, published, verified, monitored or used for recovery.
 
 ## Controlled release path
 
 ```text
 src/MissionChief_Map_Command_Toolkit.user.js
         ↓
-Validation and JavaScript syntax checks
+Exact-head validation and JavaScript syntax checks
         ↓
-Full TKB script plus install, update and metadata assets
+Immutable TKB install, update and metadata candidate
         ↓
-Version and CHANGELOG verification
+Version, changelog and SHA-256 verification
         ↓
-Immutable release bundle and SHA-256 manifest
+GitHub Release archive
         ↓
-GitHub tag and immutable Release assets
+Live TKB install, update and metadata verification
         ↓
-TKB redirect routes resolve the verified assets
+Private recovery backup
         ↓
-First-party package, metadata and private-backup verification
+Discord release announcement
         ↓
-Discord release announcement and non-blocking Greasy Fork check
-        ↓
-Dashboard and migration records updated
+Governed release dashboard, manifest and telemetry
 ```
 
 ## Release channels
@@ -39,35 +37,32 @@ Dashboard and migration records updated
 
 A production release is blocked unless:
 
-- the requested version is valid and matches the userscript metadata;
+- the requested version is valid and matches userscript and runtime metadata;
 - `CHANGELOG.md` contains an entry for that exact version;
 - the JavaScript parses successfully;
-- the generated `.user.js` and `.txt` files are byte-identical;
-- the release manifest hash matches the generated userscript;
-- the TKB install and update assets are byte-identical to the canonical release;
-- the TKB metadata asset reports the requested version;
-- the separate Greasy Fork mirror is below both the governed 1,750,000-character budget and the service's 2,097,152-character hard limit;
-- the Greasy Fork stylesheet resource is immutable and SHA-256 pinned;
+- generated install and update assets are byte-identical to the canonical source;
+- the release manifest SHA-256 matches the generated userscript;
 - the GitHub Release does not already exist;
+- the live TKB install and update routes serve the exact canonical release bytes;
+- the live TKB metadata route reports the requested version;
+- the private recovery archive is verified;
 - the operator enters the explicit `RELEASE` confirmation.
 
-Discord is notified only after the first-party TKB distribution and private backup are verified. Greasy Fork delay is recorded but does not block production.
-
-If Greasy Fork rejects or delays a release, keep TKB production live and investigate the mirror separately. Never upload a different executable payload manually. The governed mirror removes only the embedded non-executable stylesheet and loads that exact release resource through a SHA-256 integrity pin.
+Discord is notified only after the live TKB distribution and private backup are verified. No retired external channel participates in release success.
 
 ## Standard release procedure
 
 1. Update the canonical source under `src/`.
-2. Increase `@version`.
+2. Increase `@version` and the internal runtime version.
 3. Add the matching section to `CHANGELOG.md`.
-4. Allow the validation workflow to pass.
-5. Run **Actions → Release Toolkit**.
+4. Allow the exact-head validation workflow to pass.
+5. Run **Actions → Release Toolkit** or the guarded owner release command.
 6. Enter the version and type `RELEASE`.
-7. Review the workflow summary, TKB routes, statistics feed, GitHub Release, mirror state and Discord post.
+7. Review the workflow summary, TKB routes, GitHub Release, private backup, release ledger and Discord post.
 
 ## Recovery behaviour
 
-If GitHub and the TKB routes publish successfully but Greasy Fork has not synchronized, the release still completes. The mirror monitor may record later propagation without repeating the release, backup or announcement.
+Recovery can verify a release, retry the private backup, retry Discord, reconstruct the governed dashboard or repair stable GitHub Release assets. Every retained operation verifies TKB Website authority and records operational state on `release-state`; none can publish to Greasy Fork.
 
 ## Public asset stability
 

@@ -111,8 +111,11 @@ def main() -> int:
     pages_index = release.index("- name: Dispatch GitHub Pages asynchronously", push_index)
     assert state_index < builder_index < add_index < push_index < pages_index
 
-    public_url = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json"
-    assert public_url in source, "Existing v5.0.7 manifest consumer URL changed"
+    primary_url = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json"
+    compatibility_url = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json"
+    assert primary_url in source, "Authoritative release-state manifest consumer is missing"
+    assert compatibility_url in source, "Frozen main compatibility manifest consumer is missing"
+    assert source.index(primary_url) < source.index(compatibility_url)
     assert manifest["version"] == dashboard["latestRelease"]["version"]
     assert manifest["sha256"] == dashboard["latestRelease"]["sha256"]
 
@@ -124,7 +127,7 @@ def main() -> int:
         if result.returncode != 0:
             raise AssertionError(f"Stable update-manifest command failed: {' '.join(command)}")
 
-    print("Atomic update-manifest pipeline passed: one release-state commit, asynchronous Pages dispatch, read-only verification and unchanged public URL.")
+    print("Atomic update-manifest pipeline passed: release-state-first bridge, frozen main fallback, asynchronous Pages dispatch and read-only verification.")
     return 0
 
 

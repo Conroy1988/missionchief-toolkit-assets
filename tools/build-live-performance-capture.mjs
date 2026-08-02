@@ -7,7 +7,7 @@ import path from "node:path";
 import process from "node:process";
 import { instrumentSource } from "./build-render-probe-userscript.mjs";
 
-export const CAPTURE_PROFILE = "issue247-v832-live-performance";
+export const CAPTURE_PROFILE = "issue247-v1031-live-performance";
 export const REQUIRED_SCENARIOS = Object.freeze([
   ["idle-map", "Leave the map idle for at least 20 seconds."],
   ["settings-open-close", "Open and close Toolkit Settings five times, changing no settings."],

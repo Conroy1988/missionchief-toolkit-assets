@@ -1,17 +1,19 @@
 {
   "schemaVersion": 1,
   "branch": "release-state",
-  "mode": "shadow-rehearsal",
-  "authority": "main remains authoritative until Issue #41 cutover",
-  "purpose": "Mirror verified release, manifest, announcement and recovery state without changing live consumers.",
+  "mode": "operational-release-state",
+  "authority": "release-state is authoritative for verified production status",
+  "purpose": "Own verified production dashboard, manifest, telemetry, announcement and recovery state without public-main commits.",
   "allowedMutablePaths": [
     "status/release-dashboard.json",
     "status/README.md",
     "status/update-manifest.json",
-    ".github/greasyfork-version.txt",
+    "status/release-speed-history.json",
+    "status/RELEASE_SPEED.md",
+    ".github/release-announcement-version.txt",
     ".github/branch-role.json"
   ],
-  "liveConsumersEnabled": false,
+  "liveConsumersEnabled": true,
   "strictProtectionEnabled": false,
   "administratorRecoveryRequired": true,
   "cutoverIssue": 41

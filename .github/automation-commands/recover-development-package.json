@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 592,
-  "expectedMain": "6d5b156dbb5c9a8f88147177f4806eb11a0e202e",
-  "expectedHead": "ac3d975b3d78f8f2ec9923c9dcd808e7aa9699c3",
-  "nonce": "issue255-v832-update-ui-write-suppression-20260730d"
+  "prNumber": 651,
+  "expectedMain": "0c2091473ae947e3ab40142434e4359bc2a0f604",
+  "expectedHead": "9c53872c12e7ae86f025eca9ad85f83a6adec2df",
+  "nonce": "issue650-desktop-density-20260802a"
 }

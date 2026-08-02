@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.3.7] - 2026-08-02
+
+### Accurate launch patch notes
+
+- Replaces the fixed v10.2 launch briefing with the title and highlights for the installed Toolkit release.
+- Binds the briefing version, release title and highlights to the canonical userscript version and current changelog entry.
+- Makes validation fail when a future version is prepared without refreshing its launch patch notes, preventing silent release drift.
+- Adds a direct Full Patch Notes action to the immutable GitHub release while keeping the official TKB installer route.
+- Preserves once-per-version display, opt-out, manual reopen, feature badges and Desktop, Tablet and iOS behaviour without adding runtime activity.
+
 ## [10.3.6] - 2026-08-02
 
 ### Wide Desktop command band

@@ -53,6 +53,13 @@ SCRIPT_VERSION_RE = re.compile(
     r"version\s*:\s*['\"]([^'\"]+)['\"]",
     re.DOTALL,
 )
+RELEASE_BRIEFING_RE = re.compile(
+    r"\bconst\s+RELEASE_BRIEFING\s*=\s*Object\.freeze\(\{\s*"
+    r'version\s*:\s*("(?:\\.|[^"\\])*")\s*,\s*'
+    r'title\s*:\s*("(?:\\.|[^"\\])*")\s*,\s*'
+    r"highlights\s*:\s*Object\.freeze\(\[(.*?)\]\)\s*,?\s*\}\);",
+    re.DOTALL,
+)
 
 
 def fail(message: str) -> None:
@@ -115,6 +122,59 @@ def changelog_has_version(version: str) -> bool:
         text,
         re.M,
     ) is not None
+
+
+def normalise_changelog_bullet(value: str) -> str:
+    value = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", value)
+    value = value.replace("**", "").replace("`", "")
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def changelog_release_briefing(version: str) -> tuple[str, list[str]]:
+    if not CHANGELOG.exists():
+        fail("CHANGELOG.md is missing")
+    text = CHANGELOG.read_text(encoding="utf-8")
+    release = re.search(
+        rf"^## \[{re.escape(version)}\](?:\s+-\s+\d{{4}}-\d{{2}}-\d{{2}})?\s*$\n(.*?)(?=^## \[|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not release:
+        fail(f"CHANGELOG.md has no release heading for version {version}")
+    title_match = re.search(r"^###\s+(.+?)\s*$", release.group(1), re.MULTILINE)
+    if not title_match:
+        fail(f"CHANGELOG.md release {version} has no briefing title")
+    bullets = [
+        normalise_changelog_bullet(match.group(1))
+        for match in re.finditer(r"^-\s+(.+?)\s*$", release.group(1), re.MULTILINE)
+    ]
+    if not bullets:
+        fail(f"CHANGELOG.md release {version} has no briefing highlights")
+    return normalise_changelog_bullet(title_match.group(1)), bullets
+
+
+def validate_release_briefing(text: str, version: str) -> None:
+    matches = RELEASE_BRIEFING_RE.findall(text)
+    if len(matches) != 1:
+        fail("RELEASE_BRIEFING must appear exactly once in the canonical userscript")
+    version_json, title_json, highlights_json = matches[0]
+    try:
+        briefing_version = json.loads(version_json)
+        briefing_title = json.loads(title_json)
+        highlights = json.loads("[" + highlights_json + "]")
+    except json.JSONDecodeError as error:
+        fail(f"RELEASE_BRIEFING is not valid static JSON-compatible data: {error}")
+    if briefing_version != version:
+        fail(f"RELEASE_BRIEFING.version differs from the installed version: {briefing_version} != {version}")
+    if not isinstance(briefing_title, str) or not isinstance(highlights, list):
+        fail("RELEASE_BRIEFING title or highlights are malformed")
+    if not 1 <= len(highlights) <= 8 or any(not isinstance(item, str) or not 20 <= len(item) <= 280 for item in highlights):
+        fail("RELEASE_BRIEFING requires one to eight concise text highlights")
+    changelog_title, changelog_highlights = changelog_release_briefing(version)
+    if briefing_title != changelog_title:
+        fail("RELEASE_BRIEFING title differs from the current CHANGELOG.md release title")
+    if highlights != changelog_highlights:
+        fail("RELEASE_BRIEFING highlights differ from the current CHANGELOG.md release bullets")
 
 
 def is_missionchief_rule(value: str) -> bool:
@@ -218,6 +278,8 @@ def main() -> int:
             "userscript @version and internal SCRIPT.version differ: "
             f"{version} != {runtime_version}"
         )
+
+    validate_release_briefing(text, version)
 
     matches = meta.get("match", []) + meta.get("include", [])
     missionchief_rules = [value for value in matches if is_missionchief_rule(value)]

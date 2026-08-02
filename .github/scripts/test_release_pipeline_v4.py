@@ -29,6 +29,9 @@ for token in ("implementation_ready_at","validation_completed_at","pull_request_
 for token in ("Resolve exact immutable release candidate","Verify live TKB distribution and private backup","TKB_VERSION","distributionAuthority","tkb-website-only","tkbDistribution","sleep 5","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
     assert token in p, token
 assert "gh run watch" not in p
+assert "git push origin HEAD:main" not in p
+assert "Prepare authoritative release-state worktree" in p
+assert "release_state_branch.py commit" in p
 assert 'validated_sha: ${{ needs.authorize.outputs.expected_main }}' in o
 assert '"candidateCommit":a.source' in rec and 'previous["recordedCommit"]=previous.pop("sourceSha256")' in rec
 h=json.loads((r/"status/release-speed-history.json").read_text())

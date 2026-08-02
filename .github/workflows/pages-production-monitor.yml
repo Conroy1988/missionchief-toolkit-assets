@@ -12,7 +12,6 @@ on:
       - ".github/scripts/test_pages_monitor_reconciliation_contract.py"
       - ".github/scripts/test_pages_monitor_version_contract.py"
       - ".github/workflows/pages-production-monitor.yml"
-      - "status/release-dashboard.json"
   push:
     branches:
       - main
@@ -24,7 +23,6 @@ on:
       - ".github/scripts/test_pages_monitor_reconciliation_contract.py"
       - ".github/scripts/test_pages_monitor_version_contract.py"
       - ".github/workflows/pages-production-monitor.yml"
-      - "status/release-dashboard.json"
   workflow_run:
     workflows:
       - GitHub Pages Documentation
@@ -56,6 +54,15 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           persist-credentials: false
+
+      - name: Overlay authoritative release-state dashboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin \
+            +refs/heads/release-state:refs/remotes/origin/release-state
+          git restore --source=refs/remotes/origin/release-state -- \
+            status/release-dashboard.json
 
       - name: Validate monitor scripts
         shell: bash

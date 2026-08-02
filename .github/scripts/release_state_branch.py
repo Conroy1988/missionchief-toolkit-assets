@@ -57,9 +57,9 @@ def validate_role(role: dict) -> set[str]:
     expected = {
         "schemaVersion": 1,
         "branch": TARGET_BRANCH,
-        "mode": "shadow-rehearsal",
-        "authority": "main remains authoritative until Issue #41 cutover",
-        "liveConsumersEnabled": False,
+        "mode": "operational-release-state",
+        "authority": "release-state is authoritative for verified production status",
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
@@ -80,7 +80,9 @@ def validate_role(role: dict) -> set[str]:
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt",
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md",
+        ".github/release-announcement-version.txt",
         ROLE_PATH.as_posix(),
     }
     if allowed_paths != required:
@@ -250,23 +252,25 @@ def self_test() -> None:
     role = {
         "schemaVersion": 1,
         "branch": "release-state",
-        "mode": "shadow-rehearsal",
-        "authority": "main remains authoritative until Issue #41 cutover",
+        "mode": "operational-release-state",
+        "authority": "release-state is authoritative for verified production status",
         "purpose": "test",
         "allowedMutablePaths": [
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            "status/release-speed-history.json",
+            "status/RELEASE_SPEED.md",
+            ".github/release-announcement-version.txt",
             ".github/branch-role.json",
         ],
-        "liveConsumersEnabled": False,
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
     }
     allowed = validate_role(role)
-    assert ".github/greasyfork-version.txt" in allowed
+    assert ".github/release-announcement-version.txt" in allowed
     assert ".github/branch-role.json" not in allowed
 
     broken = dict(role)

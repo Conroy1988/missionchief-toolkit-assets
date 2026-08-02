@@ -1,223 +1,84 @@
 # Branch Protection Migration Plan
 
-Strict pull-request-only protection is **not yet enabled**. One controlled public-main writer remains because stable production publication still commits distribution and compatibility release state required by existing v5.0.7 installations.
+Issue #41 now has one remaining repository-setting action: enable strict pull-request-only protection for `main` after the TKB-only release-state cutover is verified in production.
 
-The migration is tracked by Issue #41. Authority is maintained in:
-
-- `docs/BRANCH_WRITE_INVENTORY.md`;
-- `.github/branch-write-inventory.json`;
-- `.github/shadow-branch-policy.json`;
-- `.github/scripts/test_branch_write_inventory.py`;
-- `.github/scripts/test_validation_candidate_pipeline.py`;
-- `.github/scripts/test_release_announcement_state_pipeline.py`;
-- `.github/scripts/test_update_manifest_pipeline.py`;
-- `.github/scripts/test_release_authority_pipeline.py`;
-- `.github/scripts/test_release_recovery_state_pipeline.py`;
-- `.github/scripts/test_shadow_branch_parity.py`;
-- `.github/scripts/test_shadow_sync_writer.py`.
-
-## Current safe controls
-
-- deletion and force-push protection;
-- reviewed pull requests for normal development;
-- code-integrity, performance, asset, recovery and documentation validation;
-- immutable Action pins and permission auditing;
-- owner-authenticated review branches for packages and rollback preparation;
-- explicit production, recovery and shadow-synchronization confirmation phrases;
-- exact commit/ref/hash validation evidence;
-- deterministic dashboard, first-party distribution, announcement-state and update-manifest verification;
-- atomic production dashboard, stable manifest and announcement compatibility state;
-- isolated non-live `release-state` and `distribution` branches;
-- verified administrator repair access to both operational branches;
-- a constrained release-state transaction helper with role, path and ancestry validation;
-- complete recovery-ledger transactions on `release-state`;
-- manual shadow synchronization with no file-copy authority over release-state data.
-
-## Completed migration stages
-
-### Write-path inventory ✅
-
-The 24 July 2026 baseline identified 10 direct public-main writers. Every `contents: write` workflow and executable main-ref mutation is now classified by target branch and fail-closed in CI.
-
-### Artifact-only validation and evidence ✅
-
-Six workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
-
-- canonical userscript validation;
-- release dry runs;
-- repository/dependency audits;
-- release dashboard projection;
-- release announcement-state verification;
-- stable update-manifest verification.
-
-### GitHub source authority ✅
-
-Automatic source importing is retired. GitHub is the immutable release archive and the TKB Website is the sole install/update authority.
-
-### Atomic production compatibility state ✅
-
-Normal production releases no longer require follow-up announcement or manifest commits.
-
-After TKB Website verification, private backup and Discord publication, `release-toolkit.yml` commits these together:
-
-- `status/release-dashboard.json`;
-- `status/README.md`;
-- `status/update-manifest.json`;
-- `status/release-speed-history.json`;
-- `status/RELEASE_SPEED.md`.
-
-The manifest is built by `.github/scripts/build_stable_update_manifest.py`. The former publisher is now a read-only projection verifier with retained evidence.
-
-The existing v5.0.7 runtime URL remains unchanged:
-
-`raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json`
-
-This is temporary compatibility state. A later versioned Toolkit release will move the runtime consumer to the final `release-state` endpoint.
-
-### Operational branch topology and access rehearsal ✅
-
-PRs #506–#507 established:
-
-- `release-state` for dashboard, manifest, announcement and recovery state;
-- `distribution` for stable `dist/` and root userscript paths;
-- read-only branch-role and governed-file verification;
-- a manual exact-SHA-bound synchronizer restricted to the two operational refs.
-
-Both branches remain in `shadow-rehearsal` mode. External consumers are disabled, strict protection is disabled and administrator recovery remains mandatory.
-
-The connected administrator identity completed:
-
-- an exact-current-`main` read-only plan;
-- initial governed-file parity;
-- same-tree fast-forward write probes on both branches;
-- post-write role and content verification;
-- no force push, history rewrite, public-main mutation or live-consumer change.
-
-### Fallback announcer retired ✅
-
-The former external release monitor was retired completely in v10.2.3 after TKB became the supported public channel. Its remaining scheduled parity workflow and mirror builder are now removed. The controlled production workflow verifies the exact live TKB install, update and metadata version before it posts to Discord.
-
-### Release recovery ledger moved to release-state ✅
-
-`release-recovery.yml` no longer commits to public `main`.
-
-The workflow retains all exact confirmation phrases and the shared `toolkit-production-release` lock. Its external operations remain unchanged:
-
-- verify immutable GitHub Release bundles;
-- retry private migration backups;
-- retry Discord announcements;
-- repair stable GitHub Release assets.
-
-All recovery-ledger mutations are delegated to `.github/scripts/release_recovery_state.py` and committed through `.github/scripts/release_state_branch.py`:
-
-- dashboard JSON;
-- rendered dashboard Markdown;
-- stable update manifest;
-- announcement tracker.
-
-The recovery-state layer:
-
-- seeds from newer verified `main` compatibility state when necessary;
-- records private-backup recovery;
-- creates a pending Discord claim before the HTTP post;
-- finalises Discord state only when the expected claim nonce remains current;
-- rebuilds verified dashboard state from release and private-backup evidence;
-- regenerates the stable manifest only for a complete verified state;
-- performs normal non-force release-state pushes only.
-
-Recovery verification and stable-asset repair remain API-only with respect to repository state.
-
-### Operational branch governance ✅
-
-The read-only verifier now treats all four release-state files as operational state and validates:
-
-- dashboard JSON schema and current/latest version equality;
-- rendered dashboard heading and version;
-- stable manifest schema, channel, version and SHA-256;
-- announcement tracker semantic version;
-- dashboard and rendered Markdown versions match;
-- manifest and tracker can never be ahead of the recovery dashboard;
-- external consumers remain disabled.
-
-Distribution paths remain byte-identical mirrors of `main` until their later cutover.
-
-The manual synchronizer has no file-copy authority on `release-state`; it preserves all four operational files and may only record an idempotent access probe. Distribution remains the only branch with mirror-copy paths.
-
-Direct public-main writers are reduced from **10 to 1**.
-
-## Remaining generated state on public `main`
-
-Public `main` still contains:
-
-1. reviewed first-party distribution source and generated assets;
-2. dashboard, stable manifest and release-speed compatibility state written by normal production releases.
-
-Fallback and recovery workflows no longer mutate `main`. Only `release-toolkit.yml` remains a direct public-main writer.
-
-## Target architecture
+## Completed architecture
 
 ### Public `main`
 
-Reviewed source, workflows, tests, policy, documentation and temporary compatibility configuration only.
+`main` contains reviewed source, workflows, tests, policy, documentation and release inputs. No workflow commits generated release state or distribution output back to it. The historical `status/` snapshot on `main` is frozen and has no live consumer.
+
+### TKB Website
+
+The TKB Website is the sole public install and automatic-update authority. GitHub Releases remain the immutable package archive. Greasy Fork is fully retired and has no operational role.
+
+### Authoritative `release-state`
+
+The `release-state` branch owns live operational data:
+
+- release dashboard JSON and Markdown;
+- stable update manifest;
+- release-speed history and dashboard;
+- release announcement version.
+
+The Toolkit runtime and GitHub Pages consume this branch directly. There is no `main` manifest fallback.
+
+`release-toolkit.yml` and `release-recovery.yml` are the only writers. Both delegate commits to `.github/scripts/release_state_branch.py`, which enforces the exact role, target, mutable paths, current ancestry and fast-forward-only push.
 
 ### Distribution branch
 
-Stable first-party distribution mirrors, written by a narrowly scoped release GitHub App after cutover.
-
-### Release-state branch
-
-Primary dashboard, manifest, announcement, fallback-monitor and recovery state. It is operational state, never product source.
+`distribution` remains a non-live mirror rehearsal. TKB Website delivery does not depend on it. The manual synchronizer may target only this branch; authoritative release-state is excluded from mirror synchronization.
 
 ### Immutable evidence
 
-Validation candidates, synchronization plans, announcement checks, dashboard and manifest projections, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
+Canonical validation, release dry runs, audits, dashboard projection, announcement-state verification and update-manifest verification use read-only repository access and retain workflow artifacts.
 
-## Access and speed requirements
+## Production proof required before protection
 
-The final protection design must retain fast owner operation:
+The `v10.3.3` cutover release must demonstrate:
 
-- `Conroy1988` remains repository administrator and recovery authority;
-- normal changes use owner-created branches and fast parallel CI;
-- no mandatory external reviewer is introduced;
-- administrator bypass is PR-only rather than routine direct push;
-- auto-merge is enabled after rehearsal;
-- distribution and release-state branches retain administrator recovery access;
-- strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are proven;
-- evidence checks become required only for the paths they govern.
+1. the exact validated PR tree publishes successfully;
+2. TKB install, update and metadata endpoints serve the exact payload/version;
+3. private backup and Discord confirmation succeed;
+4. the complete verified ledger is committed only to `release-state`;
+5. the merge commit remains the `main` head after release recording;
+6. the Toolkit version check reads only release-state;
+7. Pages deploys from reviewed `main` code plus authoritative release-state data;
+8. read-only governance and recovery contracts remain green.
 
-## Remaining migration stages
+## Strict `main` protection target
 
-1. ✅ Inventory every workflow and script capable of updating public `main`.
-2. ✅ Separate validation, audit and verification evidence from public `main`.
-3. ✅ Make dashboard and announcement state atomic; retire reconciliation writing.
-4. ✅ Fold stable update-manifest publication into the same atomic release commit — PR #505.
-5. ✅ Create and verify non-live `release-state` and `distribution` branches — PR #506.
-6. ✅ Introduce the constrained shadow writer and rehearse plan/write access — PR #507 and Issue #41 evidence.
-7. ✅ Move fallback announcement tracking to `release-state` — PR #508; retire it in v10.2.3 once TKB becomes authoritative.
-8. ✅ Move release recovery state to `release-state`.
-9. Move primary production dashboard, manifest and announcement authority to `release-state`.
-10. Publish a versioned Toolkit migration that reads the manifest from `release-state` with a reviewed compatibility fallback.
-11. Move stable first-party distribution mirrors to `distribution`.
-12. Replace temporary credentials with a narrowly scoped GitHub App.
-13. Remove unnecessary `contents: write` from orchestration-only workflows.
-14. Rehearse without public-main mutation:
-    - normal Release Readiness;
-    - full production publication;
-    - private-backup-only retry;
-    - Discord-only retry;
-    - dashboard reconstruction;
-    - stable release-asset repair;
-    - emergency rollback-candidate preparation.
-15. Rehearse owner/admin access:
-    - create and update an owner branch;
-    - open and update a pull request;
-    - auto-merge after green checks;
-    - use PR-only administrator bypass where required;
-    - repair distribution and release-state branches;
-    - disable or amend the ruleset.
-16. Require pull requests, approved checks, current branches and resolved conversations.
-17. Block routine direct human pushes and enable strict protection only after complete rehearsal.
+Enable a branch rule or ruleset for `main` with:
+
+- pull requests required;
+- required status checks from the validated PR gate;
+- branches required to be current before merge;
+- unresolved conversations blocking merge;
+- force pushes and deletions blocked;
+- routine direct human and Actions pushes blocked;
+- administrator access retained for explicit recovery and ruleset rollback;
+- no mandatory external reviewer;
+- auto-merge or merge queue retained when checks pass.
+
+The exact rule must be applied only after the production proof above. It must then be tested with an owner branch update, PR merge, rejected direct push, and administrator rollback path.
+
+## Authority and contracts
+
+- `docs/BRANCH_WRITE_INVENTORY.md` — human-readable current topology;
+- `.github/branch-write-inventory.json` — exact writer classification;
+- `.github/shadow-branch-policy.json` — operational branch roles and consumers;
+- `.github/scripts/test_branch_write_inventory.py` — direct-main mutation and permission enforcement;
+- `.github/scripts/test_release_authority_pipeline.py` — TKB-only release authority;
+- `.github/scripts/test_release_recovery_state_pipeline.py` — live recovery-state boundaries;
+- `.github/scripts/test_shadow_branch_parity.py` — read-only operational branch governance;
+- `.github/scripts/test_update_manifest_pipeline.py` — release-state-only manifest production and consumption.
 
 ## Exit criteria
 
-Strict protection is ready only when no workflow requires a public-main commit, every bypass actor is a scoped GitHub App or explicit administrator recovery actor, generated state is reconstructable, owner update speed is preserved, and every release/recovery/access path has passed non-production rehearsal.
+Issue #41 can close when:
+
+- `v10.3.3` is verified and recorded on release-state without a follow-up `main` commit;
+- public `main` has zero direct workflow writers;
+- the runtime and Pages have no `main` status fallback;
+- strict protection is active and its owner/admin rehearsal succeeds;
+- Issue #41 records the exact ruleset evidence and final branch SHAs.

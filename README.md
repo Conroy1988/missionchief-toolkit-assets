@@ -20,7 +20,7 @@
 </tr>
 <tr>
 <td width="50%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/themes/"><strong>EXPLORE THE INTERFACES</strong><br><sub>Eight complete command systems</sub></a></td>
-<td width="50%" align="center"><a href="status/README.md"><strong>CHECK RELEASE CONTROL</strong><br><sub>Verified production state</sub></a></td>
+<td width="50%" align="center"><a href="https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md"><strong>CHECK RELEASE CONTROL</strong><br><sub>Verified production state</sub></a></td>
 </tr>
 </table>
 
@@ -63,12 +63,12 @@ Focus, Open and Pin are navigation actions. The board and palette do not select 
 
 ---
 
-## Live command contract — v10.3.2
+## Live command contract — v10.3.3
 
 > [!TIP]
 > The global launcher, dock, command menu and map overlays now belong only to the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native, while supported page-specific enhancements continue independently.
 
-The compact release-status button checks the authoritative `release-state` manifest every 60 seconds, with the frozen `main` copy retained only as a one-release compatibility fallback. It shows `LATEST` when the installed release is current and a clear neon `UPDATE` when a newer verified release is available; both states open the official TKB Toolkit page.
+The compact release-status button checks the authoritative `release-state` manifest every 60 seconds. It shows `LATEST` when the installed release is current and a clear neon `UPDATE` when a newer verified release is available; both states open the official TKB Toolkit page. Public `main` is no longer a release-state or update-check fallback.
 
 On Desktop, the command bar now uses the safe horizontal map workspace instead of stacking every control into a narrow column. Its compact 36px buttons arrange themselves into responsive operational groups, pinned locations occupy a separate row, and the launcher remains reachable at every dock position. The Major Incident Wire and zoomed or short viewports are reserved automatically; internal scrolling is kept only as an emergency fallback.
 
@@ -239,7 +239,7 @@ The v7 boundary reset remains an executable product contract: MissionChief is au
 | Install or update | [TKB product page](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
 | Read setup and feature guidance | [MissionChief Map Command Toolkit Guide](https://conroy1988.github.io/missionchief-toolkit-assets/) |
 | Explore every visual system | [Interface gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/) |
-| See the current verified state | [Release Control Panel](status/README.md) |
+| See the current verified state | [Release Control Panel](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md) |
 | Review changes over time | [Changelog](CHANGELOG.md) |
 | Read every release | [GitHub Releases](https://github.com/Conroy1988/missionchief-toolkit-assets/releases) |
 | Report a confirmed problem | [Issue tracker](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) |
@@ -258,7 +258,7 @@ The public page follows live release state rather than embedding a version numbe
 | **Immutable release** | [Latest GitHub Release](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest) |
 | **Distribution** | [TKB Scripts](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
 | **Checksum** | [`dist/SHA256SUMS.txt`](dist/SHA256SUMS.txt) |
-| **Recovery and delivery evidence** | [Release Control Panel](status/README.md) |
+| **Recovery and delivery evidence** | [Release Control Panel](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md) |
 | **Hosted asset audit** | [Asset Health](.github/ASSET_HEALTH.md) |
 
 ```text

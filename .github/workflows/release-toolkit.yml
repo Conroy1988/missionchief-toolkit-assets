@@ -117,6 +117,7 @@ jobs:
         with:
           ref: ${{ inputs.validated_sha != '' && inputs.validated_sha || 'main' }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Production release safety gate
         id: release_start
@@ -142,6 +143,17 @@ jobs:
             [[ "$(git rev-parse HEAD)" == "$VALIDATED_SHA" ]]
           fi
           gh release view "v${RELEASE_VERSION}" >/dev/null 2>&1 && { echo "::error::GitHub Release v${RELEASE_VERSION} already exists."; exit 1; } || true
+
+      - name: Verify authoritative release-state writer
+        run: python3 .github/scripts/release_state_branch.py --self-test
+
+      - name: Prepare authoritative release-state worktree
+        id: release_state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/release_state_branch.py prepare \
+            --worktree "$RUNNER_TEMP/release-state"
 
       - name: Resolve exact immutable release candidate
         id: candidate
@@ -364,12 +376,19 @@ jobs:
           SOURCE_PR_MERGED_AT: ${{ inputs.pr_merged_at }}
           SOURCE_IMPLEMENTATION_READY_AT: ${{ inputs.implementation_ready_at }}
           SOURCE_VALIDATION_COMPLETED_AT: ${{ inputs.validation_completed_at }}
+          RELEASE_STATE_ROOT: ${{ steps.release_state.outputs.root }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           VERIFIED_EPOCH="$(date +%s)"
+          DASHBOARD="$RELEASE_STATE_ROOT/status/release-dashboard.json"
+          DASHBOARD_README="$RELEASE_STATE_ROOT/status/README.md"
+          UPDATE_MANIFEST="$RELEASE_STATE_ROOT/status/update-manifest.json"
+          RELEASE_SPEED_HISTORY="$RELEASE_STATE_ROOT/status/release-speed-history.json"
+          RELEASE_SPEED_DASHBOARD="$RELEASE_STATE_ROOT/status/RELEASE_SPEED.md"
+          ANNOUNCEMENT_TRACKER="$RELEASE_STATE_ROOT/.github/release-announcement-version.txt"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
@@ -386,11 +405,15 @@ jobs:
              .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",publicReleaseCreated:true,completedAt:$now} |
              .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,tkbDistributionVerified:true,distributionAuthority:"tkb-website-only",privateBackupCommit:$backupCommit,discordMessageId:$discordMessageId,discordChannelId:$discordChannelId,discordPosted:true,completedAt:$now} |
              .lastUpdated=$now' \
-            status/release-dashboard.json > status/release-dashboard.tmp
-          mv status/release-dashboard.tmp status/release-dashboard.json
-          python3 .github/scripts/generate_release_dashboard.py
-          python3 .github/scripts/build_stable_update_manifest.py
-          test "$(jq -r '.version' status/update-manifest.json)" = "$RELEASE_VERSION"
+            "$DASHBOARD" > "$DASHBOARD.tmp"
+          mv "$DASHBOARD.tmp" "$DASHBOARD"
+          python3 .github/scripts/generate_release_dashboard.py \
+            --source "$DASHBOARD" \
+            --output "$DASHBOARD_README"
+          python3 .github/scripts/build_stable_update_manifest.py \
+            --dashboard "$DASHBOARD" \
+            --output "$UPDATE_MANIFEST"
+          test "$(jq -r '.version' "$UPDATE_MANIFEST")" = "$RELEASE_VERSION"
           SOURCE_SHA="${VALIDATED_SHA:-$RELEASE_SOURCE_SHA}"
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Exact release candidate commit was not preserved."; exit 1; }
           PR_NUMBER="$SOURCE_PR_NUMBER"
@@ -422,19 +445,20 @@ jobs:
           for duration in "$PR_TO_VERIFIED" "$MERGE_TO_GITHUB" "$MERGE_TO_VERIFIED" "$IMPLEMENTATION_TO_GREEN" "$GREEN_TO_MERGE"; do
             [[ "$duration" == "null" || "$duration" -ge 0 ]] || { echo "::error::Release telemetry produced a negative duration."; exit 1; }
           done
-          python3 .github/scripts/record_release_speed.py --version "$RELEASE_VERSION" --source "$SOURCE_SHA" --pr "${PR_NUMBER:-}" --pr-created "$PR_CREATED_AT" --merged "$PR_MERGED_AT" --implementation-ready "$IMPLEMENTATION_READY_AT" --validation-completed "$VALIDATION_COMPLETED_AT" --release-started "$RELEASE_STARTED_AT" --github-release "$GITHUB_RELEASE_AT" --discord "$DISCORD_AT" --verified "$NOW" --implementation-to-green "$IMPLEMENTATION_TO_GREEN" --green-to-merge "$GREEN_TO_MERGE" --pr-to-verified "$PR_TO_VERIFIED" --merge-to-github "$MERGE_TO_GITHUB" --merge-to-verified "$MERGE_TO_VERIFIED" --release-workflow "$(( VERIFIED_EPOCH - RELEASE_STARTED_EPOCH ))" --first-party 0 --backup "$(( BACKUP_EPOCH - GITHUB_RELEASE_EPOCH ))" --discord-seconds "$(( DISCORD_EPOCH - GITHUB_RELEASE_EPOCH ))" --attempts 0
-          python3 .github/scripts/generate_release_speed_dashboard.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            status/release-dashboard.json \
-            status/README.md \
-            status/update-manifest.json \
-            status/release-speed-history.json \
-            status/RELEASE_SPEED.md
-          git commit -m "Record Toolkit ${RELEASE_VERSION} verified release state"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          python3 .github/scripts/record_release_speed.py --history "$RELEASE_SPEED_HISTORY" --version "$RELEASE_VERSION" --source "$SOURCE_SHA" --pr "${PR_NUMBER:-}" --pr-created "$PR_CREATED_AT" --merged "$PR_MERGED_AT" --implementation-ready "$IMPLEMENTATION_READY_AT" --validation-completed "$VALIDATION_COMPLETED_AT" --release-started "$RELEASE_STARTED_AT" --github-release "$GITHUB_RELEASE_AT" --discord "$DISCORD_AT" --verified "$NOW" --implementation-to-green "$IMPLEMENTATION_TO_GREEN" --green-to-merge "$GREEN_TO_MERGE" --pr-to-verified "$PR_TO_VERIFIED" --merge-to-github "$MERGE_TO_GITHUB" --merge-to-verified "$MERGE_TO_VERIFIED" --release-workflow "$(( VERIFIED_EPOCH - RELEASE_STARTED_EPOCH ))" --first-party 0 --backup "$(( BACKUP_EPOCH - GITHUB_RELEASE_EPOCH ))" --discord-seconds "$(( DISCORD_EPOCH - GITHUB_RELEASE_EPOCH ))" --attempts 0
+          python3 .github/scripts/generate_release_speed_dashboard.py \
+            --history "$RELEASE_SPEED_HISTORY" \
+            --output "$RELEASE_SPEED_DASHBOARD"
+          printf '%s\n' "$RELEASE_VERSION" > "$ANNOUNCEMENT_TRACKER"
+          python3 .github/scripts/release_state_branch.py commit \
+            --worktree "$RELEASE_STATE_ROOT" \
+            --message "Record Toolkit ${RELEASE_VERSION} verified release state" \
+            --path status/release-dashboard.json \
+            --path status/README.md \
+            --path status/update-manifest.json \
+            --path status/release-speed-history.json \
+            --path status/RELEASE_SPEED.md \
+            --path .github/release-announcement-version.txt
 
       - name: Dispatch GitHub Pages asynchronously
         id: pages
@@ -466,6 +490,7 @@ jobs:
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
             echo "- ✅ Candidate, implementation-to-green, PR, merge and publication telemetry attributed to the exact validated commit"
-            echo "- ✅ Dashboard, release-speed telemetry and stable update manifest updated atomically"
+            echo "- ✅ Authoritative release-state dashboard, telemetry, announcement tracker and stable manifest updated atomically"
+            echo "- ✅ Public main changed by release recording: no"
             echo "- ✅ GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}"
           } >> "$GITHUB_STEP_SUMMARY"

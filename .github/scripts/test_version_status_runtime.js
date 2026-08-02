@@ -8,7 +8,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
-const startMarker = '    // Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.';
+const startMarker = '    // Issue #153 introduced the control; Issues #639 and #41 make verified TKB release discovery live and release-state authoritative.';
 const endMarker = '    function createCleanExit() {';
 const start = source.indexOf(startMarker);
 const end = source.indexOf(endMarker, start);
@@ -182,10 +182,7 @@ function click(element, overrides = {}) {
     assert.equal(api.constants.cacheMs, 60_000);
     assert.equal(api.constants.failureCooldownMs, 60_000);
     assert.equal(api.constants.productUrl, productUrl);
-    assert.deepEqual(Array.from(api.constants.manifestUrls), [
-        'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json',
-        'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json',
-    ]);
+    assert.equal(api.constants.manifestUrl, 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json');
     api.setModel({ state: 'latest', manifest: current, checkedAt: now, failedAt: 0, error: '' });
     assert.equal(api.nextDelay(now), 60_000, 'next successful check is scheduled for 60 seconds');
     api.setModel({ state: 'latest', manifest: current, checkedAt: now - 60_000, failedAt: now, error: 'offline' });
@@ -257,20 +254,18 @@ function click(element, overrides = {}) {
     assert.equal(api.model().state, 'update');
     assert.equal(first.dataset.label, 'UPDATE');
 
-    // The seeded release-state ledger is authoritative; frozen main remains a one-release compatibility fallback.
-    const bridgeRequests = [];
+    // release-state is the only verified production-state authority.
+    const authorityRequests = [];
     context.GM_xmlhttpRequest = options => {
-        bridgeRequests.push(options.url);
-        queueMicrotask(() => bridgeRequests.length === 1
-            ? options.onerror()
-            : options.onload({ status: 200, responseText: JSON.stringify(manifest('10.2.10')) }));
+        authorityRequests.push(options.url);
+        queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('10.2.10')) }));
         return { abort() {} };
     };
     api.reset();
     await api.runCheck(true);
-    assert.equal(bridgeRequests.length, 2, 'compatibility fallback was not attempted exactly once');
-    assert.match(bridgeRequests[0], /\/release-state\/status\/update-manifest\.json/u);
-    assert.match(bridgeRequests[1], /\/main\/status\/update-manifest\.json/u);
+    assert.equal(authorityRequests.length, 1, 'version check contacted more than one authority');
+    assert.match(authorityRequests[0], /\/release-state\/status\/update-manifest\.json/u);
+    assert.doesNotMatch(authorityRequests[0], /\/main\/status\/update-manifest\.json/u);
     assert.equal(api.model().state, 'update');
 
     // Returning to current status removes both the alert class and animation state.

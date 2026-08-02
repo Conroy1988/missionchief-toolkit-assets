@@ -22,11 +22,13 @@ The governed recovery ledger is stored on the `release-state` branch:
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `status/update-manifest.json`;
-- `.github/greasyfork-version.txt` (legacy filename; announcement tracker only).
+- `status/release-speed-history.json`;
+- `status/RELEASE_SPEED.md`;
+- `.github/release-announcement-version.txt`.
 
 `release-recovery.yml` never commits these files to public `main`. It prepares a detached release-state worktree, validates the branch role and mutable-path allowlist, then performs a normal non-force push through `.github/scripts/release_state_branch.py`.
 
-Existing v5.0.7 installations still read the compatibility manifest from `main`. Recovery operations update the operational ledger only; the next normal production release refreshes the compatibility copy on `main`.
+The Toolkit, Pages and recovery workflows read the authoritative manifest and dashboard from `release-state`. The historical `main/status/` snapshot is not a recovery seed or live consumer authority.
 
 ## Executable recovery workflows
 
@@ -52,7 +54,7 @@ Write operations in **Release Recovery** may target only the current latest GitH
 
 The workflow shares the `toolkit-production-release` concurrency lock with formal production. Recovery cannot overlap a production release.
 
-The workflow checks out `main` with `persist-credentials: false`. `main` supplies source code, reviewed settings and a compatibility seed when `release-state` does not yet contain the requested release. Every later ledger transition occurs on `release-state`.
+The workflow checks out `main` with `persist-credentials: false` for reviewed source code and settings. Every operational transition starts from the current authoritative `release-state`; a mismatched requested version fails closed.
 
 ## Discord ambiguity guard
 
@@ -108,10 +110,10 @@ Private migration backup
       ↓
 Discord release announcement
       ↓
-Atomic compatibility state on main
+Atomic verified state on release-state
 ```
 
-Recovery writes its operational ledger to `release-state`; it does not rewrite the compatibility checkpoint on `main`.
+Recovery writes its operational ledger to `release-state`; public `main` remains unchanged.
 
 A later checkpoint is never treated as successful when an earlier checkpoint failed.
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "mode": "shadow-rehearsal",
-  "mainAuthorityPreserved": true,
-  "liveConsumersEnabled": false,
+  "mode": "operational-cutover",
+  "mainAuthorityPreserved": false,
+  "liveConsumersEnabled": true,
   "strictProtectionEnabled": false,
   "administratorRecoveryRequired": true,
   "cutoverIssue": 41,
@@ -12,7 +12,6 @@
     "authorizedActor": "Conroy1988",
     "sourceBranch": "main",
     "allowedTargets": [
-      "release-state",
       "distribution"
     ],
     "planConfirmation": "PLAN SHADOW SYNC",
@@ -25,25 +24,30 @@
   },
   "branches": {
     "release-state": {
-      "purpose": "Operate the recovery dashboard, rendered status, stable manifest and announcement tracker without public-main commits.",
+      "purpose": "Authoritative verified production dashboard, rendered status, stable manifest, telemetry and announcement state without public-main commits.",
       "rolePath": ".github/branch-role.json",
       "governedPaths": [
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt"
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md",
+        ".github/release-announcement-version.txt"
       ],
       "mirroredPaths": [],
       "operationalPaths": [
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt"
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md",
+        ".github/release-announcement-version.txt"
       ],
       "operationalWriters": [
+        ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml"
       ],
-      "externalConsumersEnabled": false
+      "externalConsumersEnabled": true
     },
     "distribution": {
       "purpose": "Mirror stable Toolkit distribution files without changing live publication.",

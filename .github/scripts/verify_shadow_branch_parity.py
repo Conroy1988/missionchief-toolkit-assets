@@ -62,9 +62,9 @@ def load_policy() -> dict:
         raise ValueError("Operational branch policy must be a JSON object")
     expected = {
         "schemaVersion": 1,
-        "mode": "shadow-rehearsal",
-        "mainAuthorityPreserved": True,
-        "liveConsumersEnabled": False,
+        "mode": "operational-cutover",
+        "mainAuthorityPreserved": False,
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
@@ -95,28 +95,32 @@ def validate_path_classes(branch: str, policy: dict) -> None:
         raise ValueError(f"{branch} mirrored and operational paths overlap")
     if set(governed) != set(mirrored) | set(operational):
         raise ValueError(f"{branch} path classes do not partition governedPaths")
-    if policy.get("externalConsumersEnabled") is not False:
-        raise ValueError(f"{branch} external consumers must remain disabled")
-
     if branch == "release-state":
         expected_operational = [
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            "status/release-speed-history.json",
+            "status/RELEASE_SPEED.md",
+            ".github/release-announcement-version.txt",
         ]
         expected_writers = [
+            ".github/workflows/release-toolkit.yml",
             ".github/workflows/release-recovery.yml",
         ]
         if mirrored != [] or operational != expected_operational:
-            raise ValueError("release-state must keep all recovery-ledger paths operational")
+            raise ValueError("release-state must keep all production-ledger paths operational")
         if writers != expected_writers:
             raise ValueError("release-state operational writers changed")
+        if policy.get("externalConsumersEnabled") is not True:
+            raise ValueError("release-state external consumers must remain enabled")
     if branch == "distribution":
         if operational or writers:
             raise ValueError("distribution cannot have operational paths before cutover")
         if mirrored != governed:
             raise ValueError("distribution paths must remain mirrored before cutover")
+        if policy.get("externalConsumersEnabled") is not False:
+            raise ValueError("distribution external consumers must remain disabled")
 
 
 def validate_role(branch: str, role: dict, policy: dict) -> list[str]:
@@ -124,8 +128,8 @@ def validate_role(branch: str, role: dict, policy: dict) -> list[str]:
     expected = {
         "schemaVersion": 1,
         "branch": branch,
-        "mode": "shadow-rehearsal",
-        "liveConsumersEnabled": False,
+        "mode": "operational-release-state" if branch == "release-state" else "shadow-rehearsal",
+        "liveConsumersEnabled": branch == "release-state",
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
@@ -136,8 +140,13 @@ def validate_role(branch: str, role: dict, policy: dict) -> list[str]:
     expected_allowed = [*policy["governedPaths"], ROLE_PATH]
     if role.get("allowedMutablePaths") != expected_allowed:
         errors.append(f"{branch} allowedMutablePaths differs from reviewed policy")
-    if "main remains authoritative" not in str(role.get("authority") or ""):
-        errors.append(f"{branch} role no longer preserves main source authority")
+    expected_authority = (
+        "release-state is authoritative for verified production status"
+        if branch == "release-state"
+        else "main remains authoritative"
+    )
+    if expected_authority not in str(role.get("authority") or ""):
+        errors.append(f"{branch} role authority changed")
     return errors
 
 
@@ -193,10 +202,24 @@ def validate_operational_content(path: str, content: bytes) -> tuple[bool, str, 
         metadata.update({"version": version, "manifest": manifest})
         return True, f"stable manifest v{version}", metadata
 
-    if path == ".github/greasyfork-version.txt":
+    if path == "status/release-speed-history.json":
+        try:
+            history = json.loads(text)
+        except json.JSONDecodeError:
+            return False, "release-speed history is not valid JSON", metadata
+        if not isinstance(history, dict) or history.get("schemaVersion") != 2 or not isinstance(history.get("releases"), list):
+            return False, "release-speed history schema is invalid", metadata
+        return True, f"release-speed history with {len(history['releases'])} records", metadata
+
+    if path == "status/RELEASE_SPEED.md":
+        if not text.startswith("# Release Speed Control"):
+            return False, "release-speed dashboard heading is invalid", metadata
+        return True, "rendered release-speed dashboard", metadata
+
+    if path == ".github/release-announcement-version.txt":
         value = text.strip()
         if not SEMVER.fullmatch(value):
-            return False, f"fallback tracker is not a stable semantic version: {value!r}", metadata
+            return False, f"announcement tracker is not a stable semantic version: {value!r}", metadata
         metadata["version"] = value
         return True, f"announcement tracker v{value}", metadata
 
@@ -209,7 +232,7 @@ def cross_validate_release_state(files: list[dict[str, object]]) -> list[str]:
     dashboard_version = str((by_path["status/release-dashboard.json"].get("metadata") or {}).get("version") or "")
     readme_version = str((by_path["status/README.md"].get("metadata") or {}).get("version") or "")
     manifest_version = str((by_path["status/update-manifest.json"].get("metadata") or {}).get("version") or "")
-    tracker_version = str((by_path[".github/greasyfork-version.txt"].get("metadata") or {}).get("version") or "")
+    tracker_version = str((by_path[".github/release-announcement-version.txt"].get("metadata") or {}).get("version") or "")
 
     if dashboard_version and readme_version and dashboard_version != readme_version:
         errors.append("release-state dashboard and rendered Markdown versions differ")
@@ -332,35 +355,40 @@ def self_test() -> None:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            "status/release-speed-history.json",
+            "status/RELEASE_SPEED.md",
+            ".github/release-announcement-version.txt",
         ],
         "mirroredPaths": [],
         "operationalPaths": [
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            "status/release-speed-history.json",
+            "status/RELEASE_SPEED.md",
+            ".github/release-announcement-version.txt",
         ],
         "operationalWriters": [
+            ".github/workflows/release-toolkit.yml",
             ".github/workflows/release-recovery.yml",
         ],
-        "externalConsumersEnabled": False,
+        "externalConsumersEnabled": True,
     }
     validate_path_classes("release-state", policy)
     role = {
         "schemaVersion": 1,
         "branch": "release-state",
-        "mode": "shadow-rehearsal",
-        "authority": "main remains authoritative until cutover",
+        "mode": "operational-release-state",
+        "authority": "release-state is authoritative for verified production status",
         "allowedMutablePaths": [*policy["governedPaths"], ROLE_PATH],
-        "liveConsumersEnabled": False,
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
     }
     assert not validate_role("release-state", role, policy)
-    assert validate_operational_content(".github/greasyfork-version.txt", b"5.0.7\n")[0]
-    assert not validate_operational_content(".github/greasyfork-version.txt", b"latest\n")[0]
+    assert validate_operational_content(".github/release-announcement-version.txt", b"5.0.7\n")[0]
+    assert not validate_operational_content(".github/release-announcement-version.txt", b"latest\n")[0]
     assert semver_tuple("5.0.7") < semver_tuple("5.0.8")
     print("Shadow branch parity self-tests passed.")
 

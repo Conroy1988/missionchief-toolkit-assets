@@ -94,7 +94,7 @@ def main() -> int:
     artifacts = workflow_set(artifact_entries)
     state_writers = workflow_set(state_entries)
 
-    expected_direct = {".github/workflows/release-toolkit.yml"}
+    expected_direct: set[str] = set()
     expected_orchestrators = {
         ".github/workflows/auto-release-after-validation.yml",
         ".github/workflows/owner-release-command.yml",
@@ -108,6 +108,7 @@ def main() -> int:
         ".github/workflows/publish-update-manifest.yml",
     }
     expected_state_writers = {
+        ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml",
     }
     if direct != expected_direct:
@@ -198,10 +199,34 @@ def main() -> int:
         require(text, ["permissions:\n  contents: read", "persist-credentials: false", marker], workflow)
         forbid(text, ["contents: write", "git push origin HEAD:main", "git push origin HEAD:refs/heads/main"], workflow)
 
-    if len(state_entries) != 1:
-        fail(f"Expected one release-state writer, found {len(state_entries)}")
+    if len(state_entries) != 2:
+        fail(f"Expected two release-state writers, found {len(state_entries)}")
     entries_by_workflow = {entry["workflow"]: entry for entry in state_entries}
+    release_entry = entries_by_workflow[".github/workflows/release-toolkit.yml"]
     recovery_entry = entries_by_workflow[".github/workflows/release-recovery.yml"]
+
+    expected_release = {
+        "workflow": ".github/workflows/release-toolkit.yml",
+        "helper": ".github/scripts/release_state_branch.py",
+        "sourceAuthority": "exact validated main candidate plus verified first-party release evidence",
+        "target": "release-state",
+        "writes": [
+            "status/release-dashboard.json",
+            "status/README.md",
+            "status/update-manifest.json",
+            "status/release-speed-history.json",
+            "status/RELEASE_SPEED.md",
+            ".github/release-announcement-version.txt",
+        ],
+        "credential": "github.token",
+        "actor": "github-actions[bot]",
+        "mainMutationAllowed": False,
+        "forcePushAllowed": False,
+        "liveConsumerCutoverAllowed": True,
+        "migrationState": "primary verified production state authority",
+    }
+    if release_entry != expected_release:
+        fail("Production release-state inventory changed")
 
     expected_recovery = {
         "workflow": ".github/workflows/release-recovery.yml",
@@ -213,18 +238,19 @@ def main() -> int:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
         ],
         "credential": "github.token",
         "actor": "github-actions[bot]",
         "mainMutationAllowed": False,
         "forcePushAllowed": False,
-        "liveConsumerCutoverAllowed": False,
-        "migrationState": "operational recovery ledger authority",
+        "liveConsumerCutoverAllowed": True,
+        "migrationState": "operational recovery authority for live release-state",
     }
     if recovery_entry != expected_recovery:
         fail("Release-recovery state inventory changed")
 
+    release = (ROOT / release_entry["workflow"]).read_text(encoding="utf-8")
     recovery = (ROOT / recovery_entry["workflow"]).read_text(encoding="utf-8")
     branch_helper = (ROOT / recovery_entry["branchHelper"]).read_text(encoding="utf-8")
     recovery_helper = (ROOT / recovery_entry["helper"]).read_text(encoding="utf-8")
@@ -235,7 +261,6 @@ def main() -> int:
             "Check out latest main authority",
             "persist-credentials: false",
             "Prepare governed release-state worktree",
-            "release_recovery_state.py seed",
             "Record private backup recovery on release-state",
             "Claim Discord retry on release-state without posting",
             "Finalize Discord recovery on release-state",
@@ -246,6 +271,7 @@ def main() -> int:
         "Release recovery workflow",
     )
     for label, text in {
+        "production release": release,
         "recovery": recovery,
         "branch helper": branch_helper,
         "recovery helper": recovery_helper,
@@ -263,6 +289,19 @@ def main() -> int:
         )
 
     require(
+        release,
+        [
+            "persist-credentials: false",
+            "Prepare authoritative release-state worktree",
+            "release_state_branch.py prepare",
+            "release_state_branch.py commit",
+            "--path status/release-speed-history.json",
+            "--path .github/release-announcement-version.txt",
+            "Public main changed by release recording: no",
+        ],
+        "Production release workflow",
+    )
+    require(
         branch_helper,
         [
             'TARGET_BRANCH = "release-state"',
@@ -277,7 +316,6 @@ def main() -> int:
         recovery_helper,
         [
             "Apply controlled Toolkit recovery-state transitions",
-            "seed_from_main",
             "record_backup",
             "claim_discord",
             "finalize_discord",
@@ -319,10 +357,10 @@ def main() -> int:
         fail("Shadow synchronization writer is missing or can mutate public main")
 
     for claim in [
-        "one workflow that can commit directly to public `main`",
-        "one workflow writes governed operational state to `release-state`",
+        "no workflow can commit directly to public `main`",
+        "two workflows write governed operational state to `release-state`",
         "All external userscript distribution and parity monitoring is retired",
-        "release recovery ledger is now written only to `release-state`",
+        "release and recovery ledgers are written only to `release-state`",
         "six workflows use read-only repository access",
     ]:
         if claim not in document:
@@ -330,7 +368,7 @@ def main() -> int:
 
     print(
         "Branch-write inventory passed: "
-        f"{len(direct)} direct main writer, "
+        f"{len(direct)} direct main writers, "
         f"{len(state_writers)} release-state writers, "
         f"{len(orchestrators)} orchestrators, "
         f"{len(artifacts)} artifact-only workflows, "

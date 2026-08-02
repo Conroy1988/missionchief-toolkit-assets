@@ -39,7 +39,8 @@ def main() -> int:
         "discord-release-response.json",
         "message_id=$DISCORD_MESSAGE_ID",
         "discordMessageId:$discordMessageId",
-        "Dashboard, release-speed telemetry and stable update manifest updated atomically",
+        "Authoritative release-state dashboard, telemetry, announcement tracker and stable manifest updated atomically",
+        "release_state_branch.py commit",
     ], "Production release workflow")
     discord_index = release.index("      - name: Post verified release to Discord")
     state_index = release.index("      - name: Record successful release, manifest, announcement and speed state")
@@ -51,6 +52,7 @@ def main() -> int:
         "name: Verify Release Announcement State",
         "permissions:\n  contents: read",
         "persist-credentials: false",
+        "Overlay authoritative release-state dashboard",
         "Verify dashboard and first-party authority",
         "distributionAuthority",
         "tkb-website-only",
@@ -93,7 +95,7 @@ def main() -> int:
     ], "Discord release-card operations workflow")
     forbid(card_operations, ["'.distribution.installUrl'", "--install-url"], "Discord release-card operations workflow")
 
-    print("Release announcement state passed: atomic release commit and read-only verification.")
+    print("Release announcement state passed: atomic release-state commit and read-only verification.")
     return 0
 
 

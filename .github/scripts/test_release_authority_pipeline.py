@@ -135,16 +135,20 @@ def main() -> int:
     state_writers = {
         entry.get("workflow") for entry in (inventory.get("releaseStateBranchWriters") or [])
     }
-    if state_writers != {".github/workflows/release-recovery.yml"}:
-        raise AssertionError("Release-state writer inventory is not recovery-only")
+    if state_writers != {
+        ".github/workflows/release-toolkit.yml",
+        ".github/workflows/release-recovery.yml",
+    }:
+        raise AssertionError("Release-state writer inventory is not production-and-recovery only")
     if retired_workflow in (security.get("allowedWritePermissions") or {}):
         raise AssertionError("Retired monitor retains Actions write permission")
 
     release_state = (policy.get("branches") or {}).get("release-state") or {}
     if release_state.get("operationalWriters") != [
+        ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml"
     ]:
-        raise AssertionError("Release-state policy is not recovery-only")
+        raise AssertionError("Release-state policy is not production-and-recovery only")
 
     print(
         "Release authority contract passed: TKB live endpoints are the sole distribution gate and "

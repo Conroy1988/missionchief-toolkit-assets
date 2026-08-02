@@ -42,7 +42,7 @@ def main() -> int:
         "manualDispatchOnly": True,
         "authorizedActor": "Conroy1988",
         "sourceBranch": "main",
-        "allowedTargets": ["release-state", "distribution"],
+        "allowedTargets": ["distribution"],
         "planConfirmation": "PLAN SHADOW SYNC",
         "applyConfirmation": "SYNC SHADOWS",
         "credentialSecret": "DEVELOPMENT_PR_TOKEN",
@@ -59,13 +59,16 @@ def main() -> int:
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt",
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md",
+        ".github/release-announcement-version.txt",
     ]
     if release_state.get("mirroredPaths") != []:
         raise AssertionError("release-state must have no manual mirror-copy paths")
     if release_state.get("operationalPaths") != expected_state_paths:
         raise AssertionError("release-state operational ledger changed")
     if release_state.get("operationalWriters") != [
+        ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml",
     ]:
         raise AssertionError("release-state operational writers changed")
@@ -78,7 +81,7 @@ def main() -> int:
         "workflow": ".github/workflows/sync-shadow-branches.yml",
         "script": ".github/scripts/sync_shadow_branches.py",
         "source": "main",
-        "targets": ["release-state", "distribution"],
+        "targets": ["distribution"],
         "credential": "DEVELOPMENT_PR_TOKEN",
         "workflowPermission": "contents: read",
         "dispatch": "manual owner-confirmed rehearsal",
@@ -95,7 +98,7 @@ def main() -> int:
     require(
         workflow,
         [
-            "name: Rehearse Shadow Branch Synchronization",
+            "name: Rehearse Distribution Branch Synchronization",
             "workflow_dispatch:",
             "permissions:\n  contents: read",
             "github.actor == 'Conroy1988'",
@@ -124,7 +127,7 @@ def main() -> int:
         script,
         [
             "Synchronize only reviewed mirror files",
-            "preserves every operational",
+            "authoritative ``release-state`` branch is deliberately excluded",
             'RELEASE_STATE_PATHS = [',
             'RELEASE_STATE_WRITERS = [',
             'mirrored != [] or operational != RELEASE_STATE_PATHS',
@@ -173,7 +176,7 @@ def main() -> int:
         raise AssertionError("Shadow synchronization self-tests failed")
 
     print(
-        "Shadow sync writer passed: release-state mirror set empty, operational ledger preserved, "
+        "Shadow sync writer passed: release-state excluded, "
         "distribution mirror-only and no main mutation."
     )
     return 0

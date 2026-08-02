@@ -120,21 +120,6 @@ jobs:
           python3 .github/scripts/release_state_branch.py prepare \
             --worktree "$RUNNER_TEMP/release-state"
 
-      - name: Seed recovery ledger from verified main compatibility state
-        if: >-
-          inputs.operation == 'retry-private-backup' ||
-          inputs.operation == 'retry-discord'
-        env:
-          RELEASE_STATE_ROOT: ${{ steps.release_state.outputs.root }}
-          RELEASE_VERSION: ${{ inputs.version }}
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/release_recovery_state.py seed \
-            --state-root "$RELEASE_STATE_ROOT" \
-            --version "$RELEASE_VERSION"
-
       - name: Verify immutable GitHub Release bundle
         id: bundle
         env:

@@ -1,27 +1,9 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-07-28",
-  "reviewedMainCommit": "ffc6acc9e26899b8eed230cdc7c60f80350443b2",
+  "reviewedAt": "2026-08-02",
+  "reviewedMainCommit": "c9fb4222465014dbe51809f3cade9ff4131b1a4a",
   "strictProtectionEnabled": false,
-  "directMainWriters": [
-    {
-      "workflow": ".github/workflows/release-toolkit.yml",
-      "purpose": "Publish the verified first-party release and record dashboard, update-manifest and release-speed state atomically.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": [
-        "status/release-dashboard.json",
-        "status/README.md",
-        "status/update-manifest.json",
-        "status/release-speed-history.json",
-        "status/RELEASE_SPEED.md"
-      ],
-      "helperScripts": [
-        ".github/scripts/build_stable_update_manifest.py"
-      ],
-      "migrationTarget": "dedicated distribution branch plus release-state branch, written by a scoped GitHub App"
-    }
-  ],
+  "directMainWriters": [],
   "indirectMainWriteOrchestrators": [
     {
       "workflow": ".github/workflows/auto-release-after-validation.yml",
@@ -101,10 +83,28 @@
       ]
     }
   ],
-  "directMainPushSources": [
-    ".github/workflows/release-toolkit.yml"
-  ],
+  "directMainPushSources": [],
   "releaseStateBranchWriters": [
+    {
+      "workflow": ".github/workflows/release-toolkit.yml",
+      "helper": ".github/scripts/release_state_branch.py",
+      "sourceAuthority": "exact validated main candidate plus verified first-party release evidence",
+      "target": "release-state",
+      "writes": [
+        "status/release-dashboard.json",
+        "status/README.md",
+        "status/update-manifest.json",
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md",
+        ".github/release-announcement-version.txt"
+      ],
+      "credential": "github.token",
+      "actor": "github-actions[bot]",
+      "mainMutationAllowed": false,
+      "forcePushAllowed": false,
+      "liveConsumerCutoverAllowed": true,
+      "migrationState": "primary verified production state authority"
+    },
     {
       "workflow": ".github/workflows/release-recovery.yml",
       "helper": ".github/scripts/release_recovery_state.py",
@@ -115,14 +115,14 @@
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt"
+        ".github/release-announcement-version.txt"
       ],
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "mainMutationAllowed": false,
       "forcePushAllowed": false,
-      "liveConsumerCutoverAllowed": false,
-      "migrationState": "operational recovery ledger authority"
+      "liveConsumerCutoverAllowed": true,
+      "migrationState": "operational recovery authority for live release-state"
     }
   ],
   "externalRepositoryMainPushSources": [
@@ -155,7 +155,6 @@
       "script": ".github/scripts/sync_shadow_branches.py",
       "source": "main",
       "targets": [
-        "release-state",
         "distribution"
       ],
       "credential": "DEVELOPMENT_PR_TOKEN",

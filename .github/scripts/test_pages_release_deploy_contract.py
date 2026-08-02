@@ -15,9 +15,11 @@ def main() -> int:
         "format('toolkit-pages-pr-{0}', github.event.pull_request.number)",
         "'toolkit-pages-production'",
         "cancel-in-progress: true",
+        "Overlay authoritative release-state status",
         "Resolve verified production source",
-        "git fetch --no-tags --depth=1 origin main",
+        "+refs/heads/release-state:refs/remotes/origin/release-state",
         "git reset --hard origin/main",
+        "git restore --source=refs/remotes/origin/release-state",
         "latestRelease.version // empty",
         "status.githubRelease // empty",
         "status.tkbDistribution // empty",
@@ -25,6 +27,7 @@ def main() -> int:
         '.github/scripts/build_download_stats.py --self-test',
         '--output _site/data/download-stats.json',
         "source_sha=$SOURCE_SHA",
+        "release_state_sha=$RELEASE_STATE_SHA",
         'grep -Fq "${{ steps.production.outputs.release_version }}" _site/index.html',
         ".github/scripts/test_pages_release_deploy_contract.py",
     ]
@@ -64,7 +67,7 @@ def main() -> int:
     summary_index = release.index("Write release summary")
     assert state_index < dispatch_index < summary_index
 
-    print("Pages deployment contract passed: verified source, one production concurrency group and asynchronous non-blocking release dispatch.")
+    print("Pages deployment contract passed: verified main source plus authoritative release-state, one production concurrency group and asynchronous non-blocking release dispatch.")
     return 0
 
 

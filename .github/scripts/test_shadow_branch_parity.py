@@ -32,9 +32,9 @@ def main() -> int:
 
     for key, expected in {
         "schemaVersion": 1,
-        "mode": "shadow-rehearsal",
-        "mainAuthorityPreserved": True,
-        "liveConsumersEnabled": False,
+        "mode": "operational-cutover",
+        "mainAuthorityPreserved": False,
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
@@ -50,7 +50,9 @@ def main() -> int:
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt",
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md",
+        ".github/release-announcement-version.txt",
     ]
     release_state = branches["release-state"]
     if release_state.get("governedPaths") != state_paths:
@@ -60,11 +62,12 @@ def main() -> int:
     if release_state.get("operationalPaths") != state_paths:
         raise AssertionError("release-state operational ledger changed")
     if release_state.get("operationalWriters") != [
+        ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml",
     ]:
         raise AssertionError("release-state operational writers changed")
-    if release_state.get("externalConsumersEnabled") is not False:
-        raise AssertionError("release-state external consumers must remain disabled")
+    if release_state.get("externalConsumersEnabled") is not True:
+        raise AssertionError("release-state external consumers must remain enabled")
 
     distribution = branches["distribution"]
     expected_distribution = [
@@ -93,13 +96,15 @@ def main() -> int:
             "Operational",
             'POLICY_PATH = ROOT / ".github" / "shadow-branch-policy.json"',
             'writers = policy.get("operationalWriters")',
-            "release-state must keep all recovery-ledger paths operational",
+            "release-state must keep all production-ledger paths operational",
             "release-state operational writers changed",
             "validate_operational_content",
             'path == "status/release-dashboard.json"',
             'path == "status/README.md"',
             'path == "status/update-manifest.json"',
-            'path == ".github/greasyfork-version.txt"',
+            'path == "status/release-speed-history.json"',
+            'path == "status/RELEASE_SPEED.md"',
+            'path == ".github/release-announcement-version.txt"',
             "cross_validate_release_state",
             "stable manifest is ahead of the recovery dashboard",
             "announcement tracker is ahead of the recovery dashboard",
@@ -145,7 +150,7 @@ def main() -> int:
 
     print(
         "Operational branch governance passed: complete release-state ledger schemas, "
-        "cross-file version ordering, distribution mirrors and no external cutover."
+        "cross-file version ordering, live release-state consumers and distribution mirrors."
     )
     return 0
 

@@ -50,29 +50,30 @@ def main() -> int:
             "status/release-dashboard.json",
             "status/README.md",
             "status/update-manifest.json",
-            ".github/greasyfork-version.txt",
+            ".github/release-announcement-version.txt",
         ],
         "credential": "github.token",
         "actor": "github-actions[bot]",
         "mainMutationAllowed": False,
         "forcePushAllowed": False,
-        "liveConsumerCutoverAllowed": False,
-        "migrationState": "operational recovery ledger authority",
+        "liveConsumerCutoverAllowed": True,
+        "migrationState": "operational recovery authority for live release-state",
     }
     if state_entries.get(expected["workflow"]) != expected:
         raise AssertionError("Release recovery inventory changed")
 
     release_state = (policy.get("branches") or {}).get("release-state") or {}
-    if release_state.get("operationalPaths") != expected["writes"]:
+    if not set(expected["writes"]) <= set(release_state.get("operationalPaths") or []):
         raise AssertionError("Release-state recovery path authority changed")
     if release_state.get("operationalWriters") != [
+        ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml",
     ]:
         raise AssertionError("Release-state recovery writers changed")
     if release_state.get("mirroredPaths") != []:
         raise AssertionError("Release-state cannot retain mirror-copy authority")
-    if release_state.get("externalConsumersEnabled") is not False:
-        raise AssertionError("Release-state external consumers must remain disabled")
+    if release_state.get("externalConsumersEnabled") is not True:
+        raise AssertionError("Release-state external consumers must remain enabled")
 
     require(
         workflow,
@@ -91,8 +92,6 @@ def main() -> int:
             "Verify recovery-state self-tests",
             "Prepare governed release-state worktree",
             "release_state_branch.py prepare",
-            "Seed recovery ledger from verified main compatibility state",
-            "release_recovery_state.py seed",
             "Record private backup recovery on release-state",
             "record-backup",
             "Claim Discord retry on release-state without posting",
@@ -130,8 +129,7 @@ def main() -> int:
             'DASHBOARD_REL = Path("status/release-dashboard.json")',
             'README_REL = Path("status/README.md")',
             'MANIFEST_REL = Path("status/update-manifest.json")',
-            'TRACKER_REL = Path(".github/greasyfork-version.txt")',
-            "seed_from_main",
+            'TRACKER_REL = Path(".github/release-announcement-version.txt")',
             "record_backup",
             "claim_discord",
             "finalize_discord",
@@ -172,10 +170,10 @@ def main() -> int:
     )
 
     for marker in [
-        "release recovery ledger is now written only to `release-state`",
+        "release and recovery ledgers are written only to `release-state`",
         "release_recovery_state.py",
         "release-recovery.yml",
-        "one workflow that can commit directly to public `main`",
+        "no workflow can commit directly to public `main`",
     ]:
         if marker not in document:
             raise AssertionError(f"Human inventory is missing recovery migration marker: {marker}")

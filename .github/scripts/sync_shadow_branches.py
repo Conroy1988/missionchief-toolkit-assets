@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Synchronize only reviewed mirror files to Issue #41 operational branches.
+"""Synchronize only reviewed mirror files to the non-live distribution branch.
 
-The synchronizer is deliberately non-live. It accepts only the reviewed
-``release-state`` and ``distribution`` branches, preserves every operational
-path, requires an exact source SHA and confirmation phrase, and never updates
-public ``main``.
+The authoritative ``release-state`` branch is deliberately excluded. The
+synchronizer requires an exact source SHA and confirmation phrase and never
+updates public ``main``.
 """
 
 from __future__ import annotations
@@ -29,9 +28,12 @@ RELEASE_STATE_PATHS = [
     "status/release-dashboard.json",
     "status/README.md",
     "status/update-manifest.json",
-    ".github/greasyfork-version.txt",
+    "status/release-speed-history.json",
+    "status/RELEASE_SPEED.md",
+    ".github/release-announcement-version.txt",
 ]
 RELEASE_STATE_WRITERS = [
+    ".github/workflows/release-toolkit.yml",
     ".github/workflows/release-recovery.yml",
 ]
 
@@ -76,19 +78,20 @@ def validate_path_classes(branch: str, policy: dict) -> tuple[list[str], list[st
         raise SyncError(f"{branch} path classes do not partition governedPaths")
     if ROLE_PATH in governed:
         raise SyncError(f"{branch} role file must never be copied from main")
-    if policy.get("externalConsumersEnabled") is not False:
-        raise SyncError(f"{branch} external consumers must remain disabled")
-
     if branch == "release-state":
         if mirrored != [] or operational != RELEASE_STATE_PATHS:
-            raise SyncError("release-state recovery ledger must remain operational and mirror-free")
+            raise SyncError("release-state authority must remain operational and mirror-free")
         if writers != RELEASE_STATE_WRITERS:
             raise SyncError("release-state operational writers changed")
+        if policy.get("externalConsumersEnabled") is not True:
+            raise SyncError("release-state external consumers must remain enabled")
     elif branch == "distribution":
         if operational or writers:
             raise SyncError("distribution cannot have operational paths before cutover")
         if mirrored != governed:
             raise SyncError("distribution governed paths must remain mirrored")
+        if policy.get("externalConsumersEnabled") is not False:
+            raise SyncError("distribution external consumers must remain disabled")
     else:
         raise SyncError(f"Unsupported operational branch: {branch}")
     return list(mirrored), list(operational)
@@ -97,9 +100,9 @@ def validate_path_classes(branch: str, policy: dict) -> tuple[list[str], list[st
 def validate_policy(policy: dict) -> dict:
     expected = {
         "schemaVersion": 1,
-        "mode": "shadow-rehearsal",
-        "mainAuthorityPreserved": True,
-        "liveConsumersEnabled": False,
+        "mode": "operational-cutover",
+        "mainAuthorityPreserved": False,
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
@@ -114,7 +117,7 @@ def validate_policy(policy: dict) -> dict:
         "manualDispatchOnly": True,
         "authorizedActor": "Conroy1988",
         "sourceBranch": "main",
-        "allowedTargets": ["release-state", "distribution"],
+        "allowedTargets": ["distribution"],
         "planConfirmation": "PLAN SHADOW SYNC",
         "applyConfirmation": "SYNC SHADOWS",
         "credentialSecret": "DEVELOPMENT_PR_TOKEN",
@@ -126,8 +129,8 @@ def validate_policy(policy: dict) -> dict:
     if writer != expected_writer:
         raise SyncError("writerRehearsal policy changed")
     branches = policy.get("branches")
-    if not isinstance(branches, dict) or set(branches) != set(writer["allowedTargets"]):
-        raise SyncError("Operational branch definitions differ from the target allowlist")
+    if not isinstance(branches, dict) or set(branches) != {"release-state", "distribution"}:
+        raise SyncError("Operational branch definitions must include release-state and distribution")
     for branch, branch_policy in branches.items():
         if not isinstance(branch_policy, dict):
             raise SyncError(f"Invalid branch policy for {branch}")
@@ -137,8 +140,6 @@ def validate_policy(policy: dict) -> dict:
 
 def selected_targets(value: str, writer: dict) -> list[str]:
     allowed = list(writer["allowedTargets"])
-    if value == "both":
-        return allowed
     if value == "main" or value not in allowed:
         raise SyncError(f"Target {value!r} is not an approved operational branch")
     return [value]
@@ -381,9 +382,9 @@ def render_markdown(report: dict) -> str:
 def self_test() -> None:
     policy = {
         "schemaVersion": 1,
-        "mode": "shadow-rehearsal",
-        "mainAuthorityPreserved": True,
-        "liveConsumersEnabled": False,
+        "mode": "operational-cutover",
+        "mainAuthorityPreserved": False,
+        "liveConsumersEnabled": True,
         "strictProtectionEnabled": False,
         "administratorRecoveryRequired": True,
         "cutoverIssue": 41,
@@ -392,7 +393,7 @@ def self_test() -> None:
             "manualDispatchOnly": True,
             "authorizedActor": "Conroy1988",
             "sourceBranch": "main",
-            "allowedTargets": ["release-state", "distribution"],
+            "allowedTargets": ["distribution"],
             "planConfirmation": "PLAN SHADOW SYNC",
             "applyConfirmation": "SYNC SHADOWS",
             "credentialSecret": "DEVELOPMENT_PR_TOKEN",
@@ -407,7 +408,7 @@ def self_test() -> None:
                 "mirroredPaths": [],
                 "operationalPaths": RELEASE_STATE_PATHS,
                 "operationalWriters": RELEASE_STATE_WRITERS,
-                "externalConsumersEnabled": False,
+                "externalConsumersEnabled": True,
             },
             "distribution": {
                 "governedPaths": ["dist/release-manifest.json"],
@@ -421,14 +422,14 @@ def self_test() -> None:
     writer, targets = validate_request(
         policy=policy,
         mode="plan",
-        target="both",
+        target="distribution",
         source_sha="a" * 40,
         confirmation="PLAN SHADOW SYNC",
         actor="Conroy1988",
         write_probe=False,
     )
     assert writer["sourceBranch"] == "main"
-    assert targets == ["release-state", "distribution"]
+    assert targets == ["distribution"]
     mirrored, operational = validate_path_classes("release-state", policy["branches"]["release-state"])
     assert mirrored == []
     assert operational == RELEASE_STATE_PATHS
@@ -444,7 +445,7 @@ def self_test() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("plan", "apply"))
-    parser.add_argument("--target", choices=("both", "release-state", "distribution"))
+    parser.add_argument("--target", choices=("distribution",))
     parser.add_argument("--source-sha")
     parser.add_argument("--confirmation")
     parser.add_argument("--actor")

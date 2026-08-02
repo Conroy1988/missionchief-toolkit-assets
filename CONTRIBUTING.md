@@ -55,7 +55,7 @@ Pull requests may run userscript validation, code-integrity auditing, performanc
 
 ## Releases
 
-Do not manually publish partial release state. Production releases use the reviewed release-readiness and release workflows, which coordinate GitHub Releases, Greasy Fork, the private migration archive, status records and Discord announcements.
+Do not manually publish partial release state. Production releases use the reviewed release-readiness and release workflows, which coordinate GitHub Releases, TKB Website distribution, the private migration archive, authoritative `release-state` records and Discord announcements.
 
 ## Pull-request content
 

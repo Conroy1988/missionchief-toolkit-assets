@@ -1,6 +1,6 @@
 # Documentation media programme
 
-This directory is reserved for reviewed screenshots and short demonstrations used by GitHub, Greasy Fork and the public documentation site.
+This directory is reserved for reviewed screenshots and short demonstrations used by GitHub, the TKB Website and the public documentation site.
 
 ## Repository landing visuals
 

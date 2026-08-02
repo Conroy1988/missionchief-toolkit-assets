@@ -29,11 +29,12 @@ def main() -> int:
     builder = BUILDER.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
-    start = source.index("    // Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.")
+    marker = "    // Issue #153 introduced the control; Issues #639 and #41 make verified TKB release discovery live and release-state authoritative."
+    start = source.index(marker)
     end = source.index("    function createCleanExit() {", start)
     block = source[start:end]
 
-    assert source.count("// Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.") == 1
+    assert source.count(marker.strip()) == 1
     assert "productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/'" in block
     assert "cacheMs: 60 * 1000" in block
     assert "autoIntervalMs: 60 * 1000" in block
@@ -83,12 +84,11 @@ def main() -> int:
     ]:
         assert marker in block, f"version-status runtime marker missing: {marker}"
     primary_manifest = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json"
-    compatibility_manifest = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json"
     assert primary_manifest in block
-    assert compatibility_manifest in block
-    assert block.index(primary_manifest) < block.index(compatibility_manifest)
-    assert "manifestUrls: Object.freeze([" in block
-    assert "endpointIndex < VERSION_STATUS.manifestUrls.length" in block
+    assert "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json" not in block
+    assert "manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json'" in block
+    assert "manifestUrls" not in block
+    assert "endpointIndex" not in block
     assert "pageWindow.open(VERSION_STATUS.productUrl" in block
     assert "pageWindow.open(destination" not in block
     assert "versionStatusPresentation(SCRIPT.version, manifest).destination" not in block
@@ -147,9 +147,10 @@ def main() -> int:
 
     dashboard_index = release_workflow.index("- name: Record successful release, manifest, announcement and speed state")
     build_index = release_workflow.index("python3 .github/scripts/build_stable_update_manifest.py", dashboard_index)
-    push_index = release_workflow.index("git push origin HEAD:main", build_index)
-    pages_index = release_workflow.index("- name: Dispatch GitHub Pages asynchronously", push_index)
-    assert dashboard_index < build_index < push_index < pages_index
+    state_commit_index = release_workflow.index("release_state_branch.py commit", build_index)
+    pages_index = release_workflow.index("- name: Dispatch GitHub Pages asynchronously", state_commit_index)
+    assert "git push origin HEAD:main" not in release_workflow
+    assert dashboard_index < build_index < state_commit_index < pages_index
 
     result = subprocess.run(["node", str(RUNTIME)], cwd=ROOT)
     assert result.returncode == 0, "version status runtime fixtures failed"

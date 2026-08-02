@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.3.5] - 2026-08-02
+
+### Long-session memory lifecycle repair
+
+- Releases Mission Value and Custom Vehicle Badge observers and frame listeners as soon as their mission documents, frames or toolbar hosts are replaced or closed, instead of retaining them until the whole Toolkit runtime ends.
+- Removes Command Palette listeners on every close and releases listener ownership from replaced version controls and command-shell elements before their DOM nodes are removed.
+- Restricts Mission Value to a connected MissionChief mission popup containing real mission content; it no longer renders on the map shell, unrelated dialogs or full-page mission routes.
+- Keeps one Mission Value indicator per live mission host while preserving the existing toolbar/fallback presentation, currency formatting and saved feature state.
+- Adds 1,000 deterministic churn cycles covering Command Palette overlays, mission hosts, mission documents/frames and Custom Vehicle Badge documents/frames, with every listener, observer and detached node returning to a zero-retention baseline.
+- Leaves timers, request cadence, network activity, themes and Desktop/Tablet/iOS layout behaviour unchanged.
+
 ## [10.3.4] - 2026-08-02
 
 ### Compact Desktop command workspace

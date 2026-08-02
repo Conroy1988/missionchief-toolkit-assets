@@ -46,6 +46,7 @@ class FakeElement {
     getAttribute(name) { return this.attributes.get(name) || null; }
     querySelector(selector) { return this.queryMap.get(selector) || null; }
     addEventListener(type, listener) { const list = this.listeners.get(type) || []; list.push(listener); this.listeners.set(type, list); }
+    removeEventListener(type, listener) { const list = this.listeners.get(type) || []; this.listeners.set(type, list.filter(item => item !== listener)); }
     appendChild(child) { child.parentNode = this; child.ownerDocument ||= this.ownerDocument; child.isConnected = true; this.children.push(child); child.ownerDocument?.nodes.add(child); return child; }
     insertBefore(child, reference) { if (child.parentNode) child.parentNode.children = child.parentNode.children.filter(item => item !== child); child.parentNode = this; child.ownerDocument ||= this.ownerDocument; child.isConnected = true; const index = this.children.indexOf(reference); if (index >= 0) this.children.splice(index, 0, child); else this.children.push(child); child.ownerDocument?.nodes.add(child); return child; }
     contains(node) { return this === node || this.children.some(child => child.contains?.(node)); }
@@ -102,6 +103,17 @@ const context = {
     document,
     runtime: { destroyed: false, requests: new Set(), fetchControllers: new Set() },
     runtimeListen: (target, type, listener, options) => { target.addEventListener(type, listener, options); listenedEvents.push({ target, type, listener, options }); },
+    runtimeUnlistenTarget: target => {
+        let removed = 0;
+        for (let index = listenedEvents.length - 1; index >= 0; index -= 1) {
+            const record = listenedEvents[index];
+            if (record.target !== target) continue;
+            record.target.removeEventListener(record.type, record.listener, record.options);
+            listenedEvents.splice(index, 1);
+            removed += 1;
+        }
+        return removed;
+    },
     runtimeSetTimeout: (callback, delay) => setTimeout(callback, delay),
     runtimeClearTimeout: timer => clearTimeout(timer),
     toolkitCommandShellContextActive: () => true,
@@ -314,6 +326,7 @@ function click(element, overrides = {}) {
     await staleCheck;
     assert.equal(document.getElementById(api.constants.buttonId), null);
     assert.equal(document.getElementById(api.constants.alertStyleId), null);
+    assert.equal(listenedEvents.filter(record => record.target === first).length, 0, 'teardown retained version-button listeners');
     staleOptions?.onload?.({ status: 200, responseText: JSON.stringify(manifest('99.0.0')) });
     assert.notEqual(api.model().manifest?.version, '99.0.0', 'stale response changed version state after teardown');
 

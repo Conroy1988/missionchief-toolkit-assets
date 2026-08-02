@@ -63,7 +63,7 @@ function createHarness(pathname = "/", body = MAP_HTML) {
     pretendToBeVisual: true,
   });
   const { window } = dom;
-  const calls = { controls: 0, panels: 0, keyboardCommands: 0, invalidations: 0 };
+  const calls = { controls: 0, panels: 0, keyboardCommands: 0, invalidations: 0, listenerReleases: 0 };
   const SCRIPT = {
     version: "10.2.5",
     controlId: "mc-map-command-toolkit-control",
@@ -150,6 +150,8 @@ function createHarness(pathname = "/", body = MAP_HTML) {
     positionPayoutFlashOverlay: () => undefined,
     toolkitApplyCommandBarState: () => undefined,
     disposeVersionStatus: () => undefined,
+    runtimeUnlistenTarget: () => { calls.listenerReleases += 1; return 0; },
+    runtimePruneDisconnectedListeners: () => 0,
     INPUT_COMMAND_META: { menu: { action: "menu" } },
     keyboardBindingFromEvent: () => "M",
     isTypingTarget: () => false,
@@ -219,6 +221,7 @@ for (const id of [canonical.SCRIPT.controlId, canonical.SCRIPT.panelId, canonica
   assert.equal(canonical.window.document.getElementById(id), null, `${id} survived map departure`);
 }
 assert.ok(canonical.window.document.getElementById("supported-page-enhancement"), "page-specific enhancement was removed");
+assert.ok(canonical.calls.listenerReleases >= 4, "command-shell teardown did not release removed-node listeners");
 canonical.window.history.pushState({}, "", "/");
 await flush();
 assert.equal(canonical.calls.controls, 2, "returning to map did not remount exactly once");

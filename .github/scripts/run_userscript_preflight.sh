@@ -34,6 +34,7 @@ node .github/scripts/test_issue612_command_experience_runtime.mjs
 node .github/scripts/test_issue614_quick_places_runtime.mjs
 node .github/scripts/test_issue616_toolkit_doctor_runtime.mjs
 node .github/scripts/test_issue618_command_palette_runtime.mjs
+node .github/scripts/test_issue661_memory_lifecycle_runtime.mjs
 node .github/scripts/test_issue620_personalisation_runtime.mjs
 node .github/scripts/test_issue622_command_experience_runtime.mjs
 node .github/scripts/test_issue624_operational_map_flow_runtime.mjs

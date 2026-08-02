@@ -51,6 +51,11 @@ def main() -> int:
         "missionValuePreferredCandidates(candidateList)",
         "missionValueRowsForCandidate(candidate)",
         "missionValueHostObservers",
+        "missionValueDocumentObservers",
+        "missionValueFrameListeners",
+        "missionValuePopupRoot(root)",
+        "missionValuePopupMissionId(root)",
+        "pruneMissionValueTracking(activeDocuments, activeFrames)",
         "pruneMissionValueHostObservers(activeSpacers)",
         "new ResizeObserverCtor",
         "toolbarSpacer.appendChild(row)",
@@ -71,6 +76,8 @@ def main() -> int:
     assert "function missionValueRightControlOffset" not in source
     assert "function positionMissionValueRow" not in source
     assert "missionValueRowsAcrossDocuments" not in source
+    assert "missionValueObservedDocuments" not in source
+    assert "missionValueObservedFrames" not in source
     assert "mountRect.right - leftEdge + 16" not in source
 
     row_rule = re.search(r"\.mcms-mission-value-row\s*\{(?P<body>.*?)\n\s*\}", source, re.S)
@@ -88,6 +95,9 @@ def main() -> int:
         "missionValueCurrencyMeta",
         "formatMissionWindowValue",
         "missionValueIdFromUrl",
+        "missionValueIdFromElement",
+        "missionValuePopupRoot",
+        "missionValuePopupMissionId",
         "missionValuePresentation",
         "missionValuePreferredCandidates",
     ])
@@ -96,6 +106,9 @@ def main() -> int:
     harness = r'''"use strict";
 const assert = require("node:assert/strict");
 global.location = { hostname: "missionchief.co.uk", href: "https://missionchief.co.uk/" };
+const document = {};
+const MISSION_VALUE_POPUP_SELECTOR = "#lightbox_box, #lightbox, .lightbox_content, .lightbox, .modal.show, .modal.in, [role=dialog], .ui-dialog-content, .ui-dialog";
+const MISSION_VALUE_CONTENT_SELECTOR = "#mission-form, #mission_content, .mission_content, [data-mission-content], [data-mission-id], [data-mission_id], input[name=mission_id], input[name=mission\\[id\\]], form[action*=missions]";
 function normaliseMissionId(value) {
   const number = Number(value);
   return Number.isInteger(number) && number > 0 ? number : null;
@@ -110,6 +123,29 @@ assert.equal(formatMissionWindowValue("not-a-value", "missionchief.co.uk"), "");
 assert.equal(missionValueIdFromUrl("/missions/98765"), 98765);
 assert.equal(missionValueIdFromUrl("https://missionchief.co.uk/missions/42/missing_vehicles"), 42);
 assert.equal(missionValueIdFromUrl("/vehicles/42"), null);
+function popupFixture({ popup = false, missionContent = false, missionId = null } = {}) {
+  const linkedMission = { getAttribute(name) { return name === "href" ? "/missions/999" : null; } };
+  const root = {
+    isConnected: true,
+    ownerDocument: document,
+    dataset: missionId ? { missionId: String(missionId) } : {},
+    id: "",
+    value: "",
+    matches(selector) { return popup && selector === MISSION_VALUE_POPUP_SELECTOR; },
+    closest(selector) { return popup && selector === MISSION_VALUE_POPUP_SELECTOR ? this : null; },
+    querySelector(selector) { return missionContent && selector === MISSION_VALUE_CONTENT_SELECTOR ? this : null; },
+    querySelectorAll(selector) {
+      if (selector.includes("[data-mission-id]")) return missionId ? [this] : [];
+      if (selector.includes('a[href*="/missions/"]')) return [linkedMission];
+      return [];
+    },
+    getAttribute(name) { return name === "data-mission-id" && missionId ? String(missionId) : null; }
+  };
+  return root;
+}
+assert.equal(missionValuePopupRoot(popupFixture({ popup: false, missionContent: true, missionId: 77 })), null, "full-page mission content must not own Mission Value");
+assert.equal(missionValuePopupMissionId(popupFixture({ popup: true })), null, "an unrelated dialog containing a mission link must not own Mission Value");
+assert.equal(missionValuePopupMissionId(popupFixture({ popup: true, missionContent: true, missionId: 77 })), 77, "the live mission popup must own Mission Value");
 for (const testCase of presentationCases) {
   assert.deepEqual(
     missionValuePresentation(testCase.width, testCase.formatted),

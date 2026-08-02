@@ -4,13 +4,16 @@ This directory is reserved for reviewed screenshots and short demonstrations use
 
 ## Repository landing visuals
 
-The root README uses three original, text-free editorial images:
+The root README uses four original, photoreal editorial images:
 
-- `readme-hero-operations.webp` — coordinated UK multi-agency city response
-- `readme-field-command.webp` — wide incident and fleet coordination view
-- `readme-control-room.webp` — map-led emergency operations room
+- `readme-v2-command-centre.webp` — rain-lit British command centre and coordinated city response
+- `readme-v2-operational-picture.webp` — elevated UK road and rail multi-agency operation
+- `readme-v2-command-post.webp` — coherent Toolkit workspace across desktop, tablet and mobile
+- `readme-v2-release-integrity.webp` — secure release validation and recovery environment
 
-All three images are 1600 × 900 WebP assets, contain no product copy, and keep typography in native Markdown so the landing page remains readable and responsive.
+All four images are 1600 × 900 WebP assets. The photoreal scenes were generated specifically for the Toolkit and do not contain private account data, third-party logos or embedded version information. A deterministic image-composition pass adds the exact MissionChief Map Command Toolkit command plate, signal colours and product copy; this prevents generated lettering errors and keeps branding aligned at every viewport width.
+
+The previous `readme-hero-operations.webp`, `readme-field-command.webp` and `readme-control-room.webp` assets remain available for historical documentation references.
 
 ## Required capture set
 

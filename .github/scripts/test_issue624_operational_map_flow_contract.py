@@ -18,7 +18,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.3.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.3.2"
 
     for required in [
         "delete merged.missionProgressRings",
@@ -98,7 +98,7 @@ def main() -> int:
     for feature in ["unitLocator", "sessionCleanup"]:
         assert f'data-feature="{feature}"' in briefing
 
-    print("Issue #624 v10.2.3 retirement contract passed: progress rings and Alliance Chat previews are absent.")
+    print("Issue #624 v10.3.2 retirement contract passed: progress rings and Alliance Chat previews are absent.")
     return 0
 
 

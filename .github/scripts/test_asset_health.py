@@ -328,6 +328,21 @@ def test_repository_audio_contract() -> None:
     )
     assert not report["failures"], report
 
+
+def test_asset_health_workflow_uses_release_state() -> None:
+    workflow = (REPOSITORY_ROOT / ".github/workflows/asset-health-monitor.yml").read_text(
+        encoding="utf-8"
+    )
+    for marker in [
+        "persist-credentials: false",
+        "Overlay authoritative release-state status",
+        "+refs/heads/release-state:refs/remotes/origin/release-state",
+        "git restore --source=refs/remotes/origin/release-state",
+        "status/release-dashboard.json",
+        "status/update-manifest.json",
+    ]:
+        assert marker in workflow, marker
+
 def main() -> None:
     tests = [
         test_live_success_and_optional_warning,
@@ -340,7 +355,8 @@ def main() -> None:
         test_audio_alias_contract_hash_mismatch,
         test_audio_alias_contract_undeclared_duplicate,
         test_audio_alias_contract_orphan_audio,
-        test_repository_audio_contract
+        test_repository_audio_contract,
+        test_asset_health_workflow_uses_release_state
     ]
     for test in tests:
         test()

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 652,
-  "expectedMain": "0c2091473ae947e3ab40142434e4359bc2a0f604",
-  "expectedHead": "b3c43f721b192248f252ca17e12be116426e3017",
-  "nonce": "issue650-desktop-density-v2-20260802a"
+  "prNumber": 654,
+  "expectedMain": "c9fb4222465014dbe51809f3cade9ff4131b1a4a",
+  "expectedHead": "5bbc1c51405a3d3bc98ca05c004ba7184e444ef1",
+  "nonce": "issue650-desktop-density-v3-20260802a"
 }

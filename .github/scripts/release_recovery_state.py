@@ -258,6 +258,9 @@ def rebuild_dashboard(
 
     completed = now()
     dashboard["currentVersion"] = version
+    source = dashboard.setdefault("source", {})
+    source["validatedSha256"] = sha256
+    source["state"] = "validated-canonical-source"
     status = dashboard.setdefault("status", {})
     status.pop("greasyForkSync", None)
     status.update(

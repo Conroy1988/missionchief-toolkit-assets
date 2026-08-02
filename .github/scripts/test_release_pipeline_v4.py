@@ -32,6 +32,8 @@ assert "gh run watch" not in p
 assert "git push origin HEAD:main" not in p
 assert "Prepare authoritative release-state worktree" in p
 assert "release_state_branch.py commit" in p
+assert ".source.validatedSha256=$hash" in p
+assert '.source.state="validated-canonical-source"' in p
 assert 'validated_sha: ${{ needs.authorize.outputs.expected_main }}' in o
 assert '"candidateCommit":a.source' in rec and 'previous["recordedCommit"]=previous.pop("sourceSha256")' in rec
 h=json.loads((r/"status/release-speed-history.json").read_text())

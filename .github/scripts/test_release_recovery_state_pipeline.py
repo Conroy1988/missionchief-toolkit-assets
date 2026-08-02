@@ -138,6 +138,8 @@ def main() -> int:
             "build_manifest(state_root)",
             "commit_state",
             'status.pop("greasyForkSync", None)',
+            'source["validatedSha256"] = sha256',
+            'source["state"] = "validated-canonical-source"',
             "Discord recovery claim changed before finalization",
             "Release recovery state self-tests passed.",
         ],

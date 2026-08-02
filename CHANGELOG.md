@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.3.2] - 2026-08-02
+
+### Compact Desktop command workspace
+
+- Keeps the v10.3.1 adaptive Desktop command surface while capping wide-screen command groups at a compact 210px track instead of distributing every spare map pixel.
+- Pulls Visibility, Intelligence, Dashboard and Performance into a denser content-sized cluster and keeps the pinned EDI/NCL/WKFD/LDN strip aligned to the same workspace width.
+- Preserves the current 36px control height, readable labels, keyboard badges, state text, four-group wide layout and adaptive three-, two- and one-column fallbacks.
+- Leaves Tablet, iPad and iOS geometry unchanged and retains every dock position, Incident Wire reservation, zoom range, auto-hide, launcher, pins and short-map scrolling safeguard.
+- Extends the existing Desktop runtime and static contracts to reject over-wide tracks and unused horizontal space without adding a request, timer, listener or observer.
+
 ## [10.3.1] - 2026-08-02
 
 ### Adaptive Desktop command workspace

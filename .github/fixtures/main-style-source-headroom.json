@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 645,
-    "version": "10.3.1",
-    "sourceBytes": 2134000,
-    "sourceLines": 32230,
-    "sourceSha256": "b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829",
+    "issue": 650,
+    "version": "10.3.2",
+    "sourceBytes": 2134498,
+    "sourceLines": 32237,
+    "sourceSha256": "4b9b2f1617114a8e7e42c86c6845cf32ae3fcfc30453d6a97a9bb6bbeacc3c55",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2146200,
     "maxSourceLines": 32350,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.0",
+    "baseline": "10.3.1",
     "approvedGrowth": {
-      "sourceBytes": 8781,
-      "sourceLines": 80,
+      "sourceBytes": 498,
+      "sourceLines": 7,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #645 adaptive full-width Desktop command workspace with compact responsive group and pin grids"
+    "scope": "Issue #650 compact content-sized Desktop command workspace tracks and aligned pinned shortcuts"
   }
 }

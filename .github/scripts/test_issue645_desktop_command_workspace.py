@@ -23,6 +23,8 @@ def main() -> int:
         "--mcms-desktop-pin-columns",
         "mcmsDesktopDockSize",
         "mcmsDesktopDockScroll",
+        "preferredGroupWidth",
+        "availableContentWidth",
     ):
         assert fragment in layout, f"adaptive Desktop layout is missing {fragment}"
     assert "ResizeObserver" not in layout and "setInterval" not in layout

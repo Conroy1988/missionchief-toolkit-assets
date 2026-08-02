@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.6
+// @version      10.3.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.6',
+        version: '10.3.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -521,6 +521,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         legacyTheme: 'mc_map_command_skins_theme_v2',
         legacyPosition: 'mc_map_command_skins_position_v1'
     };
+
+    const RELEASE_BRIEFING = Object.freeze({
+        version: "10.3.7",
+        title: "Accurate launch patch notes",
+        highlights: Object.freeze([
+            "Replaces the fixed v10.2 launch briefing with the title and highlights for the installed Toolkit release.",
+            "Binds the briefing version, release title and highlights to the canonical userscript version and current changelog entry.",
+            "Makes validation fail when a future version is prepared without refreshing its launch patch notes, preventing silent release drift.",
+            "Adds a direct Full Patch Notes action to the immutable GitHub release while keeping the official TKB installer route.",
+            "Preserves once-per-version display, opt-out, manual reopen, feature badges and Desktop, Tablet and iOS behaviour without adding runtime activity."
+        ])
+    });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
     const previousRuntime = pageWindow[RUNTIME_KEY];
     if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) return;
@@ -11928,7 +11940,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         .mcms-doctor-results strong { color:#fff !important; font-size:12px !important; }.mcms-doctor-results p { margin:3px 0 0 !important; color:#9eb2c2 !important; font-size:10px !important; line-height:1.4 !important; }
         .mcms-update-version { display:flex !important; align-items:center !important; justify-content:space-between !important; margin-bottom:13px !important; padding:13px 15px !important; border:1px solid rgba(103,201,255,.32) !important; border-radius:11px !important; background:linear-gradient(120deg,rgba(12,114,166,.2),rgba(255,255,255,.03)) !important; }
         .mcms-update-version span { color:#8bcff4 !important; font-size:9px !important; font-weight:900 !important; letter-spacing:.14em !important; }.mcms-update-version strong { color:#fff !important; font-size:24px !important; }
-        .mcms-update-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; }.mcms-update-grid article { padding:11px 12px !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:10px !important; background:rgba(255,255,255,.035) !important; }.mcms-update-grid b { color:#7dd3ff !important; font-size:12px !important; }.mcms-update-grid p { margin:4px 0 0 !important; color:#a2b6c4 !important; font-size:10px !important; line-height:1.4 !important; }
+        .mcms-update-release { padding:13px 14px !important; border:1px solid rgba(125,211,255,.24) !important; border-radius:11px !important; background:rgba(255,255,255,.035) !important; }
+        .mcms-update-release > b { color:#7dd3ff !important; font-size:14px !important; }
+        .mcms-update-highlights { display:grid !important; gap:8px !important; margin:10px 0 0 !important; padding:0 0 0 18px !important; color:#b7c9d5 !important; font-size:11px !important; line-height:1.45 !important; }
+        .mcms-update-highlights li::marker { color:#67c9ff !important; }
+        .mcms-update-actions { display:flex !important; flex-wrap:wrap !important; gap:8px !important; margin-top:10px !important; }
         #${SCRIPT.quickWheelId} { position:fixed !important; left:var(--mcms-wheel-x) !important; top:var(--mcms-wheel-y) !important; z-index:2147483500 !important; width:0 !important; height:0 !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important; }
         #${SCRIPT.quickWheelId} > button { position:absolute !important; left:0 !important; top:0 !important; width:76px !important; min-height:52px !important; transform:translate(-50%,-50%) !important; border:1px solid rgba(118,207,255,.55) !important; border-radius:12px !important; background:linear-gradient(150deg,rgba(25,47,62,.98),rgba(7,15,22,.98)) !important; color:#fff !important; box-shadow:0 8px 24px rgba(0,0,0,.56) !important; display:grid !important; place-items:center !important; align-content:center !important; gap:2px !important; }
         #${SCRIPT.quickWheelId} > button b { color:#70d2ff !important; font-size:15px !important; }#${SCRIPT.quickWheelId} > button span { font-size:8px !important; font-weight:800 !important; text-align:center !important; }
@@ -11946,7 +11962,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} .mcms-tab-panel { gap:4px !important; padding:5px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-row-label,.mcms-label,.mcms-status) { font-size:8px !important; line-height:1.25 !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-input,.mcms-select,.mcms-small-btn) { min-height:28px !important; font-size:9px !important; }
-        @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-grid { grid-template-columns:1fr !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
+        @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-actions button { flex:1 1 180px !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
         @media (prefers-reduced-motion:reduce) {
             .mcms-doctor-running span { animation:none !important; }
             #${SCRIPT.quickWheelId} > button { transition:none !important; }
@@ -22857,21 +22873,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateBriefingBody() {
+        const highlights = RELEASE_BRIEFING.highlights.map(highlight => '<li>' + escapeHtml(highlight) + '</li>').join('');
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
-        '<article class="mcms-command-note"><b>Official updates are delivered by TKB</b><p>The TKB Website is the only supported installer and automatic-update channel. GitHub remains the verified source and immutable release archive.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
-        '<article class="mcms-command-note"><b>Cleaner mission map and Alliance Chat</b><p>Mission Progress Rings and Alliance Chat Mission Previews have been retired. Mission markers and Alliance Chat now remain in their native MissionChief form.</p></article>' +
-        '<div class="mcms-update-grid">' +
-            '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
-            '<article><b>Session Cleanup</b><p>Preview and clear only temporary Toolkit effects, searches, notification memory and rebuildable caches.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="sessionCleanup">Open Cleanup</button></article>' +
-        '</div><p class="mcms-command-note">New Settings entries keep their NEW badge until you visit the relevant controls.</p>';
+        '<article class="mcms-update-release"><b>' + escapeHtml(RELEASE_BRIEFING.title) + '</b><ul class="mcms-update-highlights">' + highlights + '</ul></article>' +
+        '<article class="mcms-command-note"><b>Official updates are delivered by TKB</b><p>The TKB Website is the only supported installer and automatic-update channel. GitHub remains the verified source and immutable release archive.</p><div class="mcms-update-actions"><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button><button type="button" data-mcms-command-action="open-release-notes">Full Patch Notes</button></div></article>' +
+        '<p class="mcms-command-note">New Settings entries keep their NEW badge until you visit the relevant controls.</p>';
+    }
+
+    function openToolkitReleaseNotes() {
+        const opened = pageWindow.open('https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v' + encodeURIComponent(SCRIPT.version), '_blank', 'noopener,noreferrer');
+        try { if (opened) opened.opener = null; } catch (err) {}
     }
 
     function openUpdateBriefing({ manual = false } = {}) {
         if (!manual && !state.updateBriefing.enabled) return false;
         openCommandExperienceModal({
         kind: 'Update Briefing',
-        title: 'What’s New & Feature Beacon',
-        subtitle: 'Move to the official TKB update channel and review every v10.2 feature.',
+        title: 'What’s New & Feature Beacon · v' + RELEASE_BRIEFING.version,
+        subtitle: RELEASE_BRIEFING.title,
         body: updateBriefingBody(),
         actions: '<button type="button" data-mcms-command-action="briefing-disable">Don’t Show Again</button><button class="mcms-primary" type="button" data-mcms-command-action="briefing-dismiss">Got It</button>'
         });
@@ -22985,6 +23004,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const action = button.dataset.mcmsCommandAction;
         if (action === 'modal-close') { closeCommandExperienceModal(); return true; }
         if (action === 'open-tkb-installer') { pageWindow.open('https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', '_blank', 'noopener,noreferrer'); return true; }
+        if (action === 'open-release-notes') { openToolkitReleaseNotes(); return true; }
         if (action === 'fullscreen-exit') { setMapFullscreen(false); return true; }
         if (action === 'quick-wheel-close') { closeTabletQuickWheel({ restoreFocus: true }); return true; }
         if (action === 'quick-wheel-command') { executeQuickWheelSlot(Number(button.dataset.slotIndex)); return true; }

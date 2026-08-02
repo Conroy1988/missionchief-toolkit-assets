@@ -18,7 +18,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.3.6"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.3.7"
 
     for required in [
         "delete merged.missionProgressRings",
@@ -28,7 +28,6 @@ def main() -> int:
         "function performSessionCleanup(",
         'data-action="open-unit-locator"',
         'data-action="open-session-cleanup"',
-        "Cleaner mission map and Alliance Chat",
         "runtimeListen(document, 'click'",
     ]:
         assert required in source, required
@@ -94,9 +93,10 @@ def main() -> int:
         assert forbidden not in cleanup, forbidden
 
     briefing = section(source, "    function updateBriefingBody(", "    function openUpdateBriefing(")
-    assert briefing.count('data-mcms-command-action="briefing-open-feature"') == 2
+    assert "RELEASE_BRIEFING.highlights" in briefing
+    assert 'data-mcms-command-action="briefing-open-feature"' not in briefing
     for feature in ["unitLocator", "sessionCleanup"]:
-        assert f'data-feature="{feature}"' in briefing
+        assert f'data-feature="{feature}"' not in briefing
 
     print("Issue #624 v10.2.3 retirement contract passed: progress rings and Alliance Chat previews are absent.")
     return 0

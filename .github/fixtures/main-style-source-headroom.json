@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 664,
-    "version": "10.3.6",
-    "sourceBytes": 2148069,
-    "sourceLines": 32493,
-    "sourceSha256": "95b273371c3e5869bf30624303cc6f348fe3ce971927381f64fbf7a59ecd782d",
-    "templateBytes": 785895,
-    "templateLines": 9383,
-    "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
-    "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
+    "issue": 666,
+    "version": "10.3.7",
+    "sourceBytes": 2149007,
+    "sourceLines": 32513,
+    "sourceSha256": "3360d13bea3766738acdc15da1136c263176f74190663a3cb028bf6a1f2a56ad",
+    "templateBytes": 786077,
+    "templateLines": 9387,
+    "templateSha256": "7749c5fdbe4f8aab99fab992a471cdad22b57f0037358097477f7c414bc8b5e2",
+    "canonicalCssSha256": "c6b5ae0ad0ba1dfeb313f8cb71616162bedce904d6fb32847020d8f255ec79fd",
     "maxSourceBytes": 2160000,
     "maxSourceLines": 32650,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.5",
+    "baseline": "10.3.6",
     "approvedGrowth": {
-      "sourceBytes": 5795,
-      "sourceLines": 91,
-      "templateBytes": 0,
-      "templateLines": 0
+      "sourceBytes": 938,
+      "sourceLines": 20,
+      "templateBytes": 182,
+      "templateLines": 4
     },
-    "scope": "Issue #664 content-sized wide Desktop control allocation with inline pinned shortcuts and preserved responsive fallbacks"
+    "scope": "Issue #666 installed-release briefing data, changelog parity validation and direct immutable patch-note navigation"
   }
 }

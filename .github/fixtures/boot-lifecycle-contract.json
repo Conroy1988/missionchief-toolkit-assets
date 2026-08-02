@@ -83,7 +83,7 @@
     "stopAutoLoadAllVehicles",
     "restoreEconomyLayers",
     "restoreLeafletEconomyPolicy",
-    "disposeEconomyCanvasRenderer",
+    "disposeCoverageCanvasRenderer",
     "removeMajorIncidentFeed",
     "clearMissionLockOnEffect",
     "clearAllianceCreditLabels",

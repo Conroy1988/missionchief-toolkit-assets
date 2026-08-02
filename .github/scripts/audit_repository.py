@@ -12,8 +12,6 @@ import json
 import os
 import re
 import sys
-import urllib.error
-import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,10 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = ROOT / os.environ.get("REPOSITORY_AUDIT_OUTPUT_DIR", "repository-audit-output")
 REPORT_MD = OUTPUT_DIR / "repository-audit.md"
 REPORT_JSON = OUTPUT_DIR / "repository-audit.json"
-GREASYFORK_SCRIPT = (
-    "https://update.greasyfork.org/scripts/586018/"
-    "MissionChief%20Map%20Command%20Toolkit.user.js"
-)
+CANONICAL_SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 REPO_RAW_PREFIX = (
     "https://raw.githubusercontent.com/Conroy1988/"
     "missionchief-toolkit-assets/"
@@ -59,18 +54,6 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def download_userscript() -> tuple[str, str | None]:
-    request = urllib.request.Request(
-        GREASYFORK_SCRIPT,
-        headers={"User-Agent": "MissionChief-Toolkit-Repository-Audit/3"},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=45) as response:
-            return response.read().decode("utf-8", errors="replace"), None
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        return "", str(exc)
-
-
 def raw_url_to_repo_path(url: str) -> str | None:
     if not url.startswith(REPO_RAW_PREFIX):
         return None
@@ -101,7 +84,7 @@ def main() -> int:
             continue
         local_raw_urls.update(URL_RE.findall(read_text(path)))
 
-    userscript, fetch_error = download_userscript()
+    userscript = read_text(CANONICAL_SOURCE)
     userscript_version = None
     userscript_raw_urls = set()
     if userscript:
@@ -145,9 +128,9 @@ def main() -> int:
             "publicMainChanged": False,
             "releaseDashboardChanged": False,
         },
-        "greasyFork": {
-            "scriptFetched": bool(userscript),
-            "fetchError": fetch_error,
+        "distribution": {
+            "authority": "tkb-website-only",
+            "canonicalSourceRead": bool(userscript),
             "version": userscript_version,
             "rawRepositoryReferences": len(userscript_raw_urls),
         },
@@ -197,7 +180,8 @@ def main() -> int:
         f"- Repository files: **{len(files)}**",
         f"- Media files: **{len(media_files)}**",
         f"- GitHub Actions workflows: **{len(workflows)}**",
-        f"- Greasy Fork version: **{userscript_version or 'unavailable'}**",
+        f"- Canonical Toolkit version: **{userscript_version or 'unavailable'}**",
+        "- Distribution authority: **TKB Website only**",
         f"- Repository URLs referenced by current script/repository: **{len(all_raw_urls)}**",
         f"- Missing referenced paths: **{len(set(missing_paths))}**",
         f"- Possible one-shot workflows: **{len(one_shot_workflows)}**",

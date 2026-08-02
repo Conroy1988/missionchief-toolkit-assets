@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.3.0] - 2026-08-01
+
+### First-party Toolkit analytics
+
+- Adds a privacy-safe TKB funnel from product-page visit and install intent through installer delivery, confirmed first launch, update delivery and confirmed updated launch.
+- Sends aggregate active-use, version-adoption, coarse device and route, feature-demand, startup-performance-band and bounded runtime-error signals without player, alliance or gameplay records.
+- Uses no visitor ID, IP-derived identity, free text, full user agent, referrer or analytics cookie, and honours Global Privacy Control and Do Not Track before storing or sending analytics state.
+- Deduplicates lifecycle and feature signals locally, records a new installation only after the usable core UI launches, and records an update only after the new version launches successfully.
+- Establishes the TKB Website as the only supported install and automatic-update channel; GitHub remains the canonical source and immutable release archive.
+- Adds an executable analytics/privacy contract to the complete userscript preflight.
+
 ## [10.2.6] - 2026-08-01
 
 ### Critical Desktop command-dock containment

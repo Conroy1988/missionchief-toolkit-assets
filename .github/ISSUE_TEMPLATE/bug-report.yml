@@ -27,8 +27,8 @@ body:
     attributes:
       label: Installation source
       options:
-        - Greasy Fork
-        - GitHub release
+        - TKB Website
+        - GitHub release archive
         - Local or manually modified copy
         - Not sure
     validations:
@@ -79,7 +79,7 @@ body:
         - Themes, map skins or visual presentation
         - Settings panel, import or export
         - Tablet or iOS layout
-        - GitHub, Greasy Fork or release infrastructure
+        - TKB Website, GitHub or release infrastructure
         - Other or not sure
     validations:
       required: true

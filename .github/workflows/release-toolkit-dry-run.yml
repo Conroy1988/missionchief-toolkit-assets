@@ -79,7 +79,7 @@ jobs:
               sourceCommit: $sourceCommit,
               state: "passed",
               githubReleaseCreated: false,
-              greasyForkChanged: false,
+              retiredExternalChannelsChanged: false,
               privateBackupChanged: false,
               discordPosted: false,
               publicMainChanged: false,
@@ -93,7 +93,7 @@ jobs:
             echo "- Source commit: \`${GITHUB_SHA}\`"
             echo "- SHA-256: \`${HASH}\`"
             echo "- GitHub Release created: **no**"
-            echo "- Greasy Fork changed: **no**"
+            echo "- Retired external channels changed: **no**"
             echo "- Private backup changed: **no**"
             echo "- Discord posted: **no**"
             echo "- Public main changed: **no**"
@@ -103,7 +103,7 @@ jobs:
           jq -e \
             '.state == "passed" and
              .githubReleaseCreated == false and
-             .greasyForkChanged == false and
+             .retiredExternalChannelsChanged == false and
              .privateBackupChanged == false and
              .discordPosted == false and
              .publicMainChanged == false' \

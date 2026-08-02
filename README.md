@@ -63,7 +63,7 @@ Focus, Open and Pin are navigation actions. The board and palette do not select 
 
 ---
 
-## Live command contract — v10.2.6
+## Live command contract — v10.3.0
 
 > [!TIP]
 > The global launcher, dock, command menu and map overlays now belong only to the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native, while supported page-specific enhancements continue independently.
@@ -206,7 +206,9 @@ Responsive behaviour is a feature contract. It is not a desktop layout squeezed 
 - UK intelligence loads only after the user opens UK Intel, is schema-validated and contains no player or mission-instance data.
 - A safe JSON settings export excludes private integrations, archive identity and history.
 - Full settings transfer includes the Discord webhook and Financial Archive only inside passphrase-authenticated AES-256-GCM ciphertext.
-- No separate player account, remote telemetry service or external player database is required.
+- Privacy-safe first-party analytics report only coarse version, device class, route class, confirmed lifecycle outcomes, feature demand, startup band and bounded error category to TKB.
+- Analytics honours Global Privacy Control and Do Not Track, uses no player or alliance data, and sends no visitor identifier, IP-derived identity, free text, full user agent, referrer or analytics cookie.
+- No separate player account or external player database is required.
 
 ### Quiet when inactive
 
@@ -230,7 +232,7 @@ The v7 boundary reset remains an executable product contract: MissionChief is au
 4. Enable only the systems useful to the current account, device and workflow.
 
 > [!IMPORTANT]
-> **TKB Scripts is the supported installation and automatic-update authority.** GitHub is the canonical source, validation authority and immutable release archive. [Greasy Fork](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) is a non-blocking discovery mirror.
+> **The TKB Website is the only supported installation and automatic-update authority.** GitHub is the canonical source, validation authority and immutable release archive; it is not the end-user distribution channel.
 
 | I want to… | Go here |
 |---|---|
@@ -263,8 +265,6 @@ The public page follows live release state rather than embedding a version numbe
 Canonical source  →  exact-head validation  →  immutable GitHub Release
        ↓
 TKB install/update verification  →  private recovery backup  →  release confirmation
-       ↓
-Greasy Fork discovery mirror check (non-blocking)
 ```
 
 ---

@@ -32,7 +32,6 @@ jobs:
       releaseCandidate: ${{ steps.paths.outputs.releaseCandidate }}
       exhaustiveIntegrity: ${{ steps.paths.outputs.exhaustiveIntegrity }}
       exhaustivePerformance: ${{ steps.paths.outputs.exhaustivePerformance }}
-      externalParity: ${{ steps.paths.outputs.externalParity }}
     steps:
       - name: Check out exact repository state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -314,7 +313,6 @@ jobs:
             dist/MissionChief_Map_Command_Toolkit.install.user.js
             dist/MissionChief_Map_Command_Toolkit.update.user.js
             dist/MissionChief_Map_Command_Toolkit.meta.js
-            dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js
             dist/MissionChief_Map_Command_Toolkit.css
             dist/SHA256SUMS.txt
             dist/release-manifest.json
@@ -473,7 +471,6 @@ jobs:
           python3 .github/scripts/test_automation_record_hygiene.py
           python3 .github/scripts/test_branch_write_inventory.py
           python3 .github/scripts/test_validation_candidate_pipeline.py
-          python3 .github/scripts/test_greasyfork_parity_pipeline.py
           python3 .github/scripts/test_release_announcement_state_pipeline.py
           python3 .github/scripts/test_release_authority_pipeline.py
           python3 .github/scripts/test_release_recovery_state_pipeline.py
@@ -520,26 +517,6 @@ jobs:
             --evidence-json update-manifest-verification.json \
             --evidence-markdown update-manifest-verification.md
 
-      - name: Verify live Greasy Fork canonical parity
-        if: needs.classify.outputs.externalParity == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/audit_greasyfork_canonical_parity.py --self-test
-          mkdir -p greasyfork-parity
-          URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
-          curl --fail --silent --show-error --location --compressed \
-            --max-time 60 --retry 3 --retry-delay 5 \
-            --header "Cache-Control: no-cache" \
-            "${URL}?cache_bust=$(date +%s%N)" \
-            --output greasyfork-parity/live.user.js
-          python3 .github/scripts/audit_greasyfork_canonical_parity.py \
-            --live greasyfork-parity/live.user.js \
-            --source-url "$URL" \
-            --source-commit "$GITHUB_SHA" \
-            --json-output greasyfork-parity/report.json \
-            --markdown-output greasyfork-parity/report.md
-
       - name: Prepare advisory release plan
         if: needs.classify.outputs.releaseChecks == 'true'
         env:
@@ -570,7 +547,6 @@ jobs:
             asset-health-report.md
             update-manifest-verification.json
             update-manifest-verification.md
-            greasyfork-parity/
             release-plan.json
             release-plan.md
             merged-pull-requests.json

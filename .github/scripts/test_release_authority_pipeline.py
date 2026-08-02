@@ -51,6 +51,10 @@ def main() -> int:
     for key, expected in expected_urls.items():
         if distribution.get(key) != expected:
             raise AssertionError(f"TKB distribution {key} changed")
+    if settings.get("distributionAuthority") != "tkb-website-only":
+        raise AssertionError("TKB Website is not the sole distribution authority")
+    if "greasyFork" in settings:
+        raise AssertionError("Retired Greasy Fork configuration remains active")
 
     require(
         release,
@@ -72,6 +76,16 @@ def main() -> int:
         "Post verified release to Discord"
     ):
         raise AssertionError("Discord must run only after live TKB version verification")
+    forbid(
+        release,
+        [
+            "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
+            "sync_greasyfork_root_mirror.sh",
+            "Verify Greasy Fork mirror",
+            ".greasyFork.metadataUrl",
+        ],
+        "Production release workflow",
+    )
 
     require(
         recovery,
@@ -125,8 +139,8 @@ def main() -> int:
         raise AssertionError("Release-state policy is not recovery-only")
 
     print(
-        "Release authority contract passed: TKB live endpoints gate Discord and "
-        "Greasy Fork cannot announce a public version."
+        "Release authority contract passed: TKB live endpoints are the sole distribution gate and "
+        "the retired Greasy Fork channel cannot be published or announce a version."
     )
     return 0
 

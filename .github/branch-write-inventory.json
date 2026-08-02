@@ -6,20 +6,17 @@
   "directMainWriters": [
     {
       "workflow": ".github/workflows/release-toolkit.yml",
-      "purpose": "Publish stable distribution and record verified dashboard, update-manifest and announcement state atomically.",
+      "purpose": "Publish the verified first-party release and record dashboard, update-manifest and release-speed state atomically.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "writes": [
-        "dist/",
-        "MissionChief_Map_Command_Toolkit.user.js",
-        "MissionChief_Map_Command_Toolkit.txt",
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
-        ".github/greasyfork-version.txt"
+        "status/release-speed-history.json",
+        "status/RELEASE_SPEED.md"
       ],
       "helperScripts": [
-        ".github/scripts/sync_greasyfork_root_mirror.sh",
         ".github/scripts/build_stable_update_manifest.py"
       ],
       "migrationTarget": "dedicated distribution branch plus release-state branch, written by a scoped GitHub App"
@@ -63,7 +60,7 @@
     },
     {
       "workflow": ".github/workflows/repository-audit.yml",
-      "purpose": "Audit repository dependencies and live Greasy Fork references without changing public main or the release dashboard.",
+      "purpose": "Audit repository dependencies and first-party distribution references without changing public main or the release dashboard.",
       "permission": "contents: read",
       "artifact": "missionchief-repository-audit-<commit>",
       "evidence": [
@@ -80,18 +77,6 @@
         "status-README.md",
         "status-README.diff",
         "projection.log"
-      ]
-    },
-    {
-      "workflow": ".github/workflows/import-canonical-userscript.yml",
-      "purpose": "Verify GitHub-authoritative canonical source against live Greasy Fork without importing or modifying repository state.",
-      "permission": "contents: read",
-      "artifact": "missionchief-greasyfork-canonical-parity-<commit>",
-      "evidence": [
-        "greasyfork-canonical-parity.json",
-        "greasyfork-canonical-parity.md",
-        "live userscript",
-        "parity.log"
       ]
     },
     {
@@ -117,8 +102,7 @@
     }
   ],
   "directMainPushSources": [
-    ".github/workflows/release-toolkit.yml",
-    ".github/scripts/sync_greasyfork_root_mirror.sh"
+    ".github/workflows/release-toolkit.yml"
   ],
   "releaseStateBranchWriters": [
     {

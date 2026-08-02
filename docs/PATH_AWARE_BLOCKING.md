@@ -21,4 +21,4 @@ The automatic release controller reuses the same policy against the merged pull-
 
 ## Exhaustive and external audits
 
-Full static and ESLint audits, deep AST analysis and external stable-channel checks remain available through explicit full dispatches and their retained dedicated workflows. External Greasy Fork parity validates the stable public channel rather than an unreleased pull request, so it is removed from the normal PR critical path.
+Full static and ESLint audits plus deep AST analysis remain available through explicit full dispatches and their retained dedicated workflows. Retired external distribution checks are not part of pull-request validation or release publication.

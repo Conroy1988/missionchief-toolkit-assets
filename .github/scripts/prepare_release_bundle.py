@@ -64,7 +64,7 @@ def handover_lines(version: str, source_hash: str, manifest: dict, release_mode:
             "- Distribution bundle: prepared for production publication",
             f"- GitHub Release: published by the controlled release workflow as `v{version}`",
             "- TKB installer and update channel: verified against immutable GitHub Release assets",
-            "- Greasy Fork: checked as a non-blocking discovery mirror",
+            "- Distribution authority: TKB Website only",
             "- Private migration backup: verified before announcement",
             "- Discord release announcement: runs after TKB distribution and private backup verification",
         ]
@@ -77,7 +77,7 @@ def handover_lines(version: str, source_hash: str, manifest: dict, release_mode:
             "- GitHub canonical source: validated",
             "- Distribution bundle: prepared in dry-run mode",
             "- GitHub Release: not published",
-            "- TKB distribution and Greasy Fork mirror: unchanged",
+            "- TKB Website distribution: unchanged",
             "- Private migration backup: not written",
             "- Discord release announcement: not sent",
         ]
@@ -132,7 +132,6 @@ def main() -> int:
         DIST / "MissionChief_Map_Command_Toolkit.install.user.js",
         DIST / "MissionChief_Map_Command_Toolkit.update.user.js",
         DIST / "MissionChief_Map_Command_Toolkit.meta.js",
-        DIST / "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
         DIST / "MissionChief_Map_Command_Toolkit.css",
         DIST / "SHA256SUMS.txt",
         manifest_path,
@@ -164,7 +163,6 @@ def main() -> int:
         "MissionChief_Map_Command_Toolkit.install.user.js",
         "MissionChief_Map_Command_Toolkit.update.user.js",
         "MissionChief_Map_Command_Toolkit.meta.js",
-        "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
         "MissionChief_Map_Command_Toolkit.css",
     ]:
         shutil.copy2(DIST / variant_name, OUTPUT / variant_name)
@@ -192,7 +190,6 @@ def main() -> int:
             "MissionChief_Map_Command_Toolkit.install.user.js",
             "MissionChief_Map_Command_Toolkit.update.user.js",
             "MissionChief_Map_Command_Toolkit.meta.js",
-            "MissionChief_Map_Command_Toolkit.greasyfork.user.js",
             "MissionChief_Map_Command_Toolkit.css",
             stable_sums.name,
             versioned_sums.name,

@@ -39,10 +39,9 @@ HANDOVER="migration-handover-v${RELEASE_VERSION}.md"
 INSTALL_USER="MissionChief_Map_Command_Toolkit.install.user.js"
 UPDATE_USER="MissionChief_Map_Command_Toolkit.update.user.js"
 METADATA="MissionChief_Map_Command_Toolkit.meta.js"
-GREASY_FORK_USER="MissionChief_Map_Command_Toolkit.greasyfork.user.js"
 MAIN_STYLESHEET="MissionChief_Map_Command_Toolkit.css"
 
-required=("$VERSIONED_USER" "$VERSIONED_TXT" "$MANIFEST" "$CHANGELOG" "$SUMS" "$HANDOVER" "$INSTALL_USER" "$UPDATE_USER" "$METADATA" "$GREASY_FORK_USER" "$MAIN_STYLESHEET")
+required=("$VERSIONED_USER" "$VERSIONED_TXT" "$MANIFEST" "$CHANGELOG" "$SUMS" "$HANDOVER" "$INSTALL_USER" "$UPDATE_USER" "$METADATA" "$MAIN_STYLESHEET")
 if [[ "$REQUIRE_STABLE_ASSETS" == "true" ]]; then
   required+=("$STABLE_USER" "$STABLE_TXT")
 fi
@@ -90,11 +89,7 @@ cmp --silent "$OUTPUT_DIR/$UPDATE_USER" "$OUTPUT_DIR/$VERSIONED_USER" || {
   exit 1
 }
 [[ "$(sha256sum "$OUTPUT_DIR/$MAIN_STYLESHEET" | awk '{print $1}')" == "$(jq -r '.distribution.stylesheetSha256' "$OUTPUT_DIR/$MANIFEST")" ]] || {
-  echo "::error::Greasy Fork stylesheet resource differs from the release manifest."
-  exit 1
-}
-[[ "$(python3 -c 'from pathlib import Path; import sys; print(len(Path(sys.argv[1]).read_text(encoding="utf-8")))' "$OUTPUT_DIR/$GREASY_FORK_USER")" -le "$(jq -r '.distribution.greasyForkLimit' "$OUTPUT_DIR/$MANIFEST")" ]] || {
-  echo "::error::Greasy Fork mirror exceeds its governed character limit."
+  echo "::error::First-party stylesheet differs from the release manifest."
   exit 1
 }
 

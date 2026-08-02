@@ -10,7 +10,6 @@ on:
         type: choice
         options:
           - verify-release
-          - retry-greasyfork
           - retry-private-backup
           - retry-discord
           - rebuild-dashboard
@@ -73,7 +72,6 @@ jobs:
 
           case "$OPERATION" in
             verify-release) EXPECTED="VERIFY ${RELEASE_VERSION}" ;;
-            retry-greasyfork) EXPECTED="RETRY GREASYFORK ${RELEASE_VERSION}" ;;
             retry-private-backup) EXPECTED="RETRY BACKUP ${RELEASE_VERSION}" ;;
             retry-discord) EXPECTED="RETRY DISCORD ${RELEASE_VERSION}" ;;
             rebuild-dashboard) EXPECTED="REBUILD DASHBOARD ${RELEASE_VERSION}" ;;
@@ -103,7 +101,6 @@ jobs:
 
       - name: Verify recovery-state self-tests
         if: >-
-          inputs.operation == 'retry-greasyfork' ||
           inputs.operation == 'retry-private-backup' ||
           inputs.operation == 'retry-discord' ||
           inputs.operation == 'rebuild-dashboard'
@@ -114,7 +111,6 @@ jobs:
       - name: Prepare governed release-state worktree
         id: release_state
         if: >-
-          inputs.operation == 'retry-greasyfork' ||
           inputs.operation == 'retry-private-backup' ||
           inputs.operation == 'retry-discord' ||
           inputs.operation == 'rebuild-dashboard'
@@ -126,7 +122,6 @@ jobs:
 
       - name: Seed recovery ledger from verified main compatibility state
         if: >-
-          inputs.operation == 'retry-greasyfork' ||
           inputs.operation == 'retry-private-backup' ||
           inputs.operation == 'retry-discord'
         env:
@@ -148,61 +143,6 @@ jobs:
           REQUIRE_STABLE_ASSETS: ${{ inputs.operation == 'repair-stable-assets' && 'false' || 'true' }}
         shell: bash
         run: bash .github/scripts/download_verified_release_bundle.sh
-
-      - name: Re-emit Greasy Fork release event when required
-        if: inputs.operation == 'retry-greasyfork'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
-          LIVE_VERSION="$(curl --fail --silent --show-error --location --compressed --max-time 30 \
-            --header 'Cache-Control: no-cache' \
-            "${META_URL}?cache_bust=$(date +%s%N)" | sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' | head -n 1 | xargs || true)"
-
-          if [[ "$LIVE_VERSION" != "$RELEASE_VERSION" ]]; then
-            gh release view "v${RELEASE_VERSION}" --json name,body > /tmp/release-state.json
-            jq -r '.body' /tmp/release-state.json > /tmp/release-notes.md
-            TITLE="$(jq -r '.name' /tmp/release-state.json)"
-            gh release edit "v${RELEASE_VERSION}" --title "$TITLE" --notes-file /tmp/release-notes.md --latest
-            echo "Re-saved v${RELEASE_VERSION} to emit a fresh release update event."
-          else
-            echo "Greasy Fork already reports v${RELEASE_VERSION}; no webhook retry was emitted."
-          fi
-
-          SYNCED=false
-          for attempt in $(seq 1 30); do
-            LIVE_VERSION="$(curl --fail --silent --show-error --location --compressed --max-time 30 \
-              --header 'Cache-Control: no-cache' \
-              "${META_URL}?cache_bust=$(date +%s%N)" | sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' | head -n 1 | xargs || true)"
-            echo "Greasy Fork attempt ${attempt}/30: ${LIVE_VERSION:-unavailable}"
-            [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]] && { SYNCED=true; break; }
-            sleep 60
-          done
-          [[ "$SYNCED" == "true" ]] || { echo "::error::Greasy Fork did not synchronize v${RELEASE_VERSION}."; exit 1; }
-
-          python3 .github/scripts/check_asset_health.py \
-            --mode live \
-            --json-output /tmp/recovery-asset-health.json \
-            --markdown-output /tmp/recovery-asset-health.md
-          python3 .github/scripts/check_distribution_body_parity.py \
-            --report /tmp/recovery-asset-health.json \
-            --markdown /tmp/recovery-asset-health.md
-
-      - name: Record Greasy Fork recovery on release-state
-        if: inputs.operation == 'retry-greasyfork'
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-          RELEASE_STATE_ROOT: ${{ steps.release_state.outputs.root }}
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/release_recovery_state.py record-greasyfork \
-            --state-root "$RELEASE_STATE_ROOT" \
-            --version "$RELEASE_VERSION"
 
       - name: Retry private migration backup
         id: backup
@@ -357,12 +297,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
-          LIVE_VERSION="$(curl --fail --silent --show-error --location --compressed --max-time 30 \
-            --header 'Cache-Control: no-cache' \
-            "${META_URL}?cache_bust=$(date +%s%N)" | sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' | head -n 1 | xargs)"
-          [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]] || { echo "::error::Greasy Fork does not report v${RELEASE_VERSION}."; exit 1; }
-
           python3 .github/scripts/release_recovery_state.py rebuild-dashboard \
             --state-root "$RELEASE_STATE_ROOT" \
             --version "$RELEASE_VERSION" \

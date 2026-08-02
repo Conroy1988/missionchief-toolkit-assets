@@ -7,19 +7,19 @@
 
 Strict pull-request-only protection is **not yet safe to enable**.
 
-The repository now has one workflow that can commit directly to public `main`: `release-toolkit.yml`. It still publishes the stable distribution and writes a temporary compatibility copy of release state required by existing v5.0.7 installations.
+The repository now has one workflow that can commit directly to public `main`: `release-toolkit.yml`. It records a temporary compatibility copy of verified release state required by existing v5.0.7 installations after first-party publication succeeds.
 
 At this stage, one workflow writes governed operational state to `release-state`:
 
 - `release-recovery.yml` — recovery dashboard, rendered status, stable manifest and announcement tracker.
 
-The Greasy Fork fallback announcement monitor is retired. Greasy Fork remains a non-blocking discovery mirror and has no authority to publish a version to Discord.
+All external userscript distribution and parity monitoring is retired. The TKB Website is the sole operational install and update channel.
 
 Two release orchestrators invoke the reusable production writer but contain no direct public-main push.
 
-Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity, announcement-state verification and stable update-manifest verification are artifact-only. These seven workflows use read-only repository access and retain immutable evidence instead of committing generated state.
+Canonical validation, release dry runs, repository audits, dashboard projection, announcement-state verification and stable update-manifest verification are artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
 
-The release recovery ledger is now written only to `release-state`. GitHub Release verification and asset repair, Greasy Fork retry, private backup and Discord HTTP side effects remain controlled API operations, but their ledger reconciliation cannot commit to `main`.
+The release recovery ledger is now written only to `release-state`. GitHub Release verification and asset repair, private backup and Discord HTTP side effects remain controlled API operations, but their ledger reconciliation cannot commit to `main`.
 
 The `release-state` and `distribution` branches remain non-live operational branches. External consumers and strict protection remain disabled. Administrator recovery access has been rehearsed successfully.
 
@@ -29,9 +29,9 @@ The `release-state` and `distribution` branches remain non-live operational bran
 
 | Workflow | Current mutation | Required migration |
 |---|---|---|
-| `release-toolkit.yml` | stable distribution plus atomic dashboard, manifest and announcement compatibility state | Split distribution and primary state across dedicated branches under a scoped GitHub App. |
+| `release-toolkit.yml` | atomic dashboard, manifest and release-speed compatibility state after first-party publication | Move primary state to the dedicated release-state branch under a scoped GitHub App. |
 
-The executable public-main helper `.github/scripts/sync_greasyfork_root_mirror.sh` is owned by `release-toolkit.yml`. `.github/scripts/build_stable_update_manifest.py` generates the compatibility manifest inside the same guarded release commit.
+`.github/scripts/build_stable_update_manifest.py` generates the compatibility manifest inside the same guarded release commit.
 
 ## Governed `release-state` writers
 
@@ -52,16 +52,15 @@ Release Recovery uses `.github/scripts/release_state_branch.py` for branch trans
 - requires `GH_TOKEN` only for the final governed push;
 - contains executable self-tests that reject `main` and allowlist expansion.
 
-### Retired fallback monitor
+### Retired external distribution
 
-The scheduled Greasy Fork monitor and fallback Discord payload were removed in v10.2.3. Only the controlled TKB production release or an explicitly guarded recovery retry may post a Toolkit release. Production now verifies the live TKB install, update and metadata endpoints all serve the exact release version before Discord is called.
+The scheduled external parity monitor, mirror build and fallback Discord payload are removed. Only the controlled TKB production release or an explicitly guarded recovery retry may post a Toolkit release. Production verifies the live TKB install, update and metadata endpoints all serve the exact release version before Discord is called.
 
 ### Release recovery
 
 `.github/scripts/release_recovery_state.py` owns recovery-ledger transitions:
 
 - seeds `release-state` from a newer verified `main` compatibility snapshot when necessary;
-- records Greasy Fork recovery;
 - records private-backup recovery;
 - claims a Discord retry before posting;
 - finalises Discord state only when the expected claim nonce still matches;
@@ -80,7 +79,6 @@ The recovery workflow preserves every exact confirmation phrase and the shared `
 | `release-toolkit-dry-run.yml` | `contents: read` | release bundle plus dry-run report | No publication-channel change. |
 | `repository-audit.yml` | `contents: read` | repository audit JSON/Markdown | No branch or dashboard change. |
 | `update-release-dashboard.yml` | `contents: read` | rendered dashboard, diff and log | No branch change. |
-| `import-canonical-userscript.yml` | `contents: read` | live Greasy Fork parity evidence | No source, baseline, branch or PR change. |
 | `reconcile-release-announcement-state.yml` | `contents: read` | dashboard/tracker consistency evidence | No dashboard or tracker change. |
 | `publish-update-manifest.yml` | `contents: read` | manifest projection JSON/Markdown/log | No manifest, dashboard or branch change. |
 
@@ -132,12 +130,13 @@ The synchronizer may still copy reviewed mirror files from `main` to `distributi
 
 ## Compatibility state on `main`
 
-After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` still writes these together in one compatibility commit:
+After TKB Website verification, private backup and Discord publication, `release-toolkit.yml` writes these together in one compatibility commit:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `status/update-manifest.json`;
-- `.github/greasyfork-version.txt`.
+- `status/release-speed-history.json`;
+- `status/RELEASE_SPEED.md`.
 
 Existing v5.0.7 installations still read:
 
@@ -150,12 +149,12 @@ That URL remains valid until a later versioned Toolkit release migrates the runt
 1. Canonical validation uploads exact immutable candidate evidence.
 2. Automatic release verifies the exact run and rejects stale commits.
 3. Release Readiness independently rebuilds and validates distribution.
-4. Production publishes stable distribution and root mirrors.
-5. GitHub Release is published and Greasy Fork is verified.
+4. Production publishes the immutable GitHub Release archive and verifies the TKB Website install/update routes.
+5. The TKB Website is confirmed as the sole live distribution authority.
 6. The release is backed up privately and announced to Discord.
-7. Dashboard JSON, rendered Markdown, stable update manifest and announcement tracker are committed atomically as compatibility state.
+7. Dashboard JSON, rendered Markdown, stable update manifest and release-speed history are committed atomically as compatibility state.
 8. GitHub Pages is dispatched and awaited.
-9. Dashboard, Greasy Fork, announcement and update-manifest workflows verify only.
+9. Dashboard, announcement and update-manifest workflows verify only.
 10. Recovery operations write their governed ledger to `release-state` only.
 
 ## Indirect release orchestrators
@@ -182,7 +181,7 @@ Neither orchestrator contains a direct public-main push. Their `contents: write`
 - **Public `main`:** reviewed source, workflows, tests, policy and temporary compatibility configuration.
 - **Distribution branch:** stable `dist/` and root mirrors, written by a scoped release App.
 - **Release-state branch:** primary dashboard, manifest, announcement, fallback-monitor and recovery state.
-- **Immutable evidence:** validation, parity, synchronization plans, bundles, audits and handovers.
+- **Immutable evidence:** validation, synchronization plans, bundles, audits and handovers.
 
 ## Migration order
 
@@ -211,6 +210,6 @@ Neither orchestrator contains a direct public-main push. Their `contents: write`
 - This migration reduces direct public-main writers from **2 to 1**.
 - One workflow writes governed operational state to `release-state`.
 - The release recovery ledger is now written only to `release-state`.
-- Seven workflows use read-only repository access for immutable verification evidence.
+- Six workflows use read-only repository access for immutable verification evidence.
 - Existing v5.0.7 installations retain their exact manifest URL.
 - No userscript, production version, release object, external URL or protection setting changes in this step.

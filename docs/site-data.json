@@ -751,7 +751,7 @@
       "sections": [
         {
           "heading": "Install through TKB",
-          "body": "Install Tampermonkey or a compatible userscript manager, open the official TKB Toolkit page, review permissions and confirm installation. TKB is the supported automatic-update channel; Greasy Fork is a non-blocking discovery mirror."
+          "body": "Install Tampermonkey or a compatible userscript manager, open the official TKB Toolkit page, review permissions and confirm installation. The TKB Website is the only supported installation and automatic-update channel."
         },
         {
           "heading": "First launch",

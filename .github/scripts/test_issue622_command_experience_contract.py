@@ -18,7 +18,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.3.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.3.2"
 
     for required in [
         "const FEATURE_BEACON_KEYS = Object.freeze(['context', 'reskin', 'dock', 'input', 'safeMode', 'unitLocator', 'sessionCleanup'])",
@@ -80,7 +80,7 @@ def main() -> int:
     assert "event.pointerType === 'mouse'" in gesture
     assert "state.safeMode.enabled" in gesture
 
-    print("Issue #622 retained command-experience static contract passed on v10.2.")
+    print("Issue #622 retained command-experience static contract passed on v10.3.2.")
     return 0
 
 

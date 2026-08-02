@@ -1,13 +1,12 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "10.3.1",
+  "currentVersion": "10.3.2",
   "sourceOfTruth": "GitHub",
   "distribution": "TKB Scripts",
   "status": {
     "validation": "passed",
     "githubRelease": "published",
-    "greasyForkSync": "retired",
     "backup": "private-repository-verified",
     "discordDevelopment": "configured",
     "discordRelease": "posted",
@@ -25,10 +24,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-08-02T10:54:24Z",
+  "lastUpdated": "2026-08-02T12:56:32Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829",
+    "validatedSha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -38,27 +37,25 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "10.3.1",
+    "version": "10.3.2",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
-    "greasyForkMetadataVerified": false,
     "publicReleaseCreated": true,
-    "completedAt": "2026-08-02T10:54:24Z"
+    "completedAt": "2026-08-02T12:56:32Z"
   },
   "latestRelease": {
-    "version": "10.3.1",
-    "sha256": "b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.1",
+    "version": "10.3.2",
+    "sha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.2",
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
-    "greasyForkVerified": false,
-    "privateBackupCommit": "3c3c376ed0cf0957dc4c12f149f8f184cc8b0029",
-    "discordMessageId": "1533427745659293889",
+    "privateBackupCommit": "180b49d1819e4d2c53e2daca5fe6a1db8703fba0",
+    "discordMessageId": "1533458480243937482",
     "discordChannelId": "1264992613845565440",
     "discordPosted": true,
-    "completedAt": "2026-08-02T10:54:24Z"
+    "completedAt": "2026-08-02T12:56:32Z"
   }
 }

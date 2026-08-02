@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.3.6] - 2026-08-02
+
+### Wide Desktop command band
+
+- Uses genuinely free Desktop map width to add control columns before adding rows, reducing the supplied three-row command stack to two rows and collapsing the 1920px/2560px layouts to one row.
+- Sizes Visibility, Intelligence, Dashboard and Performance independently from their real control counts, so the wider dock never reintroduces stretched buttons or large gaps inside the group cluster.
+- Moves pinned Quick Places and bookmarks into the unused right-hand workspace when their compact track fits within the command-group height; otherwise they remain tightly content-sized beneath the groups.
+- Keeps the launcher/status controls in the same shallow left-aligned band, preserves 36px command buttons and retains readable labels, keyboard badges, state text and active styling.
+- Preserves the existing three-, two- and one-group fallbacks, all four dock positions, Major Incident Wire clearance, browser zoom, auto-hide, short-map scrolling and every Tablet/iPad/iOS layout.
+- Adds deterministic geometry and rendered-DOM coverage across the supplied width plus 2560, 1920, 1366, 1024, 603 and 480px Desktop workspaces without adding a timer, request, listener or observer.
+
 ## [10.3.5] - 2026-08-02
 
 ### Long-session memory lifecycle repair

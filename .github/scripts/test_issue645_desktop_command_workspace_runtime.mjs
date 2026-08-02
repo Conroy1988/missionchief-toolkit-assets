@@ -36,9 +36,9 @@ vm.runInContext(`${extractFunction("resolveDesktopDockGrid")}\nthis.resolveGrid 
 const resolveGrid = sandbox.resolveGrid;
 
 const scenarios = [
-  { name: "2560x1440", width: 2200, height: 1080, columns: 4, size: "wide" },
-  { name: "1920x1080", width: 1700, height: 780, columns: 4, size: "wide" },
-  { name: "1366x768", width: 1200, height: 520, columns: 4, size: "wide" },
+  { name: "2560x1440", width: 2200, height: 1080, columns: 4, size: "wide", maxRows: 1 },
+  { name: "1920x1080", width: 1700, height: 780, columns: 4, size: "wide", maxRows: 1 },
+  { name: "1366x768", width: 1200, height: 520, columns: 4, size: "wide", maxRows: 2 },
   { name: "1024x768", width: 900, height: 520, columns: 3, size: "standard" },
   { name: "603px forced Desktop", width: 564, height: 700, columns: 2, size: "compact" },
   { name: "480px forced Desktop", width: 440, height: 700, columns: 1, size: "tight" },
@@ -50,21 +50,30 @@ for (const scenario of scenarios) {
   assert.ok(grid.dockWidth <= scenario.width, `${scenario.name} exceeded the visible map width`);
   assert.equal(grid.groupColumns, scenario.columns, `${scenario.name} chose the wrong group grid`);
   assert.ok(grid.groupWidth > 0, `${scenario.name} lost its command-group width`);
-  if (scenario.columns >= 3) {
-    assert.ok(grid.groupWidth <= 210, `${scenario.name} spread command groups beyond the compact Desktop track`);
+  assert.equal(grid.groupWidths.length, 4, `${scenario.name} lost a content-sized group track`);
+  if (scenario.columns === 4) {
     assert.equal(
       grid.contentWidth,
-      (grid.groupWidth * grid.groupColumns) + (6 * (grid.groupColumns - 1)),
+      grid.groupWidths.reduce((sum, width) => sum + width, 0) + (6 * (grid.groupColumns - 1)),
       `${scenario.name} left unused horizontal space inside the command cluster`,
     );
+    assert.equal(Math.max(...[4, 5, 3, 1].map((count, index) => Math.ceil(count / grid.groupButtonColumns[index]))), scenario.maxRows, `${scenario.name} did not use free width to reduce button rows`);
+    assert.equal(grid.pinsInline, true, `${scenario.name} left shortcut space below the command band`);
   }
-  if (scenario.width >= 1200) assert.ok(grid.dockWidth <= 981, `${scenario.name} retained the over-wide Desktop deck`);
+  if (scenario.width >= 1200) assert.ok(grid.dockWidth <= 1680, `${scenario.name} exceeded the wide Desktop budget`);
   assert.equal(grid.size, scenario.size, `${scenario.name} chose the wrong density tier`);
   assert.equal(grid.scrollFallback, false, `${scenario.name} scrolls during normal use`);
   assert.ok(grid.groupButtonColumns.every(columns => columns >= 1), `${scenario.name} produced an empty button grid`);
   assert.ok(grid.filterMaxHeight >= grid.naturalFilterHeight, `${scenario.name} clipped its command groups`);
   assert.ok(grid.pinMaxHeight >= grid.naturalPinHeight, `${scenario.name} clipped its pinned shortcuts`);
 }
+
+const suppliedScreenshot = resolveGrid(1120, 330, [4, 5, 3, 1], 4, 109, 6);
+assert.equal(suppliedScreenshot.groupColumns, 4, "supplied Desktop width did not retain one group row");
+assert.deepEqual(Array.from(suppliedScreenshot.groupButtonColumns), [2, 3, 2, 1]);
+assert.equal(suppliedScreenshot.naturalFilterHeight, 94, "supplied Desktop width retained the three-row command stack");
+assert.equal(suppliedScreenshot.pinsInline, true, "supplied Desktop width left the shortcut strip below the controls");
+assert.ok(suppliedScreenshot.dockWidth <= 1120, "supplied Desktop width overflowed the safe map workspace");
 
 const short = resolveGrid(900, 145, [4, 5, 3, 1], 8, 117, 6);
 assert.equal(short.scrollFallback, true, "emergency scroll fallback was not enabled for a short map");
@@ -76,7 +85,10 @@ for (const scale of [0.8, 1, 1.25, 1.5, 2]) {
   const availableHeight = Math.max(180, Math.floor(620 / scale));
   const grid = resolveGrid(availableWidth, availableHeight, [4, 5, 3, 1], 4, 117, 6);
   assert.ok(grid.dockWidth <= availableWidth, `${scale * 100}% zoom overflowed horizontally`);
-  assert.ok(grid.filterMaxHeight + grid.pinMaxHeight + grid.pinMargin <= availableHeight, `${scale * 100}% zoom overflowed vertically`);
+  const boundedHeight = grid.pinsInline
+    ? Math.max(grid.filterMaxHeight, grid.pinMaxHeight)
+    : grid.filterMaxHeight + grid.pinMaxHeight + grid.pinMargin;
+  assert.ok(boundedHeight <= availableHeight, `${scale * 100}% zoom overflowed vertically`);
   assert.ok(grid.contentWidth > 0, `${scale * 100}% zoom lost the command workspace`);
 }
 

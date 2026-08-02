@@ -53,11 +53,12 @@ assert.equal(short.bottom, 308, "off-viewport map bottom was not pulled into vie
 assert.ok(short.maxHeight > 0 && tallMap.bottom - short.bottom <= shortViewport.height - 8);
 
 const wideGrid = resolveGrid(1180, 600, [4, 5, 3, 1], 4, 117, 6);
-assert.equal(wideGrid.dockWidth, 981);
+assert.equal(wideGrid.dockWidth, 1180);
 assert.equal(wideGrid.groupColumns, 4);
-assert.deepEqual(Array.from(wideGrid.groupButtonColumns), [2, 2, 2, 1]);
-assert.equal(wideGrid.naturalFilterHeight, 134);
+assert.deepEqual(Array.from(wideGrid.groupButtonColumns), [2, 3, 2, 1]);
+assert.equal(wideGrid.naturalFilterHeight, 94);
 assert.equal(wideGrid.naturalPinHeight, 30);
+assert.equal(wideGrid.pinsInline, true);
 assert.equal(wideGrid.scrollFallback, false);
 
 const compactGrid = resolveGrid(617, 743, [4, 5, 3, 1], 2, 117, 6);

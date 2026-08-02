@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 650,
-    "version": "10.3.4",
-    "sourceBytes": 2134529,
-    "sourceLines": 32237,
-    "sourceSha256": "303f5f8729fa16150992540f48dffe8ba9f650cccb0daeb433ee8135969da711",
+    "issue": 661,
+    "version": "10.3.5",
+    "sourceBytes": 2142274,
+    "sourceLines": 32402,
+    "sourceSha256": "bbf3a7549eb2ac50d5db7d3486f1b1b1b95a1434e081ce615d7a2affe170dfb9",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
     "canonicalCssSha256": "b1e22caaf63847de17f0590d2f7609ffadc1da6c2f1d7e21dab8c72acfd6ec68",
-    "maxSourceBytes": 2146200,
-    "maxSourceLines": 32350,
+    "maxSourceBytes": 2155000,
+    "maxSourceLines": 32550,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.3",
+    "baseline": "10.3.4",
     "approvedGrowth": {
-      "sourceBytes": 490,
-      "sourceLines": 7,
+      "sourceBytes": 7745,
+      "sourceLines": 165,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #650 compact content-sized Desktop command workspace tracks and aligned pinned shortcuts"
+    "scope": "Issue #661 bounded listener, observer, document and frame lifecycle ownership with popup-only Mission Value hosting"
   }
 }

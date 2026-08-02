@@ -1,18 +1,18 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "10.1.0",
+  "currentVersion": "10.3.2",
   "sourceOfTruth": "GitHub",
-  "distribution": "Greasy Fork",
+  "distribution": "TKB Scripts",
   "status": {
     "validation": "passed",
     "githubRelease": "published",
-    "greasyForkSync": "verified",
     "backup": "private-repository-verified",
     "discordDevelopment": "configured",
     "discordRelease": "posted",
     "assetAudit": "passed",
-    "releaseReadiness": "passed"
+    "releaseReadiness": "passed",
+    "tkbDistribution": "verified"
   },
   "channels": {
     "development": "Mission-Chief-Dev",
@@ -24,10 +24,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-08-01T02:52:02Z",
+  "lastUpdated": "2026-08-02T12:56:32Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "7e192b39af59341ea7ed2ca132613776e6a261d10acd211b83d712a9da2a1084",
+    "validatedSha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -37,21 +37,25 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "10.1.0",
+    "version": "10.3.2",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
-    "greasyForkMetadataVerified": true,
-    "publicReleaseCreated": false,
-    "completedAt": "2026-08-01T02:52:02Z"
+    "tkbDistributionVerified": true,
+    "distributionAuthority": "tkb-website-only",
+    "publicReleaseCreated": true,
+    "completedAt": "2026-08-02T12:56:32Z"
   },
   "latestRelease": {
-    "version": "10.1.0",
-    "sha256": "7e192b39af59341ea7ed2ca132613776e6a261d10acd211b83d712a9da2a1084",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.1.0",
-    "greasyForkVerified": true,
-    "privateBackupCommit": "f0ab782e7ec77be7017180b6c4803dd84e0787f6",
+    "version": "10.3.2",
+    "sha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.2",
+    "tkbDistributionVerified": true,
+    "distributionAuthority": "tkb-website-only",
+    "privateBackupCommit": "180b49d1819e4d2c53e2daca5fe6a1db8703fba0",
+    "discordMessageId": "1533458480243937482",
+    "discordChannelId": "1264992613845565440",
     "discordPosted": true,
-    "completedAt": "2026-08-01T02:52:02Z"
+    "completedAt": "2026-08-02T12:56:32Z"
   }
 }

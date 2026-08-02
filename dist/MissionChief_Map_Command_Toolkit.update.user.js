@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.4
+// @version      10.3.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.4',
+        version: '10.3.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -635,6 +635,61 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         target.addEventListener(type, listener, options);
         runtime.listeners.push({ target, type, listener, options });
         return listener;
+    }
+    function runtimeUnlisten(target, type, listener, options) {
+        if (!target) return 0;
+        let removed = 0;
+        for (let index = runtime.listeners.length - 1; index >= 0; index -= 1) {
+        const record = runtime.listeners[index];
+        if (record.target !== target || record.type !== type || record.listener !== listener || record.options !== options) continue;
+        try { record.target.removeEventListener(record.type, record.listener, record.options); } catch (err) {}
+        runtime.listeners.splice(index, 1);
+        removed += 1;
+        }
+        return removed;
+    }
+    function runtimeUnlistenTarget(target, includeDescendants = false) {
+        if (!target) return 0;
+        let removed = 0;
+        for (let index = runtime.listeners.length - 1; index >= 0; index -= 1) {
+        const record = runtime.listeners[index];
+        let matches = record.target === target;
+        if (!matches && includeDescendants && typeof target.contains === 'function') {
+            try { matches = target.contains(record.target); } catch (err) {}
+        }
+        if (!matches) continue;
+        try { record.target.removeEventListener(record.type, record.listener, record.options); } catch (err) {}
+        runtime.listeners.splice(index, 1);
+        removed += 1;
+        }
+        return removed;
+    }
+    function runtimeDocumentConnected(doc) {
+        if (!doc) return false;
+        if (doc === document) return true;
+        try {
+        const frame = doc.defaultView?.frameElement || null;
+        if (!frame?.isConnected) return false;
+        return !frame.contentDocument || frame.contentDocument === doc;
+        } catch (err) {
+        return false;
+        }
+    }
+    function runtimePruneDisconnectedListeners() {
+        let removed = 0;
+        for (let index = runtime.listeners.length - 1; index >= 0; index -= 1) {
+        const record = runtime.listeners[index];
+        const target = record.target;
+        if (target === pageWindow || target === document) continue;
+        let connected = true;
+        if (target?.nodeType === 9) connected = runtimeDocumentConnected(target);
+        else if (typeof target?.isConnected === 'boolean') connected = target.isConnected;
+        if (connected) continue;
+        try { target?.removeEventListener?.(record.type, record.listener, record.options); } catch (err) {}
+        runtime.listeners.splice(index, 1);
+        removed += 1;
+        }
+        return removed;
     }
     function runtimeTrackObserver(observer) {
         if (!observer) return observer;
@@ -1578,15 +1633,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let desktopPanelObservedElements = new Set();
     let missionValueScanTimer = null;
     let missionValueFeatureInstalled = false;
-    const missionValueObservedDocuments = new WeakSet();
-    const missionValueObservedFrames = new WeakSet();
+    const missionValueDocumentObservers = new Map();
+    const missionValueFrameListeners = new Map();
     const missionValueHostObservers = new Map();
     const missionValueRetryState = new WeakMap();
     let customVehicleBadgeScanTimer = null;
     let customVehicleBadgeRefreshPromise = null;
     let customVehicleBadgeFeatureInstalled = false;
-    const customVehicleBadgeObservedDocuments = new WeakSet();
-    const customVehicleBadgeObservedFrames = new WeakSet();
+    const customVehicleBadgeDocumentObservers = new Map();
+    const customVehicleBadgeFrameListeners = new Map();
     const customVehicleClassificationCache = new Map();
     let customVehicleClassificationRevision = -1;
     let commandBarAnimationTimer = null;
@@ -14004,18 +14059,42 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         customVehicleBadgeScanTimer = runtimeSetTimeout(scanCustomVehicleBadges, Math.max(0, Number(delay) || 0));
     }
 
+    function customVehicleBadgeFramesForDocuments(documents) {
+        const frames = new Set();
+        for (const doc of Array.from(documents || [])) {
+            try { doc.querySelectorAll?.('iframe, frame').forEach(frame => frames.add(frame)); } catch (err) {}
+        }
+        return frames;
+    }
+
+    function pruneCustomVehicleBadgeTracking(activeDocuments = null, activeFrames = null) {
+        for (const [doc, observer] of customVehicleBadgeDocumentObservers) {
+            const keep = runtimeDocumentConnected(doc) && (!activeDocuments || activeDocuments.has(doc));
+            if (keep) continue;
+            runtimeUntrackObserver(observer);
+            customVehicleBadgeDocumentObservers.delete(doc);
+        }
+        for (const [frame, listener] of customVehicleBadgeFrameListeners) {
+            const keep = Boolean(frame?.isConnected && (!activeFrames || activeFrames.has(frame)));
+            if (keep) continue;
+            runtimeUnlisten(frame, 'load', listener);
+            customVehicleBadgeFrameListeners.delete(frame);
+        }
+        runtimePruneDisconnectedListeners();
+    }
+
     function observeCustomVehicleBadgeFrame(frame) {
-        if (!frame || customVehicleBadgeObservedFrames.has(frame)) return;
-        customVehicleBadgeObservedFrames.add(frame);
-        runtimeListen(frame, 'load', () => scheduleCustomVehicleBadgeScan(20));
+        if (!frame || customVehicleBadgeFrameListeners.has(frame)) return;
+        const listener = () => scheduleCustomVehicleBadgeScan(20);
+        runtimeListen(frame, 'load', listener);
+        customVehicleBadgeFrameListeners.set(frame, listener);
     }
 
     function observeCustomVehicleBadgeDocument(doc) {
         if (!doc) return;
         ensureCustomVehicleBadgeDocumentStyle(doc);
         try { doc.querySelectorAll?.('iframe, frame').forEach(observeCustomVehicleBadgeFrame); } catch (err) {}
-        if (customVehicleBadgeObservedDocuments.has(doc)) return;
-        customVehicleBadgeObservedDocuments.add(doc);
+        if (customVehicleBadgeDocumentObservers.has(doc)) return;
         const root = doc.documentElement || doc.body;
         const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         if (!root || typeof Observer !== 'function') return;
@@ -14030,6 +14109,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             attributes: true,
             attributeFilter: ['id', 'class', 'vehicle_id', 'data-vehicle-id', 'data-vehicle_id', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id']
         });
+        customVehicleBadgeDocumentObservers.set(doc, observer);
     }
 
     function clearCustomVehicleBadges() {
@@ -14045,11 +14125,15 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 });
             } catch (err) {}
         }
+        pruneCustomVehicleBadgeTracking(new Set(), new Set());
     }
 
     function scanCustomVehicleBadges() {
         customVehicleBadgeScanTimer = null;
         const docs = customVehicleBadgeDocumentContexts();
+        const activeDocuments = new Set(docs);
+        const activeFrames = customVehicleBadgeFramesForDocuments(activeDocuments);
+        pruneCustomVehicleBadgeTracking(activeDocuments, activeFrames);
         if (!state.customVehicleBadges) {
             clearCustomVehicleBadges();
             return 0;
@@ -20261,21 +20345,94 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
     }
 
-        function missionValueWindowCandidates() {
+    const MISSION_VALUE_POPUP_SELECTOR = [
+        '#lightbox_box', '#lightbox', '.lightbox_content', '.lightbox',
+        '.modal.show', '.modal.in', '[role="dialog"]', '.ui-dialog-content', '.ui-dialog'
+    ].join(', ');
+    const MISSION_VALUE_CONTENT_SELECTOR = [
+        '#mission-form', '#mission_content', '.mission_content', '[data-mission-content]',
+        '[data-mission-id]', '[data-mission_id]', 'input[name="mission_id"]',
+        'input[name="mission[id]"]', 'form[action*="/missions/"]'
+    ].join(', ');
+
+    function missionValuePopupRoot(root) {
+        if (!root?.isConnected) return null;
+        const doc = root.ownerDocument || null;
+        if (!doc) return null;
+        if (doc === document) {
+        try { return root.matches?.(MISSION_VALUE_POPUP_SELECTOR) ? root : root.closest?.(MISSION_VALUE_POPUP_SELECTOR) || null; }
+        catch (err) { return null; }
+        }
+        try {
+        const frame = doc.defaultView?.frameElement || null;
+        if (!frame?.isConnected || !frame.closest?.(MISSION_VALUE_POPUP_SELECTOR)) return null;
+        return root;
+        } catch (err) {
+        return null;
+        }
+    }
+
+    function missionValuePopupMissionId(root) {
+        const popupRoot = missionValuePopupRoot(root);
+        if (!popupRoot) return null;
+        const doc = popupRoot.ownerDocument || null;
+        let routeMissionId = null;
+        if (doc && doc !== document) {
+        try { routeMissionId = missionValueIdFromUrl(doc.location?.href, location.href); } catch (err) {}
+        }
+        let hasMissionContent = routeMissionId !== null;
+        if (!hasMissionContent) {
+        try { hasMissionContent = Boolean(popupRoot.matches?.(MISSION_VALUE_CONTENT_SELECTOR) || popupRoot.querySelector?.(MISSION_VALUE_CONTENT_SELECTOR)); }
+        catch (err) {}
+        }
+        if (!hasMissionContent) return null;
+        return routeMissionId ?? missionValueIdFromElement(popupRoot);
+    }
+
+    function missionValueFramesForDocuments(documents) {
+        const frames = new Set();
+        for (const doc of Array.from(documents || [])) {
+        try { doc.querySelectorAll?.('iframe, frame').forEach(frame => frames.add(frame)); } catch (err) {}
+        }
+        return frames;
+    }
+
+    function pruneMissionValueTracking(activeDocuments = null, activeFrames = null) {
+        for (const [doc, observer] of missionValueDocumentObservers) {
+        const keep = runtimeDocumentConnected(doc) && (!activeDocuments || activeDocuments.has(doc));
+        if (keep) continue;
+        runtimeUntrackObserver(observer);
+        missionValueDocumentObservers.delete(doc);
+        }
+        for (const [frame, listener] of missionValueFrameListeners) {
+        const keep = Boolean(frame?.isConnected && (!activeFrames || activeFrames.has(frame)));
+        if (keep) continue;
+        runtimeUnlisten(frame, 'load', listener);
+        missionValueFrameListeners.delete(frame);
+        }
+        runtimePruneDisconnectedListeners();
+    }
+
+    function missionValueWindowCandidates() {
         const discovered = [];
         const add = root => {
-        if (!root?.isConnected) return;
-        const missionId = missionValueIdFromElement(root);
+        const popupRoot = missionValuePopupRoot(root);
+        if (!popupRoot) return;
+        const missionId = missionValuePopupMissionId(popupRoot);
         if (missionId === null) return;
-        const mount = missionValueMountForRoot(root);
+        const mount = missionValueMountForRoot(popupRoot);
         if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
-        const toolbarSpacer = missionValueToolbarSpacer(root, mount);
-        const toolbar = missionValueToolbarBar(toolbarSpacer, root, mount);
-        discovered.push({ root, mount, missionId, toolbarSpacer, toolbar });
+        const toolbarSpacer = missionValueToolbarSpacer(popupRoot, mount);
+        const toolbar = missionValueToolbarBar(toolbarSpacer, popupRoot, mount);
+        discovered.push({ root: popupRoot, mount, missionId, toolbarSpacer, toolbar });
         };
 
+        const contexts = transportSweepDocumentContexts();
+        const activeDocuments = new Set(contexts.map(context => context.doc));
+        const activeFrames = missionValueFramesForDocuments(activeDocuments);
+        pruneMissionValueTracking(activeDocuments, activeFrames);
         transportSweepVisibleWindowRoots().forEach(add);
-        for (const context of transportSweepDocumentContexts()) {
+        for (const context of contexts) {
         observeMissionValueDocument(context.doc);
         if (context.doc !== document) {
             try {
@@ -20292,6 +20449,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function clearMissionValueIndicators() {
         for (const context of transportSweepDocumentContexts()) removeMissionValueRows(context.doc);
+        pruneMissionValueHostObservers(new Set());
+        pruneMissionValueTracking(new Set(), new Set());
     }
 
 
@@ -20407,8 +20566,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         for (const [spacer, record] of missionValueHostObservers) {
         const keep = Boolean(spacer?.isConnected && record?.toolbar?.isConnected && (!activeSpacers || activeSpacers.has(spacer)));
         if (keep) continue;
-        try { record?.resizeObserver?.disconnect?.(); } catch (err) {}
-        try { record?.mutationObserver?.disconnect?.(); } catch (err) {}
+        runtimeUntrackObserver(record?.resizeObserver);
+        runtimeUntrackObserver(record?.mutationObserver);
         missionValueHostObservers.delete(spacer);
         }
     }
@@ -20420,8 +20579,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const existing = missionValueHostObservers.get(spacer);
         if (existing?.toolbar === toolbar) return;
         if (existing) {
-        try { existing.resizeObserver?.disconnect?.(); } catch (err) {}
-        try { existing.mutationObserver?.disconnect?.(); } catch (err) {}
+        runtimeUntrackObserver(existing.resizeObserver);
+        runtimeUntrackObserver(existing.mutationObserver);
         }
         const view = spacer.ownerDocument?.defaultView || pageWindow;
         const ResizeObserverCtor = view?.ResizeObserver || pageWindow.ResizeObserver;
@@ -20572,25 +20731,25 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function observeMissionValueFrame(frame) {
-        if (!frame || missionValueObservedFrames.has(frame)) return;
-        missionValueObservedFrames.add(frame);
-        const onLoad = () => scheduleMissionValueScan(40);
-        frame.addEventListener('load', onLoad);
-        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+        if (!frame || missionValueFrameListeners.has(frame)) return;
+        const listener = () => scheduleMissionValueScan(40);
+        runtimeListen(frame, 'load', listener);
+        missionValueFrameListeners.set(frame, listener);
     }
 
-        function observeMissionValueDocument(doc) {
+    function observeMissionValueDocument(doc) {
         if (!doc) return;
         ensureMissionValueDocumentStyle(doc);
-        if (missionValueObservedDocuments.has(doc)) return;
-        missionValueObservedDocuments.add(doc);
+        if (missionValueDocumentObservers.has(doc)) return;
         let frames = [];
         try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
         frames.forEach(observeMissionValueFrame);
         const root = doc.documentElement || doc.body;
         if (!root) return;
         const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"], #navbar-alarm-spacer, #navbar-right-help-button, .navbar-header';
-        const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+        const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        if (typeof Observer !== 'function') return;
+        const observer = runtimeTrackObserver(new Observer(mutations => {
         const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
             if (node?.nodeType !== 1) return false;
             if (node.matches?.(activitySelector)) return true;
@@ -20601,6 +20760,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         scheduleMissionValueScan(50);
         }));
         observer.observe(root, { childList: true, subtree: true });
+        missionValueDocumentObservers.set(doc, observer);
     }
 
     function installMissionValueWindows() {
@@ -20611,6 +20771,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             missionValueScanTimer = null;
             clearMissionValueIndicators();
             clearMissionValueDocumentStyles();
+            pruneMissionValueHostObservers(new Set());
+            pruneMissionValueTracking(new Set(), new Set());
         });
         }
         for (const context of transportSweepDocumentContexts()) observeMissionValueDocument(context.doc);
@@ -27349,9 +27511,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         for (const id of nodeIds) {
             const node = document.querySelector?.(`[id="${id}"]`);
             if (!node) continue;
+            runtimeUnlistenTarget(node, true);
             node.remove();
             removed += 1;
         }
+        runtimePruneDisconnectedListeners();
         document.querySelectorAll?.('.mcms-map-fullscreen-target').forEach(element => element.classList.remove('mcms-map-fullscreen-target'));
         fullscreenMapTarget?.classList?.remove?.('mcms-map-fullscreen-target');
         fullscreenMapTarget = null;
@@ -28400,7 +28564,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function closeCommandPalette({ restoreFocus = true } = {}) {
         const overlay = commandExperienceElement(SCRIPT.commandPaletteId);
-        if (!overlay) return false;
+        if (!overlay) { runtimePruneDisconnectedListeners(); return false; }
+        runtimeUnlistenTarget(overlay, true);
         overlay.remove();
         document.documentElement.removeAttribute('data-mcms-command-palette-open');
         commandPaletteEntries = [];
@@ -28857,7 +29022,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const row = control?.querySelector?.('.mcms-launch-row');
         if (!control || !row) return null;
         let button = document.getElementById(VERSION_STATUS.buttonId);
-        if (button && !control.contains(button)) { button.remove(); button = null; }
+        if (button && !control.contains(button)) { runtimeUnlistenTarget(button, true); button.remove(); button = null; }
         if (!button) {
             button = document.createElement('button');
             button.id = VERSION_STATUS.buttonId;
@@ -29060,7 +29225,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             }
         }, Math.max(0, Number(delay) || 0));
     }
-    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; versionStatusInitialCheckQueued = false; versionStatusRequestToken += 1; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; versionStatusCheckPromise = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); document.querySelector(`#${VERSION_STATUS.alertStyleId}`)?.remove(); }
+    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; versionStatusInitialCheckQueued = false; versionStatusRequestToken += 1; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; versionStatusCheckPromise = null; const button = document.getElementById(VERSION_STATUS.buttonId); runtimeUnlistenTarget(button, true); button?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); document.querySelector(`#${VERSION_STATUS.alertStyleId}`)?.remove(); }
 
     function createCleanExit() {
         if (!toolkitCommandShellContextActive()) return null;

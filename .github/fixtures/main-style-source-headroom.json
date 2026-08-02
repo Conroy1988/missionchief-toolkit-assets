@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 41,
-    "version": "10.3.2",
-    "sourceBytes": 2135435,
-    "sourceLines": 32254,
-    "sourceSha256": "c41839cac588837a6d924bb3362a34f49466596a46d6d0ffb0795092a8c88687",
+    "issue": 650,
+    "version": "10.3.3",
+    "sourceBytes": 2135933,
+    "sourceLines": 32261,
+    "sourceSha256": "d8365695ea572d7ba27e3e184873372caf05aebc42a23cb3ac36648f67ad2947",
     "templateBytes": 785895,
     "templateLines": 9383,
     "templateSha256": "b2d5c8e8912a071ec61e17e0adc08f15cfac693635f156f80998b6dbb4188511",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2146200,
     "maxSourceLines": 32350,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.1",
+    "baseline": "10.3.2",
     "approvedGrowth": {
-      "sourceBytes": 1435,
-      "sourceLines": 24,
+      "sourceBytes": 498,
+      "sourceLines": 7,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #41 TKB-only release-state manifest compatibility bridge"
+    "scope": "Issue #650 compact content-sized Desktop command workspace tracks and aligned pinned shortcuts"
   }
 }

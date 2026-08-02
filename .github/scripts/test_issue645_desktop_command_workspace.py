@@ -14,7 +14,14 @@ def section(start: str, end: str) -> str:
 
 def main() -> int:
     assert SOURCE.count("function resolveDesktopDockGrid(") == 1
+    resolver = section("    function resolveDesktopDockGrid(", "    function applyDesktopDockLayout(")
     layout = section("    function applyDesktopDockLayout(", "    function stopDesktopPanelWorkspaceObservation(")
+    for fragment in (
+        "preferredGroupWidth",
+        "availableContentWidth",
+        "groupWidth",
+    ):
+        assert fragment in resolver, f"compact Desktop resolver is missing {fragment}"
     for fragment in (
         "resolveDesktopDockGrid",
         "--mcms-desktop-dock-width",

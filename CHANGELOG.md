@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.3.3] - 2026-08-02
+
+### Compact Desktop command workspace
+
+- Caps wide-screen Desktop command groups at a compact 210px track instead of distributing every spare map pixel.
+- Pulls Visibility, Intelligence, Dashboard and Performance into a denser content-sized cluster and aligns the EDI/NCL/WKFD/LDN shortcut strip to the same width.
+- Preserves current 36px controls, labels, keyboard badges, four-group layout and adaptive three-, two- and one-column fallbacks.
+- Leaves Tablet, iPad and iOS geometry unchanged and adds no request, timer, listener or observer.
+
 ## [10.3.2] - 2026-08-02
 
 ### TKB-only release-state compatibility bridge

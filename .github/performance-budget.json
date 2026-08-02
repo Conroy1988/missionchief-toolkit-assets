@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-02-issue-41-release-state-bridge-v10-3-2",
-  "rationale": "Approve the Issue #41 release-state-first manifest bridge using the existing version-status request and timer lifecycle, with zero growth in request sites, observers, managed timers or managed listeners.",
+  "revision": "2026-08-02-issue-650-compact-desktop-workspace-v10-3-3",
+  "rationale": "Approve the Issue #650 content-sized Desktop command workspace using the existing fit lifecycle, with zero growth in request sites, observers, managed timers or managed listeners.",
   "transitionApproval": {
-    "issue": 41,
-    "version": "10.3.2",
+    "issue": 650,
+    "version": "10.3.3",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Issue #41: read the seeded release-state manifest first and use the frozen main manifest only as a compatibility fallback within the existing non-overlapping update-check lifecycle.",
+    "scope": "Issue #650: cap wide Desktop command tracks, compact the total workspace and align pinned shortcuts without reducing control readability or changing Tablet/iOS geometry.",
     "approvedMutationObserverDelta": 0,
     "approvedManagedListenerDelta": 0
   },
@@ -155,6 +155,14 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 41,
+      "version": "10.3.2",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Issue #41: read the seeded release-state manifest first and use the frozen main manifest only as a compatibility fallback within the existing non-overlapping update-check lifecycle.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
     {
       "issue": "first-party-analytics",
       "version": "10.3.0",

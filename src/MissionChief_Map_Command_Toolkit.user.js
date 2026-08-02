@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.2
+// @version      10.3.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.2',
+        version: '10.3.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12245,10 +12245,16 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const safeWidth = Math.max(1, Math.floor(finite(availableWidth) ? availableWidth : 1));
         const safeHeight = Math.max(1, Math.floor(finite(maxHeight) ? maxHeight : 1));
         const safeGap = Math.max(0, Math.floor(finite(gap) ? gap : 6));
-        const dockWidth = Math.min(1180, safeWidth);
-        const safeLaunchWidth = Math.min(dockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
-        const contentWidth = Math.max(1, dockWidth - safeLaunchWidth - safeGap);
-        const groupColumns = contentWidth >= 900 ? 4 : contentWidth >= 620 ? 3 : contentWidth >= 360 ? 2 : 1;
+        const availableDockWidth = Math.min(1180, safeWidth);
+        const safeLaunchWidth = Math.min(availableDockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
+        const availableContentWidth = Math.max(1, availableDockWidth - safeLaunchWidth - safeGap);
+        const groupColumns = availableContentWidth >= 900 ? 4 : availableContentWidth >= 620 ? 3 : availableContentWidth >= 360 ? 2 : 1;
+        const preferredGroupWidth = groupColumns >= 3 ? 210 : groupColumns === 2 ? 220 : availableContentWidth;
+        const contentWidth = Math.min(
+            availableContentWidth,
+            (preferredGroupWidth * groupColumns) + (safeGap * Math.max(0, groupColumns - 1))
+        );
+        const dockWidth = Math.min(availableDockWidth, safeLaunchWidth + safeGap + contentWidth);
         const groupWidth = Math.max(1, Math.floor((contentWidth - (safeGap * Math.max(0, groupColumns - 1))) / groupColumns));
         const minimumButtonWidth = groupWidth >= 330 ? 92 : groupWidth >= 220 ? 88 : 82;
         const counts = Array.isArray(groupControlCounts) && groupControlCounts.length
@@ -12284,6 +12290,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         dockWidth,
         launchWidth: safeLaunchWidth,
         contentWidth,
+        groupWidth,
         groupColumns,
         groupButtonColumns,
         pinColumns,
@@ -12293,7 +12300,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         pinMaxHeight,
         pinMargin,
         scrollFallback: naturalHeight > safeHeight,
-        size: dockWidth >= 1000 ? 'wide' : dockWidth >= 760 ? 'standard' : dockWidth >= 520 ? 'compact' : 'tight'
+        size: availableDockWidth >= 1000 ? 'wide' : availableDockWidth >= 760 ? 'standard' : availableDockWidth >= 520 ? 'compact' : 'tight'
         };
     }
 

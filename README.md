@@ -1,271 +1,187 @@
-<div align="center">
+<p align="center">
+  <img src="docs/media/readme-v2-command-centre.webp" width="100%" alt="MissionChief Map Command Toolkit command centre overlooking a rain-lit British emergency response, finished with the branded Toolkit command plate">
+</p>
 
-<img src="docs/media/readme-hero-operations.webp" alt="A coordinated UK fire, ambulance and police response on a rain-lit city street" width="100%">
+<h1 align="center">MissionChief Map Command Toolkit</h1>
 
-# MissionChief Map Command Toolkit
+<p align="center">
+  <strong>See the mission. Read the fleet. Command the map. Reconcile the operation.</strong>
+</p>
 
-<p><strong>One operational layer for the mission, the fleet, the map and the account.</strong></p>
+<p align="center">
+  A precision command layer for MissionChief UK — created and maintained by <a href="https://github.com/Conroy1988">Conroy1988</a>.
+</p>
 
-<p><strong>Built for MissionChief UK by <a href="https://github.com/Conroy1988">Conroy1988</a>.</strong><br>Situational awareness, safe native actions and a command surface that adapts to the way you play.</p>
+<p align="center">
+  <a href="https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest"><img alt="Live Toolkit release" src="https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&amp;style=for-the-badge&amp;label=LIVE%20RELEASE&amp;color=35c8ff&amp;labelColor=071017"></a>
+  <a href="https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest"><img alt="Latest release publication date" src="https://img.shields.io/github/release-date/Conroy1988/missionchief-toolkit-assets?style=for-the-badge&amp;label=PUBLISHED&amp;color=f0bd45&amp;labelColor=071017"></a>
+  <a href="https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml"><img alt="Canonical build status" src="https://img.shields.io/github/actions/workflow/status/Conroy1988/missionchief-toolkit-assets/validate-userscript.yml?branch=main&amp;style=for-the-badge&amp;label=CANONICAL%20BUILD&amp;color=4be27d&amp;labelColor=071017"></a>
+</p>
 
-[![Latest release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&style=for-the-badge&label=LIVE%20RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
-[![Official installer](https://img.shields.io/badge/OFFICIAL%20INSTALL-TKB%20SCRIPTS-e52b32?style=for-the-badge)](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)
-[![Validation](https://img.shields.io/github/actions/workflow/status/Conroy1988/missionchief-toolkit-assets/validate-userscript.yml?branch=main&style=for-the-badge&label=CANONICAL%20BUILD)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
-[![Licence](https://img.shields.io/badge/LICENCE-MIT-111827?style=for-the-badge)](#licence-and-independence)
+<p align="center">
+  <a href="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/"><img alt="Install from the official Toolkit channel" src="https://img.shields.io/badge/INSTALL%20%2F%20UPDATE-TKB%20SCRIPTS-e52b32?style=for-the-badge&amp;logo=tampermonkey&amp;logoColor=white"></a>
+</p>
 
-<table>
-<tr>
-<td width="50%" align="center"><a href="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/"><strong>INSTALL OR UPDATE</strong><br><sub>Supported TKB distribution</sub></a></td>
-<td width="50%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/"><strong>OPEN THE FIELD GUIDE</strong><br><sub>Setup, features and operation</sub></a></td>
-</tr>
-<tr>
-<td width="50%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/themes/"><strong>EXPLORE THE INTERFACES</strong><br><sub>Eight complete command systems</sub></a></td>
-<td width="50%" align="center"><a href="https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md"><strong>CHECK RELEASE CONTROL</strong><br><sub>Verified production state</sub></a></td>
-</tr>
-</table>
+> [!IMPORTANT]
+> **TKB Scripts is the only supported install and update channel.** GitHub is the canonical source, release archive and public engineering record — not the end-user installer.
 
-<sub><a href="#the-command-layer">Overview</a> · <a href="#operational-systems">Systems</a> · <a href="#the-current-command-experience">Experience</a> · <a href="#eight-complete-interface-systems">Interfaces</a> · <a href="#built-for-every-command-post">Devices</a> · <a href="#install-and-enter-command">Install</a> · <a href="#release-integrity">Integrity</a></sub>
+| Enter command | Explore the system |
+|---|---|
+| **[Install or update from TKB Scripts](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)**<br>Enter through the supported product channel. | **[Open the Field Guide](https://conroy1988.github.io/missionchief-toolkit-assets/)**<br>Learn the command layer from first signal to final account. |
+| **[Browse the Interface Gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)**<br>See all eight complete interface systems. | **[Inspect Release Control](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md)**<br>Read the live delivery, backup and verification state. |
 
-</div>
+<p align="center">
+  <a href="#the-command-layer">Command layer</a> ·
+  <a href="#from-first-signal-to-final-account">Operational flow</a> ·
+  <a href="#one-command-layer-every-screen">Every screen</a> ·
+  <a href="#eight-complete-interface-systems">Interface systems</a> ·
+  <a href="#release-without-guesswork">Release integrity</a> ·
+  <a href="#install-and-enter-command">Install</a>
+</p>
 
 ---
 
 ## The command layer
 
-MissionChief distributes critical information across the map, mission windows, vehicle tables, alliance pages, transport requests and finance views. The Toolkit brings those signals together without taking authority away from MissionChief.
+MissionChief is the operational engine. The Toolkit is the decision surface above it: a dark, high-contrast command environment that turns missions, units, transport, places and finance into one legible picture.
 
-It helps you **see the operation**, **understand the pressure**, **reach the right native control** and **recover cleanly** when a session becomes crowded.
+It never invents game actions. Every action remains traceable to MissionChief's native controls; the Toolkit improves how quickly you can see, understand and reach them.
 
-| INCIDENT | FLEET | MAP | CONTROL |
-|:---:|:---:|:---:|:---:|
-| Priority, age and requirement intelligence | Status, identity, demand and nearby resources | Coverage, places, profiles and responsive layouts | Finance, diagnostics, backups and safe recovery |
+| Command principle | What it means in practice |
+|---|---|
+| **Signal over noise** | Operationally useful information moves forward. Decoration steps back. |
+| **Context before clicks** | The right status, gap or action appears where the decision is being made. |
+| **One coherent picture** | Mission, fleet, map and finance share the same visual and behavioural language. |
+| **Safe by construction** | Native actions, local preferences, clear recovery paths and explicit boundaries. |
 
-> [!NOTE]
-> **Command doctrine:** expose the signal, preserve the source, act through the correct native control, and leave the page recoverable.
-
----
+<p align="center">
+  <img src="docs/media/readme-v2-operational-picture.webp" width="100%" alt="British multi-agency road and rail response seen as a single operational picture, with the MissionChief Map Command Toolkit command plate">
+</p>
 
 ## From first signal to final account
 
-<img src="docs/media/readme-field-command.webp" alt="A controlled UK multi-agency response across a dual carriageway" width="100%">
+| Operational stage | Command capability |
+|---|---|
+| **01 · See the incident** | Incident Command Wire surfaces developing activity; map timers reveal Mission Age; Mission Value gives immediate scale; MissionChief UK Knowledge Link brings the relevant operational context into reach. |
+| **02 · Read the fleet** | Operational Pressure Board, Vehicle Code Status, Custom Vehicle Badges and Resource Gap expose readiness, load and shortfall; Unit Locator & Follow Mode keeps a selected response in view. |
+| **03 · Command the map** | Toolkit Command Palette, Contextual Command Menus, Quick Places, bookmarks and coverage rings turn navigation into direct intent: open, focus, pin, follow or return. |
+| **04 · Reconcile the operation** | Alliance Credits and financial intelligence preserve checkpoints, variance and payout context; explicit reports can be sent only to a saved Discord webhook. |
 
-### See the entire operational picture
+### Four channels, one operational picture
 
-The **Incident Command Wire** keeps priority events in sequence. **Mission Age map timers** surface time pressure. **Mission Value** adds verified value context to opened MissionChief windows. **MissionChief UK Knowledge Link** turns live requirements into explainable UK unit, crew, training and personnel evidence.
-
-The map-native **Operational Pressure Board** then reconciles personal and joined alliance missions against the available personal fleet. It accounts for shared demand, specialist shortages, fleet conflicts, reserve risk and patient or prisoner transport pressure before presenting the clearest Top Actions.
-
-### Move through the operation safely
-
-**Toolkit Command Palette** searches live missions, personal vehicles, buildings, Quick Places, bookmarks, profiles, settings and safe commands from one responsive surface. **Contextual Command Menus** bring focused actions to supported missions, vehicles and buildings by right-click or long-press.
-
-Focus, Open and Pin are navigation actions. The board and palette do not select or dispatch vehicles. An **Operational SITREP** is sent only when the user explicitly generates it, through the saved Discord webhook, with mentions suppressed.
+| Channel | What moves forward |
+|---|---|
+| **Mission command** | Incident Command Wire · Mission Age · Mission Value · Unit Commitment · Patient Transport Sweep · Operational SITREP |
+| **Fleet and transport** | Operational Pressure Board · Vehicle Code Status · Resource Gap · Transport Watcher · Unit Locator & Follow Mode |
+| **Map and places** | My Missions · Alliance Missions · Vehicles · Buildings · Quick Places · bookmarks · coverage rings |
+| **Finance and alliance** | Alliance Credits · reconciliation checkpoints · variance preservation · payout feedback · Financial Archive |
 
 ---
 
-## Live command contract — v10.3.4
+<p align="center">
+  <img src="docs/media/readme-v2-command-post.webp" width="100%" alt="Toolkit command post running a coherent emergency map across ultrawide display, tablet and phone, finished with the branded command plate">
+</p>
 
-> [!TIP]
-> The global launcher, dock, command menu and map overlays now belong only to the positively identified top-level MissionChief map. Standalone mission, credits, alliance, building and vehicle pages remain native, while supported page-specific enhancements continue independently.
+## One command layer, every screen
 
-The compact release-status button checks the authoritative `release-state` manifest every 60 seconds. It shows `LATEST` when the installed release is current and a clear neon `UPDATE` when a newer verified release is available; both states open the official TKB Toolkit page. Public `main` is no longer a release-state or update-check fallback.
+The operational hierarchy stays intact as the workspace changes. Controls reflow, density adjusts and touch targets expand without turning the product into a different tool.
 
-On Desktop, the command bar now uses the safe horizontal map workspace instead of stacking every control into a narrow column. Its compact 36px buttons arrange themselves into responsive operational groups, pinned locations occupy a separate row, and the launcher remains reachable at every dock position. The Major Incident Wire and zoomed or short viewports are reserved automatically; internal scrolling is kept only as an emergency fallback.
-
----
-
-## Operational systems
-
-### Mission command
-
-| System | What it contributes |
+| Environment | Designed behaviour |
 |---|---|
-| **Incident Command Wire** | A bounded priority sequence with a wider incident queue and direct map navigation |
-| **Operational Pressure Board** | Mission priority, one-vehicle allocation, confirmed shortfalls, fleet conflicts, reserve risk and transport pressure |
-| **MissionChief UK Knowledge Link** | Verified UK requirements evidence and direct records from the TKB Guide |
-| **Mission Age map timers** | Compact age context above personal missions |
-| **Mission Value** | Verified value in opened native mission windows |
-| **Unit Commitment** | Response context while MissionChief remains in charge of dispatch |
-| **Transport Watcher** | Patient and prisoner transport demand at the point it matters |
+| **Desktop and ultrawide** | Maximum situational density, a stable dock, fast switching and a wide operational canvas. |
+| **Tablet and iPad** | Touch-first command surfaces, balanced panels and strong landscape or portrait recovery. |
+| **iPhone and iOS Mobile** | Focused mission context, thumb-reachable actions and disciplined use of limited space. |
+| **Economy Mode and reduced motion** | Lower visual workload and quieter updates while preserving core command information. |
 
-### Fleet and transport command
+## The command experience
 
-| System | What it contributes |
+| Move | System |
 |---|---|
-| **Vehicle Code Status** | A live fleet summary by response code, description and count |
-| **Custom Vehicle Badges** | Personal vehicle categories beside native vehicle identity |
-| **Unit Locator & Follow Mode** | Local search by caption, ID, type, station or status, followed only after explicit selection |
-| **Resource Gap** | Active demand compared with nearby personal availability |
-| **Auto-load all vehicles** | MissionChief’s own hidden-vehicle batch control, reached safely |
-| **Patient Transport Sweep** | Bounded processing through MissionChief-owned vehicle and release controls with result verification |
-
-### Map and location command
-
-| System | What it contributes |
-|---|---|
-| **Coverage rings** | Readable response-range context around selected places |
-| **Smart Bookmark Labels** | Compact labels, pins and touch previews for saved operational geography |
-| **Quick Places** | Fixed jumps to Edinburgh, Fife, Wakefield, London and Newcastle |
-| **Profiles and layouts** | Distinct command presentations without changing MissionChief data |
-| **Full-Screen Map** | Maximum working area with persistent and <kbd>Esc</kbd> recovery |
-| **Tablet Quick Wheel** | Four to eight configurable long-press actions on the map |
-
-### Finance and alliance command
-
-| System | What it contributes |
-|---|---|
-| **Alliance Credits** | Mission-value and eligibility-aware alliance filtering |
-| **Alliance Member Manager** | Member tools confined to a positively identified Members view |
-| **Financial intelligence** | Daily, weekly, monthly and custom-period performance context |
-| **Reconciliation checkpoints** | Complete periods anchored to MissionChief revenue, spending and sum evidence |
-| **Variance preservation** | Unexplained differences remain visible rather than receiving invented classifications |
-| **Payout presentations** | Simple, Informative and The Wolf reports, including an optional 1200 × 675 visual report |
-| **Discord reporting** | User-triggered finance and SITREP delivery through the configured webhook only |
-
-> [!IMPORTANT]
-> **Patient Transport Sweep** uses MissionChief-owned windows and controls, verifies the native result, and stops when authoritative evidence does not change. It is deliberately bounded automation, not a replacement dispatch system.
-
----
-
-## The current command experience
-
-<img src="docs/media/readme-control-room.webp" alt="A modern emergency operations room with map, fleet and pressure displays" width="100%">
-
-### Find it. Shape it. Recover it
-
-The current Toolkit experience combines fast discovery with deep personal control:
-
-| DISCOVERY | PERSONALISATION |
-|---|---|
-| **What’s New & Feature Beacon** introduces new work once and keeps a `NEW` marker on the correct Settings route until viewed. | **Personalisation Studio** brings device layouts, colours, surfaces, Quick Wheel slots, settings backups, first-run guidance and opt-in alerts into one place. |
-| **Toolkit Command Palette** opens with <kbd>K</kbd>, the Palette control, Settings or the Tablet Quick Wheel. | **Hotkey & Gesture Studio** remaps Toolkit keyboard commands with duplicate rejection and assigns four optional touch swipes. |
-| **Contextual Command Menus** expose safe focus, native-open and local-search actions where the work already is. | **Complete MissionChief Reskinning** can extend the active interface across navigation, lists, windows, tables, forms and buttons while preserving warning meaning. |
-
-| FOCUS | RECOVERY |
-|---|---|
-| **Smart Auto-Hiding Dock** retracts the command controls while keeping the launcher and version status reachable. | **Toolkit Safe Mode** suspends optional overlays, dashboards, effects and input surfaces while retaining Settings, Doctor, export and recovery. |
-| Independent Desktop and Tablet density supports Spacious, Standard, Compact and Command Centre layouts. | **Toolkit Doctor** checks version, interface ownership, persistence, map mounting, public UK intelligence and responsive bounds without copying secrets. |
-| Local sounds are synthesised in the browser; notifications require an explicit permission choice. | **One-Click Session Cleanup** previews an allowlist of transient state and protects settings, layouts, themes, profiles, bookmarks, snapshots, webhooks, secrets and Financial Archive history. |
-
-The Layout Builder supports pointer, touch and keyboard movement. Hidden controls remain reachable through Settings and the Palette. The Setup Wizard appears automatically only for a genuinely fresh install and can always be reopened or skipped.
+| **Discover** | Toolkit Command Palette, Hotkey & Gesture Studio and Contextual Command Menus make every major surface reachable without hunting. |
+| **Personalise** | Personalisation Studio, Complete MissionChief Reskinning and Smart Auto-Hiding Dock shape one deliberate workspace rather than a pile of add-ons. |
+| **Stay oriented** | What’s New & Feature Beacon explains change in context; Unit Locator & Follow Mode and mission signals preserve operational continuity. |
+| **Recover cleanly** | Toolkit Doctor, Toolkit Safe Mode and One-Click Session Cleanup provide visible, bounded recovery without damaging the native game. |
 
 ### Command shortcuts
 
-| Key | Action | Key | Action |
-|:---:|---|:---:|---|
-| <kbd>1</kbd> | My Missions | <kbd>5</kbd> | Alliance Credits |
-| <kbd>2</kbd> | Alliance Missions | <kbd>6</kbd> | Mission Age |
-| <kbd>3</kbd> | Vehicles | <kbd>V</kbd> | Vehicle Code Status |
-| <kbd>4</kbd> | My Buildings | <kbd>B</kbd> | Operational Pressure Board |
-| <kbd>K</kbd> | Toolkit Command Palette | <kbd>Esc</kbd> | Recover from Full-Screen Map |
-
-Every Toolkit shortcut can be changed in Hotkey & Gesture Studio.
+| Key | Opens | Key | Opens |
+|---:|---|---:|---|
+| `1` | My Missions | `2` | Alliance Missions |
+| `3` | Vehicles | `4` | My Buildings |
+| `5` | Alliance Credits | `6` | Mission Age |
+| `V` | Vehicle Code Status | `B` | Operational Pressure Board |
+| `K` | Toolkit Command Palette | — | — |
 
 ---
 
 ## Eight complete interface systems
 
-Every interface carries the same capability and stored configuration. The visual language changes; the operational contract does not.
+These are not colour swaps. Each system retunes surfaces, borders, signals, typography and atmosphere while keeping the same command grammar. **[Explore the live interface gallery →](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)**
 
-| Interface | Command-room character |
+| Interface system | Direction |
 |---|---|
-| **Map Command** | Clean cyan telemetry and modern dispatch-console clarity |
-| **Cyberpunk** | Neon incident signals and angular high-contrast controls |
-| **Fallout 4** | Green phosphor terminals and industrial survival controls |
-| **Umbrella** | Clinical containment, black surfaces and red-alert discipline |
-| **Factorio** | Machinery panels, amber controls and production-line logic |
-| **007 Intelligence** | Classified dossiers, restrained black and champagne-gold controls |
-| **Hyrule Command** | Royal cartography, luminous energy and ancient command motifs |
-| **The Godfather** | Oxblood, antique gold, polished wood and restrained authority |
-
-Inactive interfaces do not keep interface-specific effects or hosted media running. [Explore all eight interface systems](https://conroy1988.github.io/missionchief-toolkit-assets/themes/).
-
----
-
-## Built for every command post
-
-| Environment | Designed behaviour |
-|---|---|
-| **Desktop** | Full command panels, internal scrolling, keyboard control and an independently saved density |
-| **Ultrawide** | Expanded layouts without unbounded line length or detached controls |
-| **Tablet / iPad** | Touch-safe controls, landscape-aware panels, Quick Wheel and a separate density |
-| **iPhone Safari** | Safe-area-aware bottom sheets, 44 px targets, toolbar recovery and touch-first navigation |
-| **iPad Safari** | Split-view resilience, visual-viewport fitting and orientation recovery |
-| **Economy Mode** | Core information retained while non-essential work is suppressed |
-| **Reduced motion** | Operational facts preserved with non-essential movement removed |
-
-Responsive behaviour is a feature contract. It is not a desktop layout squeezed into a smaller screen.
+| **Map Command** | The signature cyan, gold and emergency-red operations room. |
+| **Cyberpunk** | Electric neon, deep contrast and a high-energy tactical grid. |
+| **Fallout 4** | Worn terminal green and retro-future field instrumentation. |
+| **Umbrella** | Clinical containment, hard geometry and controlled warning red. |
+| **Factorio** | Industrial panels, engineered density and production-floor clarity. |
+| **007 Intelligence** | Restrained intelligence-suite polish with precise gold accents. |
+| **Hyrule Command** | Ancient-symbol warmth translated into a modern command surface. |
+| **The Godfather** | Black, ivory and quiet authority for a cinematic executive room. |
 
 ---
 
 ## Privacy, performance and recovery
 
-### Local by default
+| Guarantee | Operational boundary |
+|---|---|
+| **Local-first preferences** | Interface settings stay in the browser unless you explicitly export or transfer them. |
+| **Anonymous outcomes only** | Coarse first-party analytics can measure feature outcomes, respect Global Privacy Control and Do Not Track, and never send player identity, alliance identity, a visitor ID, full user agent, referrer or an analytics cookie. |
+| **Quiet when inactive** | The Toolkit avoids pointless background work and offers Economy Mode plus reduced motion for constrained devices. |
+| **A clean return path** | Disable the userscript and MissionChief is **The One We Knew Before**. The native game remains the boundary and the fallback. |
 
-- Configuration stays in the browser unless the user explicitly invokes a supported reporting feature.
-- UK intelligence loads only after the user opens UK Intel, is schema-validated and contains no player or mission-instance data.
-- A safe JSON settings export excludes private integrations, archive identity and history.
-- Full settings transfer includes the Discord webhook and Financial Archive only inside passphrase-authenticated AES-256-GCM ciphertext.
-- Privacy-safe first-party analytics report only coarse version, device class, route class, confirmed lifecycle outcomes, feature demand, startup band and bounded error category to TKB.
-- Analytics honours Global Privacy Control and Do Not Track, uses no player or alliance data, and sends no visitor identifier, IP-derived identity, free text, full user agent, referrer or analytics cookie.
-- No separate player account or external player database is required.
+Protected settings backups, encrypted full transfer and safe export support deliberate recovery. No configuration transfer is silent; no Discord report is automatic.
 
-### Quiet when inactive
+---
 
-- Disabled systems must not retain recurring timers or active lifecycle work.
-- Inactive interfaces do not load hosted media or keep visual effects alive.
-- Broad document scans are avoided where bounded ownership is possible.
-- Map, responsive and command state have deterministic teardown and restoration.
-- Source contracts guard observer, timer, listener, selector and retired-feature budgets.
+<p align="center">
+  <img src="docs/media/readme-v2-release-integrity.webp" width="100%" alt="Secure Toolkit release lab with validation gates and infrastructure, finished with the MissionChief Map Command Toolkit command plate">
+</p>
 
-### The One We Knew Before
+## Release without guesswork
 
-The v7 boundary reset remains an executable product contract: MissionChief is authoritative, retired lifecycle ownership stays retired, independent Toolkit systems remain independently useful, and validation fails if deleted integration work is accidentally restored.
+The badges at the top of this page are live views of GitHub release and workflow metadata. **No version number or publication date is hard-coded into this README.** Publish a new repository release and the visible release identity updates automatically; the validation badge follows the canonical workflow on `main`.
+
+| Authority | Verified destination |
+|---|---|
+| **Canonical source** | [`src/MissionChief_Map_Command_Toolkit.user.js`](src/MissionChief_Map_Command_Toolkit.user.js) on `main` |
+| **Exact-head validation** | [Canonical validation workflow](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml) |
+| **Immutable release archive** | [Latest GitHub Release](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest) |
+| **Supported distribution** | [TKB Scripts product channel](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
+| **Published checksum** | [`dist/SHA256SUMS.txt`](dist/SHA256SUMS.txt) |
+| **Delivery and recovery evidence** | [Live Release Control Panel](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md) |
+
+```text
+Canonical source → exact-head validation → immutable GitHub release
+        ↓
+TKB verification → private recovery backup → Discord confirmation
+```
+
+The installed Toolkit also checks the authoritative `release-state` manifest on its normal schedule. When a newer published release exists, the status changes from **LATEST** to **UPDATE** and opens the supported TKB product page.
 
 ---
 
 ## Install and enter command
 
-1. Install **Tampermonkey** or another compatible userscript manager.
-2. Open the supported installer: **[Install MissionChief Map Command Toolkit](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/)**.
-3. Confirm the installation, reload MissionChief and open the Toolkit launcher on the map.
-4. Enable only the systems useful to the current account, device and workflow.
+1. Install a compatible userscript manager for your browser.
+2. Open the **[MissionChief Map Command Toolkit page on TKB Scripts](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)**.
+3. Choose **[Install Toolkit](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/)** and approve the userscript manager prompt.
+4. Load MissionChief UK. The command layer starts with safe defaults and introduces its controls in context.
 
-> [!IMPORTANT]
-> **The TKB Website is the only supported installation and automatic-update authority.** GitHub is the canonical source, validation authority and immutable release archive; it is not the end-user distribution channel.
+> [!NOTE]
+> Global launchers, dock controls and map overlays are limited to the top-level MissionChief map. Supported page enhancements can still operate independently on their relevant pages.
 
-| I want to… | Go here |
-|---|---|
-| Install or update | [TKB product page](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
-| Read setup and feature guidance | [MissionChief Map Command Toolkit Guide](https://conroy1988.github.io/missionchief-toolkit-assets/) |
-| Explore every visual system | [Interface gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/) |
-| See the current verified state | [Release Control Panel](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md) |
-| Review changes over time | [Changelog](CHANGELOG.md) |
-| Read every release | [GitHub Releases](https://github.com/Conroy1988/missionchief-toolkit-assets/releases) |
-| Report a confirmed problem | [Issue tracker](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) |
-| Discuss an idea | [GitHub Discussions](https://github.com/Conroy1988/missionchief-toolkit-assets/discussions) |
-
----
-
-## Release integrity
-
-The public page follows live release state rather than embedding a version number that can go stale.
-
-| Authority | Verified destination |
-|---|---|
-| **Canonical source** | [`src/MissionChief_Map_Command_Toolkit.user.js`](src/MissionChief_Map_Command_Toolkit.user.js) on `main` |
-| **Build validation** | [Canonical validation workflow](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml) |
-| **Immutable release** | [Latest GitHub Release](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest) |
-| **Distribution** | [TKB Scripts](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) |
-| **Checksum** | [`dist/SHA256SUMS.txt`](dist/SHA256SUMS.txt) |
-| **Recovery and delivery evidence** | [Release Control Panel](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md) |
-| **Hosted asset audit** | [Asset Health](.github/ASSET_HEALTH.md) |
-
-```text
-Canonical source  →  exact-head validation  →  immutable GitHub Release
-       ↓
-TKB install/update verification  →  private recovery backup  →  release confirmation
-```
+For normal updates, revisit the TKB product page or follow the in-Toolkit **UPDATE** signal. Do not replace an installed build from an unverified source.
 
 ---
 
@@ -274,7 +190,7 @@ TKB install/update verification  →  private recovery backup  →  release conf
 
 <br>
 
-**Map:** My Missions · Alliance Missions · Vehicles · My Buildings · Alliance Credits · mission age · coverage rings · Smart Bookmark Labels · Quick Places · bookmarks · profiles · Full-Screen Map · responsive modes
+**Map:** My Missions · Alliance Missions · Vehicles · My Buildings · Alliance Credits · Mission Age · coverage rings · Smart Bookmark Labels · Quick Places · bookmarks · profiles · Full-Screen Map · responsive modes
 
 **Missions:** Incident Command Wire · Operational Pressure Board · Operational SITREP · MissionChief UK Knowledge Link · Mission Value · Unit Commitment · Transport Watcher · Patient Transport Sweep
 
@@ -288,7 +204,15 @@ TKB install/update verification  →  private recovery backup  →  release conf
 
 </details>
 
----
+## Support and contribute
+
+| Need | Destination |
+|---|---|
+| Read the operational guide | [Toolkit Field Guide](https://conroy1988.github.io/missionchief-toolkit-assets/) |
+| Review release history | [GitHub Releases](https://github.com/Conroy1988/missionchief-toolkit-assets/releases) and [`CHANGELOG.md`](CHANGELOG.md) |
+| Report a confirmed problem | [Issue tracker](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) |
+| Propose an idea or discuss operations | [GitHub Discussions](https://github.com/Conroy1988/missionchief-toolkit-assets/discussions) |
+| Contribute safely | [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) and [`SECURITY.md`](SECURITY.md) |
 
 ## Licence and independence
 
@@ -302,9 +226,9 @@ MissionChief, Leitstellenspiel, Cyberpunk 2077, Fallout, Resident Evil / Umbrell
 
 ---
 
-### See the mission · Read the fleet · Command the map · Reconcile the operation
+### The operation is already moving. See all of it.
 
-[![Install Toolkit](https://img.shields.io/badge/INSTALL-MISSIONCHIEF%20MAP%20COMMAND%20TOOLKIT-e52b32?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)
+[![Enter Command](https://img.shields.io/badge/ENTER%20COMMAND-MISSIONCHIEF%20MAP%20COMMAND%20TOOLKIT-e52b32?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/)
 
 <sub>Canonical source on GitHub · Supported distribution through TKB Scripts · Independent community project</sub>
 

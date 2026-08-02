@@ -11,7 +11,6 @@ VALIDATION = ROOT / ".github/workflows/validate-userscript.yml"
 AUTOMATIC = ROOT / ".github/workflows/auto-release-after-validation.yml"
 OWNER = ROOT / ".github/workflows/owner-release-command.yml"
 RELEASE = ROOT / ".github/workflows/release-toolkit.yml"
-SYNC = ROOT / ".github/scripts/sync_greasyfork_root_mirror.sh"
 VERIFIER = ROOT / ".github/scripts/verify_validation_candidate.py"
 DASHBOARD = ROOT / "status/release-dashboard.json"
 DASHBOARD_GENERATOR = ROOT / ".github/scripts/generate_release_dashboard.py"
@@ -35,7 +34,6 @@ def main() -> int:
     automatic = AUTOMATIC.read_text(encoding="utf-8")
     owner = OWNER.read_text(encoding="utf-8")
     release = RELEASE.read_text(encoding="utf-8")
-    sync = SYNC.read_text(encoding="utf-8")
     generator = DASHBOARD_GENERATOR.read_text(encoding="utf-8")
     reconciler = RETIRED_RECONCILER.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
@@ -53,7 +51,6 @@ def main() -> int:
         "dist/MissionChief_Map_Command_Toolkit.install.user.js",
         "dist/MissionChief_Map_Command_Toolkit.update.user.js",
         "dist/MissionChief_Map_Command_Toolkit.meta.js",
-        "dist/MissionChief_Map_Command_Toolkit.greasyfork.user.js",
         "dist/MissionChief_Map_Command_Toolkit.css",
         "publicMainChanged: false",
         "releaseDashboardChanged: false",
@@ -141,13 +138,11 @@ def main() -> int:
         "Verify requested version is a validated candidate",
     ], "Owner release workflow")
 
-    require(sync, [
-        "git add dist \"$ROOT_USER\" \"$ROOT_TXT\"",
-        "Publish Toolkit ${VERSION} stable distribution source",
-        "Stable distribution publication commit",
-    ], "Stable distribution publication helper")
     require(release, [
-        "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
+        "Prepare stable first-party release assets",
+        'RELEASE_TARGET_SHA: ${{ steps.release_start.outputs.source_sha }}',
+        'distributionAuthority' ,
+        'tkb-website-only',
         "Record successful release, manifest, announcement and speed state",
         "python3 .github/scripts/build_stable_update_manifest.py",
         "source_sha=$(git rev-parse HEAD)",

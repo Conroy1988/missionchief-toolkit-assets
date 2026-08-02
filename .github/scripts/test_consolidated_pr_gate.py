@@ -14,7 +14,6 @@ LEGACY = [
     ".github/workflows/asset-health-monitor.yml",
     ".github/workflows/v7-native-toolkit-boundary.yml",
     ".github/workflows/v7-incident-command-wire.yml",
-    ".github/workflows/import-canonical-userscript.yml",
     ".github/workflows/github-pages.yml",
     ".github/workflows/release-planning.yml",
     ".github/workflows/publish-update-manifest.yml",

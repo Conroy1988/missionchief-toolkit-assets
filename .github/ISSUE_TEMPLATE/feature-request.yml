@@ -43,7 +43,7 @@ body:
         - Themes, map skins or visual presentation
         - Settings, import or export
         - Tablet or iOS experience
-        - GitHub, Greasy Fork or release infrastructure
+        - TKB Website, GitHub or release infrastructure
         - New area
     validations:
       required: true

@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || { echo "::error::Invalid version: $RELEASE_VERSION"; exit 1; }
-          [[ "$(jq -r '.greasyFork.syncEnabled' .github/release-settings.json)" == "true" ]] || { echo "::error::Greasy Fork synchronization is disabled."; exit 1; }
+          [[ "$(jq -r '.distributionAuthority' .github/release-settings.json)" == "tkb-website-only" ]] || { echo "::error::TKB Website must remain the sole distribution authority."; exit 1; }
           [[ "$(jq -r '.release.externalMigrationBackup' .github/release-settings.json)" == "Conroy1988/missionchief-map-command-toolkit-private" ]] || { echo "::error::Private migration repository is not configured correctly."; exit 1; }
 
       - name: Validate canonical userscript
@@ -180,28 +180,6 @@ jobs:
           [[ "$PERMISSION" == "true" ]] || { echo "::error::MIGRATION_REPO_TOKEN can read the private repository but does not have push permission. Set Contents to Read and write."; exit 1; }
           echo "Private migration repository read/write permission verified."
 
-      - name: Verify Greasy Fork metadata endpoint
-        shell: bash
-        run: |
-          set -euo pipefail
-          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
-          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
-
-          curl --fail --silent --show-error --location --compressed --max-time 30 \
-            --header "Cache-Control: no-cache" \
-            "${META_URL}?cache_bust=$(date +%s%N)" -o greasyfork.meta.js
-
-          LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork.meta.js | head -n 1 | xargs)"
-          [[ -n "$LIVE_VERSION" ]] || { echo "::error::Could not read the current Greasy Fork version from the metadata endpoint."; exit 1; }
-          echo "Current Greasy Fork version: $LIVE_VERSION"
-
-          PAGE_STATUS="$(curl --silent --show-error --location --max-time 30 --output /dev/null --write-out '%{http_code}' "$SCRIPT_URL" || true)"
-          if [[ "$PAGE_STATUS" != "200" ]]; then
-            echo "::warning::Greasy Fork's HTML page returned HTTP ${PAGE_STATUS:-unavailable} to the GitHub runner. This is commonly caused by automated-request blocking and does not affect metadata verification or release syncing."
-          else
-            echo "Greasy Fork HTML page is reachable."
-          fi
-
       - name: Write readiness summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
@@ -220,8 +198,8 @@ jobs:
             echo "- ✅ Changelog and release bundle prepared"
             echo "- ✅ SHA-256 verified: \`${HASH}\`"
             echo "- ✅ Private migration repository read/write permission verified"
-            echo "- ✅ Greasy Fork metadata endpoint verified"
+            echo "- ✅ TKB Website-only distribution authority verified"
             echo "- ⏸️ No GitHub Release created"
-            echo "- ⏸️ Greasy Fork not changed"
+            echo "- ⏸️ No retired distribution channel contacted"
             echo "- ⏸️ Discord not notified"
           } >> "$GITHUB_STEP_SUMMARY"

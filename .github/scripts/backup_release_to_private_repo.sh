@@ -33,7 +33,6 @@ required=(
   "MissionChief_Map_Command_Toolkit.install.user.js"
   "MissionChief_Map_Command_Toolkit.update.user.js"
   "MissionChief_Map_Command_Toolkit.meta.js"
-  "MissionChief_Map_Command_Toolkit.greasyfork.user.js"
   "MissionChief_Map_Command_Toolkit.css"
 )
 
@@ -123,8 +122,7 @@ else
     --arg releaseUrl "$RELEASE_URL" \
     --arg sha256 "$ACTUAL_HASH" \
     --arg backedUpAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-    --argjson greasyForkVerified "${GREASYFORK_VERIFIED:-false}" \
-    '{project:$project,version:$version,sourceRepository:$sourceRepository,sourceCommit:$sourceCommit,githubRelease:$releaseUrl,sha256:$sha256,tkbDistributionVerified:true,greasyForkVerified:$greasyForkVerified,filesValidated:true,textCopyByteIdentical:true,backedUpAt:$backedUpAt}' > "$TARGET_ROOT/backup-record.json"
+    '{project:$project,version:$version,sourceRepository:$sourceRepository,sourceCommit:$sourceCommit,githubRelease:$releaseUrl,sha256:$sha256,distributionAuthority:"tkb-website-only",tkbDistributionVerified:true,filesValidated:true,textCopyByteIdentical:true,backedUpAt:$backedUpAt}' > "$TARGET_ROOT/backup-record.json"
 fi
 
 if [[ "$UPDATE_CURRENT_POINTER" == "true" ]]; then

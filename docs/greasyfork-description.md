@@ -1,12 +1,12 @@
 # MissionChief Map Command Toolkit
 
-## v10.2.7 — Adaptive Desktop command workspace
+## Distribution retired — use TKB Website
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
 **The One We Knew Before** keeps MissionChief's native pages in control while adding the command layer only where it belongs.
 
-Version 10.2.7 replaces the narrow 240px Desktop command column with an adaptive map-width command deck. Compact 36px controls retain readable labels, keyboard badges and state text while Visibility, Intelligence, Dashboard and Performance reorganise from one to four responsive group columns. Pinned locations use a dedicated compact row, normal Desktop layouts avoid horizontal and vertical scrolling, and genuinely short maps retain a bounded emergency scroll fallback. All four dock positions, Major Incident Wire reservation, 80–200% browser zoom, auto-hide, themes and custom layouts remain supported. The global command shell remains exclusive to the positively identified top-level MissionChief map, the compact release-status button retains its verified 60-second TKB-first update check, and Alliance Member Manager remains isolated to the active Members or Mitglieder view. Unit Locator & Follow Mode and One-Click Session Cleanup remain fully supported. TKB remains the official install and automatic-update channel; Greasy Fork is a non-blocking discovery mirror.
+This listing is retired and no longer receives Toolkit releases. The TKB Website is the only supported installation and automatic-update channel. Version 10.3.1 replaces the narrow Desktop column with an adaptive map-width command deck whose compact 36px controls reorganise into one to four readable groups, with pinned locations on their own row and bounded scrolling only for genuinely short maps. It retains v10.3.0's privacy-safe aggregate lifecycle, adoption, feature, performance and bounded error analytics without visitor identifiers or player, alliance or gameplay data. All four dock positions, Major Incident Wire reservation, 80–200% browser zoom, map-only command ownership, Unit Locator & Follow Mode and One-Click Session Cleanup remain supported.
 
 ### Retained native systems
 

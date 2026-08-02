@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.2.7
+// @version      10.3.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.2.7',
+        version: '10.3.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -504,6 +504,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         financeRulesCacheState: 'mc_map_command_toolkit_finance_rules_v450',
         financePolicyCacheState: 'mc_map_command_toolkit_finance_policy_v460',
         ukKnowledgeCacheState: 'mc_map_command_toolkit_uk_knowledge_v1',
+        analyticsState: 'mc_map_command_toolkit_analytics_v1',
         oldStorageKeys: [
         'mc_map_command_toolkit_state_v149',
         'mc_map_command_toolkit_state_v148',
@@ -784,6 +785,132 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         Object.assign(metrics, extra);
         pageWindow.__MCMS_STARTUP_METRICS__ = metrics;
         return elapsedMs;
+    }
+
+    const TOOLKIT_ANALYTICS_ENDPOINT = 'https://tkb-gaming.scot/api/toolkit-analytics.php';
+    const TOOLKIT_ANALYTICS_FEATURES = new Set([
+        'markerFocus', 'missionPulse', 'roadPriority', 'coverage', 'allianceMissions',
+        'myMissions', 'vehicles', 'buildings', 'missionValue', 'customVehicleBadges',
+        'missionLockAudio', 'payoutFlash', 'payoutSound', 'stuckDetector', 'missionSpawn',
+        'clean', 'shortcuts', 'compactDock', 'quickWheel', 'autoLoadAllVehicles',
+        'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
+        'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
+        'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
+        'financialIntelligence', 'toolkitDoctor', 'safeMode', 'sessionCleanup'
+    ]);
+    const toolkitAnalyticsSessionSignals = new Set();
+
+    function toolkitAnalyticsAllowed() {
+        try {
+        return pageWindow.navigator?.globalPrivacyControl !== true &&
+            pageWindow.navigator?.doNotTrack !== '1' &&
+            pageWindow.doNotTrack !== '1';
+        } catch (err) { return false; }
+    }
+
+    function toolkitAnalyticsDevice() {
+        const width = Math.max(0, Number(pageWindow.innerWidth) || Number(document.documentElement?.clientWidth) || 0);
+        if (width <= 760) return 'mobile';
+        if (width <= 1180 || pageWindow.matchMedia?.('(pointer: coarse)')?.matches) return 'tablet';
+        return 'desktop';
+    }
+
+    function toolkitAnalyticsRoute() {
+        const path = String(location.pathname || '').toLowerCase();
+        if (/^\/(?:$|missions\/?$)/u.test(path)) return 'map';
+        if (path.startsWith('/missions/')) return 'mission';
+        if (path.includes('/alliance') || path.includes('/verband')) return 'alliance';
+        if (path.includes('/buildings') || path.includes('/gebauede') || path.includes('/gebaeude')) return 'buildings';
+        if (path.includes('/credits')) return 'credits';
+        return 'other';
+    }
+
+    function toolkitAnalyticsPerformance(elapsedMs) {
+        const value = Math.max(0, Number(elapsedMs) || 0);
+        if (value < 750) return 'fast';
+        if (value < 2000) return 'normal';
+        if (value < 5000) return 'slow';
+        return 'very_slow';
+    }
+
+    function toolkitAnalyticsSend(event, dimensions = {}) {
+        if (!toolkitAnalyticsAllowed() || runtime.destroyed) return false;
+        const allowedEvents = new Set(['telemetry_enrolled', 'install_confirmed', 'update_confirmed', 'active_daily', 'active_7d', 'active_30d', 'core_ready', 'feature_toggle', 'feature_use', 'runtime_error']);
+        if (!allowedEvents.has(event)) return false;
+        const payload = new URLSearchParams({ event, version: SCRIPT.version });
+        for (const key of ['previousVersion', 'device', 'route', 'feature', 'performance', 'error']) {
+        const value = String(dimensions[key] || '');
+        if (value) payload.set(key, value);
+        }
+        try {
+        void runtimeFetch(TOOLKIT_ANALYTICS_ENDPOINT, {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: payload.toString(),
+            credentials: 'omit',
+            referrerPolicy: 'no-referrer'
+        }).catch(() => {});
+        return true;
+        } catch (err) { return false; }
+    }
+
+    function toolkitAnalyticsReadState() {
+        const raw = gmGetValueSafe(SCRIPT.analyticsState, null);
+        if (!raw) return null;
+        try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!parsed || Number(parsed.schema) !== 1) return null;
+        return parsed;
+        } catch (err) { return null; }
+    }
+
+    function toolkitAnalyticsConfirmLifecycle(coreReadyMs) {
+        if (!toolkitAnalyticsAllowed()) return false;
+        const now = Date.now();
+        const day = new Date(now).toISOString().slice(0, 10);
+        const week = String(Math.floor(now / (7 * 86400000)));
+        const month = String(Math.floor(now / (30 * 86400000)));
+        const previous = toolkitAnalyticsReadState();
+        const next = {
+        schema: 1,
+        lastVersion: SCRIPT.version,
+        lastDay: day,
+        lastWeek: week,
+        lastMonth: month,
+        lastCoreReadyDay: day
+        };
+        if (!gmSetValueSafe(SCRIPT.analyticsState, JSON.stringify(next))) return false;
+
+        if (!previous) {
+        toolkitAnalyticsSend(toolkitFreshInstallAtLoad ? 'install_confirmed' : 'telemetry_enrolled');
+        } else if (String(previous.lastVersion || '') !== SCRIPT.version) {
+        toolkitAnalyticsSend('update_confirmed', { previousVersion: String(previous.lastVersion || '') });
+        }
+        const activity = { device: toolkitAnalyticsDevice(), route: toolkitAnalyticsRoute() };
+        if (previous?.lastDay !== day) toolkitAnalyticsSend('active_daily', activity);
+        if (previous?.lastWeek !== week) toolkitAnalyticsSend('active_7d', activity);
+        if (previous?.lastMonth !== month) toolkitAnalyticsSend('active_30d', activity);
+        if (previous?.lastCoreReadyDay !== day) toolkitAnalyticsSend('core_ready', { performance: toolkitAnalyticsPerformance(coreReadyMs) });
+        return true;
+    }
+
+    function toolkitAnalyticsRecordFeature(feature, event = 'feature_use') {
+        const safeFeature = String(feature || '');
+        const safeEvent = event === 'feature_toggle' ? event : 'feature_use';
+        const signal = `${safeEvent}:${safeFeature}`;
+        if (!TOOLKIT_ANALYTICS_FEATURES.has(safeFeature) || toolkitAnalyticsSessionSignals.has(signal)) return false;
+        toolkitAnalyticsSessionSignals.add(signal);
+        return toolkitAnalyticsSend(safeEvent, { feature: safeFeature });
+    }
+
+    function toolkitAnalyticsRecordError(error) {
+        const safeError = ['boot_integration', 'operational_startup'].includes(error) ? error : '';
+        const signal = `runtime_error:${safeError}`;
+        if (!safeError || toolkitAnalyticsSessionSignals.has(signal)) return false;
+        toolkitAnalyticsSessionSignals.add(signal);
+        return toolkitAnalyticsSend('runtime_error', { error: safeError });
     }
 
     function runtimeFetch(input, init = {}) {
@@ -1513,6 +1640,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let commandPaletteSelectedIndex = 0;
     let commandPaletteReturnFocus = null;
     state = loadState();
+    const toolkitFreshInstallAtLoad = settingsPersistenceMeta.source === 'defaults';
 
     function defaultLayoutDeviceState(position = 'bl', device = 'desktop') {
         const safePosition = POSITIONS[position] ? position : 'bl';
@@ -15785,6 +15913,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
 The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control or Cancel Transport control. Your own verified vehicle IDs are always excluded. Continue?`);
         if (!confirmed) return;
+        toolkitAnalyticsRecordFeature('patientTransportSweep');
         transportSweepRuntime.running = true;
         transportSweepRuntime.stopRequested = false;
         transportSweepRuntime.currentMissionId = null;
@@ -20001,6 +20130,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             closeOperationalPressureBoard();
             return;
         }
+        toolkitAnalyticsRecordFeature('pressureBoard');
         const vehicleStatus = document.querySelector(`[id="${SCRIPT.vehicleStatusId}"]`);
         if (vehicleStatus?.classList.contains('mcms-open')) {
             vehicleStatus.classList.remove('mcms-open');
@@ -21420,6 +21550,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function setToolkitSafeMode(enabled, announce = true) {
         const next = Boolean(enabled);
         if (state.safeMode.enabled === next) return false;
+        toolkitAnalyticsRecordFeature('safeMode');
         captureSettingsSnapshot(state, { reason: next ? 'Before entering Toolkit Safe Mode' : 'Before leaving Toolkit Safe Mode', force: true });
         if (next) {
         state.safeMode = { enabled: true, since: Date.now(), previousTab: state.activeTab };
@@ -22391,6 +22522,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     async function runToolkitDoctor() {
+        toolkitAnalyticsRecordFeature('toolkitDoctor');
         closeCommandExperienceModal({ restoreFocus: false });
         const responsiveStatus = toolkitDoctorResponsiveStatus();
         const overlayConflicts = toolkitDoctorOverlayConflictCount();
@@ -22466,7 +22598,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
-        '<article class="mcms-command-note"><b>Official updates have moved to TKB</b><p>TKB now provides the supported installer and automatic-update channel. GitHub remains the verified release archive; Greasy Fork is a non-blocking mirror.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
+        '<article class="mcms-command-note"><b>Official updates are delivered by TKB</b><p>The TKB Website is the only supported installer and automatic-update channel. GitHub remains the verified source and immutable release archive.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
         '<article class="mcms-command-note"><b>Cleaner mission map and Alliance Chat</b><p>Mission Progress Rings and Alliance Chat Mission Previews have been retired. Mission markers and Alliance Chat now remain in their native MissionChief form.</p></article>' +
         '<div class="mcms-update-grid">' +
             '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
@@ -22514,6 +22646,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function openSessionCleanup() {
+        toolkitAnalyticsRecordFeature('sessionCleanup');
         markFeatureBeaconViewed('sessionCleanup');
         const plan = sessionCleanupPlan();
         const list = plan.items.length
@@ -27101,6 +27234,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function setActiveTab(tab) {
         if (!COMMAND_SECTION_ORDER.includes(tab)) return;
+        if (tab === 'finance') toolkitAnalyticsRecordFeature('financialIntelligence');
         state.activeTab = tab;
         saveState();
         updateUI();
@@ -27395,6 +27529,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             if (!state.quickWheel.enabled) closeTabletQuickWheel();
             showToast(state.quickWheel.enabled ? 'Tablet Quick Wheel on' : 'Tablet Quick Wheel off');
         }
+        toolkitAnalyticsRecordFeature(feature, 'feature_toggle');
     }
     function parseTime(value, fallback) {
         const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
@@ -27783,6 +27918,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function openUnitLocator() {
         if (state.safeMode.enabled) { showToast('Exit Toolkit Safe Mode to use vehicle follow'); return false; }
+        toolkitAnalyticsRecordFeature('unitLocator');
         markFeatureBeaconViewed('unitLocator');
         const overlay = openCommandExperienceModal({
         kind: 'Unit Locator',
@@ -28236,6 +28372,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             existing.querySelector('[data-command-palette-input]')?.focus?.({ preventScroll: true });
             return existing;
         }
+        toolkitAnalyticsRecordFeature('commandPalette');
         commandPaletteReturnFocus = returnFocus instanceof HTMLElement ? returnFocus : document.activeElement instanceof HTMLElement ? document.activeElement : null;
         closeTabletQuickWheel({ restoreFocus: false });
         closeCommandExperienceModal({ restoreFocus: false });
@@ -30662,6 +30799,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (operationalStartupStarted || runtime.destroyed) return;
         runtimeSetTimeout(() => runtimeRunWhenIdle(() => {
             runDeferredOperationalStartup().catch(err => {
+                toolkitAnalyticsRecordError('operational_startup');
                 operationalStartupComplete = true;
                 startupDataPassActive = false;
                 console.debug(`[${SCRIPT.name}] Deferred startup recovered after an operational initialisation error.`, err);
@@ -30925,6 +31063,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         try {
             return callback();
         } catch (error) {
+            toolkitAnalyticsRecordError('boot_integration');
             console.warn(`[${SCRIPT.name}] ${label} failed without blocking the Toolkit launcher.`, error);
             return null;
         }
@@ -30949,7 +31088,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             runBootIntegration('credits observer', observeCreditValue);
             if (ready && (!commandShellRouteEligible || mapReady || attempts >= 12)) {
                 complete = true;
-                runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                const coreReadyMs = runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                runBootIntegration('privacy-safe analytics confirmation', () => toolkitAnalyticsConfirmLifecycle(coreReadyMs));
                 runBootIntegration('marker state sync', () => {
                     scheduleMarkerStateSync(0, false);
                 });

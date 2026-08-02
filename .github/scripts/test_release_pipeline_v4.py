@@ -26,7 +26,7 @@ assert '[[ "$EVIDENCE_PR" == "$PR_NUMBER" ]]' in a
 assert 'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"' not in a
 for token in ("implementation_ready_at","validation_completed_at","pull_request_number","pr_created_at","pr_merged_at"):
     assert token in a, token
-for token in ("Resolve exact immutable release candidate","Verify live TKB distribution and private backup","TKB_VERSION","Verify Greasy Fork mirror without blocking production","greasyForkStatus","tkbDistribution","sleep 5","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
+for token in ("Resolve exact immutable release candidate","Verify live TKB distribution and private backup","TKB_VERSION","distributionAuthority","tkb-website-only","tkbDistribution","sleep 5","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):
     assert token in p, token
 assert "gh run watch" not in p
 assert 'validated_sha: ${{ needs.authorize.outputs.expected_main }}' in o
@@ -47,8 +47,10 @@ assert "Implementation-ready → green median" in dashboard
 assert "| 8.2.7 | v4 | normal | 57s | 45s | 15m 27s | 2m 18s | 2m 31s | 13s | 6s |" in dashboard
 assert chr(1) not in p
 assert p.count("      - name: Record successful release, manifest, announcement and speed state") == 1
-assert 'echo "- ✅ TKB install, update, metadata and mirror assets verified"' in p
-assert 'echo "- ✅ Greasy Fork mirror checked without blocking production"' in p
+assert 'echo "- ✅ TKB Website install, update and metadata assets verified"' in p
+assert 'echo "- ✅ Retired distribution channels were not generated, published or checked"' in p
+for retired in ("Verify Greasy Fork mirror", "MissionChief_Map_Command_Toolkit.greasyfork.user.js", ".greasyFork.metadataUrl", "sync_greasyfork_root_mirror.sh"):
+    assert retired not in p, retired
 assert 'GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}' in p
 assert "name: Toolkit Hotfix Gate" in v
 assert "test_consolidated_pr_gate.py" in v

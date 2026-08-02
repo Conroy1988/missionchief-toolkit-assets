@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-08-01-issue-645-adaptive-desktop-workspace-v10-2-7",
+  "revision": "2026-08-02-issue-645-adaptive-desktop-workspace-v10-3-1",
   "rationale": "Approve the measured Issue #645 adaptive Desktop command workspace using the existing fit timer and Desktop resize observer, with zero growth in request sites, observers, managed timers or managed listeners.",
   "transitionApproval": {
     "issue": 645,
-    "version": "10.2.7",
+    "version": "10.3.1",
     "approvedNetworkRequestDelta": 0,
     "scope": "Issue #645: replace the narrow Desktop command column with a map-width adaptive deck, compact responsive command groups and a dedicated pinned-shortcut row while retaining bounded short-map fallback.",
     "approvedMutationObserverDelta": 0,
@@ -156,6 +156,22 @@
   },
   "approvalHistory": [
     {
+      "issue": "first-party-analytics",
+      "version": "10.3.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Record confirmed Toolkit lifecycle, coarse activity, version adoption, bounded feature demand, startup band and bounded failures through TKB without identifiers, player data or a new network primitive.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
+    {
+      "issue": 641,
+      "version": "10.2.6",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Issue #641: constrain every Desktop dock position to the visible map workspace, reserve the Major Incident Wire, and keep the launcher reachable while command groups scroll internally when height is limited.",
+      "approvedMutationObserverDelta": 0,
+      "approvedManagedListenerDelta": 0
+    },
+    {
       "issue": 638,
       "version": "10.2.5",
       "approvedNetworkRequestDelta": 0,
@@ -191,7 +207,7 @@
       "issue": 627,
       "version": "10.2.1",
       "approvedNetworkRequestDelta": 0,
-      "scope": "First-party TKB install/update metadata, migration briefing and non-blocking Greasy Fork mirror.",
+      "scope": "First-party TKB install/update metadata, migration briefing and privacy-safe aggregate analytics.",
       "approvedMutationObserverDelta": 0,
       "approvedManagedListenerDelta": 0
     },

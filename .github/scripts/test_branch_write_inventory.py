@@ -104,7 +104,6 @@ def main() -> int:
         ".github/workflows/release-toolkit-dry-run.yml",
         ".github/workflows/repository-audit.yml",
         ".github/workflows/update-release-dashboard.yml",
-        ".github/workflows/import-canonical-userscript.yml",
         ".github/workflows/reconcile-release-announcement-state.yml",
         ".github/workflows/publish-update-manifest.yml",
     }
@@ -191,7 +190,6 @@ def main() -> int:
         ".github/workflows/release-toolkit-dry-run.yml": "Upload reviewable release bundle and evidence",
         ".github/workflows/repository-audit.yml": "Upload immutable audit reports",
         ".github/workflows/update-release-dashboard.yml": "Upload dashboard projection evidence",
-        ".github/workflows/import-canonical-userscript.yml": "Upload immutable parity evidence",
         ".github/workflows/reconcile-release-announcement-state.yml": "Upload immutable announcement-state evidence",
         ".github/workflows/publish-update-manifest.yml": "Upload immutable update-manifest evidence",
     }
@@ -238,7 +236,6 @@ def main() -> int:
             "persist-credentials: false",
             "Prepare governed release-state worktree",
             "release_recovery_state.py seed",
-            "Record Greasy Fork recovery on release-state",
             "Record private backup recovery on release-state",
             "Claim Discord retry on release-state without posting",
             "Finalize Discord recovery on release-state",
@@ -281,7 +278,6 @@ def main() -> int:
         [
             "Apply controlled Toolkit recovery-state transitions",
             "seed_from_main",
-            "record_greasyfork",
             "record_backup",
             "claim_discord",
             "finalize_discord",
@@ -291,6 +287,11 @@ def main() -> int:
             "Release recovery state self-tests passed.",
         ],
         "Release recovery state helper",
+    )
+    forbid(
+        recovery + recovery_helper,
+        ["record-greasyfork", "Record Greasy Fork recovery"],
+        "Retired distribution recovery",
     )
 
     for entry in external_entries:
@@ -320,9 +321,9 @@ def main() -> int:
     for claim in [
         "one workflow that can commit directly to public `main`",
         "one workflow writes governed operational state to `release-state`",
-        "Greasy Fork fallback announcement monitor is retired",
+        "All external userscript distribution and parity monitoring is retired",
         "release recovery ledger is now written only to `release-state`",
-        "seven workflows use read-only repository access",
+        "six workflows use read-only repository access",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")

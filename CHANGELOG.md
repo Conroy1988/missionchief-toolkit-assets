@@ -1,6 +1,6 @@
 # Changelog
 
-## [10.2.7] - 2026-08-01
+## [10.3.1] - 2026-08-02
 
 ### Adaptive Desktop command workspace
 
@@ -11,6 +11,17 @@
 - Uses the full safe width on standard and narrow Desktop windows, including the reported forced-Desktop layout, while retaining bounded internal scrolling only for genuinely short workspaces.
 - Preserves all four dock positions, Major Incident Wire reservation, browser zoom from 80–200%, auto-hide, collapse/reopen, custom control order and visibility, themes, reduced motion and canonical-map-only lifecycle ownership.
 - Adds static, geometry and rendered-DOM regressions across 2560×1440, 1920×1080, 1366×768, 1024×768 and narrow forced-Desktop workspaces without adding a request, timer, listener or observer.
+
+## [10.3.0] - 2026-08-01
+
+### First-party Toolkit analytics
+
+- Adds a privacy-safe TKB funnel from product-page visit and install intent through installer delivery, confirmed first launch, update delivery and confirmed updated launch.
+- Sends aggregate active-use, version-adoption, coarse device and route, feature-demand, startup-performance-band and bounded runtime-error signals without player, alliance or gameplay records.
+- Uses no visitor ID, IP-derived identity, free text, full user agent, referrer or analytics cookie, and honours Global Privacy Control and Do Not Track before storing or sending analytics state.
+- Deduplicates lifecycle and feature signals locally, records a new installation only after the usable core UI launches, and records an update only after the new version launches successfully.
+- Establishes the TKB Website as the only supported install and automatic-update channel; GitHub remains the canonical source and immutable release archive.
+- Adds an executable analytics/privacy contract to the complete userscript preflight.
 
 ## [10.2.6] - 2026-08-01
 

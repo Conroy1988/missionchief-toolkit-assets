@@ -32,11 +32,11 @@ lines=[
     f"| PR → verified P90 | {fmt(pct(b,.9))} | {fmt(pct(f,.9))} | {fmt(data['targets']['normalHotfixPrToVerifiedP90Seconds'])} |",
     f"| Merge → verified median | {fmt(med(vals(base,'mergeToVerified')))} | {fmt(med(vals(v4,'mergeToVerified')))} | {fmt(data['targets']['mergeToVerifiedMedianSeconds'])} |","",
     "## Release history","",
-    "| Version | Pipeline | Class | Implementation → green | Green → merge | PR → verified | Merge → GitHub | Merge → verified | Greasy Fork | Backup |",
+    "| Version | Pipeline | Class | Implementation → green | Green → merge | PR → verified | Merge → GitHub | Merge → verified | TKB Website | Backup |",
     "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|",
 ]
 for r in reversed(data["releases"]):
     d=r.get("durationsSeconds",{})
-    lines.append(f"| {r.get('version')} | v{r.get('pipelineVersion')} | {r.get('benchmarkClass')} | {fmt(d.get('implementationToGreen'))} | {fmt(d.get('greenToMerge'))} | {fmt(d.get('prToVerified'))} | {fmt(d.get('mergeToGitHubRelease'))} | {fmt(d.get('mergeToVerified'))} | {fmt(d.get('greasyForkPropagation'))} | {fmt(d.get('privateBackup'))} |")
+    lines.append(f"| {r.get('version')} | v{r.get('pipelineVersion')} | {r.get('benchmarkClass')} | {fmt(d.get('implementationToGreen'))} | {fmt(d.get('greenToMerge'))} | {fmt(d.get('prToVerified'))} | {fmt(d.get('mergeToGitHubRelease'))} | {fmt(d.get('mergeToVerified'))} | {fmt(d.get('firstPartyPropagation', d.get('greasyForkPropagation')))} | {fmt(d.get('privateBackup'))} |")
 lines += ["","The v8.0.2 binary-transfer exception is retained for transparency but excluded from the normal-hotfix baseline. GitHub Pages is asynchronous and does not block userscript delivery. Null historical fields are displayed as em dashes rather than inferred.",""]
 (root/"status/RELEASE_SPEED.md").write_text("\n".join(lines),encoding="utf-8")

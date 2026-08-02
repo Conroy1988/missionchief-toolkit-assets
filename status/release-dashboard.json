@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "10.3.4",
+  "currentVersion": "10.3.5",
   "sourceOfTruth": "GitHub",
   "distribution": "TKB Scripts",
   "status": {
@@ -24,10 +24,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-08-02T15:48:00Z",
+  "lastUpdated": "2026-08-02T17:39:52Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "303f5f8729fa16150992540f48dffe8ba9f650cccb0daeb433ee8135969da711",
+    "validatedSha256": "bbf3a7549eb2ac50d5db7d3486f1b1b1b95a1434e081ce615d7a2affe170dfb9",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -37,25 +37,25 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "10.3.4",
+    "version": "10.3.5",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
     "publicReleaseCreated": true,
-    "completedAt": "2026-08-02T15:48:00Z"
+    "completedAt": "2026-08-02T17:39:52Z"
   },
   "latestRelease": {
-    "version": "10.3.4",
-    "sha256": "303f5f8729fa16150992540f48dffe8ba9f650cccb0daeb433ee8135969da711",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.4",
+    "version": "10.3.5",
+    "sha256": "bbf3a7549eb2ac50d5db7d3486f1b1b1b95a1434e081ce615d7a2affe170dfb9",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.3.5",
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
-    "privateBackupCommit": "068ff8a0457ea6fdefc2bc9075c3d765fd64edde",
-    "discordMessageId": "1533501631231168544",
+    "privateBackupCommit": "11d7ddec6036b2cc89debd60448df7d48c953ae6",
+    "discordMessageId": "1533529783894278355",
     "discordChannelId": "1264992613845565440",
     "discordPosted": true,
-    "completedAt": "2026-08-02T15:48:00Z"
+    "completedAt": "2026-08-02T17:39:52Z"
   }
 }

@@ -2,7 +2,7 @@
 
 > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
 
-## Current version: `10.3.6`
+## Current version: `10.3.7`
 
 | System | Health | State |
 |---|:---:|---|
@@ -17,10 +17,10 @@
 
 ## Release state
 
-- **Latest recorded version:** `10.3.6`
+- **Latest recorded version:** `10.3.7`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `95b273371c3e5869bf30624303cc6f348fe3ce971927381f64fbf7a59ecd782d`
+- **Validated SHA-256:** `3360d13bea3766738acdc15da1136c263176f74190663a3cb028bf6a1f2a56ad`
 - **Candidate validation evidence:** immutable GitHub Actions artifact tied to the exact source commit
 
 ## Repository health
@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last release-state update:** `2026-08-02T18:58:04Z`
+- **Last release-state update:** `2026-08-02T20:58:59Z`
 
 ## Release channels
 

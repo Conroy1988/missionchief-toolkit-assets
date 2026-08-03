@@ -1,6 +1,6 @@
 # Protected-branch write inventory
 
-**Reviewed:** 2 August 2026
+**Reviewed:** 3 August 2026
 **Issue:** #41 — TKB-only release-state cutover and strict `main` protection
 
 ## Current conclusion
@@ -85,6 +85,12 @@ Canonical validation, release dry runs, repository audits, dashboard projection,
 
 The exact artifact-only workflows are `validate-userscript.yml`, `release-toolkit-dry-run.yml`, `repository-audit.yml`, `update-release-dashboard.yml`, `reconcile-release-announcement-state.yml` and `publish-update-manifest.yml`.
 
+## Audited branch maintenance
+
+`execute-audited-branch-cleanup.yml` is the only branch-maintenance writer. It accepts an owner-pushed command only on the transient `automation/branch-cleanup` branch and requires an exact audited SHA for every requested ref.
+
+Before any deletion, the workflow verifies the complete command without mutation, rejects `main` and every operational branch, rejects branches with an open pull request, and requires each candidate to be recoverable from a closed pull request or already contained in `main`. It then rechecks every SHA immediately before deletion, verifies every removal, and deletes the transient command branch last. It cannot force-push or mutate source, release-state, distribution or automation authority.
+
 ## Distribution branch rehearsal
 
 The `distribution` branch remains non-live and mirror-only. `.github/workflows/sync-shadow-branches.yml` may synchronize only `distribution` from an exact reviewed `main` SHA, using the temporary `DEVELOPMENT_PR_TOKEN` in an owner-confirmed manual rehearsal.
@@ -103,6 +109,7 @@ The read-only `verify-shadow-branch-parity.yml` still validates both branch role
 | Artifact-only evidence | Six read-only workflows | Workflow artifacts |
 | Review-branch writers | Development-package and rollback workflows | Owner PR branches only |
 | Distribution rehearsal | `sync-shadow-branches.yml` | `distribution` only |
+| Audited branch maintenance | `execute-audited-branch-cleanup.yml` | Proven obsolete non-operational refs only |
 | External backup | `backup_release_to_private_repo.sh` | Private repository `main` |
 
 ## Migration evidence

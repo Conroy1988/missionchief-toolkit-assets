@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 675,
-    "version": "10.4.1",
-    "sourceBytes": 2180505,
-    "sourceLines": 32942,
-    "sourceSha256": "e8e87f0f2bfee4d6ba9384aa13b07daadee990305c128b8f8472f241364d62e5",
-    "templateBytes": 796118,
-    "templateLines": 9427,
-    "templateSha256": "9e7e99ccabf038a42f30f6400aa278fc42e41c19a92d0821f11d1195bf16cb75",
-    "canonicalCssSha256": "c8ddfb62eb9d314a0948fe13726febf1d04a124f99e6c06f77e442a7a15e62b1",
-    "maxSourceBytes": 2200000,
-    "maxSourceLines": 33200,
+    "issue": 677,
+    "version": "10.5.0",
+    "sourceBytes": 2207417,
+    "sourceLines": 33322,
+    "sourceSha256": "120b69c31ed295017bc6ff34471755f03352feba46d9e84d443cec877b8e0bbd",
+    "templateBytes": 799253,
+    "templateLines": 9441,
+    "templateSha256": "c48ec85018a01f96265e4fe328d9696551fb8fd5532461307829eed3af535cf7",
+    "canonicalCssSha256": "33c9911cef2cb29169ff329ca05054e65d8e65f370bd97ab66edd1e5c9f539bd",
+    "maxSourceBytes": 2225000,
+    "maxSourceLines": 33500,
     "minTemplateBytes": 500000,
-    "baseline": "10.4.0",
+    "baseline": "10.4.1",
     "approvedGrowth": {
-      "sourceBytes": -22086,
-      "sourceLines": -369,
-      "templateBytes": -649,
-      "templateLines": -3
+      "sourceBytes": 26912,
+      "sourceLines": 380,
+      "templateBytes": 3135,
+      "templateLines": 14
     },
-    "scope": "Issue #675 complete Incident Card retirement and kilometre-first Measure toolbar"
+    "scope": "Issue #677 unified on-demand Drawing workspace with bounded session-local map tools"
   }
 }

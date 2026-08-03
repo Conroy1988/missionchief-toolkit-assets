@@ -64,7 +64,7 @@ It never invents game actions. Every action remains traceable to MissionChief's 
 |---|---|
 | **01 · See the incident** | Incident Command Wire surfaces developing activity; map timers reveal Mission Age; Mission Value gives immediate scale; MissionChief UK Knowledge Link brings the relevant operational context into reach. |
 | **02 · Read the fleet** | Operational Pressure Board, Vehicle Code Status, Custom Vehicle Badges and Resource Gap expose readiness, load and shortfall; Unit Locator & Follow Mode keeps a selected response in view. |
-| **03 · Command the map** | The persistent Measure toolbar button, Toolkit Command Palette, Contextual Command Menus, Quick Places, bookmarks and coverage rings turn navigation into direct intent: open, focus, pin, follow, measure or return. |
+| **03 · Command the map** | The persistent Drawing toolbar button, Toolkit Command Palette, Contextual Command Menus, Quick Places, bookmarks and coverage rings turn navigation into direct intent: open, focus, pin, follow, draw, measure or return. |
 | **04 · Reconcile the operation** | Alliance Credits and financial intelligence preserve checkpoints, variance and payout context; explicit reports can be sent only to a saved Discord webhook. |
 
 ### Four channels, one operational picture
@@ -73,7 +73,7 @@ It never invents game actions. Every action remains traceable to MissionChief's 
 |---|---|
 | **Mission command** | Incident Command Wire · Mission Age · Mission Value · Unit Commitment · Patient Transport Sweep · Operational SITREP |
 | **Fleet and transport** | Operational Pressure Board · Vehicle Code Status · Resource Gap · Transport Watcher · Unit Locator & Follow Mode |
-| **Map and places** | My Missions · Alliance Missions · Vehicles · Buildings · Quick Places · bookmarks · coverage rings · kilometre-first Measure |
+| **Map and places** | My Missions · Alliance Missions · Vehicles · Buildings · Quick Places · bookmarks · coverage rings · on-demand Drawing with kilometre measurement, arrows, shapes, zones, text and markers |
 | **Finance and alliance** | Alliance Credits · reconciliation checkpoints · variance preservation · payout feedback · Financial Archive |
 
 ---
@@ -190,7 +190,7 @@ For normal updates, revisit the TKB product page or follow the in-Toolkit **UPDA
 
 <br>
 
-**Map:** My Missions · Alliance Missions · Vehicles · My Buildings · Alliance Credits · Mission Age · coverage rings · kilometre-first Measure · Smart Bookmark Labels · Quick Places · bookmarks · profiles · Full-Screen Map · responsive modes
+**Map:** My Missions · Alliance Missions · Vehicles · My Buildings · Alliance Credits · Mission Age · coverage rings · on-demand Drawing and kilometre measurement · Smart Bookmark Labels · Quick Places · bookmarks · profiles · Full-Screen Map · responsive modes
 
 **Missions:** Incident Command Wire · Operational Pressure Board · Operational SITREP · MissionChief UK Knowledge Link · Mission Value · Unit Commitment · Transport Watcher · Patient Transport Sweep
 

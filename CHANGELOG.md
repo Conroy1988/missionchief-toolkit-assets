@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.5.0] - 2026-08-03
+
+### Unified on-demand Drawing workspace
+
+- Renames the persistent Measure action and its panel to Drawing across the toolbar, Map controls and Command Palette.
+- Keeps kilometre and square-kilometre measurement beside straight lines, arrows, freehand sketches, circles, rectangles and polygon zones.
+- Adds temporary text labels and markers plus colour, solid or dashed line and thin, normal or bold style controls.
+- Keeps drawings session-local, capped and fully removed with every temporary listener and Leaflet layer when Drawing closes.
+- Preserves the map movement governor, stable colours, Desktop, Tablet and iOS layouts and the zero-idle-work performance baseline.
+
 ## [10.4.1] - 2026-08-03
 
 ### Kilometre-first Measure toolbar

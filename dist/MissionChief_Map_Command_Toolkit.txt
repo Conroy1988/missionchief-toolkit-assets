@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.2
+// @version      10.3.9
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.2',
+        version: '10.3.9',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -521,6 +521,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         legacyTheme: 'mc_map_command_skins_theme_v2',
         legacyPosition: 'mc_map_command_skins_position_v1'
     };
+
+    const RELEASE_BRIEFING = Object.freeze({
+        version: "10.3.9",
+        title: "Stable map colours during movement",
+        highlights: Object.freeze([
+            "Keeps the selected map skin and Road Priority colour treatment continuously visible while panning and zooming, eliminating the bright default-tile flash.",
+            "Hands movement-time colour processing from individual tiles to one Leaflet tile-pane composite, retaining the v10.3.8 compositing relief without changing the chosen skin.",
+            "Continues pausing Toolkit marker and interface animations, transitions, backdrop blur and will-change hints during gestures, then restores them after settling.",
+            "Preserves universal movement batching, tile-noise suppression, one settled refresh, shared Canvas Coverage Rings and every saved feature setting.",
+            "Adds parity coverage for all eleven map skins and their Road Priority variants without adding a timer, listener, observer, request or polling cadence."
+        ])
+    });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
     const previousRuntime = pageWindow[RUNTIME_KEY];
     if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) return;
@@ -635,6 +647,61 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         target.addEventListener(type, listener, options);
         runtime.listeners.push({ target, type, listener, options });
         return listener;
+    }
+    function runtimeUnlisten(target, type, listener, options) {
+        if (!target) return 0;
+        let removed = 0;
+        for (let index = runtime.listeners.length - 1; index >= 0; index -= 1) {
+        const record = runtime.listeners[index];
+        if (record.target !== target || record.type !== type || record.listener !== listener || record.options !== options) continue;
+        try { record.target.removeEventListener(record.type, record.listener, record.options); } catch (err) {}
+        runtime.listeners.splice(index, 1);
+        removed += 1;
+        }
+        return removed;
+    }
+    function runtimeUnlistenTarget(target, includeDescendants = false) {
+        if (!target) return 0;
+        let removed = 0;
+        for (let index = runtime.listeners.length - 1; index >= 0; index -= 1) {
+        const record = runtime.listeners[index];
+        let matches = record.target === target;
+        if (!matches && includeDescendants && typeof target.contains === 'function') {
+            try { matches = target.contains(record.target); } catch (err) {}
+        }
+        if (!matches) continue;
+        try { record.target.removeEventListener(record.type, record.listener, record.options); } catch (err) {}
+        runtime.listeners.splice(index, 1);
+        removed += 1;
+        }
+        return removed;
+    }
+    function runtimeDocumentConnected(doc) {
+        if (!doc) return false;
+        if (doc === document) return true;
+        try {
+        const frame = doc.defaultView?.frameElement || null;
+        if (!frame?.isConnected) return false;
+        return !frame.contentDocument || frame.contentDocument === doc;
+        } catch (err) {
+        return false;
+        }
+    }
+    function runtimePruneDisconnectedListeners() {
+        let removed = 0;
+        for (let index = runtime.listeners.length - 1; index >= 0; index -= 1) {
+        const record = runtime.listeners[index];
+        const target = record.target;
+        if (target === pageWindow || target === document) continue;
+        let connected = true;
+        if (target?.nodeType === 9) connected = runtimeDocumentConnected(target);
+        else if (typeof target?.isConnected === 'boolean') connected = target.isConnected;
+        if (connected) continue;
+        try { target?.removeEventListener?.(record.type, record.listener, record.options); } catch (err) {}
+        runtime.listeners.splice(index, 1);
+        removed += 1;
+        }
+        return removed;
     }
     function runtimeTrackObserver(observer) {
         if (!observer) return observer;
@@ -1194,6 +1261,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const VEHICLE_CODE_STATUS_BY_CODE = new Map(VEHICLE_CODE_STATUS_DEFINITIONS.map(item => [item.code, item]));
     const VEHICLE_API_MIN_REFRESH_MS = 20 * 1000;
     const DOM_REFRESH_DEBOUNCE_MS = 260;
+    const MAP_INTERACTION_SETTLE_MS = 90;
     const STARTUP_IDLE_TIMEOUT_MS = 2500;
     const STARTUP_OPERATIONAL_DELAY_MS = 700;
     const STARTUP_OBSERVER_DELAY_MS = 900;
@@ -1422,10 +1490,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const economyLeafletOptionSnapshots = new Map();
     let economyLayerSyncTimer = null;
     let economyLayerEnforcement = false;
-    let economyMapMoving = false;
-    let economyDeferredMapRefresh = false;
-    let economyDeferredDomMutation = false;
-    let economyCanvasRenderer = null;
+    let mapInteractionMoving = false;
+    let mapInteractionSettling = false;
+    let mapInteractionDeferredRefresh = false;
+    let mapInteractionDeferredSnapshots = false;
+    let mapInteractionDeferredDomMutation = false;
+    let mapInteractionMarkerSyncNeeded = false;
+    const mapInteractionDirtyScopes = new Set();
+    let coverageCanvasRenderer = null;
     let allianceCreditGroup = null;
     let allianceCreditTimer = null;
     let missionAgeGroup = null;
@@ -1578,15 +1650,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let desktopPanelObservedElements = new Set();
     let missionValueScanTimer = null;
     let missionValueFeatureInstalled = false;
-    const missionValueObservedDocuments = new WeakSet();
-    const missionValueObservedFrames = new WeakSet();
+    const missionValueDocumentObservers = new Map();
+    const missionValueFrameListeners = new Map();
     const missionValueHostObservers = new Map();
     const missionValueRetryState = new WeakMap();
     let customVehicleBadgeScanTimer = null;
     let customVehicleBadgeRefreshPromise = null;
     let customVehicleBadgeFeatureInstalled = false;
-    const customVehicleBadgeObservedDocuments = new WeakSet();
-    const customVehicleBadgeObservedFrames = new WeakSet();
+    const customVehicleBadgeDocumentObservers = new Map();
+    const customVehicleBadgeFrameListeners = new Map();
     const customVehicleClassificationCache = new Map();
     let customVehicleClassificationRevision = -1;
     let commandBarAnimationTimer = null;
@@ -8999,7 +9071,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-economy="true"] #radio_messages_important li {
             content-visibility:auto !important; contain-intrinsic-size:0 58px !important;
         }html[data-mcms-economy="true"] .progress-bar-striped.active,
-        html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId} { visibility:hidden !important; }html[data-mcms-economy="true"] #${SCRIPT.controlId},
+        html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="default"] .leaflet-tile-pane { filter:none !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="control"] .leaflet-tile-pane { filter:invert(92%) hue-rotate(182deg) brightness(62%) contrast(112%) saturate(72%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="incident"] .leaflet-tile-pane { filter:brightness(108%) contrast(142%) saturate(118%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="roads"] .leaflet-tile-pane { filter:grayscale(28%) brightness(104%) contrast(126%) saturate(70%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="urban"] .leaflet-tile-pane { filter:grayscale(100%) invert(88%) brightness(61%) contrast(122%) saturate(54%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="rural"] .leaflet-tile-pane { filter:grayscale(42%) brightness(94%) contrast(108%) saturate(58%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="nightshift"] .leaflet-tile-pane { filter:invert(88%) hue-rotate(165deg) brightness(68%) contrast(119%) saturate(72%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="fireCommand"] .leaflet-tile-pane { filter:grayscale(38%) sepia(58%) hue-rotate(335deg) saturate(145%) brightness(76%) contrast(124%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="policeTactical"] .leaflet-tile-pane { filter:grayscale(24%) invert(89%) sepia(18%) saturate(118%) hue-rotate(166deg) brightness(64%) contrast(126%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="medicalControl"] .leaflet-tile-pane { filter:grayscale(18%) invert(88%) sepia(22%) saturate(126%) hue-rotate(126deg) brightness(68%) contrast(116%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="coastalCommand"] .leaflet-tile-pane { filter:grayscale(22%) sepia(24%) hue-rotate(145deg) saturate(138%) brightness(82%) contrast(118%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="default"] .leaflet-tile-pane { filter:grayscale(18%) brightness(106%) contrast(132%) saturate(82%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="control"] .leaflet-tile-pane { filter:invert(92%) hue-rotate(182deg) brightness(68%) contrast(132%) saturate(70%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="incident"] .leaflet-tile-pane { filter:brightness(112%) contrast(156%) saturate(110%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="roads"] .leaflet-tile-pane { filter:grayscale(35%) brightness(110%) contrast(150%) saturate(58%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="urban"] .leaflet-tile-pane { filter:grayscale(100%) invert(88%) brightness(68%) contrast(144%) saturate(50%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="rural"] .leaflet-tile-pane { filter:grayscale(48%) brightness(101%) contrast(130%) saturate(52%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="nightshift"] .leaflet-tile-pane { filter:invert(88%) hue-rotate(165deg) brightness(73%) contrast(136%) saturate(68%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="fireCommand"] .leaflet-tile-pane { filter:grayscale(42%) sepia(62%) hue-rotate(335deg) saturate(150%) brightness(82%) contrast(142%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="policeTactical"] .leaflet-tile-pane { filter:grayscale(28%) invert(89%) sepia(18%) saturate(112%) hue-rotate(166deg) brightness(70%) contrast(144%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="medicalControl"] .leaflet-tile-pane { filter:grayscale(22%) invert(88%) sepia(22%) saturate(122%) hue-rotate(126deg) brightness(74%) contrast(134%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="coastalCommand"] .leaflet-tile-pane { filter:grayscale(26%) sepia(24%) hue-rotate(145deg) saturate(132%) brightness(88%) contrast(136%) !important; }html[data-mcms-map-moving="true"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }html[data-mcms-map-moving="true"] .leaflet-pane [class*="mcms-"],
+        html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-mission,
+        html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-vehicle,
+        html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-building { animation-play-state:paused !important; transition:none !important; will-change:auto !important; }html[data-mcms-map-moving="true"] body #${SCRIPT.controlId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.panelId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.vehicleStatusId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.pressureBoardId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.majorIncidentFeedId},
+        html[data-mcms-map-moving="true"][data-mcms-custom-theme="true"] body #${SCRIPT.controlId},
+        html[data-mcms-map-moving="true"][data-mcms-custom-theme="true"] body #${SCRIPT.panelId} { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; filter:none !important; }html[data-mcms-map-moving="true"] #${SCRIPT.controlId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.panelId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.vehicleStatusId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.pressureBoardId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId} * { animation-play-state:paused !important; transition:none !important; will-change:auto !important; }html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId} { visibility:hidden !important; }html[data-mcms-economy="true"] #${SCRIPT.controlId},
         html[data-mcms-economy="true"] #${SCRIPT.panelId},
         html[data-mcms-economy="true"] #${SCRIPT.vehicleStatusId},
         html[data-mcms-economy="true"] #${SCRIPT.majorIncidentFeedId},
@@ -11873,7 +11958,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         .mcms-doctor-results strong { color:#fff !important; font-size:12px !important; }.mcms-doctor-results p { margin:3px 0 0 !important; color:#9eb2c2 !important; font-size:10px !important; line-height:1.4 !important; }
         .mcms-update-version { display:flex !important; align-items:center !important; justify-content:space-between !important; margin-bottom:13px !important; padding:13px 15px !important; border:1px solid rgba(103,201,255,.32) !important; border-radius:11px !important; background:linear-gradient(120deg,rgba(12,114,166,.2),rgba(255,255,255,.03)) !important; }
         .mcms-update-version span { color:#8bcff4 !important; font-size:9px !important; font-weight:900 !important; letter-spacing:.14em !important; }.mcms-update-version strong { color:#fff !important; font-size:24px !important; }
-        .mcms-update-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; }.mcms-update-grid article { padding:11px 12px !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:10px !important; background:rgba(255,255,255,.035) !important; }.mcms-update-grid b { color:#7dd3ff !important; font-size:12px !important; }.mcms-update-grid p { margin:4px 0 0 !important; color:#a2b6c4 !important; font-size:10px !important; line-height:1.4 !important; }
+        .mcms-update-release { padding:13px 14px !important; border:1px solid rgba(125,211,255,.24) !important; border-radius:11px !important; background:rgba(255,255,255,.035) !important; }
+        .mcms-update-release > b { color:#7dd3ff !important; font-size:14px !important; }
+        .mcms-update-highlights { display:grid !important; gap:8px !important; margin:10px 0 0 !important; padding:0 0 0 18px !important; color:#b7c9d5 !important; font-size:11px !important; line-height:1.45 !important; }
+        .mcms-update-highlights li::marker { color:#67c9ff !important; }
+        .mcms-update-actions { display:flex !important; flex-wrap:wrap !important; gap:8px !important; margin-top:10px !important; }
         #${SCRIPT.quickWheelId} { position:fixed !important; left:var(--mcms-wheel-x) !important; top:var(--mcms-wheel-y) !important; z-index:2147483500 !important; width:0 !important; height:0 !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important; }
         #${SCRIPT.quickWheelId} > button { position:absolute !important; left:0 !important; top:0 !important; width:76px !important; min-height:52px !important; transform:translate(-50%,-50%) !important; border:1px solid rgba(118,207,255,.55) !important; border-radius:12px !important; background:linear-gradient(150deg,rgba(25,47,62,.98),rgba(7,15,22,.98)) !important; color:#fff !important; box-shadow:0 8px 24px rgba(0,0,0,.56) !important; display:grid !important; place-items:center !important; align-content:center !important; gap:2px !important; }
         #${SCRIPT.quickWheelId} > button b { color:#70d2ff !important; font-size:15px !important; }#${SCRIPT.quickWheelId} > button span { font-size:8px !important; font-weight:800 !important; text-align:center !important; }
@@ -11891,7 +11980,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} .mcms-tab-panel { gap:4px !important; padding:5px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-row-label,.mcms-label,.mcms-status) { font-size:8px !important; line-height:1.25 !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-input,.mcms-select,.mcms-small-btn) { min-height:28px !important; font-size:9px !important; }
-        @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-grid { grid-template-columns:1fr !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
+        @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-actions button { flex:1 1 180px !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
         @media (prefers-reduced-motion:reduce) {
             .mcms-doctor-running span { animation:none !important; }
             #${SCRIPT.quickWheelId} > button { transition:none !important; }
@@ -12245,65 +12334,154 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const safeWidth = Math.max(1, Math.floor(finite(availableWidth) ? availableWidth : 1));
         const safeHeight = Math.max(1, Math.floor(finite(maxHeight) ? maxHeight : 1));
         const safeGap = Math.max(0, Math.floor(finite(gap) ? gap : 6));
-        const dockWidth = Math.min(1180, safeWidth);
-        const safeLaunchWidth = Math.min(dockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
-        const contentWidth = Math.max(1, dockWidth - safeLaunchWidth - safeGap);
-        const groupColumns = contentWidth >= 900 ? 4 : contentWidth >= 620 ? 3 : contentWidth >= 360 ? 2 : 1;
-        const groupWidth = Math.max(1, Math.floor((contentWidth - (safeGap * Math.max(0, groupColumns - 1))) / groupColumns));
-        const minimumButtonWidth = groupWidth >= 330 ? 92 : groupWidth >= 220 ? 88 : 82;
+        const availableDockWidth = Math.min(1680, safeWidth);
+        const safeLaunchWidth = Math.min(availableDockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
+        const availableContentWidth = Math.max(1, availableDockWidth - safeLaunchWidth - safeGap);
+        const groupColumns = availableContentWidth >= 900 ? 4 : availableContentWidth >= 620 ? 3 : availableContentWidth >= 360 ? 2 : 1;
         const counts = Array.isArray(groupControlCounts) && groupControlCounts.length
         ? groupControlCounts.map(count => Math.max(0, Math.floor(Number(count) || 0)))
         : [4, 5, 3, 1];
-        const groupButtonColumns = counts.map(count => Math.max(1, Math.min(Math.max(1, count), Math.floor((Math.max(1, groupWidth - 10) + 4) / (minimumButtonWidth + 4)) || 1)));
-        const groupHeights = counts.map((count, index) => {
+        const safePinCount = Math.max(0, Math.floor(Number(pinCount) || 0));
+        const buttonGap = 4;
+        const minimumButtonWidth = 82;
+        const preferredPinButtonWidth = 92;
+        const minimumPinButtonWidth = 72;
+        const groupWidthForColumns = columns => 10 + (Math.max(1, columns) * minimumButtonWidth) + (Math.max(0, columns - 1) * buttonGap);
+        const measureGroupHeight = (count, columns) => {
         if (!count) return 0;
-        const rows = Math.max(1, Math.ceil(count / groupButtonColumns[index]));
-        return 18 + (rows * 36) + (Math.max(0, rows - 1) * 4);
-        });
-        let naturalFilterHeight = 0;
+        const rows = Math.max(1, Math.ceil(count / Math.max(1, columns)));
+        return 18 + (rows * 36) + (Math.max(0, rows - 1) * buttonGap);
+        };
+        const measurePinTrack = (widthBudget, allowEmpty = false) => {
+        if (!safePinCount) return { columns: 1, rows: 0, width: 0, height: 0 };
+        const budget = Math.max(0, Math.floor(Number(widthBudget) || 0));
+        const columns = Math.max(allowEmpty ? 0 : 1, Math.min(safePinCount, Math.floor((budget + buttonGap) / (minimumPinButtonWidth + buttonGap)) || 0));
+        if (!columns) return { columns: 0, rows: 0, width: 0, height: 0 };
+        const rows = Math.max(1, Math.ceil(safePinCount / columns));
+        return {
+            columns,
+            rows,
+            width: Math.min(budget, (columns * preferredPinButtonWidth) + (Math.max(0, columns - 1) * buttonGap)),
+            height: (rows * 30) + (Math.max(0, rows - 1) * buttonGap)
+        };
+        };
+
+        let groupButtonColumns;
+        let groupWidths;
+        let contentWidth;
+        let naturalFilterHeight;
+        let pinColumns;
+        let pinWidth;
+        let naturalPinHeight;
+        let pinsInline = false;
+
+        if (groupColumns === 4 && counts.length <= 4) {
+        const candidates = [];
+        const maximumRows = Math.max(1, ...counts.map(count => Math.max(1, count)));
+        for (let targetRows = 1; targetRows <= maximumRows; targetRows += 1) {
+            const columns = counts.map(count => count ? Math.max(1, Math.ceil(count / targetRows)) : 1);
+            const widths = columns.map(groupWidthForColumns);
+            const filterWidth = widths.reduce((sum, width) => sum + width, 0) + (safeGap * Math.max(0, widths.length - 1));
+            if (filterWidth > availableContentWidth) continue;
+            const filterHeight = Math.max(1, ...counts.map((count, index) => measureGroupHeight(count, columns[index])));
+            const inlineBudget = Math.max(0, availableDockWidth - safeLaunchWidth - safeGap - filterWidth - (safePinCount ? safeGap : 0));
+            const inlinePins = measurePinTrack(inlineBudget, true);
+            const inline = Boolean(safePinCount && inlinePins.columns && inlinePins.height <= filterHeight);
+            const belowPins = inline ? inlinePins : measurePinTrack(filterWidth);
+            const pinMargin = inline || !belowPins.height ? 0 : safeGap;
+            const height = inline ? Math.max(filterHeight, belowPins.height) : filterHeight + pinMargin + belowPins.height;
+            const deckContentWidth = inline ? filterWidth + safeGap + belowPins.width : Math.max(filterWidth, belowPins.width);
+            candidates.push({
+            columns,
+            widths,
+            filterWidth,
+            filterHeight,
+            pins: belowPins,
+            pinsInline: inline,
+            pinMargin,
+            naturalHeight: height,
+            dockWidth: Math.min(availableDockWidth, safeLaunchWidth + safeGap + deckContentWidth)
+            });
+        }
+        candidates.sort((left, right) => left.naturalHeight - right.naturalHeight || left.dockWidth - right.dockWidth || left.filterWidth - right.filterWidth);
+        const best = candidates[0];
+        if (best) {
+            groupButtonColumns = best.columns;
+            groupWidths = best.widths;
+            contentWidth = best.filterWidth;
+            naturalFilterHeight = best.filterHeight;
+            pinColumns = best.pins.columns || 1;
+            pinWidth = best.pins.width;
+            naturalPinHeight = best.pins.height;
+            pinsInline = best.pinsInline;
+        }
+        }
+
+        if (!groupButtonColumns) {
+        const preferredGroupWidth = groupColumns >= 3 ? 210 : groupColumns === 2 ? 220 : availableContentWidth;
+        contentWidth = Math.min(availableContentWidth, (preferredGroupWidth * groupColumns) + (safeGap * Math.max(0, groupColumns - 1)));
+        const groupWidth = Math.max(1, Math.floor((contentWidth - (safeGap * Math.max(0, groupColumns - 1))) / groupColumns));
+        const fallbackMinimumButtonWidth = groupWidth >= 330 ? 92 : groupWidth >= 220 ? 88 : 82;
+        groupButtonColumns = counts.map(count => Math.max(1, Math.min(Math.max(1, count), Math.floor((Math.max(1, groupWidth - 10) + buttonGap) / (fallbackMinimumButtonWidth + buttonGap)) || 1)));
+        groupWidths = counts.map(() => groupWidth);
+        const groupHeights = counts.map((count, index) => measureGroupHeight(count, groupButtonColumns[index]));
+        naturalFilterHeight = 0;
         for (let index = 0; index < groupHeights.length; index += groupColumns) {
-        const rowHeight = Math.max(0, ...groupHeights.slice(index, index + groupColumns));
-        if (!rowHeight) continue;
-        if (naturalFilterHeight) naturalFilterHeight += safeGap;
-        naturalFilterHeight += rowHeight;
+            const rowHeight = Math.max(0, ...groupHeights.slice(index, index + groupColumns));
+            if (!rowHeight) continue;
+            if (naturalFilterHeight) naturalFilterHeight += safeGap;
+            naturalFilterHeight += rowHeight;
         }
         naturalFilterHeight = Math.max(1, naturalFilterHeight);
+        const pins = measurePinTrack(contentWidth);
+        pinColumns = pins.columns || 1;
+        pinWidth = pins.width;
+        naturalPinHeight = pins.height;
+        }
 
-        const safePinCount = Math.max(0, Math.floor(Number(pinCount) || 0));
-        const pinColumns = safePinCount
-        ? Math.max(1, Math.min(safePinCount, Math.floor((contentWidth + safeGap) / (72 + safeGap)) || 1))
-        : 1;
-        const pinRows = safePinCount ? Math.max(1, Math.ceil(safePinCount / pinColumns)) : 0;
-        const naturalPinHeight = pinRows ? (pinRows * 30) + (Math.max(0, pinRows - 1) * 4) : 0;
-        const pinMargin = naturalPinHeight ? safeGap : 0;
-        const filterMaxHeight = Math.max(1, safeHeight - Math.min(naturalPinHeight + pinMargin, Math.max(0, safeHeight - 1)));
+        const pinMargin = naturalPinHeight && !pinsInline ? safeGap : 0;
+        const deckContentWidth = pinsInline ? contentWidth + safeGap + pinWidth : Math.max(contentWidth, pinWidth);
+        const dockWidth = Math.min(availableDockWidth, safeLaunchWidth + safeGap + deckContentWidth);
+        const filterMaxHeight = pinsInline
+        ? safeHeight
+        : Math.max(1, safeHeight - Math.min(naturalPinHeight + pinMargin, Math.max(0, safeHeight - 1)));
         const estimatedFilterHeight = Math.min(naturalFilterHeight, filterMaxHeight);
-        const pinMaxHeight = naturalPinHeight ? Math.max(0, Math.min(naturalPinHeight, safeHeight - estimatedFilterHeight - pinMargin)) : 0;
-        const naturalHeight = Math.max(56, naturalFilterHeight + naturalPinHeight + pinMargin);
+        const pinMaxHeight = naturalPinHeight
+        ? Math.max(0, Math.min(naturalPinHeight, pinsInline ? safeHeight : safeHeight - estimatedFilterHeight - pinMargin))
+        : 0;
+        const naturalHeight = Math.max(56, pinsInline ? Math.max(naturalFilterHeight, naturalPinHeight) : naturalFilterHeight + naturalPinHeight + pinMargin);
         return {
         dockWidth,
         launchWidth: safeLaunchWidth,
         contentWidth,
+        groupWidth: Math.max(1, ...groupWidths),
+        groupWidths,
         groupColumns,
         groupButtonColumns,
         pinColumns,
+        pinWidth,
+        pinsInline,
         naturalFilterHeight,
         naturalPinHeight,
         filterMaxHeight,
         pinMaxHeight,
         pinMargin,
         scrollFallback: naturalHeight > safeHeight,
-        size: dockWidth >= 1000 ? 'wide' : dockWidth >= 760 ? 'standard' : dockWidth >= 520 ? 'compact' : 'tight'
+        size: availableDockWidth >= 1000 ? 'wide' : availableDockWidth >= 760 ? 'standard' : availableDockWidth >= 520 ? 'compact' : 'tight'
         };
     }
 
     function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
         if (!control) return;
-        for (const property of ['--mcms-desktop-dock-width', '--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-launch-width', '--mcms-desktop-group-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
-        for (const group of control.querySelectorAll?.('.mcms-control-group') || []) group.style.removeProperty('--mcms-desktop-button-columns');
+        for (const property of ['--mcms-desktop-dock-width', '--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-launch-width', '--mcms-desktop-content-width', '--mcms-desktop-filter-width', '--mcms-desktop-group-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-width', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const group of control.querySelectorAll?.('.mcms-control-group') || []) {
+        group.style.removeProperty('--mcms-desktop-button-columns');
+        group.style.removeProperty('--mcms-desktop-group-width');
+        }
         delete control.dataset.mcmsDesktopDockFit;
         delete control.dataset.mcmsDesktopDockSize;
         delete control.dataset.mcmsDesktopDockScroll;
+        delete control.dataset.mcmsDesktopPinsInline;
     }
 
     function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
@@ -12334,7 +12512,10 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
         const grid = resolveDesktopDockGrid(Math.max(1, workspace.maxWidth - nudgeX), workspace.maxHeight, groupControlCounts, pinsVisible ? pins.childElementCount : 0, launchWidth, 6);
 
-        groups.forEach((group, index) => group.style.setProperty('--mcms-desktop-button-columns', String(grid.groupButtonColumns[index] || 1)));
+        groups.forEach((group, index) => {
+        group.style.setProperty('--mcms-desktop-button-columns', String(grid.groupButtonColumns[index] || 1));
+        group.style.setProperty('--mcms-desktop-group-width', `${grid.groupWidths[index] || grid.groupWidth}px`);
+        });
 
         control.style.setProperty('--mcms-desktop-dock-width', `${grid.dockWidth}px`);
         control.style.setProperty('--mcms-desktop-dock-max-height', `${workspace.maxHeight}px`);
@@ -12344,14 +12525,18 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
         control.style.setProperty('--mcms-desktop-dock-right', `${workspace.right}px`);
         control.style.setProperty('--mcms-desktop-launch-width', `${grid.launchWidth}px`);
+        control.style.setProperty('--mcms-desktop-content-width', `${grid.pinsInline ? grid.contentWidth + 6 + grid.pinWidth : Math.max(grid.contentWidth, grid.pinWidth)}px`);
+        control.style.setProperty('--mcms-desktop-filter-width', `${grid.contentWidth}px`);
         control.style.setProperty('--mcms-desktop-group-columns', String(grid.groupColumns));
         control.style.setProperty('--mcms-desktop-filter-max-height', `${grid.filterMaxHeight}px`);
         control.style.setProperty('--mcms-desktop-pin-columns', String(grid.pinColumns));
+        control.style.setProperty('--mcms-desktop-pin-width', `${grid.pinWidth}px`);
         control.style.setProperty('--mcms-desktop-pin-max-height', `${grid.pinMaxHeight}px`);
         control.style.setProperty('--mcms-desktop-pin-margin', `${grid.pinMargin}px`);
-        control.dataset.mcmsDesktopDockFit = `${position}:${grid.dockWidth}:${workspace.maxHeight}:${grid.groupColumns}:${grid.pinColumns}`;
+        control.dataset.mcmsDesktopDockFit = `${position}:${grid.dockWidth}:${workspace.maxHeight}:${grid.groupColumns}:${grid.pinColumns}:${grid.pinsInline ? 'inline' : 'below'}`;
         control.dataset.mcmsDesktopDockSize = grid.size;
         control.dataset.mcmsDesktopDockScroll = grid.scrollFallback ? 'true' : 'false';
+        control.dataset.mcmsDesktopPinsInline = grid.pinsInline ? 'true' : 'false';
         return Boolean(filter);
     }
 
@@ -12559,7 +12744,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:var(--mcms-desktop-launch-width,117px) minmax(0,1fr)!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;column-gap:6px!important;row-gap:0!important;width:var(--mcms-desktop-dock-width,min(1180px,calc(100vw - 24px)))!important;max-width:min(var(--mcms-desktop-dock-max-width,calc(100vw - 24px)),var(--mcms-desktop-dock-width,1180px))!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:var(--mcms-desktop-launch-width,117px) var(--mcms-desktop-content-width,min(858px,calc(100vw - 147px)))!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;justify-content:start!important;column-gap:6px!important;row-gap:0!important;width:var(--mcms-desktop-dock-width,min(1680px,calc(100vw - 24px)))!important;max-width:min(var(--mcms-desktop-dock-max-width,calc(100vw - 24px)),var(--mcms-desktop-dock-width,1680px))!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-pins-inline="true"]{grid-template-columns:var(--mcms-desktop-launch-width,117px) var(--mcms-desktop-filter-width,858px) var(--mcms-desktop-pin-width,0px)!important;grid-template-areas:"menu filters pins"!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
@@ -12570,9 +12756,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-floating-filter,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{grid-area:filters!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-group-columns,4),minmax(0,1fr))!important;align-items:start!important;gap:6px!important;width:100%!important;max-width:none!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;margin:0!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{grid-area:filters!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-group-columns,4),max-content)!important;align-items:start!important;justify-content:start!important;gap:6px!important;width:var(--mcms-desktop-filter-width,100%)!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;margin:0!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-floating-filter{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group{grid-template-columns:repeat(var(--mcms-desktop-button-columns,2),minmax(0,1fr))!important;gap:4px!important;min-width:0!important;padding:5px!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group{grid-template-columns:repeat(var(--mcms-desktop-button-columns,2),minmax(0,1fr))!important;gap:4px!important;width:var(--mcms-desktop-group-width,210px)!important;min-width:0!important;padding:5px!important;pointer-events:none!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group-label{padding:0 2px 2px!important;font-size:7px!important;line-height:1!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn){grid-template-columns:20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;gap:5px!important;padding:3px 6px!important;pointer-events:auto!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-icon{display:none!important}
@@ -12584,7 +12770,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
-        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{grid-area:pins!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-pin-columns,6),minmax(0,1fr))!important;gap:4px!important;width:100%!important;max-width:none!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins{grid-area:pins!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-pin-columns,6),minmax(0,1fr))!important;align-self:start!important;justify-self:start!important;gap:4px!important;width:var(--mcms-desktop-pin-width,100%)!important;max-width:100%!important;max-height:var(--mcms-desktop-pin-max-height,132px)!important;margin-top:var(--mcms-desktop-pin-margin,6px)!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-pins-inline="true"] .mcms-screen-pins{align-self:center!important;margin-top:0!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-screen-pins{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pin-btn{width:100%!important;min-width:0!important;max-width:none!important;height:30px!important;min-height:30px!important;padding:0 8px!important;font-size:9px!important;pointer-events:auto!important}
         html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-floating-filter,.mcms-screen-pins){display:none!important}
@@ -13997,18 +14184,42 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         customVehicleBadgeScanTimer = runtimeSetTimeout(scanCustomVehicleBadges, Math.max(0, Number(delay) || 0));
     }
 
+    function customVehicleBadgeFramesForDocuments(documents) {
+        const frames = new Set();
+        for (const doc of Array.from(documents || [])) {
+            try { doc.querySelectorAll?.('iframe, frame').forEach(frame => frames.add(frame)); } catch (err) {}
+        }
+        return frames;
+    }
+
+    function pruneCustomVehicleBadgeTracking(activeDocuments = null, activeFrames = null) {
+        for (const [doc, observer] of customVehicleBadgeDocumentObservers) {
+            const keep = runtimeDocumentConnected(doc) && (!activeDocuments || activeDocuments.has(doc));
+            if (keep) continue;
+            runtimeUntrackObserver(observer);
+            customVehicleBadgeDocumentObservers.delete(doc);
+        }
+        for (const [frame, listener] of customVehicleBadgeFrameListeners) {
+            const keep = Boolean(frame?.isConnected && (!activeFrames || activeFrames.has(frame)));
+            if (keep) continue;
+            runtimeUnlisten(frame, 'load', listener);
+            customVehicleBadgeFrameListeners.delete(frame);
+        }
+        runtimePruneDisconnectedListeners();
+    }
+
     function observeCustomVehicleBadgeFrame(frame) {
-        if (!frame || customVehicleBadgeObservedFrames.has(frame)) return;
-        customVehicleBadgeObservedFrames.add(frame);
-        runtimeListen(frame, 'load', () => scheduleCustomVehicleBadgeScan(20));
+        if (!frame || customVehicleBadgeFrameListeners.has(frame)) return;
+        const listener = () => scheduleCustomVehicleBadgeScan(20);
+        runtimeListen(frame, 'load', listener);
+        customVehicleBadgeFrameListeners.set(frame, listener);
     }
 
     function observeCustomVehicleBadgeDocument(doc) {
         if (!doc) return;
         ensureCustomVehicleBadgeDocumentStyle(doc);
         try { doc.querySelectorAll?.('iframe, frame').forEach(observeCustomVehicleBadgeFrame); } catch (err) {}
-        if (customVehicleBadgeObservedDocuments.has(doc)) return;
-        customVehicleBadgeObservedDocuments.add(doc);
+        if (customVehicleBadgeDocumentObservers.has(doc)) return;
         const root = doc.documentElement || doc.body;
         const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         if (!root || typeof Observer !== 'function') return;
@@ -14023,6 +14234,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             attributes: true,
             attributeFilter: ['id', 'class', 'vehicle_id', 'data-vehicle-id', 'data-vehicle_id', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id']
         });
+        customVehicleBadgeDocumentObservers.set(doc, observer);
     }
 
     function clearCustomVehicleBadges() {
@@ -14038,11 +14250,15 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 });
             } catch (err) {}
         }
+        pruneCustomVehicleBadgeTracking(new Set(), new Set());
     }
 
     function scanCustomVehicleBadges() {
         customVehicleBadgeScanTimer = null;
         const docs = customVehicleBadgeDocumentContexts();
+        const activeDocuments = new Set(docs);
+        const activeFrames = customVehicleBadgeFramesForDocuments(activeDocuments);
+        pruneCustomVehicleBadgeTracking(activeDocuments, activeFrames);
         if (!state.customVehicleBadges) {
             clearCustomVehicleBadges();
             return 0;
@@ -14341,7 +14557,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function updateAllianceCreditLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         if (!state.allianceCredits || !state.visibility.allianceMissions) {
         clearAllianceCreditLabels();
         return;
@@ -14426,6 +14642,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function scheduleAllianceCreditRefresh(delay = 220) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(allianceCreditTimer);
         allianceCreditTimer = runtimeSetTimeout(updateAllianceCreditLabels, state.economyMode ? Math.max(700, delay) : delay);
     }
@@ -14511,9 +14728,10 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         });
     }
     function missionAgeRefreshPlan({enabled=true,moving=false,mapReady=true,markers=0,candidates=0,labels=0}={}){if(!enabled)return{clear:true,delay:0};if(moving||!mapReady)return{clear:!mapReady,delay:700};if(!markers||(!labels&&candidates))return{clear:false,delay:1000};return{clear:false,delay:MISSION_AGE_LABEL_REFRESH_MS};}
-    function updateMissionAgeLabels() { const enabled=Boolean(state.missionAge&&state.visibility.myMissions);if(!enabled){clearMissionAgeLabels();return;}if(state.economyMode&&economyMapMoving){scheduleMissionAgeRefresh(700);return;}scanInlineMissionMarkerData(true);installMissionMarkerAddHook();const map=findLeafletMapInstance(false);if(!map||!pageWindow.L||typeof pageWindow.L.layerGroup!=='function'||typeof pageWindow.L.marker!=='function'||typeof pageWindow.L.divIcon!=='function'){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}const floatPane=ensureMissionFloatPane(map);if(!floatPane){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}let markers=getMissionMarkerIndex().markers;if(!markers.length){invalidateMarkerRegistryCaches('mission');markers=getMissionMarkerIndex().markers;}const economyBounds=state.economyMode?economyPaddedBounds(map,0.08):null,activeMissionIds=new Set(),now=Date.now();let candidates=0,rendered=0,missingEvidence=0;try{if(!missionAgeGroup||missionAgeGroup._map!==map){clearMissionAgeLabels();missionAgeGroup=pageWindow.L.layerGroup();missionAgeGroup.__mcmsMissionAgeLayer=true;missionAgeGroup.addTo(map);}for(const marker of markers){const missionId=normaliseMissionId(marker?.mission_id??marker?.missionId??marker?.options?.mission_id??marker?.options?.missionId);if(missionId===null)continue;if(!missionKnownPersonal(marker,missionId)){if(!missionHasExplicitAllianceOwner(marker,missionId))missingEvidence+=1;continue;}candidates+=1;const existingLabel=missionAgeLabels.get(missionId);let latLng;try{latLng=marker.getLatLng?.();}catch(error){latLng=null;}if(!latLng||(economyBounds&&!economyBounds.contains?.(latLng)))continue;try{const onMap=typeof map.hasLayer==='function'?map.hasLayer(marker):Boolean(marker._map);if(!onMap){if(existingLabel)activeMissionIds.add(missionId);continue;}}catch(error){if(existingLabel)activeMissionIds.add(missionId);continue;}let createdAt=getMissionCreatedAt(marker,missionId);if(createdAt===null){captureMissionMarkerData(marker);createdAt=getMissionCreatedAt(marker,missionId);}if(createdAt===null){missingEvidence+=1;if(existingLabel)activeMissionIds.add(missionId);continue;}const ageMs=Math.max(0,now-createdAt),ageText=formatMissionAge(createdAt,now),severity=missionAgeSeverity(ageMs);activeMissionIds.add(missionId);let label=existingLabel;const attached=Boolean(label&&typeof missionAgeGroup.hasLayer==='function'&&missionAgeGroup.hasLayer(label));if(!label||!attached){if(label)try{missionAgeGroup.removeLayer(label);}catch(error){}label=pageWindow.L.marker(latLng,{interactive:false,keyboard:false,bubblingMouseEvents:false,pane:floatPane,zIndexOffset:0,icon:makeMissionAgeIcon(ageText,severity)});label.__mcmsMissionAgeLabel=true;label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;label.__mcmsMissionAgeSourceMarker=marker;label.addTo(missionAgeGroup);missionAgeLabels.set(missionId,label);}else{try{label.setLatLng(latLng);}catch(error){}label.__mcmsMissionAgeSourceMarker=marker;if(label.__mcmsMissionAgeText!==ageText||label.__mcmsMissionAgeSeverityRank!==severity.rank||label.__mcmsMissionAgeCreatedAt!==createdAt){label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;try{label.setIcon(makeMissionAgeIcon(ageText,severity));}catch(error){}}}rendered+=1;}for(const[missionId,label]of missionAgeLabels.entries()){if(activeMissionIds.has(missionId))continue;missionAgeLabels.delete(missionId);try{missionAgeGroup.removeLayer(label);}catch(error){}}const plan=missionAgeRefreshPlan({enabled,moving:false,mapReady:true,markers:markers.length,candidates:candidates+missingEvidence,labels:rendered});if(!document.hidden)scheduleMissionAgeRefresh(plan.delay);}catch(error){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(1000);} }
+    function updateMissionAgeLabels() { const enabled=Boolean(state.missionAge&&state.visibility.myMissions);if(!enabled){clearMissionAgeLabels();return;}if(deferMapInteractionRefresh())return;scanInlineMissionMarkerData(true);installMissionMarkerAddHook();const map=findLeafletMapInstance(false);if(!map||!pageWindow.L||typeof pageWindow.L.layerGroup!=='function'||typeof pageWindow.L.marker!=='function'||typeof pageWindow.L.divIcon!=='function'){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}const floatPane=ensureMissionFloatPane(map);if(!floatPane){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}let markers=getMissionMarkerIndex().markers;if(!markers.length){invalidateMarkerRegistryCaches('mission');markers=getMissionMarkerIndex().markers;}const economyBounds=state.economyMode?economyPaddedBounds(map,0.08):null,activeMissionIds=new Set(),now=Date.now();let candidates=0,rendered=0,missingEvidence=0;try{if(!missionAgeGroup||missionAgeGroup._map!==map){clearMissionAgeLabels();missionAgeGroup=pageWindow.L.layerGroup();missionAgeGroup.__mcmsMissionAgeLayer=true;missionAgeGroup.addTo(map);}for(const marker of markers){const missionId=normaliseMissionId(marker?.mission_id??marker?.missionId??marker?.options?.mission_id??marker?.options?.missionId);if(missionId===null)continue;if(!missionKnownPersonal(marker,missionId)){if(!missionHasExplicitAllianceOwner(marker,missionId))missingEvidence+=1;continue;}candidates+=1;const existingLabel=missionAgeLabels.get(missionId);let latLng;try{latLng=marker.getLatLng?.();}catch(error){latLng=null;}if(!latLng||(economyBounds&&!economyBounds.contains?.(latLng)))continue;try{const onMap=typeof map.hasLayer==='function'?map.hasLayer(marker):Boolean(marker._map);if(!onMap){if(existingLabel)activeMissionIds.add(missionId);continue;}}catch(error){if(existingLabel)activeMissionIds.add(missionId);continue;}let createdAt=getMissionCreatedAt(marker,missionId);if(createdAt===null){captureMissionMarkerData(marker);createdAt=getMissionCreatedAt(marker,missionId);}if(createdAt===null){missingEvidence+=1;if(existingLabel)activeMissionIds.add(missionId);continue;}const ageMs=Math.max(0,now-createdAt),ageText=formatMissionAge(createdAt,now),severity=missionAgeSeverity(ageMs);activeMissionIds.add(missionId);let label=existingLabel;const attached=Boolean(label&&typeof missionAgeGroup.hasLayer==='function'&&missionAgeGroup.hasLayer(label));if(!label||!attached){if(label)try{missionAgeGroup.removeLayer(label);}catch(error){}label=pageWindow.L.marker(latLng,{interactive:false,keyboard:false,bubblingMouseEvents:false,pane:floatPane,zIndexOffset:0,icon:makeMissionAgeIcon(ageText,severity)});label.__mcmsMissionAgeLabel=true;label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;label.__mcmsMissionAgeSourceMarker=marker;label.addTo(missionAgeGroup);missionAgeLabels.set(missionId,label);}else{try{label.setLatLng(latLng);}catch(error){}label.__mcmsMissionAgeSourceMarker=marker;if(label.__mcmsMissionAgeText!==ageText||label.__mcmsMissionAgeSeverityRank!==severity.rank||label.__mcmsMissionAgeCreatedAt!==createdAt){label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;try{label.setIcon(makeMissionAgeIcon(ageText,severity));}catch(error){}}}rendered+=1;}for(const[missionId,label]of missionAgeLabels.entries()){if(activeMissionIds.has(missionId))continue;missionAgeLabels.delete(missionId);try{missionAgeGroup.removeLayer(label);}catch(error){}}const plan=missionAgeRefreshPlan({enabled,moving:false,mapReady:true,markers:markers.length,candidates:candidates+missingEvidence,labels:rendered});if(!document.hidden)scheduleMissionAgeRefresh(plan.delay);}catch(error){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(1000);} }
 
     function scheduleMissionAgeRefresh(delay = 220) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(missionAgeTimer);
         missionAgeTimer = runtimeSetTimeout(updateMissionAgeLabels, state.economyMode ? Math.max(700, delay) : delay);
     }
@@ -14567,7 +14785,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function updateUnitCommitmentLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         if (!state.unitCommitment) { clearUnitCommitmentLabels(); return; }
         const vehicleDataFreshnessMs = state.economyMode ? 5 * 60 * 1000 : VEHICLE_API_REFRESH_MS;
         if (!vehicleApiReady || Date.now() - vehicleApiLastFetch >= vehicleDataFreshnessMs) refreshPersonalVehicleData(false);
@@ -14624,6 +14842,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function scheduleUnitCommitmentRefresh(delay = 400) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(unitCommitmentTimer);
         unitCommitmentTimer = runtimeSetTimeout(updateUnitCommitmentLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
@@ -14761,7 +14980,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function updateTransportWatcherLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(transportWatcherTimer);
         transportWatcherTimer = null;
         if (!state.transportWatcher) {
@@ -14844,6 +15063,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function scheduleTransportWatcherRefresh(delay = 320) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(transportWatcherTimer);
         transportWatcherTimer = runtimeSetTimeout(updateTransportWatcherLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
@@ -16873,7 +17093,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateResourceGapLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(resourceGapTimer);
         resourceGapTimer = null;
         if (!state.resourceGap.enabled) { clearResourceGapLabels(); return; }
@@ -16929,6 +17149,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleResourceGapRefresh(delay = 420) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(resourceGapTimer);
         resourceGapTimer = runtimeSetTimeout(updateResourceGapLabels, state.economyMode ? Math.max(1500, delay) : delay);
     }
@@ -17110,10 +17331,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             economyLayerSyncTimer = null;
             restoreEconomyLayers(existingMap);
             restoreLeafletEconomyPolicy();
-            disposeEconomyCanvasRenderer(existingMap);
-            document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
-            economyDeferredMapRefresh = false;
-            economyDeferredDomMutation = false;
         }
         updateUI();
         return;
@@ -17130,15 +17347,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         economyLayerSyncTimer = null;
         restoreEconomyLayers(map);
         restoreLeafletEconomyPolicy();
-        document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
         try { map?.invalidateSize?.({ animate: false }); } catch (err) {}
         }
         runtimeRescheduleTasks(!next);
         coverageRenderSignature = '';
         majorIncidentFeedRenderSignature = '';
-        economyDeferredMapRefresh = false;
-        economyDeferredDomMutation = false;
-        if (!next) disposeEconomyCanvasRenderer(map);
         if (state.coverage.enabled) { clearCoverageRings(); scheduleCoverageRefresh(); }
         scheduleMajorIncidentFeedRender(0);
         scheduleEnabledMapRefreshes({ includeSnapshots: true, positionPanel: true });
@@ -17562,6 +17775,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleMarkerStateSync(delay = 20, trailing = false) {
+        if (deferMapInteractionRefresh({ markerSync: true, fullRefresh: false })) return;
         const timerName = trailing ? 'markerStateTrailingTimer' : 'markerStateSyncTimer';
         const currentTimer = trailing ? markerStateTrailingTimer : markerStateSyncTimer;
         runtimeClearTimeout(currentTimer);
@@ -17579,6 +17793,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleMarkerClassification() {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(classifyTimer);
         classifyTimer = runtimeSetTimeout(classifyMarkersNow, state.economyMode ? 420 : 180);
     }
@@ -17616,7 +17831,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function isToolkitLeafletLayer(layer) {
         return Boolean(layer && (
-        layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer ||
+        layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer || layer.__mcmsCoverageRenderer ||
         layer.__mcmsAllianceCreditLabel || layer.__mcmsAllianceCreditLayer ||
         layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
         layer.__mcmsUnitCommitmentLabel || layer.__mcmsUnitCommitmentLayer ||
@@ -17631,11 +17846,95 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     let enabledMapRefreshTimer = null;
     let pendingEnabledMapRefresh = { includeSnapshots: false, positionPanel: false, refreshOperational: false, fullRefresh: false };
 
+    function mapInteractionWorkDeferred() {
+        return mapInteractionMoving || mapInteractionSettling;
+    }
+
+    function deferMapInteractionRefresh({ scope = '', includeSnapshots = false, markerSync = false, domMutation = false, fullRefresh = true } = {}) {
+        if (!mapInteractionWorkDeferred()) return false;
+        if (scope) mapInteractionDirtyScopes.add(['mission', 'vehicle', 'building'].includes(scope) ? scope : 'all');
+        mapInteractionDeferredRefresh ||= Boolean(fullRefresh);
+        mapInteractionDeferredSnapshots ||= Boolean(includeSnapshots);
+        mapInteractionMarkerSyncNeeded ||= Boolean(markerSync);
+        mapInteractionDeferredDomMutation ||= Boolean(domMutation);
+        return true;
+    }
+
+    function cancelPendingMapRenderWork() {
+        const fullRefreshPending = [classifyTimer, allianceCreditTimer, missionAgeTimer, unitCommitmentTimer, transportWatcherTimer, resourceGapTimer, stuckMissionTimer].some(timer => timer !== null);
+        const markerSyncPending = markerStateSyncTimer !== null || markerStateTrailingTimer !== null;
+        const snapshotPending = missionSnapshotTimer !== null;
+        const domMutationPending = mutationTimer !== null;
+        for (const timer of [mutationTimer, classifyTimer, markerStateSyncTimer, markerStateTrailingTimer, coverageTimer, allianceCreditTimer, missionAgeTimer, unitCommitmentTimer, transportWatcherTimer, resourceGapTimer, stuckMissionTimer, missionSnapshotTimer]) runtimeClearTimeout(timer);
+        mutationTimer = null;
+        classifyTimer = null;
+        markerStateSyncTimer = null;
+        markerStateTrailingTimer = null;
+        coverageTimer = null;
+        allianceCreditTimer = null;
+        missionAgeTimer = null;
+        unitCommitmentTimer = null;
+        transportWatcherTimer = null;
+        resourceGapTimer = null;
+        stuckMissionTimer = null;
+        missionSnapshotTimer = null;
+        mapInteractionDeferredRefresh ||= fullRefreshPending;
+        mapInteractionMarkerSyncNeeded ||= markerSyncPending;
+        mapInteractionDeferredSnapshots ||= snapshotPending;
+        mapInteractionDeferredDomMutation ||= domMutationPending;
+    }
+
+    function beginMapInteractionBatch() {
+        mapInteractionMoving = true;
+        mapInteractionSettling = false;
+        if (enabledMapRefreshTimer !== null) {
+        runtimeClearTimeout(enabledMapRefreshTimer);
+        enabledMapRefreshTimer = null;
+        }
+        cancelPendingMapRenderWork();
+        document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
+    }
+
+    function completeMapInteractionBatch() {
+        const scopes = Array.from(mapInteractionDirtyScopes);
+        if (mapInteractionDeferredDomMutation && !scopes.length) scopes.push('all');
+        const summary = {
+        scopes,
+        fullRefresh: mapInteractionDeferredRefresh || mapInteractionDeferredDomMutation || scopes.length > 0,
+        includeSnapshots: mapInteractionDeferredSnapshots || mapInteractionDeferredDomMutation || scopes.some(scope => scope !== 'building'),
+        markerSync: mapInteractionMarkerSyncNeeded || scopes.length > 0,
+        domMutation: mapInteractionDeferredDomMutation
+        };
+        mapInteractionMoving = false;
+        mapInteractionSettling = false;
+        mapInteractionDeferredRefresh = false;
+        mapInteractionDeferredSnapshots = false;
+        mapInteractionDeferredDomMutation = false;
+        mapInteractionMarkerSyncNeeded = false;
+        mapInteractionDirtyScopes.clear();
+        document.documentElement?.setAttribute?.('data-mcms-map-moving', 'false');
+        if (scopes.includes('all')) invalidateMarkerRegistryCaches('all');
+        else for (const scope of scopes) invalidateMarkerRegistryCaches(scope);
+        return summary;
+    }
+
     function flushEnabledMapRefreshes() {
         enabledMapRefreshTimer = null;
         if (runtime.destroyed) return;
         const request = pendingEnabledMapRefresh;
         pendingEnabledMapRefresh = { includeSnapshots: false, positionPanel: false, refreshOperational: false, fullRefresh: false };
+        const movement = mapInteractionSettling ? completeMapInteractionBatch() : null;
+        if (movement) {
+        request.fullRefresh ||= movement.fullRefresh;
+        request.includeSnapshots ||= movement.includeSnapshots;
+        if (movement.domMutation) {
+            invalidateMapElementCache();
+            refreshSuppression();
+            fitControlToMap();
+        }
+        if (movement.markerSync) scheduleMarkerStateSync(0, false);
+        if (state.economyMode) scheduleEconomyLayerSync(80);
+        }
         if (state.safeMode.enabled) { if (request.positionPanel && !dragState) schedulePanelPosition(true, 60); return; }
 
         if (request.fullRefresh && markerClassificationNeeded()) scheduleMarkerClassification();
@@ -17659,9 +17958,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         pendingEnabledMapRefresh.positionPanel ||= Boolean(positionPanel);
         pendingEnabledMapRefresh.refreshOperational ||= Boolean(refreshOperational);
         pendingEnabledMapRefresh.fullRefresh ||= !mapOnly;
-        if (state.economyMode && economyMapMoving) return;
+        if (mapInteractionMoving) return;
         if (enabledMapRefreshTimer !== null) return;
-        enabledMapRefreshTimer = runtimeSetTimeout(flushEnabledMapRefreshes, state.economyMode ? 180 : 35);
+        enabledMapRefreshTimer = runtimeSetTimeout(flushEnabledMapRefreshes, mapInteractionSettling ? MAP_INTERACTION_SETTLE_MS : state.economyMode ? 180 : 35);
     }
 
     function reconcileFeatureRefreshes({ includeSnapshots = true, positionPanel = false } = {}) {
@@ -17798,13 +18097,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const onLayerAdd = event => {
         const layer = event?.layer;
         if (isToolkitLeafletLayer(layer) || economyLayerEnforcement) return;
-        if (state.economyMode) applyEconomyToLeafletLayer(map, layer);
         const scope = inferScope(layer);
+        if (deferMapInteractionRefresh({
+            scope,
+            includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all',
+            markerSync: scope === 'vehicle' || scope === 'building'
+        })) return;
+        if (state.economyMode) applyEconomyToLeafletLayer(map, layer);
         invalidateMarkerRegistryCaches(scope);
-        if (state.economyMode && economyMapMoving) {
-            economyDeferredMapRefresh = true;
-            return;
-        }
 
         const isVehicleLayer = scope === 'vehicle';
         if (isVehicleLayer && layer?._icon) markVehicleIcon(layer._icon);
@@ -17823,16 +18123,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const layer = event?.layer;
         if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || enforcingNativeAllianceBuildingVisibility || economyLayerEnforcement) return;
         const scope = inferScope(layer);
+        if (deferMapInteractionRefresh({
+            scope,
+            includeSnapshots: scope !== 'building',
+            markerSync: scope === 'vehicle' || scope === 'building'
+        })) return;
         if (scope === 'vehicle' && followedVehicleMarker === layer) stopVehicleFollow(true);
         invalidateMarkerRegistryCaches(scope);
-        if (state.economyMode && economyMapMoving) {
-            economyDeferredMapRefresh = true;
-            return;
-        }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope !== 'building', positionPanel: false });
         };
 
         const onNativeOverlayChange = () => {
+        if (deferMapInteractionRefresh({ scope: 'building', markerSync: true })) return;
         invalidateMarkerRegistryCaches('building');
         scheduleMarkerStateSync(0, false);
         scheduleMarkerStateSync(180, true);
@@ -17840,23 +18142,16 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
         const onMapMoveStart = () => {
         if (followedVehicleId && !vehicleFollowRecentering) stopVehicleFollow(true);
-        economyMapMoving = true;
-        document.documentElement.setAttribute('data-mcms-map-moving', 'true');
+        beginMapInteractionBatch();
         };
 
-        const onMapMove = () => {
-        economyMapMoving = false;
-        document.documentElement.setAttribute('data-mcms-map-moving', 'false');
-        const deferredRefresh = economyDeferredMapRefresh || economyDeferredDomMutation;
-        economyDeferredMapRefresh = false;
-        economyDeferredDomMutation = false;
-        if (deferredRefresh) {
-            invalidateMarkerRegistryCaches('all');
-            ensureUi();
-        }
-        if (state.economyMode) scheduleEconomyLayerSync(80);
-        if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement(map)) scheduleMarkerStateSync(0, false);
-        scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
+        const onMapMove = event => {
+        if (event?.type === 'viewreset' && mapInteractionMoving) return;
+        mapInteractionMoving = false;
+        mapInteractionSettling = true;
+        mapInteractionMarkerSyncNeeded ||= Boolean(!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement(map));
+        document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
+        scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: true, refreshOperational: false, mapOnly: true });
         };
 
         const onTabletQuickWheel = event => {
@@ -17912,24 +18207,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
     }
 
-    function economyLeafletPathRenderer(map) {
-        if (!state.economyMode || !map || typeof pageWindow.L?.canvas !== 'function') return undefined;
+    function coverageLeafletPathRenderer(map) {
+        if (!map || typeof pageWindow.L?.canvas !== 'function') return undefined;
         try {
-        if (!economyCanvasRenderer || economyCanvasRenderer._map !== map) {
-            const previousRenderer = economyCanvasRenderer;
+        if (!coverageCanvasRenderer || coverageCanvasRenderer._map !== map) {
+            const previousRenderer = coverageCanvasRenderer;
             if (previousRenderer?._map && previousRenderer._map !== map) {
                 try { previousRenderer._map.removeLayer?.(previousRenderer); } catch (err) {}
             }
-            economyCanvasRenderer = pageWindow.L.canvas({ padding: 0.08, tolerance: 2 });
-            economyCanvasRenderer.__mcmsEconomyRenderer = true;
+            coverageCanvasRenderer = pageWindow.L.canvas({ padding: 0.08, tolerance: 2 });
+            coverageCanvasRenderer.__mcmsCoverageRenderer = true;
         }
-        return economyCanvasRenderer;
+        return coverageCanvasRenderer;
         } catch (err) { return undefined; }
     }
 
-    function disposeEconomyCanvasRenderer(map = findLeafletMapInstance(false)) {
-        const renderer = economyCanvasRenderer;
-        economyCanvasRenderer = null;
+    function disposeCoverageCanvasRenderer(map = findLeafletMapInstance(false)) {
+        const renderer = coverageCanvasRenderer;
+        coverageCanvasRenderer = null;
         if (!renderer || !map) return;
         try { if (map.hasLayer?.(renderer)) map.removeLayer(renderer); } catch (err) {}
     }
@@ -17963,7 +18258,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateCoverageRings() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh({ fullRefresh: false })) return;
         if (!state.coverage.enabled) { clearCoverageRings(); return; }
         const map = findLeafletMapInstance(false);
 
@@ -17992,7 +18287,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         coverageRenderSignature = signature;
 
         const metres = radiusMi * 1609.344;
-        const renderer = economyLeafletPathRenderer(map);
+        const renderer = coverageLeafletPathRenderer(map);
         for (const layer of layers) {
             const ring = pageWindow.L.circle(layer.getLatLng(), {
                 radius: metres,
@@ -18016,6 +18311,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleCoverageRefresh() {
+        if (deferMapInteractionRefresh({ fullRefresh: false })) return;
         runtimeClearTimeout(coverageTimer);
         coverageTimer = runtimeSetTimeout(updateCoverageRings, state.economyMode ? 650 : 220);
     }
@@ -19310,6 +19606,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleMissionSnapshotRefresh(delay = 600) {
+        if (deferMapInteractionRefresh({ includeSnapshots: true, fullRefresh: false })) return;
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
         if (runtime.destroyed || document.hidden || !missionSnapshotsNeeded()) return;
@@ -20254,21 +20551,94 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
     }
 
-        function missionValueWindowCandidates() {
+    const MISSION_VALUE_POPUP_SELECTOR = [
+        '#lightbox_box', '#lightbox', '.lightbox_content', '.lightbox',
+        '.modal.show', '.modal.in', '[role="dialog"]', '.ui-dialog-content', '.ui-dialog'
+    ].join(', ');
+    const MISSION_VALUE_CONTENT_SELECTOR = [
+        '#mission-form', '#mission_content', '.mission_content', '[data-mission-content]',
+        '[data-mission-id]', '[data-mission_id]', 'input[name="mission_id"]',
+        'input[name="mission[id]"]', 'form[action*="/missions/"]'
+    ].join(', ');
+
+    function missionValuePopupRoot(root) {
+        if (!root?.isConnected) return null;
+        const doc = root.ownerDocument || null;
+        if (!doc) return null;
+        if (doc === document) {
+        try { return root.matches?.(MISSION_VALUE_POPUP_SELECTOR) ? root : root.closest?.(MISSION_VALUE_POPUP_SELECTOR) || null; }
+        catch (err) { return null; }
+        }
+        try {
+        const frame = doc.defaultView?.frameElement || null;
+        if (!frame?.isConnected || !frame.closest?.(MISSION_VALUE_POPUP_SELECTOR)) return null;
+        return root;
+        } catch (err) {
+        return null;
+        }
+    }
+
+    function missionValuePopupMissionId(root) {
+        const popupRoot = missionValuePopupRoot(root);
+        if (!popupRoot) return null;
+        const doc = popupRoot.ownerDocument || null;
+        let routeMissionId = null;
+        if (doc && doc !== document) {
+        try { routeMissionId = missionValueIdFromUrl(doc.location?.href, location.href); } catch (err) {}
+        }
+        let hasMissionContent = routeMissionId !== null;
+        if (!hasMissionContent) {
+        try { hasMissionContent = Boolean(popupRoot.matches?.(MISSION_VALUE_CONTENT_SELECTOR) || popupRoot.querySelector?.(MISSION_VALUE_CONTENT_SELECTOR)); }
+        catch (err) {}
+        }
+        if (!hasMissionContent) return null;
+        return routeMissionId ?? missionValueIdFromElement(popupRoot);
+    }
+
+    function missionValueFramesForDocuments(documents) {
+        const frames = new Set();
+        for (const doc of Array.from(documents || [])) {
+        try { doc.querySelectorAll?.('iframe, frame').forEach(frame => frames.add(frame)); } catch (err) {}
+        }
+        return frames;
+    }
+
+    function pruneMissionValueTracking(activeDocuments = null, activeFrames = null) {
+        for (const [doc, observer] of missionValueDocumentObservers) {
+        const keep = runtimeDocumentConnected(doc) && (!activeDocuments || activeDocuments.has(doc));
+        if (keep) continue;
+        runtimeUntrackObserver(observer);
+        missionValueDocumentObservers.delete(doc);
+        }
+        for (const [frame, listener] of missionValueFrameListeners) {
+        const keep = Boolean(frame?.isConnected && (!activeFrames || activeFrames.has(frame)));
+        if (keep) continue;
+        runtimeUnlisten(frame, 'load', listener);
+        missionValueFrameListeners.delete(frame);
+        }
+        runtimePruneDisconnectedListeners();
+    }
+
+    function missionValueWindowCandidates() {
         const discovered = [];
         const add = root => {
-        if (!root?.isConnected) return;
-        const missionId = missionValueIdFromElement(root);
+        const popupRoot = missionValuePopupRoot(root);
+        if (!popupRoot) return;
+        const missionId = missionValuePopupMissionId(popupRoot);
         if (missionId === null) return;
-        const mount = missionValueMountForRoot(root);
+        const mount = missionValueMountForRoot(popupRoot);
         if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
-        const toolbarSpacer = missionValueToolbarSpacer(root, mount);
-        const toolbar = missionValueToolbarBar(toolbarSpacer, root, mount);
-        discovered.push({ root, mount, missionId, toolbarSpacer, toolbar });
+        const toolbarSpacer = missionValueToolbarSpacer(popupRoot, mount);
+        const toolbar = missionValueToolbarBar(toolbarSpacer, popupRoot, mount);
+        discovered.push({ root: popupRoot, mount, missionId, toolbarSpacer, toolbar });
         };
 
+        const contexts = transportSweepDocumentContexts();
+        const activeDocuments = new Set(contexts.map(context => context.doc));
+        const activeFrames = missionValueFramesForDocuments(activeDocuments);
+        pruneMissionValueTracking(activeDocuments, activeFrames);
         transportSweepVisibleWindowRoots().forEach(add);
-        for (const context of transportSweepDocumentContexts()) {
+        for (const context of contexts) {
         observeMissionValueDocument(context.doc);
         if (context.doc !== document) {
             try {
@@ -20285,6 +20655,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function clearMissionValueIndicators() {
         for (const context of transportSweepDocumentContexts()) removeMissionValueRows(context.doc);
+        pruneMissionValueHostObservers(new Set());
+        pruneMissionValueTracking(new Set(), new Set());
     }
 
 
@@ -20400,8 +20772,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         for (const [spacer, record] of missionValueHostObservers) {
         const keep = Boolean(spacer?.isConnected && record?.toolbar?.isConnected && (!activeSpacers || activeSpacers.has(spacer)));
         if (keep) continue;
-        try { record?.resizeObserver?.disconnect?.(); } catch (err) {}
-        try { record?.mutationObserver?.disconnect?.(); } catch (err) {}
+        runtimeUntrackObserver(record?.resizeObserver);
+        runtimeUntrackObserver(record?.mutationObserver);
         missionValueHostObservers.delete(spacer);
         }
     }
@@ -20413,8 +20785,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const existing = missionValueHostObservers.get(spacer);
         if (existing?.toolbar === toolbar) return;
         if (existing) {
-        try { existing.resizeObserver?.disconnect?.(); } catch (err) {}
-        try { existing.mutationObserver?.disconnect?.(); } catch (err) {}
+        runtimeUntrackObserver(existing.resizeObserver);
+        runtimeUntrackObserver(existing.mutationObserver);
         }
         const view = spacer.ownerDocument?.defaultView || pageWindow;
         const ResizeObserverCtor = view?.ResizeObserver || pageWindow.ResizeObserver;
@@ -20565,25 +20937,25 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function observeMissionValueFrame(frame) {
-        if (!frame || missionValueObservedFrames.has(frame)) return;
-        missionValueObservedFrames.add(frame);
-        const onLoad = () => scheduleMissionValueScan(40);
-        frame.addEventListener('load', onLoad);
-        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+        if (!frame || missionValueFrameListeners.has(frame)) return;
+        const listener = () => scheduleMissionValueScan(40);
+        runtimeListen(frame, 'load', listener);
+        missionValueFrameListeners.set(frame, listener);
     }
 
-        function observeMissionValueDocument(doc) {
+    function observeMissionValueDocument(doc) {
         if (!doc) return;
         ensureMissionValueDocumentStyle(doc);
-        if (missionValueObservedDocuments.has(doc)) return;
-        missionValueObservedDocuments.add(doc);
+        if (missionValueDocumentObservers.has(doc)) return;
         let frames = [];
         try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
         frames.forEach(observeMissionValueFrame);
         const root = doc.documentElement || doc.body;
         if (!root) return;
         const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"], #navbar-alarm-spacer, #navbar-right-help-button, .navbar-header';
-        const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+        const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        if (typeof Observer !== 'function') return;
+        const observer = runtimeTrackObserver(new Observer(mutations => {
         const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
             if (node?.nodeType !== 1) return false;
             if (node.matches?.(activitySelector)) return true;
@@ -20594,6 +20966,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         scheduleMissionValueScan(50);
         }));
         observer.observe(root, { childList: true, subtree: true });
+        missionValueDocumentObservers.set(doc, observer);
     }
 
     function installMissionValueWindows() {
@@ -20604,6 +20977,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             missionValueScanTimer = null;
             clearMissionValueIndicators();
             clearMissionValueDocumentStyles();
+            pruneMissionValueHostObservers(new Set());
+            pruneMissionValueTracking(new Set(), new Set());
         });
         }
         for (const context of transportSweepDocumentContexts()) observeMissionValueDocument(context.doc);
@@ -21109,7 +21484,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateStuckMissionLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(stuckMissionTimer);
         stuckMissionTimer = null;
         if (!state.stuckDetector.enabled) {
@@ -21196,6 +21571,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleStuckMissionRefresh(delay = 300) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(stuckMissionTimer);
         stuckMissionTimer = runtimeSetTimeout(updateStuckMissionLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
@@ -22597,21 +22973,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateBriefingBody() {
+        const highlights = RELEASE_BRIEFING.highlights.map(highlight => '<li>' + escapeHtml(highlight) + '</li>').join('');
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
-        '<article class="mcms-command-note"><b>Official updates are delivered by TKB</b><p>The TKB Website is the only supported installer and automatic-update channel. GitHub remains the verified source and immutable release archive.</p><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button></article>' +
-        '<article class="mcms-command-note"><b>Cleaner mission map and Alliance Chat</b><p>Mission Progress Rings and Alliance Chat Mission Previews have been retired. Mission markers and Alliance Chat now remain in their native MissionChief form.</p></article>' +
-        '<div class="mcms-update-grid">' +
-            '<article><b>Unit Locator &amp; Follow</b><p>Search personal vehicles by caption, ID, type, station or status and deliberately follow one live marker.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="unitLocator">Open Unit Locator</button></article>' +
-            '<article><b>Session Cleanup</b><p>Preview and clear only temporary Toolkit effects, searches, notification memory and rebuildable caches.</p><button type="button" data-mcms-command-action="briefing-open-feature" data-feature="sessionCleanup">Open Cleanup</button></article>' +
-        '</div><p class="mcms-command-note">New Settings entries keep their NEW badge until you visit the relevant controls.</p>';
+        '<article class="mcms-update-release"><b>' + escapeHtml(RELEASE_BRIEFING.title) + '</b><ul class="mcms-update-highlights">' + highlights + '</ul></article>' +
+        '<article class="mcms-command-note"><b>Official updates are delivered by TKB</b><p>The TKB Website is the only supported installer and automatic-update channel. GitHub remains the verified source and immutable release archive.</p><div class="mcms-update-actions"><button type="button" data-mcms-command-action="open-tkb-installer">Open Official TKB Installer</button><button type="button" data-mcms-command-action="open-release-notes">Full Patch Notes</button></div></article>' +
+        '<p class="mcms-command-note">New Settings entries keep their NEW badge until you visit the relevant controls.</p>';
+    }
+
+    function openToolkitReleaseNotes() {
+        const opened = pageWindow.open('https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v' + encodeURIComponent(SCRIPT.version), '_blank', 'noopener,noreferrer');
+        try { if (opened) opened.opener = null; } catch (err) {}
     }
 
     function openUpdateBriefing({ manual = false } = {}) {
         if (!manual && !state.updateBriefing.enabled) return false;
         openCommandExperienceModal({
         kind: 'Update Briefing',
-        title: 'What’s New & Feature Beacon',
-        subtitle: 'Move to the official TKB update channel and review every v10.2 feature.',
+        title: 'What’s New & Feature Beacon · v' + RELEASE_BRIEFING.version,
+        subtitle: RELEASE_BRIEFING.title,
         body: updateBriefingBody(),
         actions: '<button type="button" data-mcms-command-action="briefing-disable">Don’t Show Again</button><button class="mcms-primary" type="button" data-mcms-command-action="briefing-dismiss">Got It</button>'
         });
@@ -22725,6 +23104,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const action = button.dataset.mcmsCommandAction;
         if (action === 'modal-close') { closeCommandExperienceModal(); return true; }
         if (action === 'open-tkb-installer') { pageWindow.open('https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', '_blank', 'noopener,noreferrer'); return true; }
+        if (action === 'open-release-notes') { openToolkitReleaseNotes(); return true; }
         if (action === 'fullscreen-exit') { setMapFullscreen(false); return true; }
         if (action === 'quick-wheel-close') { closeTabletQuickWheel({ restoreFocus: true }); return true; }
         if (action === 'quick-wheel-command') { executeQuickWheelSlot(Number(button.dataset.slotIndex)); return true; }
@@ -27342,9 +27722,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         for (const id of nodeIds) {
             const node = document.querySelector?.(`[id="${id}"]`);
             if (!node) continue;
+            runtimeUnlistenTarget(node, true);
             node.remove();
             removed += 1;
         }
+        runtimePruneDisconnectedListeners();
         document.querySelectorAll?.('.mcms-map-fullscreen-target').forEach(element => element.classList.remove('mcms-map-fullscreen-target'));
         fullscreenMapTarget?.classList?.remove?.('mcms-map-fullscreen-target');
         fullscreenMapTarget = null;
@@ -28393,7 +28775,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function closeCommandPalette({ restoreFocus = true } = {}) {
         const overlay = commandExperienceElement(SCRIPT.commandPaletteId);
-        if (!overlay) return false;
+        if (!overlay) { runtimePruneDisconnectedListeners(); return false; }
+        runtimeUnlistenTarget(overlay, true);
         overlay.remove();
         document.documentElement.removeAttribute('data-mcms-command-palette-open');
         commandPaletteEntries = [];
@@ -28800,8 +29183,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         `;
     }
 
-    // Issue #153 introduced the control; Issues #639 and #41 make verified release discovery live, TKB-first and release-state authoritative.
-    const VERSION_STATUS = Object.freeze({ manifestUrls: Object.freeze(['https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json', 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json']), productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
+    // Issue #153 introduced the control; Issues #639 and #41 make verified TKB release discovery live and release-state authoritative.
+    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/release-state/status/update-manifest.json', productUrl: 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 60 * 1000, autoIntervalMs: 60 * 1000, failureCooldownMs: 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 1500, longPressMs: 650, styleId: 'mcms-version-status-style', alertStyleId: 'mcms-version-status-alert-style', buttonId: 'mcms-version-status-control' });
     let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusRequestToken = 0; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false; let versionStatusInitialCheckQueued = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
@@ -28850,7 +29233,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const row = control?.querySelector?.('.mcms-launch-row');
         if (!control || !row) return null;
         let button = document.getElementById(VERSION_STATUS.buttonId);
-        if (button && !control.contains(button)) { button.remove(); button = null; }
+        if (button && !control.contains(button)) { runtimeUnlistenTarget(button, true); button.remove(); button = null; }
         if (!button) {
             button = document.createElement('button');
             button.id = VERSION_STATUS.buttonId;
@@ -28903,84 +29286,60 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let settled = false;
             let timeoutTimer = null;
             let requestHandle = null;
-            let attemptToken = 0;
-            let endpointIndex = 0;
-            let lastError = null;
-            const finish = (currentAttempt, error, text) => {
-                if (settled || currentAttempt !== attemptToken) return;
+            const finish = (error, text) => {
+                if (settled) return;
+                settled = true;
                 runtimeClearTimeout(timeoutTimer);
                 if (requestHandle?.abort) runtime.requests?.delete?.(requestHandle);
                 if (requestHandle) runtime.fetchControllers?.delete?.(requestHandle);
                 if (versionStatusRequest === requestHandle) versionStatusRequest = null;
                 if (runtime.destroyed || requestToken !== versionStatusRequestToken) {
-                    settled = true;
                     reject(new Error('Version check was superseded.'));
                     return;
                 }
-                let manifest = null;
-                if (!error) {
-                    try { manifest = versionStatusValidateManifest(JSON.parse(String(text || ''))); }
-                    catch (err) { error = err instanceof Error ? err : new Error('Version manifest is invalid.'); }
-                }
-                if (manifest) {
-                    settled = true;
-                    resolve(manifest);
-                    return;
-                }
-                lastError = error instanceof Error ? error : new Error('Version endpoint could not be reached.');
-                if (endpointIndex < VERSION_STATUS.manifestUrls.length) {
-                    requestNext();
-                    return;
-                }
-                settled = true;
-                reject(lastError);
+                if (error) { reject(error); return; }
+                try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); }
+                catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); }
             };
-            const requestNext = () => {
-                const currentAttempt = ++attemptToken;
-                const endpoint = VERSION_STATUS.manifestUrls[endpointIndex++];
-                const url = `${endpoint}?cache_bust=${Date.now()}-${requestToken}-${endpointIndex}`;
-                timeoutTimer = null;
-                requestHandle = null;
-                if (typeof GM_xmlhttpRequest === 'function') {
-                    try {
-                        requestHandle = GM_xmlhttpRequest({
-                            method: 'GET',
-                            url,
-                            timeout: VERSION_STATUS.requestTimeoutMs,
-                            responseType: 'text',
-                            headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-                            onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
-                                ? finish(currentAttempt, null, response.responseText)
-                                : finish(currentAttempt, new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
-                            onerror: () => finish(currentAttempt, new Error('Version endpoint could not be reached.')),
-                            ontimeout: () => finish(currentAttempt, new Error('Version check timed out.')),
-                            onabort: () => finish(currentAttempt, new Error('Version check was cancelled.')),
-                        });
-                        versionStatusRequest = requestHandle;
-                        if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
-                    } catch (err) { finish(currentAttempt, err); }
-                    return;
-                }
-                const Controller = pageWindow.AbortController || globalThis.AbortController;
-                const controller = typeof Controller === 'function' ? new Controller() : null;
-                requestHandle = controller;
-                versionStatusRequest = controller;
-                if (controller) runtime.fetchControllers?.add?.(controller);
-                timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
-                Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
-                    cache: 'no-store',
-                    credentials: 'omit',
-                    signal: controller?.signal,
-                    headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-                }))
-                    .then(response => {
-                        if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
-                        return response.text();
-                    })
-                    .then(text => finish(currentAttempt, null, text))
-                    .catch(error => finish(currentAttempt, error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
-            };
-            requestNext();
+            const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}-${requestToken}`;
+            if (typeof GM_xmlhttpRequest === 'function') {
+                try {
+                    requestHandle = GM_xmlhttpRequest({
+                        method: 'GET',
+                        url,
+                        timeout: VERSION_STATUS.requestTimeoutMs,
+                        responseType: 'text',
+                        headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+                        onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300
+                            ? finish(null, response.responseText)
+                            : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)),
+                        onerror: () => finish(new Error('Version endpoint could not be reached.')),
+                        ontimeout: () => finish(new Error('Version check timed out.')),
+                        onabort: () => finish(new Error('Version check was cancelled.')),
+                    });
+                    versionStatusRequest = requestHandle;
+                    if (requestHandle?.abort) runtime.requests?.add?.(requestHandle);
+                } catch (err) { finish(err); }
+                return;
+            }
+            const Controller = pageWindow.AbortController || globalThis.AbortController;
+            const controller = typeof Controller === 'function' ? new Controller() : null;
+            requestHandle = controller;
+            versionStatusRequest = controller;
+            if (controller) runtime.fetchControllers?.add?.(controller);
+            timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs);
+            Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, {
+                cache: 'no-store',
+                credentials: 'omit',
+                signal: controller?.signal,
+                headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+            }))
+                .then(response => {
+                    if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`);
+                    return response.text();
+                })
+                .then(text => finish(null, text))
+                .catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.')));
         });
     }
     async function runVersionStatusCheck(force = false) {
@@ -29077,7 +29436,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             }
         }, Math.max(0, Number(delay) || 0));
     }
-    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; versionStatusInitialCheckQueued = false; versionStatusRequestToken += 1; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; versionStatusCheckPromise = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); document.querySelector(`#${VERSION_STATUS.alertStyleId}`)?.remove(); }
+    function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; versionStatusInitialCheckQueued = false; versionStatusRequestToken += 1; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; versionStatusCheckPromise = null; const button = document.getElementById(VERSION_STATUS.buttonId); runtimeUnlistenTarget(button, true); button?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); document.querySelector(`#${VERSION_STATUS.alertStyleId}`)?.remove(); }
 
     function createCleanExit() {
         if (!toolkitCommandShellContextActive()) return null;
@@ -30547,6 +30906,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return elementCount > 0;
     }
 
+    function mutationIsLeafletTileNoise(mutation) {
+        if (!mutation || mutation.type !== 'childList') return false;
+        const target = mutation.target;
+        if (target?.nodeType === 1 && (target.matches?.('.leaflet-tile-pane, .leaflet-tile-container') || target.closest?.('.leaflet-tile-pane'))) return true;
+        const nodes = [...Array.from(mutation.addedNodes || []), ...Array.from(mutation.removedNodes || [])].filter(node => node?.nodeType === 1);
+        return nodes.length > 0 && nodes.every(node => node.matches?.('.leaflet-tile-pane, .leaflet-tile-container, .leaflet-tile'));
+    }
+
     function mutationAddsLeafletMarkerIcon(mutation) {
         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
         for (const node of mutation.addedNodes) {
@@ -31145,10 +31512,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 10 * 60 * 1000
         });
         runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredMapRefresh = true;
-                return;
-            }
+            if (deferMapInteractionRefresh({ includeSnapshots: missionSnapshotsNeeded() })) return;
             installMissionMarkerAddHook();
             installRadioMessageHook();
             installCreditsUpdateHook();
@@ -31209,8 +31573,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runBootIntegration('credits observer', observeCreditValue);
         runBootIntegration('custom vehicle badges', installCustomVehicleBadges);
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredDomMutation = true;
+            if (mapInteractionWorkDeferred()) {
+                if (!mutations.every(mutationIsLeafletTileNoise)) deferMapInteractionRefresh({ includeSnapshots: true, domMutation: true });
                 return;
             }
             let externalMutationFound = false;
@@ -31219,6 +31583,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let layoutChanged = false;
             let toolkitUiRemoved = false;
             for (const mutation of mutations) {
+                if (mutationIsLeafletTileNoise(mutation)) continue;
                 const removesToolkitUi = mutationRemovesToolkitUi(mutation);
                 if (removesToolkitUi) toolkitUiRemoved = true;
                 if (mutationBelongsToToolkit(mutation) && !removesToolkitUi) continue;
@@ -31241,14 +31606,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (!state.visibility.buildings || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
             }
             if (layoutChanged) invalidateMapElementCache();
-            if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+            if (document.hidden || dragState || mapInteractionWorkDeferred()) return;
             runtimeClearTimeout(mutationTimer);
             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
             const mutationDelay = startupSettling
                 ? STARTUP_MUTATION_DEBOUNCE_MS
                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
             mutationTimer = runtimeSetTimeout(() => {
-                if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+                if (dragState || document.hidden || runtime.destroyed || mapInteractionWorkDeferred()) return;
                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
@@ -31368,10 +31733,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             document.removeEventListener('touchcancel', endPanelDrag, true);
             document.documentElement.style.cursor = '';
             if (document.body) document.body.style.userSelect = '';
+            mapInteractionMoving = false;
+            mapInteractionSettling = false;
+            mapInteractionDeferredRefresh = false;
+            mapInteractionDeferredSnapshots = false;
+            mapInteractionDeferredDomMutation = false;
+            mapInteractionMarkerSyncNeeded = false;
+            mapInteractionDirtyScopes.clear();
+            document.documentElement?.setAttribute?.('data-mcms-map-moving', 'false');
             restoreEconomyLayers();
             restoreLeafletEconomyPolicy();
             releaseNativeAllianceBuildingVisibility(cachedMap);
-            disposeEconomyCanvasRenderer();
+            disposeCoverageCanvasRenderer();
             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
             majorIncidentFeedLayoutTimer = null;
             const originalBuildingVisibility = state.visibility.buildings;

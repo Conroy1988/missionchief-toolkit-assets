@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 679,
-    "version": "10.5.1",
-    "sourceBytes": 2210707,
-    "sourceLines": 33362,
-    "sourceSha256": "50ae17918d0d5971f2d4afc5619d7f2cce6cdb81b4d88679a902999b7b4b6ba5",
-    "templateBytes": 802349,
-    "templateLines": 9479,
-    "templateSha256": "5220678d2274f3ddc3e226a28f04cfeebd2571342609f2ebc9b9f78099fa28ec",
-    "canonicalCssSha256": "860d6a02d996c5ed64b8b74d7a0b18b5a03bcda2bcdba8680f1ddc993d35bcbb",
+    "issue": 681,
+    "version": "10.5.2",
+    "sourceBytes": 2214754,
+    "sourceLines": 33395,
+    "sourceSha256": "1a0db8b4b24fe00dd2c7d13889ef50babde4cc7fd8d74e0f05018e3698f1570b",
+    "templateBytes": 805091,
+    "templateLines": 9493,
+    "templateSha256": "d074571a8cc17058b941d9eb0f1d419cbbe6bca3e456543f246726fec8ce933a",
+    "canonicalCssSha256": "e15180dae7b3d1b5345cf937e22eb916b037c91730d2c7f7022f5a3051ecb1ba",
     "maxSourceBytes": 2225000,
     "maxSourceLines": 33500,
     "minTemplateBytes": 500000,
-    "baseline": "10.5.0",
+    "baseline": "10.5.1",
     "approvedGrowth": {
-      "sourceBytes": 3290,
-      "sourceLines": 40,
-      "templateBytes": 3096,
-      "templateLines": 38
+      "sourceBytes": 4047,
+      "sourceLines": 33,
+      "templateBytes": 2742,
+      "templateLines": 14
     },
-    "scope": "Issue #679 visual-viewport-safe iOS Drawing bottom sheet and swipeable touch tool rail"
+    "scope": "Issue #681 responsive mid-sized Desktop command surface and balanced Settings card columns"
   }
 }

@@ -8804,6 +8804,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             min-height:48px !important;
         }
 
+        /* Issue #681: mid-sized Desktop windows use a wider, shorter command surface.
+           Settings cards balance into columns instead of inheriting the tallest card in each grid row. */
+        @media (min-width:1200px) and (max-width:2239px) {
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-command-layout { grid-template-columns:142px minmax(0,1fr) !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tabs { grid-template-rows:repeat(6,minmax(48px,auto)) !important; padding:8px 7px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-btn { grid-template-columns:28px minmax(0,1fr) !important; min-height:48px !important; padding:5px 6px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-icon { width:28px !important; height:28px !important; }
+        }
+        @media (min-width:1360px) and (min-height:900px) and (max-width:2239px) {
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-command-content:has(> .mcms-tab-panel[data-panel="settings"].mcms-active) { overflow-y:auto !important; overflow-x:hidden !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-panel[data-panel="settings"].mcms-active { display:block !important; width:100% !important; height:auto !important; min-height:100% !important; padding:10px !important; overflow:visible !important; column-width:230px !important; column-count:3 !important; column-gap:10px !important; column-fill:balance !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-panel[data-panel="settings"].mcms-active > .mcms-command-card { display:inline-block !important; width:100% !important; margin:0 0 10px !important; break-inside:avoid-column !important; page-break-inside:avoid !important; vertical-align:top !important; }
+        }
+
         html[data-mcms-ui-theme] body #mc-map-command-toolkit-control {
             max-width:none !important;
         }

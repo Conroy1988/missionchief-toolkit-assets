@@ -14,7 +14,7 @@ Toolkit `v10.3.8` makes the movement governor standard for every active map rath
 
 Coverage Rings retain the 200-visible-building limit, radius, colour and opacity, but every ring uses one shared Leaflet Canvas renderer. The renderer is Toolkit-owned, excluded from native layer-churn handling and released during runtime teardown.
 
-While the map is moving, Toolkit-owned marker and interface animations are paused, tile filters and Toolkit backdrop blur are suspended, and `will-change` hints are neutralised. All theme, skin and animation rules resume automatically after the settled pass.
+While the map is moving, Toolkit-owned marker and interface animations are paused, Toolkit backdrop blur is suspended and `will-change` hints are neutralised. From `v10.3.9`, the selected skin filter is handed from the individual tile images to one tile-pane composite for the gesture, so the map retains the same colour treatment without paying for a filter on every tile. Normal tile rendering resumes automatically after the settled pass.
 
 ## Compatibility and regression boundary
 

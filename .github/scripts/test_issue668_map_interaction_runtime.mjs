@@ -44,6 +44,7 @@ function extractFunction(name) {
 
 for (const contract of [
   "const MAP_INTERACTION_SETTLE_MS = 90",
+  "html[data-mcms-map-moving=\"true\"][data-mc-map-skin=\"control\"] .leaflet-tile-pane { filter:invert(92%) hue-rotate(182deg) brightness(62%) contrast(112%) saturate(72%) !important; }",
   "html[data-mcms-map-moving=\"true\"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }",
   "animation-play-state:paused !important",
   "function mutationIsLeafletTileNoise",

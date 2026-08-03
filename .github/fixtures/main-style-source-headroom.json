@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 668,
-    "version": "10.3.8",
-    "sourceBytes": 2156553,
+    "issue": 670,
+    "version": "10.3.9",
+    "sourceBytes": 2160821,
     "sourceLines": 32627,
-    "sourceSha256": "453afc7d520ae16f340e59b80b51af0445615f573c4c119444768c3c04cc4561",
-    "templateBytes": 787688,
+    "sourceSha256": "4af0252f060f96cab8629ea8f0c37d719f119d29c39441c84d068a050e8e0152",
+    "templateBytes": 791981,
     "templateLines": 9400,
-    "templateSha256": "4441736af2d3570b23acd04b4b4b2de8255ae4c8262983fa1a88d150a14fceea",
-    "canonicalCssSha256": "c39d21c848906529e888e0a636faf68839e24b0b22c996c5a03e3295c93f5f45",
+    "templateSha256": "273a48118f77a8537072f617bd642e05eaa7534ea8d2e2b4f7cffd9a23d28fdb",
+    "canonicalCssSha256": "2404926c561194063819947bd83aa7b61a30f49124d0536e4eba8c35efc76795",
     "maxSourceBytes": 2180000,
     "maxSourceLines": 32900,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.7",
+    "baseline": "10.3.8",
     "approvedGrowth": {
-      "sourceBytes": 7546,
-      "sourceLines": 114,
-      "templateBytes": 1611,
-      "templateLines": 13
+      "sourceBytes": 4268,
+      "sourceLines": 0,
+      "templateBytes": 4293,
+      "templateLines": 0
     },
-    "scope": "Issue #668 universal map-movement batching, tile-noise suppression, shared Canvas Coverage Rings and temporary compositing relief"
+    "scope": "Issue #670 stable movement-time map colours through a shared tile-pane filter composite"
   }
 }

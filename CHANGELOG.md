@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.3.9] - 2026-08-03
+
+### Stable map colours during movement
+
+- Keeps the selected map skin and Road Priority colour treatment continuously visible while panning and zooming, eliminating the bright default-tile flash.
+- Hands movement-time colour processing from individual tiles to one Leaflet tile-pane composite, retaining the v10.3.8 compositing relief without changing the chosen skin.
+- Continues pausing Toolkit marker and interface animations, transitions, backdrop blur and will-change hints during gestures, then restores them after settling.
+- Preserves universal movement batching, tile-noise suppression, one settled refresh, shared Canvas Coverage Rings and every saved feature setting.
+- Adds parity coverage for all eleven map skins and their Road Priority variants without adding a timer, listener, observer, request or polling cadence.
+
 ## [10.3.8] - 2026-08-02
 
 ### Smooth map interaction

@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 677,
-    "version": "10.5.0",
-    "sourceBytes": 2207417,
-    "sourceLines": 33322,
-    "sourceSha256": "120b69c31ed295017bc6ff34471755f03352feba46d9e84d443cec877b8e0bbd",
-    "templateBytes": 799253,
-    "templateLines": 9441,
-    "templateSha256": "c48ec85018a01f96265e4fe328d9696551fb8fd5532461307829eed3af535cf7",
-    "canonicalCssSha256": "33c9911cef2cb29169ff329ca05054e65d8e65f370bd97ab66edd1e5c9f539bd",
+    "issue": 679,
+    "version": "10.5.1",
+    "sourceBytes": 2210707,
+    "sourceLines": 33362,
+    "sourceSha256": "50ae17918d0d5971f2d4afc5619d7f2cce6cdb81b4d88679a902999b7b4b6ba5",
+    "templateBytes": 802349,
+    "templateLines": 9479,
+    "templateSha256": "5220678d2274f3ddc3e226a28f04cfeebd2571342609f2ebc9b9f78099fa28ec",
+    "canonicalCssSha256": "860d6a02d996c5ed64b8b74d7a0b18b5a03bcda2bcdba8680f1ddc993d35bcbb",
     "maxSourceBytes": 2225000,
     "maxSourceLines": 33500,
     "minTemplateBytes": 500000,
-    "baseline": "10.4.1",
+    "baseline": "10.5.0",
     "approvedGrowth": {
-      "sourceBytes": 26912,
-      "sourceLines": 380,
-      "templateBytes": 3135,
-      "templateLines": 14
+      "sourceBytes": 3290,
+      "sourceLines": 40,
+      "templateBytes": 3096,
+      "templateLines": 38
     },
-    "scope": "Issue #677 unified on-demand Drawing workspace with bounded session-local map tools"
+    "scope": "Issue #679 visual-viewport-safe iOS Drawing bottom sheet and swipeable touch tool rail"
   }
 }

@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.5.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.5.1"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.5.0"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.5.1"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Renames the persistent Measure action and its panel to Drawing across the toolbar, Map controls and Command Palette.",
+            "Rebuilds Drawing as a compact iOS Safari bottom sheet that leaves a substantial live map surface available for touch drawing.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

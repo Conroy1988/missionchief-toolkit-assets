@@ -9379,13 +9379,14 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #mc-map-command-toolkit-quick-wheel > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
         #mc-map-command-toolkit-map-measure {
             position:fixed !important; top:max(74px,calc(env(safe-area-inset-top) + 12px)) !important; right:max(12px,env(safe-area-inset-right)) !important;
-            z-index:2147483400 !important; width:min(390px,calc(100vw - 24px)) !important; max-height:calc(100vh - 92px) !important; overflow:auto !important; overscroll-behavior:contain !important; display:grid !important; gap:9px !important;
+            z-index:2147483400 !important; width:min(390px,calc(100vw - 24px)) !important; max-height:calc(100vh - 92px) !important; overflow:hidden !important; overscroll-behavior:contain !important; display:flex !important; flex-direction:column !important;
             padding:13px !important; border:1px solid rgba(104,211,255,.6) !important; border-radius:14px !important;
             background:linear-gradient(150deg,rgba(14,31,43,.98),rgba(4,11,17,.985)) !important; color:#eef9ff !important;
             box-shadow:0 18px 50px rgba(0,0,0,.62),0 0 28px rgba(66,193,245,.13) !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
         }
         #mc-map-command-toolkit-map-measure,#mc-map-command-toolkit-map-measure * { box-sizing:border-box !important; }
-        #mc-map-command-toolkit-map-measure .mcms-measure-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-head { flex:0 0 auto !important; display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
+        #mc-map-command-toolkit-map-measure .mcms-drawing-scroll { min-height:0 !important; margin-top:9px !important; padding-right:2px !important; overflow-y:auto !important; overflow-x:hidden !important; overscroll-behavior:contain !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; display:grid !important; gap:9px !important; }
         #mc-map-command-toolkit-map-measure .mcms-measure-head span { display:block !important; color:#66d3ff !important; font-size:8px !important; font-weight:950 !important; letter-spacing:.14em !important; }
         #mc-map-command-toolkit-map-measure .mcms-measure-head strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:17px !important; }
         #mc-map-command-toolkit-map-measure .mcms-measure-head small { display:block !important; margin-top:2px !important; color:#8fa7b6 !important; font-size:8px !important; font-weight:750 !important; }
@@ -9415,8 +9416,45 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         .mcms-map-drawing-label-icon > span { display:inline-block !important; max-width:240px !important; padding:5px 8px !important; border:1px solid var(--mcms-drawing-colour) !important; border-left-width:4px !important; border-radius:6px !important; background:rgba(5,13,20,.92) !important; color:#fff !important; font:800 11px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; box-shadow:0 3px 10px rgba(0,0,0,.5) !important; }
         html[data-mcms-economy="true"] #mc-map-command-toolkit-map-measure { box-shadow:0 12px 30px rgba(0,0,0,.54) !important; }
         @media (max-width:620px) {
-            #mc-map-command-toolkit-map-measure { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; max-height:min(74vh,calc(100vh - env(safe-area-inset-top) - 16px)) !important; }
-            #mc-map-command-toolkit-map-measure button { min-height:46px !important; font-size:11px !important; }
+            #mc-map-command-toolkit-map-measure {
+                top:auto !important;
+                right:max(8px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px)) !important;
+                bottom:max(8px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px)) !important;
+                left:max(8px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px)) !important;
+                width:auto !important;
+                max-width:calc(var(--mcms-visual-width,100vw) - 16px) !important;
+                max-height:52vh !important;
+                max-height:min(52dvh,430px,calc(var(--mcms-visual-height,100dvh) - 96px)) !important;
+                padding:10px !important;
+            }
+            #mc-map-command-toolkit-map-measure .mcms-measure-head { min-height:44px !important; align-items:center !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-head span { font-size:7px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-head strong { margin-top:1px !important; font-size:15px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-head small { margin-top:1px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-close { width:44px !important; min-width:44px !important; height:44px !important; min-height:44px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-drawing-scroll { margin-top:6px !important; padding-right:1px !important; gap:6px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-modes {
+                display:flex !important;
+                grid-template-columns:none !important;
+                gap:6px !important;
+                padding:1px 2px 5px !important;
+                overflow-x:auto !important;
+                overflow-y:hidden !important;
+                overscroll-behavior-x:contain !important;
+                -webkit-overflow-scrolling:touch !important;
+                scrollbar-width:none !important;
+                scroll-snap-type:x proximity !important;
+                touch-action:pan-x !important;
+            }
+            #mc-map-command-toolkit-map-measure .mcms-measure-modes::-webkit-scrollbar { display:none !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-modes button { flex:0 0 clamp(92px,28vw,112px) !important; min-width:92px !important; min-height:44px !important; scroll-snap-align:start !important; }
+            #mc-map-command-toolkit-map-measure button { min-height:44px !important; font-size:11px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-drawing-style { gap:6px !important; padding:6px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-drawing-colours button { height:44px !important; min-height:44px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-drawing-lines button { min-height:44px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-readout { min-height:58px !important; padding:8px 10px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-readout strong { font-size:17px !important; }
+            #mc-map-command-toolkit-map-measure .mcms-measure-guidance { font-size:9px !important; }
         }
         #mc-map-command-toolkit-panel .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #mc-map-command-toolkit-panel :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }

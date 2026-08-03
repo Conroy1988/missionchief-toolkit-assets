@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.5.0
+// @version      10.5.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.5.0',
+        version: '10.5.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -524,14 +524,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.5.0",
-        title: "Unified on-demand Drawing workspace",
+        version: "10.5.1",
+        title: "iOS Drawing workspace repair",
         highlights: Object.freeze([
-            "Renames the persistent Measure action and its panel to Drawing across the toolbar, Map controls and Command Palette.",
-            "Keeps kilometre and square-kilometre measurement beside straight lines, arrows, freehand sketches, circles, rectangles and polygon zones.",
-            "Adds temporary text labels and markers plus colour, solid or dashed line and thin, normal or bold style controls.",
-            "Keeps drawings session-local, capped and fully removed with every temporary listener and Leaflet layer when Drawing closes.",
-            "Preserves the map movement governor, stable colours, Desktop, Tablet and iOS layouts and the zero-idle-work performance baseline."
+            "Rebuilds Drawing as a compact iOS Safari bottom sheet that leaves a substantial live map surface available for touch drawing.",
+            "Uses the Toolkit's existing visual-viewport and safe-area geometry so Safari browser chrome, rotation and constrained landscape heights cannot bury the controls.",
+            "Keeps the title, object count and 44px close control fixed while Drawing options scroll independently inside the sheet.",
+            "Turns all ten Drawing modes into a swipeable 44px tool rail while keeping colours, styles, readout, Undo, Finish, Clear All and guidance reachable.",
+            "Preserves Desktop and Tablet behaviour, every Drawing capability, session-only teardown and the zero-idle-work movement and lifecycle budgets."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -11997,13 +11997,14 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.quickWheelId} > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
         #${SCRIPT.mapMeasureHudId} {
             position:fixed !important; top:max(74px,calc(env(safe-area-inset-top) + 12px)) !important; right:max(12px,env(safe-area-inset-right)) !important;
-            z-index:2147483400 !important; width:min(390px,calc(100vw - 24px)) !important; max-height:calc(100vh - 92px) !important; overflow:auto !important; overscroll-behavior:contain !important; display:grid !important; gap:9px !important;
+            z-index:2147483400 !important; width:min(390px,calc(100vw - 24px)) !important; max-height:calc(100vh - 92px) !important; overflow:hidden !important; overscroll-behavior:contain !important; display:flex !important; flex-direction:column !important;
             padding:13px !important; border:1px solid rgba(104,211,255,.6) !important; border-radius:14px !important;
             background:linear-gradient(150deg,rgba(14,31,43,.98),rgba(4,11,17,.985)) !important; color:#eef9ff !important;
             box-shadow:0 18px 50px rgba(0,0,0,.62),0 0 28px rgba(66,193,245,.13) !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
         }
         #${SCRIPT.mapMeasureHudId},#${SCRIPT.mapMeasureHudId} * { box-sizing:border-box !important; }
-        #${SCRIPT.mapMeasureHudId} .mcms-measure-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-head { flex:0 0 auto !important; display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-scroll { min-height:0 !important; margin-top:9px !important; padding-right:2px !important; overflow-y:auto !important; overflow-x:hidden !important; overscroll-behavior:contain !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; display:grid !important; gap:9px !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-head span { display:block !important; color:#66d3ff !important; font-size:8px !important; font-weight:950 !important; letter-spacing:.14em !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-head strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:17px !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-head small { display:block !important; margin-top:2px !important; color:#8fa7b6 !important; font-size:8px !important; font-weight:750 !important; }
@@ -12033,8 +12034,45 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         .mcms-map-drawing-label-icon > span { display:inline-block !important; max-width:240px !important; padding:5px 8px !important; border:1px solid var(--mcms-drawing-colour) !important; border-left-width:4px !important; border-radius:6px !important; background:rgba(5,13,20,.92) !important; color:#fff !important; font:800 11px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; box-shadow:0 3px 10px rgba(0,0,0,.5) !important; }
         html[data-mcms-economy="true"] #${SCRIPT.mapMeasureHudId} { box-shadow:0 12px 30px rgba(0,0,0,.54) !important; }
         @media (max-width:620px) {
-            #${SCRIPT.mapMeasureHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; max-height:min(74vh,calc(100vh - env(safe-area-inset-top) - 16px)) !important; }
-            #${SCRIPT.mapMeasureHudId} button { min-height:46px !important; font-size:11px !important; }
+            #${SCRIPT.mapMeasureHudId} {
+                top:auto !important;
+                right:max(8px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px)) !important;
+                bottom:max(8px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px)) !important;
+                left:max(8px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px)) !important;
+                width:auto !important;
+                max-width:calc(var(--mcms-visual-width,100vw) - 16px) !important;
+                max-height:52vh !important;
+                max-height:min(52dvh,430px,calc(var(--mcms-visual-height,100dvh) - 96px)) !important;
+                padding:10px !important;
+            }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-head { min-height:44px !important; align-items:center !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-head span { font-size:7px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-head strong { margin-top:1px !important; font-size:15px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-head small { margin-top:1px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-close { width:44px !important; min-width:44px !important; height:44px !important; min-height:44px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-drawing-scroll { margin-top:6px !important; padding-right:1px !important; gap:6px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-modes {
+                display:flex !important;
+                grid-template-columns:none !important;
+                gap:6px !important;
+                padding:1px 2px 5px !important;
+                overflow-x:auto !important;
+                overflow-y:hidden !important;
+                overscroll-behavior-x:contain !important;
+                -webkit-overflow-scrolling:touch !important;
+                scrollbar-width:none !important;
+                scroll-snap-type:x proximity !important;
+                touch-action:pan-x !important;
+            }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-modes::-webkit-scrollbar { display:none !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-modes button { flex:0 0 clamp(92px,28vw,112px) !important; min-width:92px !important; min-height:44px !important; scroll-snap-align:start !important; }
+            #${SCRIPT.mapMeasureHudId} button { min-height:44px !important; font-size:11px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-drawing-style { gap:6px !important; padding:6px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-drawing-colours button { height:44px !important; min-height:44px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-drawing-lines button { min-height:44px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-readout { min-height:58px !important; padding:8px 10px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-readout strong { font-size:17px !important; }
+            #${SCRIPT.mapMeasureHudId} .mcms-measure-guidance { font-size:9px !important; }
         }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
@@ -18813,21 +18851,23 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         hud.setAttribute('aria-label', 'Map Drawing');
         setInnerHtmlIfChanged(hud, `
             <div class="mcms-measure-head"><div><span>MAP COMMAND · ON-DEMAND</span><strong>Drawing</strong><small data-drawing-count>0/${MAP_DRAWING_MAX_OBJECTS} objects</small></div><button class="mcms-measure-close" type="button" data-measure-action="close" aria-label="Close Drawing">×</button></div>
-            <div class="mcms-measure-modes" aria-label="Drawing tools">
-                <button type="button" data-measure-mode="distance" aria-pressed="true">Distance</button><button type="button" data-measure-mode="area" aria-pressed="false">Area</button>
-                <button type="button" data-measure-mode="line" aria-pressed="false">Line</button><button type="button" data-measure-mode="arrow" aria-pressed="false">Arrow</button>
-                <button type="button" data-measure-mode="freehand" aria-pressed="false">Freehand</button><button type="button" data-measure-mode="circle" aria-pressed="false">Circle</button>
-                <button type="button" data-measure-mode="rectangle" aria-pressed="false">Rectangle</button><button type="button" data-measure-mode="polygon" aria-pressed="false">Zone</button>
-                <button type="button" data-measure-mode="label" aria-pressed="false">Text</button><button type="button" data-measure-mode="marker" aria-pressed="false">Marker</button>
-            </div>
-            <div class="mcms-drawing-style" aria-label="Drawing style">
-                <div class="mcms-drawing-colours"><button type="button" data-drawing-colour="#62d3ff" aria-label="Blue" aria-pressed="true" style="--mcms-drawing-swatch:#62d3ff"></button><button type="button" data-drawing-colour="#ff5f68" aria-label="Red" aria-pressed="false" style="--mcms-drawing-swatch:#ff5f68"></button><button type="button" data-drawing-colour="#ffbd59" aria-label="Amber" aria-pressed="false" style="--mcms-drawing-swatch:#ffbd59"></button><button type="button" data-drawing-colour="#72e6a5" aria-label="Green" aria-pressed="false" style="--mcms-drawing-swatch:#72e6a5"></button><button type="button" data-drawing-colour="#c48cff" aria-label="Purple" aria-pressed="false" style="--mcms-drawing-swatch:#c48cff"></button><button type="button" data-drawing-colour="#ffffff" aria-label="White" aria-pressed="false" style="--mcms-drawing-swatch:#ffffff"></button></div>
-                <div class="mcms-drawing-lines"><button type="button" data-drawing-style="solid" aria-pressed="true">Solid</button><button type="button" data-drawing-style="dashed" aria-pressed="false">Dashed</button><button type="button" data-drawing-weight="2" aria-pressed="false">Thin</button><button type="button" data-drawing-weight="3" aria-pressed="true">Normal</button><button type="button" data-drawing-weight="5" aria-pressed="false">Bold</button></div>
-            </div>
-            <div class="mcms-measure-readout"><strong data-measure-primary>0 points</strong><span data-measure-secondary>Click the map to begin a route measurement.</span></div>
-            <div class="mcms-measure-actions"><button type="button" data-measure-action="undo" disabled>Undo</button><button type="button" data-measure-action="finish" disabled>Finish</button><button type="button" data-measure-action="clear" disabled>Clear All</button></div>
-            <div class="mcms-measure-guidance" data-measure-guidance>Click route points, then Finish. Distance stays in kilometres.</div>
-            <div class="mcms-measure-guidance">Session-only · Escape closes · Backspace undoes · up to ${MAP_MEASURE_MAX_POINTS} points per route/zone.</div>`);
+            <div class="mcms-drawing-scroll">
+                <div class="mcms-measure-modes" aria-label="Drawing tools">
+                    <button type="button" data-measure-mode="distance" aria-pressed="true">Distance</button><button type="button" data-measure-mode="area" aria-pressed="false">Area</button>
+                    <button type="button" data-measure-mode="line" aria-pressed="false">Line</button><button type="button" data-measure-mode="arrow" aria-pressed="false">Arrow</button>
+                    <button type="button" data-measure-mode="freehand" aria-pressed="false">Freehand</button><button type="button" data-measure-mode="circle" aria-pressed="false">Circle</button>
+                    <button type="button" data-measure-mode="rectangle" aria-pressed="false">Rectangle</button><button type="button" data-measure-mode="polygon" aria-pressed="false">Zone</button>
+                    <button type="button" data-measure-mode="label" aria-pressed="false">Text</button><button type="button" data-measure-mode="marker" aria-pressed="false">Marker</button>
+                </div>
+                <div class="mcms-drawing-style" aria-label="Drawing style">
+                    <div class="mcms-drawing-colours"><button type="button" data-drawing-colour="#62d3ff" aria-label="Blue" aria-pressed="true" style="--mcms-drawing-swatch:#62d3ff"></button><button type="button" data-drawing-colour="#ff5f68" aria-label="Red" aria-pressed="false" style="--mcms-drawing-swatch:#ff5f68"></button><button type="button" data-drawing-colour="#ffbd59" aria-label="Amber" aria-pressed="false" style="--mcms-drawing-swatch:#ffbd59"></button><button type="button" data-drawing-colour="#72e6a5" aria-label="Green" aria-pressed="false" style="--mcms-drawing-swatch:#72e6a5"></button><button type="button" data-drawing-colour="#c48cff" aria-label="Purple" aria-pressed="false" style="--mcms-drawing-swatch:#c48cff"></button><button type="button" data-drawing-colour="#ffffff" aria-label="White" aria-pressed="false" style="--mcms-drawing-swatch:#ffffff"></button></div>
+                    <div class="mcms-drawing-lines"><button type="button" data-drawing-style="solid" aria-pressed="true">Solid</button><button type="button" data-drawing-style="dashed" aria-pressed="false">Dashed</button><button type="button" data-drawing-weight="2" aria-pressed="false">Thin</button><button type="button" data-drawing-weight="3" aria-pressed="true">Normal</button><button type="button" data-drawing-weight="5" aria-pressed="false">Bold</button></div>
+                </div>
+                <div class="mcms-measure-readout"><strong data-measure-primary>0 points</strong><span data-measure-secondary>Click the map to begin a route measurement.</span></div>
+                <div class="mcms-measure-actions"><button type="button" data-measure-action="undo" disabled>Undo</button><button type="button" data-measure-action="finish" disabled>Finish</button><button type="button" data-measure-action="clear" disabled>Clear All</button></div>
+                <div class="mcms-measure-guidance" data-measure-guidance>Click route points, then Finish. Distance stays in kilometres.</div>
+                <div class="mcms-measure-guidance">Session-only · Escape closes · Backspace undoes · up to ${MAP_MEASURE_MAX_POINTS} points per route/zone.</div>
+            </div>`);
         document.body.appendChild(hud);
         const group = pageWindow.L.layerGroup();
         group.__mcmsMapMeasureLayer = true;

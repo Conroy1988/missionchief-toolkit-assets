@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "command": "release-toolkit",
+  "version": "10.4.0",
+  "confirmation": "RELEASE",
+  "expectedMain": "392c7dfd5fe52d917552eb431301856866a34a6f",
+  "issueNumber": 673,
+  "nonce": "issue673-v1040-20260803T125333Z"
+}

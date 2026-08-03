@@ -57,10 +57,14 @@ function renderCoverage(report) {
   const measurements = Array.isArray(report.renderMeasurements) ? report.renderMeasurements : [];
   const updateRows = measurements.filter(item => item?.path === "updateUI" && Number(item?.attempts) > 0);
   if (!updateRows.length) throw new Error("No updateUI render measurements were captured");
-  const covered = new Set(updateRows.map(item => String(item.scenario || "")));
-  const missing = REQUIRED_SCENARIOS.filter(name => !covered.has(name));
-  if (missing.length) throw new Error(`No updateUI render evidence for: ${missing.join(", ")}`);
-  return { measurements, updateRows };
+  const feedRows = measurements.filter(item => item?.path === "renderMajorIncidentFeed" && Number(item?.attempts) > 0);
+  if (!feedRows.length) throw new Error("No Major Incident Feed render measurements were captured");
+  for (const [label, rows] of [["updateUI", updateRows], ["Major Incident Feed", feedRows]]) {
+    const covered = new Set(rows.map(item => String(item.scenario || "")));
+    const missing = REQUIRED_SCENARIOS.filter(name => !covered.has(name));
+    if (missing.length) throw new Error(`No ${label} render evidence for: ${missing.join(", ")}`);
+  }
+  return { measurements, updateRows, feedRows };
 }
 
 export function validateReport(report, manifest) {
@@ -87,7 +91,7 @@ export function validateReport(report, manifest) {
   assert(Array.isArray(report.resources), "resources must be an array");
 
   let scenarios = [];
-  let render = { measurements: [], updateRows: [] };
+  let render = { measurements: [], updateRows: [], feedRows: [] };
   try { scenarios = orderedScenarioCoverage(report); } catch (error) { errors.push(error.message); }
   try { render = renderCoverage(report); } catch (error) { errors.push(error.message); }
 
@@ -103,6 +107,16 @@ export function validateReport(report, manifest) {
     durationMs: Number(report.durationMs) || 0,
     scenarioTransitions: scenarios,
     updateUiMeasurements: render.updateRows.map(item => ({
+      scenario: item.scenario,
+      attempts: item.attempts,
+      unchangedAttempts: item.unchangedAttempts,
+      changedAttempts: item.changedAttempts,
+      unchangedRatio: item.unchangedRatio,
+      averageDurationMs: item.averageDurationMs,
+      maxDurationMs: item.maxDurationMs,
+      mutationRecords: item.mutationRecords,
+    })),
+    feedMeasurements: render.feedRows.map(item => ({
       scenario: item.scenario,
       attempts: item.attempts,
       unchangedAttempts: item.unchangedAttempts,
@@ -139,6 +153,12 @@ function renderMarkdown(summary) {
     "| Scenario | Attempts | Unchanged | Changed | Unchanged ratio | Average | Maximum | Mutation records |",
     "|---|---:|---:|---:|---:|---:|---:|---:|",
     ...summary.updateUiMeasurements.map(row => `| ${row.scenario} | ${row.attempts} | ${row.unchangedAttempts} | ${row.changedAttempts} | ${Number(row.unchangedRatio || 0).toFixed(4)} | ${Number(row.averageDurationMs || 0).toFixed(3)} ms | ${Number(row.maxDurationMs || 0).toFixed(3)} ms | ${row.mutationRecords} |`),
+    "",
+    "## Major Incident Feed scenario evidence",
+    "",
+    "| Scenario | Attempts | Unchanged | Changed | Unchanged ratio | Average | Maximum | Mutation records |",
+    "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ...summary.feedMeasurements.map(row => `| ${row.scenario} | ${row.attempts} | ${row.unchangedAttempts} | ${row.changedAttempts} | ${Number(row.unchangedRatio || 0).toFixed(4)} | ${Number(row.averageDurationMs || 0).toFixed(3)} ms | ${Number(row.maxDurationMs || 0).toFixed(3)} ms | ${row.mutationRecords} |`),
     "",
     "## Validation errors",
     "",

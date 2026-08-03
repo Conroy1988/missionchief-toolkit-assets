@@ -6,7 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { buildCaptureBundle, CAPTURE_PROFILE, REQUIRED_SCENARIOS } from "../../tools/build-live-performance-capture.mjs";
+import { buildCaptureBundle, CAPTURE_PROFILE, CAPTURE_TARGETS, REQUIRED_SCENARIOS } from "../../tools/build-live-performance-capture.mjs";
 import { validateReport } from "../../tools/validate-live-performance-report.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
@@ -17,22 +17,25 @@ const profiler = fs.readFileSync(profilerPath, "utf8");
 const result = buildCaptureBundle(sourceBefore, profiler);
 
 assert.equal(result.manifest.profile, CAPTURE_PROFILE);
-assert.equal(result.manifest.toolkitVersion, "10.3.1");
-assert.equal(result.manifest.canonicalSourceSha256, "b318a72d2bb20c03db75406ed76ecfcf4500a739e32ce9de91490dc02bd5e829");
-assert.deepEqual(result.manifest.instrumentedFunctions, ["renderOperationalPanels", "updateUI"]);
+assert.equal(result.manifest.toolkitVersion, "10.5.4");
+assert.equal(result.manifest.canonicalSourceSha256, "3b7f344883f9d44980a7a416cba3dfff1d68cfa5571ce9612a9565390fc21a77");
+assert.deepEqual(result.manifest.instrumentedFunctions, [...CAPTURE_TARGETS].sort());
 assert.deepEqual(result.manifest.requiredScenarios, REQUIRED_SCENARIOS.map(([name]) => name));
 assert.equal(result.manifest.stableUpdateUrlsRemoved, true);
 assert.equal(result.manifest.productionSourceModified, false);
 assert.equal(result.manifest.requiresStableToolkitDisabled, true);
-assert.match(result.bundle, /@name\s+MissionChief Toolkit v10\.3\.1 Authenticated Performance Capture/u);
+assert.match(result.bundle, /@name\s+MissionChief Toolkit v10\.5\.4 Authenticated Performance Capture/u);
 assert.match(result.bundle, /@namespace\s+https:\/\/github\.com\/Conroy1988\/missionchief-toolkit-assets\/performance-capture/u);
-assert.match(result.bundle, /@version\s+10\.3\.1-capture\.1/u);
+assert.match(result.bundle, /@version\s+10\.5\.4-capture\.1/u);
 assert.doesNotMatch(result.bundle, /^\/\/\s*@(downloadURL|updateURL)\s+/mu);
 assert.match(result.bundle, /captureSourceSha256/u);
 assert.match(result.bundle, /Finish and export report/u);
 assert.match(result.bundle, /keep the normal Toolkit userscript disabled/u);
 assert.match(result.bundle, /beginRender\?\.\("updateUI"\)/u);
 assert.match(result.bundle, /beginRender\?\.\("renderOperationalPanels"\)/u);
+assert.match(result.bundle, /beginRender\?\.\("renderMajorIncidentFeed"\)/u);
+assert.match(result.bundle, /beginRender\?\.\("positionMajorIncidentFeed"\)/u);
+assert.match(result.bundle, /beginRender\?\.\("ensureUi"\)/u);
 assert.equal(fs.readFileSync(sourcePath, "utf8"), sourceBefore, "canonical source must remain byte-identical");
 
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "mcms-live-capture-"));
@@ -52,6 +55,18 @@ const measurements = REQUIRED_SCENARIOS.map(([scenario], index) => ({
   mutationRecords: 2,
   unchangedRatio: 0.75,
   averageDurationMs: 2,
+}));
+const feedMeasurements = REQUIRED_SCENARIOS.map(([scenario], index) => ({
+  scenario,
+  path: "renderMajorIncidentFeed",
+  attempts: 8 + index,
+  changedAttempts: 1,
+  unchangedAttempts: 7 + index,
+  totalDurationMs: 8,
+  maxDurationMs: 2,
+  mutationRecords: 1,
+  unchangedRatio: 0.875,
+  averageDurationMs: 1,
 }));
 const report = {
   schemaVersion: 2,
@@ -78,12 +93,13 @@ const report = {
   currentScenario: "layout-change",
   scenarioTransitions: transitions,
   renderEvents: [],
-  renderMeasurements: measurements,
+  renderMeasurements: [...measurements, ...feedMeasurements],
   limits: {},
 };
 const validation = validateReport(report, result.manifest);
 assert.equal(validation.valid, true, validation.errors.join("\n"));
 assert.equal(validation.updateUiMeasurements.length, REQUIRED_SCENARIOS.length);
+assert.equal(validation.feedMeasurements.length, REQUIRED_SCENARIOS.length);
 
 const active = validateReport({ ...report, active: true }, result.manifest);
 assert.equal(active.valid, false);

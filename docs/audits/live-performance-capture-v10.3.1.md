@@ -1,6 +1,6 @@
 # Authenticated MissionChief performance capture — Toolkit v10.3.1
 
-This is the remaining browser-only evidence stage for Issues #247, #254 and #255.
+This historical capture has been superseded by `live-performance-capture-v10.5.4.md` and must not be used as the current performance baseline.
 
 ## Capture authority
 

@@ -7,7 +7,14 @@ import path from "node:path";
 import process from "node:process";
 import { instrumentSource } from "./build-render-probe-userscript.mjs";
 
-export const CAPTURE_PROFILE = "issue247-v1031-live-performance";
+export const CAPTURE_PROFILE = "issue247-v1054-feed-performance";
+export const CAPTURE_TARGETS = Object.freeze([
+  "ensureUi",
+  "positionMajorIncidentFeed",
+  "renderMajorIncidentFeed",
+  "renderOperationalPanels",
+  "updateUI",
+]);
 export const REQUIRED_SCENARIOS = Object.freeze([
   ["idle-map", "Leave the map idle for at least 20 seconds."],
   ["settings-open-close", "Open and close Toolkit Settings five times, changing no settings."],
@@ -135,7 +142,7 @@ export function buildCaptureBundle(toolkitSource, profilerSource) {
   const profilerVersion = metadataValue(profilerSource, "version");
   if (!profilerVersion) throw new Error("Profiler version missing");
 
-  const instrumented = instrumentSource(toolkitSource);
+  const instrumented = instrumentSource(toolkitSource, CAPTURE_TARGETS);
   let bundle = instrumented.generated;
   bundle = replaceMetadata(bundle, "name", `MissionChief Toolkit v${toolkitVersion} Authenticated Performance Capture`);
   bundle = replaceMetadata(bundle, "namespace", "https://github.com/Conroy1988/missionchief-toolkit-assets/performance-capture");
@@ -166,6 +173,9 @@ export function buildCaptureBundle(toolkitSource, profilerSource) {
   }
   if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"updateUI\")")) throw new Error("updateUI probe missing");
   if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"renderOperationalPanels\")")) throw new Error("operational render probe missing");
+  if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"renderMajorIncidentFeed\")")) throw new Error("Major Incident Feed render probe missing");
+  if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"positionMajorIncidentFeed\")")) throw new Error("Major Incident Feed layout probe missing");
+  if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"ensureUi\")")) throw new Error("UI integrity probe missing");
   if (!bundle.includes(canonicalSourceSha256)) throw new Error("Canonical source authority missing from capture bundle");
 
   return {

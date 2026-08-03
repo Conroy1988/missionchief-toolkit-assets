@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 683,
-    "version": "10.5.3",
-    "sourceBytes": 2216380,
-    "sourceLines": 33409,
-    "sourceSha256": "e02b281e707161636aaa068318318b5899254798cf5f1cbbd9445cd6aba08edf",
+    "issue": 685,
+    "version": "10.5.4",
+    "sourceBytes": 2216987,
+    "sourceLines": 33415,
+    "sourceSha256": "3b7f344883f9d44980a7a416cba3dfff1d68cfa5571ce9612a9565390fc21a77",
     "templateBytes": 805091,
     "templateLines": 9493,
     "templateSha256": "d074571a8cc17058b941d9eb0f1d419cbbe6bca3e456543f246726fec8ce933a",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2225000,
     "maxSourceLines": 33500,
     "minTemplateBytes": 500000,
-    "baseline": "10.5.2",
+    "baseline": "10.5.3",
     "approvedGrowth": {
-      "sourceBytes": 1626,
-      "sourceLines": 14,
+      "sourceBytes": 607,
+      "sourceLines": 6,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #683 balanced Desktop command deck for tall, horizontally constrained map workspaces"
+    "scope": "Issue #685 compact offset Desktop command deck using the full safe map corridor"
   }
 }

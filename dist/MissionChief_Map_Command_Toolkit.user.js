@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.5.3
+// @version      10.5.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.5.3',
+        version: '10.5.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -524,14 +524,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.5.3",
-        title: "Balanced Desktop command deck",
+        version: "10.5.4",
+        title: "Compact offset Desktop command deck",
         highlights: Object.freeze([
-            "Uses available map height when a centred or horizontally constrained Desktop command bar would otherwise collapse into a shallow three-column block.",
-            "Balances Visibility, Intelligence, Dashboard and Performance into a two-by-two deck with larger 44px controls and more breathing room.",
-            "Expands Quick Jump across the full command-deck width as the bottom row while retaining the map attribution safety strip.",
-            "Keeps the efficient one-band treatment on genuinely wide maps and the existing contained scroll fallback on short maps.",
-            "Leaves Settings, Tablet, protected iOS, saved layouts, auto-hide and themes unchanged with no new idle map work."
+            "Reclaims the safe horizontal map corridor that was incorrectly discarded when the Desktop command bar had a saved horizontal nudge.",
+            "Turns the supplied 1690×1276 layout from a tall 44px two-by-two block into one shallow band of compact 36px controls.",
+            "Keeps Quick Jump inline inside the same band and clamps the effective offset so every control remains within the live map.",
+            "Retains the balanced fallback for genuinely narrow Desktop maps and the existing contained scroll fallback for short maps.",
+            "Leaves Settings, Tablet, protected iOS, saved layout data, auto-hide and themes unchanged with no new idle map work."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -12598,7 +12598,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
 
     function clearDesktopDockSizing(control = document.querySelector?.('#' + SCRIPT.controlId)) {
         if (!control) return;
-        for (const property of ['--mcms-desktop-dock-width', '--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-launch-width', '--mcms-desktop-content-width', '--mcms-desktop-filter-width', '--mcms-desktop-group-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-width', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
+        for (const property of ['--mcms-desktop-dock-width', '--mcms-desktop-dock-max-height', '--mcms-desktop-dock-max-width', '--mcms-desktop-dock-top', '--mcms-desktop-dock-bottom', '--mcms-desktop-dock-left', '--mcms-desktop-dock-right', '--mcms-desktop-dock-offset-x', '--mcms-desktop-launch-width', '--mcms-desktop-content-width', '--mcms-desktop-filter-width', '--mcms-desktop-group-columns', '--mcms-desktop-filter-max-height', '--mcms-desktop-pin-columns', '--mcms-desktop-pin-width', '--mcms-desktop-pin-max-height', '--mcms-desktop-pin-margin']) control.style.removeProperty(property);
         for (const group of control.querySelectorAll?.('.mcms-control-group') || []) {
         group.style.removeProperty('--mcms-desktop-button-columns');
         group.style.removeProperty('--mcms-desktop-group-width');
@@ -12635,8 +12635,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const groups = Array.from(filter?.querySelectorAll?.(':scope > .mcms-control-group:not(.mcms-layout-group-hidden)') || []);
         const groupControlCounts = groups.map(group => group.querySelectorAll(':scope > button:not(.mcms-layout-hidden)').length);
         const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
-        const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
-        const grid = resolveDesktopDockGrid(Math.max(1, workspace.maxWidth - nudgeX), workspace.maxHeight, groupControlCounts, pinsVisible ? pins.childElementCount : 0, launchWidth, 6);
+        const desiredNudgeX = Number(state.nudge?.x) || 0;
+        const grid = resolveDesktopDockGrid(workspace.maxWidth, workspace.maxHeight, groupControlCounts, pinsVisible ? pins.childElementCount : 0, launchWidth, 6);
+        const horizontalSlack = Math.max(0, workspace.maxWidth - grid.dockWidth);
+        const rightAnchored = String(position).endsWith('r');
+        const effectiveNudgeX = rightAnchored
+        ? Math.max(-horizontalSlack, Math.min(0, desiredNudgeX))
+        : Math.max(0, Math.min(horizontalSlack, desiredNudgeX));
 
         groups.forEach((group, index) => {
         group.style.setProperty('--mcms-desktop-button-columns', String(grid.groupButtonColumns[index] || 1));
@@ -12650,6 +12655,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         control.style.setProperty('--mcms-desktop-dock-bottom', `${workspace.bottom}px`);
         control.style.setProperty('--mcms-desktop-dock-left', `${workspace.left}px`);
         control.style.setProperty('--mcms-desktop-dock-right', `${workspace.right}px`);
+        control.style.setProperty('--mcms-desktop-dock-offset-x', `${effectiveNudgeX}px`);
         control.style.setProperty('--mcms-desktop-launch-width', `${grid.launchWidth}px`);
         control.style.setProperty('--mcms-desktop-content-width', `${grid.pinsInline ? grid.contentWidth + 6 + grid.pinWidth : Math.max(grid.contentWidth, grid.pinWidth)}px`);
         control.style.setProperty('--mcms-desktop-filter-width', `${grid.contentWidth}px`);
@@ -12890,12 +12896,12 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-dock-auto-hide="true"][data-mcms-auto-hide-revealed="false"][data-mcms-auto-hide-axis="vertical"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-width:100vw!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){transition:opacity .16s ease,transform .16s ease,max-height .16s ease,max-width .16s ease!important}
         html[data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}:is(:hover,:focus-within) :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"]:has(#${SCRIPT.panelId}.mcms-open) body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins),html[data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId} :is(.mcms-floating-filter,.mcms-screen-pins){max-height:1000px!important;max-width:100vw!important;opacity:1!important;overflow:visible!important;pointer-events:auto!important;transform:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:var(--mcms-desktop-launch-width,117px) var(--mcms-desktop-content-width,min(858px,calc(100vw - 147px)))!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;justify-content:start!important;column-gap:6px!important;row-gap:0!important;width:var(--mcms-desktop-dock-width,min(1680px,calc(100vw - 24px)))!important;max-width:min(var(--mcms-desktop-dock-max-width,calc(100vw - 24px)),var(--mcms-desktop-dock-width,1680px))!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;pointer-events:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{display:grid!important;grid-template-columns:var(--mcms-desktop-launch-width,117px) var(--mcms-desktop-content-width,min(858px,calc(100vw - 147px)))!important;grid-template-areas:"menu filters" ". pins"!important;align-items:start!important;justify-content:start!important;column-gap:6px!important;row-gap:0!important;width:var(--mcms-desktop-dock-width,min(1680px,calc(100vw - 24px)))!important;max-width:min(var(--mcms-desktop-dock-max-width,calc(100vw - 24px)),var(--mcms-desktop-dock-width,1680px))!important;max-height:var(--mcms-desktop-dock-max-height,100vh)!important;margin-left:0!important;pointer-events:none!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-pins-inline="true"]{grid-template-columns:var(--mcms-desktop-launch-width,117px) var(--mcms-desktop-filter-width,858px) var(--mcms-desktop-pin-width,0px)!important;grid-template-areas:"menu filters pins"!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:var(--mcms-desktop-dock-left,54px)!important;top:var(--mcms-desktop-dock-top,10px)!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:var(--mcms-desktop-dock-right,12px)!important;top:var(--mcms-desktop-dock-top,48px)!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:var(--mcms-desktop-dock-left,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:var(--mcms-desktop-dock-right,12px)!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tl{left:calc(var(--mcms-desktop-dock-left,54px) + var(--mcms-desktop-dock-offset-x,0px))!important;top:var(--mcms-desktop-dock-top,10px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-tr{right:calc(var(--mcms-desktop-dock-right,12px) - var(--mcms-desktop-dock-offset-x,0px))!important;top:var(--mcms-desktop-dock-top,48px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-bl{left:calc(var(--mcms-desktop-dock-left,12px) + var(--mcms-desktop-dock-offset-x,0px))!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit].mcms-pos-br{right:calc(var(--mcms-desktop-dock-right,12px) - var(--mcms-desktop-dock-offset-x,0px))!important;bottom:var(--mcms-desktop-dock-bottom,42px)!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-launch-row{grid-area:menu!important;width:var(--mcms-desktop-launch-width,117px)!important;max-width:100%!important;margin:0!important;pointer-events:auto!important}
         html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]{grid-template-columns:var(--mcms-desktop-launch-width,117px)!important;grid-template-areas:"menu"!important;width:var(--mcms-desktop-launch-width,117px)!important;max-width:var(--mcms-desktop-launch-width,117px)!important}
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter,

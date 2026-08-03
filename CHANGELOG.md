@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.5.2] - 2026-08-03
+
+### Responsive Desktop command surface
+
+- Uses free horizontal space in mid-sized Desktop windows to expand the default command surface up to 1,040px while capping tall-window height at 760px.
+- Balances Settings cards into up to three content-sized columns, removing the large row-height gaps created by unequal cards such as Tablet Quick Wheel and Map Command Bar.
+- Compacts the section navigation rail while retaining every label, description, search control, header action and footer status.
+- Preserves custom panel widths and heights, saved panel positions, map-aware viewport clamping and the existing proportional fallback on short Desktop windows.
+- Leaves Tablet and protected iOS layouts unchanged and adds no polling, timer, observer, request, map listener or idle map work.
+
 ## [10.5.1] - 2026-08-03
 
 ### iOS Drawing workspace repair

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.5.1
+// @version      10.5.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.5.1',
+        version: '10.5.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -524,14 +524,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.5.1",
-        title: "iOS Drawing workspace repair",
+        version: "10.5.2",
+        title: "Responsive Desktop command surface",
         highlights: Object.freeze([
-            "Rebuilds Drawing as a compact iOS Safari bottom sheet that leaves a substantial live map surface available for touch drawing.",
-            "Uses the Toolkit's existing visual-viewport and safe-area geometry so Safari browser chrome, rotation and constrained landscape heights cannot bury the controls.",
-            "Keeps the title, object count and 44px close control fixed while Drawing options scroll independently inside the sheet.",
-            "Turns all ten Drawing modes into a swipeable 44px tool rail while keeping colours, styles, readout, Undo, Finish, Clear All and guidance reachable.",
-            "Preserves Desktop and Tablet behaviour, every Drawing capability, session-only teardown and the zero-idle-work movement and lifecycle budgets."
+            "Uses free horizontal space in mid-sized Desktop windows to expand the default command surface up to 1,040px while capping tall-window height at 760px.",
+            "Balances Settings cards into up to three content-sized columns, removing the large row-height gaps created by unequal cards such as Tablet Quick Wheel and Map Command Bar.",
+            "Compacts the section navigation rail while retaining every label, description, search control, header action and footer status.",
+            "Preserves custom panel widths and heights, saved panel positions, map-aware viewport clamping and the existing proportional fallback on short Desktop windows.",
+            "Leaves Tablet and protected iOS layouts unchanged and adds no polling, timer, observer, request, map listener or idle map work."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -11422,6 +11422,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             min-height:48px !important;
         }
 
+        /* Issue #681: mid-sized Desktop windows use a wider, shorter command surface.
+           Settings cards balance into columns instead of inheriting the tallest card in each grid row. */
+        @media (min-width:1200px) and (max-width:2239px) {
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-layout { grid-template-columns:142px minmax(0,1fr) !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tabs { grid-template-rows:repeat(6,minmax(48px,auto)) !important; padding:8px 7px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-btn { grid-template-columns:28px minmax(0,1fr) !important; min-height:48px !important; padding:5px 6px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-icon { width:28px !important; height:28px !important; }
+        }
+        @media (min-width:1360px) and (min-height:900px) and (max-width:2239px) {
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-content:has(> .mcms-tab-panel[data-panel="settings"].mcms-active) { overflow-y:auto !important; overflow-x:hidden !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-panel[data-panel="settings"].mcms-active { display:block !important; width:100% !important; height:auto !important; min-height:100% !important; padding:10px !important; overflow:visible !important; column-width:230px !important; column-count:3 !important; column-gap:10px !important; column-fill:balance !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-panel[data-panel="settings"].mcms-active > .mcms-command-card { display:inline-block !important; width:100% !important; margin:0 0 10px !important; break-inside:avoid-column !important; page-break-inside:avoid !important; vertical-align:top !important; }
+        }
+
         html[data-mcms-ui-theme] body #${SCRIPT.controlId} {
             max-width:none !important;
         }
@@ -12712,7 +12726,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const obstructionRects = collectDesktopWorkspaceObstructions(viewport, mapEl, panel)
         .map(item => item.rect);
         const bounds = resolveDesktopPanelBounds(mapRect, viewport, 12, obstructionRects);
-        const desiredMaxHeight = Math.min(bounds.maxHeight, Math.max(320, Math.round(bounds.maxHeight * (activeLayoutPreferences('desktop').panelHeight / 100))));
+        const desktopPreferences = activeLayoutPreferences('desktop');
+        const responsiveHeightCap = resolveResponsiveDesktopPanelHeightCap(viewport, desktopPreferences);
+        const desiredMaxHeight = Math.min(
+            bounds.maxHeight,
+            Math.max(320, Math.round(bounds.maxHeight * (desktopPreferences.panelHeight / 100))),
+            responsiveHeightCap
+        );
         const personalBounds = { ...bounds, maxHeight: desiredMaxHeight };
         panel.style.setProperty('--mcms-desktop-panel-max-height', `${desiredMaxHeight}px`);
         panel.style.setProperty('max-height', `${desiredMaxHeight}px`, 'important');
@@ -12738,6 +12758,14 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         }
         return personalBounds;
+    }
+
+    function resolveResponsiveDesktopPanelHeightCap(viewport, preferences) {
+        const width = Math.max(1, Number(viewport?.width) || 1);
+        const height = Math.max(1, Number(viewport?.height) || 1);
+        const usesDefaultGeometry = Number(preferences?.panelWidth) === 720 && Number(preferences?.panelHeight) === 82;
+        if (!usesDefaultGeometry || width < 1360 || width >= 2240 || height < 900) return Number.POSITIVE_INFINITY;
+        return Math.max(620, Math.min(760, Math.floor(height - 64)));
     }
 
     function getIosBrowserSignals() {
@@ -12815,11 +12843,16 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         const theme = normaliseThemeStudioState(state.themeStudio);
         const preferences = activeLayoutPreferences();
+        const desktopPreferences = activeLayoutPreferences('desktop');
         const surfaceRgb = themeColourRgb(theme.surface);
         const opacity = (theme.opacity / 100).toFixed(2);
         const panelWidth = activeDeviceLayout === 'mobile' ? '100vw' : `${preferences.panelWidth}px`;
+        const responsiveDesktopPanelWidth = Number(desktopPreferences.panelWidth) === 720
+            ? `@media (min-width:1200px) and (max-width:2239px){html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId}{width:min(68vw,clamp(720px,calc(1844px - 50vw),1040px),calc(100vw - 24px))!important}}`
+            : '';
         style.textContent = `
         html:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId}{width:min(${panelWidth},calc(100vw - 24px))!important}
+        ${responsiveDesktopPanelWidth}
         .mcms-layout-hidden{display:none!important}.mcms-layout-group-hidden{display:none!important}
         #${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;margin-bottom:12px!important}
         #${SCRIPT.commandExperienceModalId} .mcms-personal-tabs button[aria-selected="true"]{border-color:#70ceff!important;background:rgba(39,139,197,.3)!important;color:#fff!important}

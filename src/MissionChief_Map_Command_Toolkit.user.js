@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.4.1
+// @version      10.5.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.4.1',
+        version: '10.5.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -524,14 +524,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.4.1",
-        title: "Kilometre-first Measure toolbar",
+        version: "10.5.0",
+        title: "Unified on-demand Drawing workspace",
         highlights: Object.freeze([
-            "Adds a persistent Measure button to the map command toolbar for one-click activation.",
-            "Shows route distance and boundary perimeter in kilometres and boundary area in square kilometres.",
-            "Completely retires Shareable Incident Card and removes its renderer, controls, commands, mission action and runtime state.",
-            "Keeps Measure dormant until explicitly opened and removes every temporary listener and Leaflet layer when closed.",
-            "Preserves the v10.3.8–v10.4.0 movement governor, stable map colours, every theme and all saved Toolkit settings without adding background cadence."
+            "Renames the persistent Measure action and its panel to Drawing across the toolbar, Map controls and Command Palette.",
+            "Keeps kilometre and square-kilometre measurement beside straight lines, arrows, freehand sketches, circles, rectangles and polygon zones.",
+            "Adds temporary text labels and markers plus colour, solid or dashed line and thin, normal or bold style controls.",
+            "Keeps drawings session-local, capped and fully removed with every temporary listener and Leaflet layer when Drawing closes.",
+            "Preserves the map movement governor, stable colours, Desktop, Tablet and iOS layouts and the zero-idle-work performance baseline."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1385,7 +1385,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const LAYOUT_CONTROL_LABELS = Object.freeze({
         myMissions: 'Personal Missions', allianceMissions: 'Alliance Missions', vehicles: 'Vehicles', buildings: 'Buildings',
         allianceCredits: 'Alliance Credits', missionAge: 'Mission Age', transportWatcher: 'Transport Watcher', unitCommitment: 'Unit Count', stuckDetector: 'Stuck Detector',
-        'open-vehicle-status': 'Vehicle Codes', 'open-pressure-board': 'Pressure Board', 'open-command-palette': 'Command Palette', 'open-map-measure': 'Measure', 'toggle-economy': 'Economy Mode'
+        'open-vehicle-status': 'Vehicle Codes', 'open-pressure-board': 'Pressure Board', 'open-command-palette': 'Command Palette', 'open-map-measure': 'Drawing', 'toggle-economy': 'Economy Mode'
     });
     const QUICK_WHEEL_SLOT_MIN = 4;
     const QUICK_WHEEL_SLOT_MAX = 8;
@@ -1684,9 +1684,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         mode: 'distance',
         map: null,
         group: null,
+        draftGroup: null,
         renderer: null,
         points: [],
+        objects: [],
         clickHandler: null,
+        pointerStartHandler: null,
+        pointerMoveHandler: null,
+        pointerEndHandler: null,
+        freehandDrawing: false,
+        lastContainerPoint: null,
+        draggingWasEnabled: null,
+        colour: '#62d3ff',
+        dashed: false,
+        weight: 3,
         hud: null
     };
     runtime.cleanupCallbacks.push(() => {
@@ -11986,7 +11997,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.quickWheelId} > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
         #${SCRIPT.mapMeasureHudId} {
             position:fixed !important; top:max(74px,calc(env(safe-area-inset-top) + 12px)) !important; right:max(12px,env(safe-area-inset-right)) !important;
-            z-index:2147483400 !important; width:min(330px,calc(100vw - 24px)) !important; display:grid !important; gap:9px !important;
+            z-index:2147483400 !important; width:min(390px,calc(100vw - 24px)) !important; max-height:calc(100vh - 92px) !important; overflow:auto !important; overscroll-behavior:contain !important; display:grid !important; gap:9px !important;
             padding:13px !important; border:1px solid rgba(104,211,255,.6) !important; border-radius:14px !important;
             background:linear-gradient(150deg,rgba(14,31,43,.98),rgba(4,11,17,.985)) !important; color:#eef9ff !important;
             box-shadow:0 18px 50px rgba(0,0,0,.62),0 0 28px rgba(66,193,245,.13) !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
@@ -11995,8 +12006,10 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.mapMeasureHudId} .mcms-measure-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-head span { display:block !important; color:#66d3ff !important; font-size:8px !important; font-weight:950 !important; letter-spacing:.14em !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-head strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:17px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-head small { display:block !important; margin-top:2px !important; color:#8fa7b6 !important; font-size:8px !important; font-weight:750 !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-close { width:40px !important; min-width:40px !important; height:40px !important; min-height:40px !important; padding:0 !important; border:1px solid rgba(255,255,255,.22) !important; border-radius:9px !important; background:rgba(255,255,255,.055) !important; color:#fff !important; font-size:23px !important; }
-        #${SCRIPT.mapMeasureHudId} .mcms-measure-modes,#${SCRIPT.mapMeasureHudId} .mcms-measure-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-modes { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-actions { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:7px !important; }
         #${SCRIPT.mapMeasureHudId} button { min-height:42px !important; padding:7px 9px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:9px !important; background:rgba(255,255,255,.055) !important; color:#dcecf5 !important; font-size:10px !important; font-weight:850 !important; cursor:pointer !important; touch-action:manipulation !important; }
         #${SCRIPT.mapMeasureHudId} button[aria-pressed="true"] { border-color:#66d3ff !important; background:rgba(35,151,204,.24) !important; color:#fff !important; box-shadow:0 0 0 2px rgba(102,211,255,.08) inset !important; }
         #${SCRIPT.mapMeasureHudId} button:disabled { opacity:.38 !important; cursor:default !important; }
@@ -12006,9 +12019,21 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.mapMeasureHudId} .mcms-measure-readout strong { color:#fff !important; font-size:20px !important; line-height:1.1 !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-readout span { color:#9bb3c2 !important; font-size:9px !important; line-height:1.4 !important; }
         #${SCRIPT.mapMeasureHudId} .mcms-measure-guidance { color:#8fa7b6 !important; font-size:8.5px !important; line-height:1.4 !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-style { display:grid !important; gap:7px !important; padding:8px !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:10px !important; background:rgba(255,255,255,.025) !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-colours { display:grid !important; grid-template-columns:repeat(6,1fr) !important; gap:7px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-colours button { min-height:30px !important; height:30px !important; padding:4px !important; border-radius:50% !important; background:var(--mcms-drawing-swatch) !important; box-shadow:0 0 0 4px rgba(255,255,255,.05) inset !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-colours button[aria-pressed="true"] { border-color:#fff !important; box-shadow:0 0 0 3px rgba(4,11,17,.72) inset,0 0 0 2px var(--mcms-drawing-swatch) !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-lines { display:grid !important; grid-template-columns:repeat(5,minmax(0,1fr)) !important; gap:6px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-drawing-lines button { min-height:34px !important; padding:5px !important; font-size:8px !important; }
+        .mcms-map-drawing-arrow-icon { background:transparent !important; border:0 !important; }
+        .mcms-map-drawing-arrow-icon > span { width:28px !important; height:28px !important; display:grid !important; place-items:center !important; font-size:26px !important; line-height:1 !important; text-shadow:0 2px 4px rgba(0,0,0,.85) !important; transform-origin:center !important; }
+        .mcms-map-drawing-marker-icon { background:transparent !important; border:0 !important; }
+        .mcms-map-drawing-marker-icon > span { width:28px !important; height:32px !important; display:grid !important; place-items:center !important; font-size:26px !important; line-height:1 !important; text-shadow:0 2px 5px rgba(0,0,0,.9) !important; }
+        .mcms-map-drawing-label-icon { width:auto !important; height:auto !important; background:transparent !important; border:0 !important; }
+        .mcms-map-drawing-label-icon > span { display:inline-block !important; max-width:240px !important; padding:5px 8px !important; border:1px solid var(--mcms-drawing-colour) !important; border-left-width:4px !important; border-radius:6px !important; background:rgba(5,13,20,.92) !important; color:#fff !important; font:800 11px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; box-shadow:0 3px 10px rgba(0,0,0,.5) !important; }
         html[data-mcms-economy="true"] #${SCRIPT.mapMeasureHudId} { box-shadow:0 12px 30px rgba(0,0,0,.54) !important; }
         @media (max-width:620px) {
-            #${SCRIPT.mapMeasureHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; }
+            #${SCRIPT.mapMeasureHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; max-height:min(74vh,calc(100vh - env(safe-area-inset-top) - 16px)) !important; }
             #${SCRIPT.mapMeasureHudId} button { min-height:46px !important; font-size:11px !important; }
         }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
@@ -18251,7 +18276,22 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     const MAP_MEASURE_MAX_POINTS = 64;
+    const MAP_DRAWING_MAX_OBJECTS = 48;
+    const MAP_DRAWING_MAX_FREEHAND_POINTS = 160;
+    const MAP_DRAWING_FREEHAND_SAMPLE_PIXELS = 6;
     const MAP_MEASURE_EARTH_RADIUS_METRES = 6371008.8;
+    const MAP_DRAWING_MODES = Object.freeze({
+        distance: Object.freeze({ label: 'Distance', guidance: 'Click route points, then Finish. Distance stays in kilometres.' }),
+        area: Object.freeze({ label: 'Area', guidance: 'Click at least three boundary points, then Finish. Area stays in square kilometres.' }),
+        line: Object.freeze({ label: 'Line', guidance: 'Click a start point and an end point.' }),
+        arrow: Object.freeze({ label: 'Arrow', guidance: 'Click where the arrow begins and where it should point.' }),
+        freehand: Object.freeze({ label: 'Freehand', guidance: 'Press and drag on the map to sketch. Map dragging resumes when another tool is selected.' }),
+        circle: Object.freeze({ label: 'Circle', guidance: 'Click the centre, then click the outer edge.' }),
+        rectangle: Object.freeze({ label: 'Rectangle', guidance: 'Click one corner, then the opposite corner.' }),
+        polygon: Object.freeze({ label: 'Zone', guidance: 'Click at least three zone corners, then Finish.' }),
+        label: Object.freeze({ label: 'Text', guidance: 'Click the map, then enter a temporary label.' }),
+        marker: Object.freeze({ label: 'Marker', guidance: 'Click anywhere to place a temporary marker.' })
+    });
 
     function mapMeasureRadians(value) {
         return Number(value) * Math.PI / 180;
@@ -18302,8 +18342,76 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return `${squareKilometres.toLocaleString('en-GB', { maximumFractionDigits })} km²`;
     }
 
+    function mapDrawingPoint(value) {
+        const lat = Number(value?.lat);
+        const lng = Number(value?.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    }
+
+    function mapDrawingStyle() {
+        return {
+        colour: /^#[0-9a-f]{6}$/iu.test(mapMeasureRuntime.colour) ? mapMeasureRuntime.colour : '#62d3ff',
+        dashed: Boolean(mapMeasureRuntime.dashed),
+        weight: [2, 3, 5].includes(Number(mapMeasureRuntime.weight)) ? Number(mapMeasureRuntime.weight) : 3
+        };
+    }
+
+    function mapDrawingPathOptions(style = mapDrawingStyle(), extra = {}) {
+        return {
+        color: style.colour,
+        weight: style.weight,
+        opacity: 0.96,
+        dashArray: style.dashed ? '10 8' : undefined,
+        interactive: false,
+        bubblingMouseEvents: false,
+        className: 'mcms-map-measure-path mcms-map-drawing-path',
+        renderer: mapMeasureRuntime.renderer || undefined,
+        ...extra
+        };
+    }
+
+    function mapDrawingRectanglePoints(points) {
+        if (!Array.isArray(points) || points.length < 2) return [];
+        const first = mapDrawingPoint(points[0]);
+        const second = mapDrawingPoint(points[1]);
+        return first && second ? [first, { lat: first.lat, lng: second.lng }, second, { lat: second.lat, lng: first.lng }] : [];
+    }
+
+    function mapDrawingBearing(left, right) {
+        const start = mapDrawingPoint(left);
+        const end = mapDrawingPoint(right);
+        if (!start || !end) return 0;
+        const lat1 = mapMeasureRadians(start.lat);
+        const lat2 = mapMeasureRadians(end.lat);
+        const deltaLng = mapMeasureRadians(end.lng - start.lng);
+        const y = Math.sin(deltaLng) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+
+    function mapDrawingObjectReadout(object) {
+        if (!object) return null;
+        const points = Array.from(object.points || []);
+        if (['distance', 'line', 'arrow', 'freehand'].includes(object.type)) {
+        return { primary: mapMeasureFormatDistance(mapMeasureLineDistance(points)), secondary: `${MAP_DRAWING_MODES[object.type]?.label || 'Line'} · ${points.length} points` };
+        }
+        const areaPoints = object.type === 'rectangle' ? mapDrawingRectanglePoints(points) : points;
+        if (['area', 'polygon', 'rectangle'].includes(object.type)) {
+        return { primary: mapMeasureFormatArea(mapMeasureArea(areaPoints)), secondary: `Perimeter ${mapMeasureFormatDistance(mapMeasureLineDistance(areaPoints, true))}` };
+        }
+        if (object.type === 'circle' && points.length >= 2) {
+        const radius = mapMeasurePointDistance(points[0], points[1]);
+        return { primary: mapMeasureFormatArea(Math.PI * radius * radius), secondary: `Radius ${mapMeasureFormatDistance(radius)} · circumference ${mapMeasureFormatDistance(2 * Math.PI * radius)}` };
+        }
+        if (object.type === 'label') return { primary: object.text || 'Text label', secondary: 'Temporary map label added' };
+        if (object.type === 'marker') return { primary: 'Marker added', secondary: `${Number(points[0]?.lat || 0).toFixed(5)}, ${Number(points[0]?.lng || 0).toFixed(5)}` };
+        return null;
+    }
+
     function mapMeasureReadout() {
         const pointCount = mapMeasureRuntime.points.length;
+        const latestObjectReadout = pointCount === 0 ? mapDrawingObjectReadout(mapMeasureRuntime.objects.at(-1)) : null;
+        if (latestObjectReadout) return latestObjectReadout;
         if (mapMeasureRuntime.mode === 'area') {
         const area = mapMeasureFormatArea(mapMeasureArea());
         const perimeter = mapMeasureFormatDistance(mapMeasureLineDistance(mapMeasureRuntime.points, true));
@@ -18312,6 +18420,22 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             : { primary: area, secondary: `Perimeter ${perimeter} · ${pointCount} points` };
         }
         const distance = mapMeasureFormatDistance(mapMeasureLineDistance());
+        if (['line', 'arrow', 'circle', 'rectangle'].includes(mapMeasureRuntime.mode)) {
+        if (pointCount < 2) return { primary: `${pointCount} of 2 points`, secondary: MAP_DRAWING_MODES[mapMeasureRuntime.mode].guidance };
+        }
+        if (mapMeasureRuntime.mode === 'polygon') {
+        const area = mapMeasureFormatArea(mapMeasureArea());
+        const perimeter = mapMeasureFormatDistance(mapMeasureLineDistance(mapMeasureRuntime.points, true));
+        return pointCount < 3
+            ? { primary: `${pointCount} point${pointCount === 1 ? '' : 's'}`, secondary: `Add ${3 - pointCount} more to create a zone.` }
+            : { primary: area, secondary: `Zone perimeter ${perimeter} · ${pointCount} points` };
+        }
+        if (mapMeasureRuntime.mode === 'freehand') {
+        return pointCount < 2
+            ? { primary: 'Ready to sketch', secondary: MAP_DRAWING_MODES.freehand.guidance }
+            : { primary: distance, secondary: `${pointCount} sampled points` };
+        }
+        if (mapMeasureRuntime.mode === 'label' || mapMeasureRuntime.mode === 'marker') return { primary: MAP_DRAWING_MODES[mapMeasureRuntime.mode].label, secondary: MAP_DRAWING_MODES[mapMeasureRuntime.mode].guidance };
         return pointCount < 2
         ? { primary: `${pointCount} point${pointCount === 1 ? '' : 's'}`, secondary: 'Click the map to begin a route measurement.' }
         : { primary: distance, secondary: `${pointCount - 1} segment${pointCount === 2 ? '' : 's'}` };
@@ -18319,44 +18443,117 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function mapMeasureClearLayers() {
         try { mapMeasureRuntime.group?.clearLayers?.(); } catch (err) {}
+        try { mapMeasureRuntime.draftGroup?.clearLayers?.(); } catch (err) {}
+    }
+
+    function mapDrawingTagLayer(layer) {
+        if (layer) layer.__mcmsMapMeasureLayer = true;
+        return layer;
+    }
+
+    function mapDrawingCreateObjectLayers(object, target = mapMeasureRuntime.group) {
+        if (!object || !target || !pageWindow.L) return [];
+        const points = Array.from(object.points || []).map(mapDrawingPoint).filter(Boolean);
+        const style = object.style || mapDrawingStyle();
+        const layers = [];
+        const add = layer => {
+        if (!layer) return;
+        mapDrawingTagLayer(layer);
+        layer.addTo(target);
+        layers.push(layer);
+        };
+        try {
+        if (['distance', 'line', 'freehand'].includes(object.type) && points.length >= 2) {
+            add(pageWindow.L.polyline(points, mapDrawingPathOptions(style)));
+        } else if (object.type === 'arrow' && points.length >= 2) {
+            add(pageWindow.L.polyline(points, mapDrawingPathOptions(style)));
+            if (typeof pageWindow.L.marker === 'function' && typeof pageWindow.L.divIcon === 'function') {
+            const angle = mapDrawingBearing(points[0], points.at(-1)) - 90;
+            add(pageWindow.L.marker(points.at(-1), {
+                interactive: false, keyboard: false, bubblingMouseEvents: false,
+                icon: pageWindow.L.divIcon({
+                className: 'mcms-map-drawing-arrow-icon',
+                html: `<span style="color:${style.colour};transform:rotate(${angle.toFixed(1)}deg)">➤</span>`,
+                iconSize: [28, 28], iconAnchor: [14, 14]
+                })
+            }));
+            }
+        } else if (['area', 'polygon'].includes(object.type) && points.length >= 3 && typeof pageWindow.L.polygon === 'function') {
+            add(pageWindow.L.polygon(points, mapDrawingPathOptions(style, { fill: true, fillColor: style.colour, fillOpacity: 0.15 })));
+        } else if (object.type === 'circle' && points.length >= 2 && typeof pageWindow.L.circle === 'function') {
+            add(pageWindow.L.circle(points[0], mapDrawingPathOptions(style, { radius: mapMeasurePointDistance(points[0], points[1]), fill: true, fillColor: style.colour, fillOpacity: 0.12 })));
+        } else if (object.type === 'rectangle' && points.length >= 2) {
+            const corners = mapDrawingRectanglePoints(points);
+            if (typeof pageWindow.L.rectangle === 'function' && typeof pageWindow.L.latLngBounds === 'function') {
+            add(pageWindow.L.rectangle(pageWindow.L.latLngBounds(points), mapDrawingPathOptions(style, { fill: true, fillColor: style.colour, fillOpacity: 0.14 })));
+            } else if (typeof pageWindow.L.polygon === 'function') {
+            add(pageWindow.L.polygon(corners, mapDrawingPathOptions(style, { fill: true, fillColor: style.colour, fillOpacity: 0.14 })));
+            }
+        } else if (object.type === 'marker' && points.length && typeof pageWindow.L.marker === 'function' && typeof pageWindow.L.divIcon === 'function') {
+            add(pageWindow.L.marker(points[0], {
+            interactive: false, keyboard: false, bubblingMouseEvents: false,
+            icon: pageWindow.L.divIcon({ className: 'mcms-map-drawing-marker-icon', html: `<span style="color:${style.colour}">◆</span>`, iconSize: [28, 32], iconAnchor: [14, 16] })
+            }));
+        } else if (object.type === 'label' && points.length && object.text && typeof pageWindow.L.marker === 'function' && typeof pageWindow.L.divIcon === 'function') {
+            add(pageWindow.L.marker(points[0], {
+            interactive: false, keyboard: false, bubblingMouseEvents: false,
+            icon: pageWindow.L.divIcon({ className: 'mcms-map-drawing-label-icon', html: `<span style="--mcms-drawing-colour:${style.colour}">${escapeHtml(object.text)}</span>`, iconSize: null, iconAnchor: [0, 18] })
+            }));
+        }
+        } catch (err) {}
+        return layers;
+    }
+
+    function mapDrawingAddObject(type, points, text = '') {
+        if (mapMeasureRuntime.objects.length >= MAP_DRAWING_MAX_OBJECTS) {
+        showToast(`Drawing is capped at ${MAP_DRAWING_MAX_OBJECTS} objects`);
+        return false;
+        }
+        const safePoints = Array.from(points || []).map(mapDrawingPoint).filter(Boolean);
+        const object = { type, points: safePoints, text: String(text || '').slice(0, 80), style: mapDrawingStyle(), layers: [] };
+        object.layers = mapDrawingCreateObjectLayers(object);
+        if (!object.layers.length && !['label', 'marker'].includes(type)) return false;
+        mapMeasureRuntime.objects.push(object);
+        mapMeasureRuntime.points = [];
+        try { mapMeasureRuntime.draftGroup?.clearLayers?.(); } catch (err) {}
+        updateMapMeasureHud();
+        return true;
     }
 
     function renderMapMeasureLayers() {
-        const { group, points, mode } = mapMeasureRuntime;
-        mapMeasureClearLayers();
-        if (!group || !pageWindow.L) return;
-        const pathOptions = {
-        color: '#62d3ff',
-        weight: 3,
-        opacity: 0.95,
-        interactive: false,
-        bubblingMouseEvents: false,
-        className: 'mcms-map-measure-path',
-        renderer: mapMeasureRuntime.renderer || undefined
-        };
+        const { draftGroup, points, mode } = mapMeasureRuntime;
+        try { draftGroup?.clearLayers?.(); } catch (err) {}
+        if (!draftGroup || !pageWindow.L) return;
+        const style = mapDrawingStyle();
+        const pathOptions = mapDrawingPathOptions(style);
         try {
         if (points.length >= 2) {
-            const path = mode === 'area' && points.length >= 3 && typeof pageWindow.L.polygon === 'function'
-            ? pageWindow.L.polygon(points, { ...pathOptions, fill: true, fillColor: '#2fb7ef', fillOpacity: 0.15 })
-            : pageWindow.L.polyline(points, pathOptions);
-            path.__mcmsMapMeasureLayer = true;
-            path.addTo(group);
+            let path = null;
+            if (['area', 'polygon'].includes(mode) && points.length >= 3 && typeof pageWindow.L.polygon === 'function') {
+            path = pageWindow.L.polygon(points, { ...pathOptions, fill: true, fillColor: style.colour, fillOpacity: 0.15 });
+            } else if (mode === 'circle' && typeof pageWindow.L.circle === 'function') {
+            path = pageWindow.L.circle(points[0], { ...pathOptions, radius: mapMeasurePointDistance(points[0], points[1]), fill: true, fillColor: style.colour, fillOpacity: 0.12 });
+            } else if (mode === 'rectangle') {
+            path = typeof pageWindow.L.rectangle === 'function' && typeof pageWindow.L.latLngBounds === 'function'
+                ? pageWindow.L.rectangle(pageWindow.L.latLngBounds(points), { ...pathOptions, fill: true, fillColor: style.colour, fillOpacity: 0.14 })
+                : pageWindow.L.polygon(mapDrawingRectanglePoints(points), { ...pathOptions, fill: true, fillColor: style.colour, fillOpacity: 0.14 });
+            } else path = pageWindow.L.polyline(points, pathOptions);
+            mapDrawingTagLayer(path)?.addTo(draftGroup);
         }
-        if (typeof pageWindow.L.circleMarker === 'function') {
+        if (mode !== 'freehand' && typeof pageWindow.L.circleMarker === 'function') {
             points.forEach((point, index) => {
             const marker = pageWindow.L.circleMarker(point, {
                 radius: index === 0 ? 6 : 5,
-                color: index === 0 ? '#ffffff' : '#62d3ff',
+                color: index === 0 ? '#ffffff' : style.colour,
                 weight: 2,
-                fillColor: index === 0 ? '#ffbd59' : '#0a8fc6',
+                fillColor: index === 0 ? '#ffbd59' : style.colour,
                 fillOpacity: 1,
                 interactive: false,
                 bubblingMouseEvents: false,
                 className: 'mcms-map-measure-point',
                 renderer: mapMeasureRuntime.renderer || undefined
             });
-            marker.__mcmsMapMeasureLayer = true;
-            marker.addTo(group);
+            mapDrawingTagLayer(marker)?.addTo(draftGroup);
             });
         }
         } catch (err) {}
@@ -18367,14 +18564,23 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!hud?.isConnected) return;
         const readout = mapMeasureReadout();
         hud.querySelectorAll('[data-measure-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.measureMode === mapMeasureRuntime.mode)));
+        hud.querySelectorAll('[data-drawing-colour]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.drawingColour === mapMeasureRuntime.colour)));
+        hud.querySelectorAll('[data-drawing-style]').forEach(button => button.setAttribute('aria-pressed', String((button.dataset.drawingStyle === 'dashed') === mapMeasureRuntime.dashed)));
+        hud.querySelectorAll('[data-drawing-weight]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.drawingWeight) === Number(mapMeasureRuntime.weight))));
         const primary = hud.querySelector('[data-measure-primary]');
         const secondary = hud.querySelector('[data-measure-secondary]');
+        const guidance = hud.querySelector('[data-measure-guidance]');
+        const count = hud.querySelector('[data-drawing-count]');
         if (primary) primary.textContent = readout.primary;
         if (secondary) secondary.textContent = readout.secondary;
+        if (guidance) guidance.textContent = MAP_DRAWING_MODES[mapMeasureRuntime.mode]?.guidance || '';
+        if (count) count.textContent = `${mapMeasureRuntime.objects.length}/${MAP_DRAWING_MAX_OBJECTS} objects`;
         const undo = hud.querySelector('[data-measure-action="undo"]');
+        const finish = hud.querySelector('[data-measure-action="finish"]');
         const clear = hud.querySelector('[data-measure-action="clear"]');
-        if (undo) undo.disabled = mapMeasureRuntime.points.length === 0;
-        if (clear) clear.disabled = mapMeasureRuntime.points.length === 0;
+        if (undo) undo.disabled = mapMeasureRuntime.points.length === 0 && mapMeasureRuntime.objects.length === 0;
+        if (finish) finish.disabled = !mapDrawingDraftCanFinish();
+        if (clear) clear.disabled = mapMeasureRuntime.points.length === 0 && mapMeasureRuntime.objects.length === 0;
     }
 
     function syncMapMeasureToolbarButton() {
@@ -18385,13 +18591,20 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         updateUiSetAttribute(button, 'aria-pressed', String(active));
         updateUiSetDataset(button, 'mcmsState', active ? 'on' : 'off');
         updateUiSetText(button.querySelector('.mcms-control-state'), active ? 'ACTIVE' : 'READY');
-        updateUiSetAttribute(button, 'aria-label', active ? 'Measure is active. Return to the measurement controls.' : 'Activate Measure on the map.');
+        updateUiSetAttribute(button, 'aria-label', active ? 'Drawing is active. Return to the drawing controls.' : 'Activate Drawing on the map.');
         return true;
     }
 
     function mapMeasureUndo() {
-        if (!mapMeasureRuntime.active || !mapMeasureRuntime.points.length) return false;
-        mapMeasureRuntime.points.pop();
+        if (!mapMeasureRuntime.active) return false;
+        if (mapMeasureRuntime.points.length) mapMeasureRuntime.points.pop();
+        else {
+        const object = mapMeasureRuntime.objects.pop();
+        if (!object) return false;
+        for (const layer of object.layers || []) {
+            try { mapMeasureRuntime.group?.removeLayer?.(layer); } catch (err) {}
+        }
+        }
         renderMapMeasureLayers();
         updateMapMeasureHud();
         return true;
@@ -18400,18 +18613,151 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function mapMeasureClear() {
         if (!mapMeasureRuntime.active) return false;
         mapMeasureRuntime.points = [];
+        mapMeasureRuntime.objects = [];
+        mapMeasureRuntime.freehandDrawing = false;
+        mapMeasureRuntime.lastContainerPoint = null;
         mapMeasureClearLayers();
         updateMapMeasureHud();
         return true;
     }
 
+    function mapDrawingDraftCanFinish() {
+        const minimum = mapMeasureRuntime.mode === 'distance' ? 2 : ['area', 'polygon'].includes(mapMeasureRuntime.mode) ? 3 : Infinity;
+        return mapMeasureRuntime.points.length >= minimum;
+    }
+
+    function mapDrawingFinishDraft(announce = true) {
+        if (!mapDrawingDraftCanFinish()) return false;
+        const type = mapMeasureRuntime.mode;
+        const points = mapMeasureRuntime.points.slice();
+        const added = mapDrawingAddObject(type, points);
+        if (added && announce) showToast(`${MAP_DRAWING_MODES[type].label} added to Drawing`);
+        return added;
+    }
+
+    function mapDrawingRestoreDragging() {
+        const map = mapMeasureRuntime.map;
+        if (mapMeasureRuntime.draggingWasEnabled) {
+        try { map?.dragging?.enable?.(); } catch (err) {}
+        }
+        mapMeasureRuntime.draggingWasEnabled = null;
+    }
+
+    function mapDrawingPrepareFreehand() {
+        const dragging = mapMeasureRuntime.map?.dragging;
+        try { mapMeasureRuntime.draggingWasEnabled = typeof dragging?.enabled === 'function' ? Boolean(dragging.enabled()) : true; } catch (err) { mapMeasureRuntime.draggingWasEnabled = true; }
+        if (mapMeasureRuntime.draggingWasEnabled) {
+        try { dragging?.disable?.(); } catch (err) {}
+        }
+    }
+
     function setMapMeasureMode(mode) {
-        const nextMode = mode === 'area' ? 'area' : 'distance';
+        const nextMode = Object.hasOwn(MAP_DRAWING_MODES, mode) ? mode : 'distance';
         if (mapMeasureRuntime.mode === nextMode) return false;
+        if (mapMeasureRuntime.mode === 'freehand') mapDrawingRestoreDragging();
+        if (mapDrawingDraftCanFinish()) mapDrawingFinishDraft(false);
+        else mapMeasureRuntime.points = [];
         mapMeasureRuntime.mode = nextMode;
-        mapMeasureClear();
-        showToast(nextMode === 'area' ? 'Boundary measurement ready' : 'Distance measurement ready');
+        mapMeasureRuntime.freehandDrawing = false;
+        mapMeasureRuntime.lastContainerPoint = null;
+        try { mapMeasureRuntime.draftGroup?.clearLayers?.(); } catch (err) {}
+        if (nextMode === 'freehand') mapDrawingPrepareFreehand();
+        updateMapMeasureHud();
+        showToast(`${MAP_DRAWING_MODES[nextMode].label} tool ready`);
         return true;
+    }
+
+    function setMapDrawingColour(colour) {
+        if (!/^#[0-9a-f]{6}$/iu.test(colour)) return false;
+        mapMeasureRuntime.colour = colour.toLowerCase();
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        return true;
+    }
+
+    function setMapDrawingStyle(style) {
+        mapMeasureRuntime.dashed = style === 'dashed';
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        return true;
+    }
+
+    function setMapDrawingWeight(weight) {
+        const next = Number(weight);
+        if (![2, 3, 5].includes(next)) return false;
+        mapMeasureRuntime.weight = next;
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        return true;
+    }
+
+    function mapDrawingHandleClick(event) {
+        if (!mapMeasureRuntime.active || mapMeasureRuntime.map !== event?.target || !event?.latlng || mapMeasureRuntime.mode === 'freehand') return;
+        const point = mapDrawingPoint(event.latlng);
+        if (!point) return;
+        const mode = mapMeasureRuntime.mode;
+        if (mode === 'marker') {
+        mapDrawingAddObject('marker', [point]);
+        return;
+        }
+        if (mode === 'label') {
+        const label = pageWindow.prompt?.('Temporary map label:', '');
+        if (label !== null && String(label).trim()) mapDrawingAddObject('label', [point], String(label).trim());
+        return;
+        }
+        if (mapMeasureRuntime.points.length >= MAP_MEASURE_MAX_POINTS) {
+        showToast(`Drawing is capped at ${MAP_MEASURE_MAX_POINTS} points per shape`);
+        return;
+        }
+        mapMeasureRuntime.points.push(point);
+        if (['line', 'arrow', 'circle', 'rectangle'].includes(mode) && mapMeasureRuntime.points.length === 2) {
+        mapDrawingAddObject(mode, mapMeasureRuntime.points.slice());
+        } else {
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        }
+    }
+
+    function mapDrawingHandleFreehandStart(event) {
+        if (!mapMeasureRuntime.active || mapMeasureRuntime.mode !== 'freehand' || mapMeasureRuntime.freehandDrawing) return;
+        const point = mapDrawingPoint(event?.latlng);
+        if (!point) return;
+        event.originalEvent?.preventDefault?.();
+        mapMeasureRuntime.freehandDrawing = true;
+        mapMeasureRuntime.points = [point];
+        mapMeasureRuntime.lastContainerPoint = event.containerPoint ? { x: Number(event.containerPoint.x), y: Number(event.containerPoint.y) } : null;
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+    }
+
+    function mapDrawingHandleFreehandMove(event) {
+        if (!mapMeasureRuntime.freehandDrawing || mapMeasureRuntime.mode !== 'freehand') return;
+        if (mapMeasureRuntime.points.length >= MAP_DRAWING_MAX_FREEHAND_POINTS) return;
+        const point = mapDrawingPoint(event?.latlng);
+        if (!point) return;
+        const containerPoint = event.containerPoint ? { x: Number(event.containerPoint.x), y: Number(event.containerPoint.y) } : null;
+        const previous = mapMeasureRuntime.lastContainerPoint;
+        if (containerPoint && previous && Math.hypot(containerPoint.x - previous.x, containerPoint.y - previous.y) < MAP_DRAWING_FREEHAND_SAMPLE_PIXELS) return;
+        event.originalEvent?.preventDefault?.();
+        mapMeasureRuntime.points.push(point);
+        mapMeasureRuntime.lastContainerPoint = containerPoint;
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+    }
+
+    function mapDrawingHandleFreehandEnd(event) {
+        if (!mapMeasureRuntime.freehandDrawing) return;
+        mapMeasureRuntime.freehandDrawing = false;
+        mapMeasureRuntime.lastContainerPoint = null;
+        const point = mapDrawingPoint(event?.latlng);
+        const last = mapMeasureRuntime.points.at(-1);
+        if (point && (!last || mapMeasurePointDistance(last, point) > 0.5) && mapMeasureRuntime.points.length < MAP_DRAWING_MAX_FREEHAND_POINTS) mapMeasureRuntime.points.push(point);
+        if (mapMeasureRuntime.points.length >= 2) mapDrawingAddObject('freehand', mapMeasureRuntime.points.slice());
+        else {
+        mapMeasureRuntime.points = [];
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        }
     }
 
     function stopMapMeasure(announce = true) {
@@ -18419,78 +18765,112 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const map = mapMeasureRuntime.map;
         const renderer = mapMeasureRuntime.renderer;
         try { mapMeasureRuntime.map?.off?.('click', mapMeasureRuntime.clickHandler); } catch (err) {}
+        try { mapMeasureRuntime.map?.off?.('mousedown touchstart', mapMeasureRuntime.pointerStartHandler); } catch (err) {}
+        try { mapMeasureRuntime.map?.off?.('mousemove touchmove', mapMeasureRuntime.pointerMoveHandler); } catch (err) {}
+        try { mapMeasureRuntime.map?.off?.('mouseup touchend mouseout', mapMeasureRuntime.pointerEndHandler); } catch (err) {}
+        mapDrawingRestoreDragging();
         runtimeUnlistenTarget(mapMeasureRuntime.hud, true);
         mapMeasureClearLayers();
         try { mapMeasureRuntime.group?.remove?.(); } catch (err) {}
+        try { mapMeasureRuntime.draftGroup?.remove?.(); } catch (err) {}
         try { if (renderer && map?.hasLayer?.(renderer)) map.removeLayer(renderer); } catch (err) {}
         mapMeasureRuntime.hud?.remove?.();
         mapMeasureRuntime.active = false;
         mapMeasureRuntime.map = null;
         mapMeasureRuntime.group = null;
+        mapMeasureRuntime.draftGroup = null;
         mapMeasureRuntime.renderer = null;
         mapMeasureRuntime.points = [];
+        mapMeasureRuntime.objects = [];
         mapMeasureRuntime.clickHandler = null;
+        mapMeasureRuntime.pointerStartHandler = null;
+        mapMeasureRuntime.pointerMoveHandler = null;
+        mapMeasureRuntime.pointerEndHandler = null;
+        mapMeasureRuntime.freehandDrawing = false;
+        mapMeasureRuntime.lastContainerPoint = null;
         mapMeasureRuntime.hud = null;
         document.documentElement?.removeAttribute?.('data-mcms-map-measuring');
         syncMapMeasureToolbarButton();
-        if (wasActive && announce) showToast('Map Measure closed');
+        if (wasActive && announce) showToast('Drawing closed');
         return wasActive;
     }
 
     function startMapMeasure() {
-        if (state.safeMode.enabled) { showToast('Map Measure is unavailable in Toolkit Safe Mode'); return false; }
+        if (state.safeMode.enabled) { showToast('Drawing is unavailable in Toolkit Safe Mode'); return false; }
         if (mapMeasureRuntime.active) {
         try { mapMeasureRuntime.hud?.querySelector?.('[data-measure-mode][aria-pressed="true"]')?.focus?.({ preventScroll: true }); } catch (err) {}
         return true;
         }
         const map = findLeafletMapInstance(true);
         if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof map.on !== 'function') {
-        showToast('Map Measure is unavailable on this page');
+        showToast('Drawing is unavailable on this page');
         return false;
         }
         closePanel();
         const hud = document.createElement('section');
         hud.id = SCRIPT.mapMeasureHudId;
         hud.setAttribute('role', 'dialog');
-        hud.setAttribute('aria-label', 'Map Measure');
+        hud.setAttribute('aria-label', 'Map Drawing');
         setInnerHtmlIfChanged(hud, `
-            <div class="mcms-measure-head"><div><span>MAP COMMAND · ON-DEMAND</span><strong>Map Measure</strong></div><button class="mcms-measure-close" type="button" data-measure-action="close" aria-label="Close Map Measure">×</button></div>
-            <div class="mcms-measure-modes"><button type="button" data-measure-mode="distance" aria-pressed="true">Distance / Route</button><button type="button" data-measure-mode="area" aria-pressed="false">Boundary / Area</button></div>
+            <div class="mcms-measure-head"><div><span>MAP COMMAND · ON-DEMAND</span><strong>Drawing</strong><small data-drawing-count>0/${MAP_DRAWING_MAX_OBJECTS} objects</small></div><button class="mcms-measure-close" type="button" data-measure-action="close" aria-label="Close Drawing">×</button></div>
+            <div class="mcms-measure-modes" aria-label="Drawing tools">
+                <button type="button" data-measure-mode="distance" aria-pressed="true">Distance</button><button type="button" data-measure-mode="area" aria-pressed="false">Area</button>
+                <button type="button" data-measure-mode="line" aria-pressed="false">Line</button><button type="button" data-measure-mode="arrow" aria-pressed="false">Arrow</button>
+                <button type="button" data-measure-mode="freehand" aria-pressed="false">Freehand</button><button type="button" data-measure-mode="circle" aria-pressed="false">Circle</button>
+                <button type="button" data-measure-mode="rectangle" aria-pressed="false">Rectangle</button><button type="button" data-measure-mode="polygon" aria-pressed="false">Zone</button>
+                <button type="button" data-measure-mode="label" aria-pressed="false">Text</button><button type="button" data-measure-mode="marker" aria-pressed="false">Marker</button>
+            </div>
+            <div class="mcms-drawing-style" aria-label="Drawing style">
+                <div class="mcms-drawing-colours"><button type="button" data-drawing-colour="#62d3ff" aria-label="Blue" aria-pressed="true" style="--mcms-drawing-swatch:#62d3ff"></button><button type="button" data-drawing-colour="#ff5f68" aria-label="Red" aria-pressed="false" style="--mcms-drawing-swatch:#ff5f68"></button><button type="button" data-drawing-colour="#ffbd59" aria-label="Amber" aria-pressed="false" style="--mcms-drawing-swatch:#ffbd59"></button><button type="button" data-drawing-colour="#72e6a5" aria-label="Green" aria-pressed="false" style="--mcms-drawing-swatch:#72e6a5"></button><button type="button" data-drawing-colour="#c48cff" aria-label="Purple" aria-pressed="false" style="--mcms-drawing-swatch:#c48cff"></button><button type="button" data-drawing-colour="#ffffff" aria-label="White" aria-pressed="false" style="--mcms-drawing-swatch:#ffffff"></button></div>
+                <div class="mcms-drawing-lines"><button type="button" data-drawing-style="solid" aria-pressed="true">Solid</button><button type="button" data-drawing-style="dashed" aria-pressed="false">Dashed</button><button type="button" data-drawing-weight="2" aria-pressed="false">Thin</button><button type="button" data-drawing-weight="3" aria-pressed="true">Normal</button><button type="button" data-drawing-weight="5" aria-pressed="false">Bold</button></div>
+            </div>
             <div class="mcms-measure-readout"><strong data-measure-primary>0 points</strong><span data-measure-secondary>Click the map to begin a route measurement.</span></div>
-            <div class="mcms-measure-actions"><button type="button" data-measure-action="undo" disabled>Undo Point</button><button type="button" data-measure-action="clear" disabled>Clear</button></div>
-            <div class="mcms-measure-guidance">Click map positions to add up to ${MAP_MEASURE_MAX_POINTS} points. Dragging and zooming remain native. Escape closes; Backspace undoes.</div>`);
+            <div class="mcms-measure-actions"><button type="button" data-measure-action="undo" disabled>Undo</button><button type="button" data-measure-action="finish" disabled>Finish</button><button type="button" data-measure-action="clear" disabled>Clear All</button></div>
+            <div class="mcms-measure-guidance" data-measure-guidance>Click route points, then Finish. Distance stays in kilometres.</div>
+            <div class="mcms-measure-guidance">Session-only · Escape closes · Backspace undoes · up to ${MAP_MEASURE_MAX_POINTS} points per route/zone.</div>`);
         document.body.appendChild(hud);
         const group = pageWindow.L.layerGroup();
         group.__mcmsMapMeasureLayer = true;
+        const draftGroup = pageWindow.L.layerGroup();
+        draftGroup.__mcmsMapMeasureLayer = true;
         const renderer = typeof pageWindow.L.canvas === 'function' ? pageWindow.L.canvas({ padding: 0.08, tolerance: 2 }) : null;
         if (renderer) renderer.__mcmsMapMeasureLayer = true;
-        try { group.addTo(map); } catch (err) { hud.remove(); showToast('Map Measure could not attach to this map'); return false; }
+        try { group.addTo(map); draftGroup.addTo(map); } catch (err) { hud.remove(); showToast('Drawing could not attach to this map'); return false; }
 
         mapMeasureRuntime.active = true;
         mapMeasureRuntime.mode = 'distance';
         mapMeasureRuntime.map = map;
         mapMeasureRuntime.group = group;
+        mapMeasureRuntime.draftGroup = draftGroup;
         mapMeasureRuntime.renderer = renderer;
         mapMeasureRuntime.points = [];
+        mapMeasureRuntime.objects = [];
+        mapMeasureRuntime.colour = '#62d3ff';
+        mapMeasureRuntime.dashed = false;
+        mapMeasureRuntime.weight = 3;
         mapMeasureRuntime.hud = hud;
-        mapMeasureRuntime.clickHandler = event => {
-        if (!mapMeasureRuntime.active || mapMeasureRuntime.map !== map || !event?.latlng) return;
-        if (mapMeasureRuntime.points.length >= MAP_MEASURE_MAX_POINTS) { showToast(`Map Measure is capped at ${MAP_MEASURE_MAX_POINTS} points`); return; }
-        const lat = Number(event.latlng.lat);
-        const lng = Number(event.latlng.lng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-        mapMeasureRuntime.points.push({ lat, lng });
-        renderMapMeasureLayers();
-        updateMapMeasureHud();
-        };
+        mapMeasureRuntime.clickHandler = mapDrawingHandleClick;
+        mapMeasureRuntime.pointerStartHandler = mapDrawingHandleFreehandStart;
+        mapMeasureRuntime.pointerMoveHandler = mapDrawingHandleFreehandMove;
+        mapMeasureRuntime.pointerEndHandler = mapDrawingHandleFreehandEnd;
         map.on('click', mapMeasureRuntime.clickHandler);
+        map.on('mousedown touchstart', mapMeasureRuntime.pointerStartHandler);
+        map.on('mousemove touchmove', mapMeasureRuntime.pointerMoveHandler);
+        map.on('mouseup touchend mouseout', mapMeasureRuntime.pointerEndHandler);
         hud.onclick = event => {
         const modeButton = closestEventTarget(event, '[data-measure-mode]');
         const actionButton = closestEventTarget(event, '[data-measure-action]');
+        const colourButton = closestEventTarget(event, '[data-drawing-colour]');
+        const styleButton = closestEventTarget(event, '[data-drawing-style]');
+        const weightButton = closestEventTarget(event, '[data-drawing-weight]');
         if (modeButton) { event.preventDefault(); setMapMeasureMode(modeButton.dataset.measureMode); return; }
+        if (colourButton) { event.preventDefault(); setMapDrawingColour(colourButton.dataset.drawingColour); return; }
+        if (styleButton) { event.preventDefault(); setMapDrawingStyle(styleButton.dataset.drawingStyle); return; }
+        if (weightButton) { event.preventDefault(); setMapDrawingWeight(weightButton.dataset.drawingWeight); return; }
         if (!actionButton) return;
         event.preventDefault();
         if (actionButton.dataset.measureAction === 'undo') mapMeasureUndo();
+        else if (actionButton.dataset.measureAction === 'finish') mapDrawingFinishDraft();
         else if (actionButton.dataset.measureAction === 'clear') mapMeasureClear();
         else if (actionButton.dataset.measureAction === 'close') stopMapMeasure();
         };
@@ -18499,7 +18879,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         updateMapMeasureHud();
         syncMapMeasureToolbarButton();
         toolkitAnalyticsRecordFeature('mapMeasure');
-        showToast('Map Measure active · click the map to add points');
+        showToast('Drawing active · choose a tool and use the map');
         return true;
     }
 
@@ -28745,7 +29125,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         add('pressure-board', `${operationalPressureBoardOpen() ? 'Close' : 'Open'} Operational Pressure Board`, 'Live demand and response pressure across active missions', 'mission board dashboard demand radar', () => toggleOperationalPressureBoard(), true);
         add('vehicle-codes', `${commandExperienceElement(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ? 'Close' : 'Open'} Vehicle Code Status`, 'Inspect current personal-unit availability by FMS code', 'vehicles units availability status fms codes', () => toggleVehicleCodeStatus(), true);
         add('fullscreen', `${state.fullscreenMap ? 'Exit' : 'Enter'} Full-Screen Map`, `Map full-screen mode · currently ${state.fullscreenMap ? 'on' : 'off'}`, 'fullscreen maximise maximize restore', () => setMapFullscreen(!state.fullscreenMap), true);
-        add('map-measure', `${mapMeasureRuntime.active ? 'Return to' : 'Open'} Measure`, 'Measure routes and boundaries in kilometres only while the tool is active', 'ruler range kilometres km boundary perimeter square kilometres area', () => startMapMeasure(), true);
+        add('map-measure', `${mapMeasureRuntime.active ? 'Return to' : 'Open'} Drawing`, 'Measure in kilometres and add temporary lines, arrows, freehand sketches, shapes, zones, text and markers', 'drawing draw measure ruler range kilometres km area line arrow circle rectangle polygon zone label marker freehand', () => startMapMeasure(), true);
         add('doctor', 'Run Toolkit Doctor', 'Safe user-triggered diagnostics and UI repair', 'health report warning repair diagnostic', () => { void runToolkitDoctor(); }, true);
         add('help', 'Open Help Centre', 'Search the complete Toolkit guide', 'documentation instructions support guide', () => openHelpCenter());
         add('briefing', 'Open Update Briefing', `Review what changed in Toolkit ${SCRIPT.version}`, 'release notes whats new version', () => openUpdateBriefing({ manual: true }));
@@ -29804,7 +30184,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeActionFloatButton('open-vehicle-status', 'V', 'Vehicle Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Vehicle Codes', 'Codes')}
                     ${makeActionFloatButton('open-pressure-board', 'B', 'Pressure Board', 'Open or close the Operational Pressure Board. Shortcut: B', 'Pressure Board', 'Pressure', 'pressureBoard')}
                     ${makeActionFloatButton('open-command-palette', 'K', 'Command Palette', 'Search missions, vehicles, buildings, locations, settings and Toolkit commands. Shortcut: K', 'Palette', 'Search', 'commandPalette')}
-                    ${makeActionFloatButton('open-map-measure', '', 'Measure', 'Activate Measure on the map. No listener or layer exists until opened.', 'Measure', 'Measure', 'measure')}
+                    ${makeActionFloatButton('open-map-measure', '', 'Drawing', 'Activate Drawing on the map. No listener or layer exists until opened.', 'Drawing', 'Draw', 'measure')}
                 </div>
                 <div class="mcms-control-group" data-control-group="performance" aria-label="Performance controls">
                     <span class="mcms-control-group-label">Performance</span>
@@ -30106,7 +30486,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
-                    <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-map-measure" title="Deliberately measure routes and operational boundaries in kilometres. No listener or layer exists until opened."><span class="mcms-iconbox">↔</span><span class="mcms-text"><span class="mcms-label">Measure</span><span class="mcms-pill">OPEN</span></span></button>
+                    <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-map-measure" title="Open Drawing for kilometre measurements, lines, arrows, freehand sketches, shapes, zones, text and markers. Nothing runs until opened."><span class="mcms-iconbox">✎</span><span class="mcms-text"><span class="mcms-label">Drawing</span><span class="mcms-pill">OPEN</span></span></button>
                 </div>
                 <div class="mcms-row" style="margin-top:8px">
                     <span class="mcms-row-label">Ring radius</span>

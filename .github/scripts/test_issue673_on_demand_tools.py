@@ -19,7 +19,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.4.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.5.0"
 
     measure = section(source, "    const MAP_MEASURE_MAX_POINTS", "    function coverageLeafletPathRenderer(")
     for required in [
@@ -36,8 +36,8 @@ def main() -> int:
         "renderer.__mcmsMapMeasureLayer = true",
         "renderer: mapMeasureRuntime.renderer || undefined",
         "map.removeLayer(renderer)",
-        "path.__mcmsMapMeasureLayer = true",
-        "marker.__mcmsMapMeasureLayer = true",
+        "function mapDrawingTagLayer(",
+        "layer.__mcmsMapMeasureLayer = true",
         "mapMeasureRuntime.points.length >= MAP_MEASURE_MAX_POINTS",
         "mapMeasureRuntime.points = []",
         "data-mcms-map-measuring",
@@ -71,7 +71,7 @@ def main() -> int:
     ]:
         assert required in source, required
 
-    print("Issue #673 static contract passed: Measure is kilometre-first, explicit, bounded and local-only.")
+    print("Issue #673 static contract passed: Drawing preserves kilometre-first Measure as an explicit, bounded, local-only tool.")
     return 0
 
 

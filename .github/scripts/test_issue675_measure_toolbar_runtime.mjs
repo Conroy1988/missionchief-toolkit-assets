@@ -59,9 +59,9 @@ vm.runInContext(
   sandbox,
 );
 
-const markup = sandbox.__api.makeActionFloatButton("open-map-measure", "", "Measure", "Activate Measure", "Measure", "Measure", "measure");
+const markup = sandbox.__api.makeActionFloatButton("open-map-measure", "", "Drawing", "Activate Drawing", "Drawing", "Draw", "measure");
 assert.match(markup, /data-action="open-map-measure"/u);
-assert.match(markup, />Measure</u);
+assert.match(markup, />Drawing</u);
 assert.match(markup, /mcms-float-key[^>]*aria-hidden="true">↔</u);
 assert.doesNotMatch(markup, /aria-keyshortcuts=""/u);
 
@@ -77,4 +77,4 @@ assert.equal(button.dataset.mcmsState, "on");
 assert.equal(button.attributes.get("aria-pressed"), "true");
 assert.ok(button.classList.values.has("mcms-on"));
 
-console.log("Issue #675 Measure toolbar runtime passed: the labelled action activates without a blank shortcut and reports READY/ACTIVE state.");
+console.log("Issue #675 toolbar runtime passed: the compatibility action is labelled Drawing, activates without a blank shortcut and reports READY/ACTIVE state.");

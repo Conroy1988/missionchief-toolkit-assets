@@ -27,16 +27,16 @@ def main() -> int:
 
     for required in [
         "dashboard: Object.freeze({ label: 'Dashboard', controls: Object.freeze(['open-vehicle-status', 'open-pressure-board', 'open-command-palette', 'open-map-measure']) })",
-        "'open-map-measure': 'Measure'",
+        "'open-map-measure': 'Drawing'",
         "measure: '↔'",
-        "makeActionFloatButton('open-map-measure', '', 'Measure'",
+        "makeActionFloatButton('open-map-measure', '', 'Drawing'",
         "function syncMapMeasureToolbarButton()",
         "syncMapMeasureToolbarButton();",
         "active ? 'ACTIVE' : 'READY'",
     ]:
         assert required in source, required
 
-    print("Issue #675 retirement contract passed: Incident Card is absent and Measure is a first-class toolbar action.")
+    print("Issue #675 retirement contract passed: Incident Card remains absent and the legacy Measure action has safely evolved into Drawing.")
     return 0
 
 

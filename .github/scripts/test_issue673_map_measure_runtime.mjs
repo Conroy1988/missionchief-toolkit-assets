@@ -58,8 +58,10 @@ assert.equal(api.line([{ lat: 0, lng: 0 }]), 0);
 assert.ok(Math.abs(api.line([{ lat: 0, lng: 0 }, { lat: 0, lng: 1 }, { lat: 1, lng: 1 }]) - (oneDegree * 2)) < 30);
 const squareArea = api.area([{ lat: 0, lng: 0 }, { lat: 0, lng: 1 }, { lat: 1, lng: 1 }, { lat: 1, lng: 0 }]);
 assert.ok(squareArea > 12.35e9 && squareArea < 12.37e9, squareArea);
-assert.equal(api.formatDistance(1609.344).primary, "1 mi");
-assert.equal(api.formatDistance(1000).secondary, "1 km");
-assert.equal(api.formatArea(10000).secondary, "1 ha");
+assert.equal(api.formatDistance(1609.344), "1.61 km");
+assert.equal(api.formatDistance(1000), "1 km");
+assert.equal(api.formatDistance(125), "0.125 km");
+assert.equal(api.formatArea(10000), "0.01 km²");
+assert.equal(api.formatArea(1250000), "1.25 km²");
 
-console.log("Issue #673 Map Measure runtime passed: distance, route and spherical boundary calculations remain deterministic.");
+console.log("Issue #673 Map Measure runtime passed: kilometre distance, route and spherical boundary calculations remain deterministic.");

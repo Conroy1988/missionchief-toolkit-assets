@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.4.1] - 2026-08-03
+
+### Kilometre-first Measure toolbar
+
+- Adds a persistent Measure button to the map command toolbar for one-click activation.
+- Shows route distance and boundary perimeter in kilometres and boundary area in square kilometres.
+- Completely retires Shareable Incident Card and removes its renderer, controls, commands, mission action and runtime state.
+- Keeps Measure dormant until explicitly opened and removes every temporary listener and Leaflet layer when closed.
+- Preserves the v10.3.8–v10.4.0 movement governor, stable map colours, every theme and all saved Toolkit settings without adding background cadence.
+
 ## [10.4.0] - 2026-08-03
 
 ### On-demand map measurement and incident cards

@@ -90,7 +90,7 @@ The operational hierarchy stays intact as the workspace changes. Controls reflow
 |---|---|
 | **Desktop and ultrawide** | Maximum situational density, a stable dock, fast switching and a wide operational canvas. |
 | **Tablet and iPad** | Touch-first command surfaces, balanced panels and strong landscape or portrait recovery. |
-| **iPhone and iOS Mobile** | Focused mission context, thumb-reachable actions and disciplined use of limited space. |
+| **iPhone and iOS Mobile** | Focused mission context, thumb-reachable actions and a visual-viewport-safe Drawing bottom sheet that keeps the live map available. |
 | **Economy Mode and reduced motion** | Lower visual workload and quieter updates while preserving core command information. |
 
 ## The command experience

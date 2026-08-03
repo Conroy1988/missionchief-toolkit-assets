@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.5.1] - 2026-08-03
+
+### iOS Drawing workspace repair
+
+- Rebuilds Drawing as a compact iOS Safari bottom sheet that leaves a substantial live map surface available for touch drawing.
+- Uses the Toolkit's existing visual-viewport and safe-area geometry so Safari browser chrome, rotation and constrained landscape heights cannot bury the controls.
+- Keeps the title, object count and 44px close control fixed while Drawing options scroll independently inside the sheet.
+- Turns all ten Drawing modes into a swipeable 44px tool rail while keeping colours, styles, readout, Undo, Finish, Clear All and guidance reachable.
+- Preserves Desktop and Tablet behaviour, every Drawing capability, session-only teardown and the zero-idle-work movement and lifecycle budgets.
+
 ## [10.5.0] - 2026-08-03
 
 ### Unified on-demand Drawing workspace

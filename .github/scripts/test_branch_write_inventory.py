@@ -88,11 +88,13 @@ def main() -> int:
     external_entries = inventory.get("externalRepositoryMainPushSources") or []
     review_entries = inventory.get("reviewBranchWriters") or []
     shadow_entries = inventory.get("shadowBranchWriters") or []
+    maintenance_entries = inventory.get("branchMaintenanceWriters") or []
 
     direct = workflow_set(direct_entries)
     orchestrators = workflow_set(orchestrator_entries)
     artifacts = workflow_set(artifact_entries)
     state_writers = workflow_set(state_entries)
+    maintenance_writers = workflow_set(maintenance_entries)
 
     expected_direct: set[str] = set()
     expected_orchestrators = {
@@ -111,6 +113,9 @@ def main() -> int:
         ".github/workflows/release-toolkit.yml",
         ".github/workflows/release-recovery.yml",
     }
+    expected_maintenance_writers = {
+        ".github/workflows/execute-audited-branch-cleanup.yml",
+    }
     if direct != expected_direct:
         fail(f"Unexpected direct public-main writers: {sorted(direct)}")
     if orchestrators != expected_orchestrators:
@@ -119,8 +124,10 @@ def main() -> int:
         fail(f"Unexpected artifact-only workflows: {sorted(artifacts)}")
     if state_writers != expected_state_writers:
         fail(f"Unexpected release-state writers: {sorted(state_writers)}")
+    if maintenance_writers != expected_maintenance_writers:
+        fail(f"Unexpected branch-maintenance writers: {sorted(maintenance_writers)}")
 
-    groups = [direct, orchestrators, artifacts, state_writers]
+    groups = [direct, orchestrators, artifacts, state_writers, maintenance_writers]
     for index, left in enumerate(groups):
         for right in groups[index + 1 :]:
             if left & right:
@@ -132,7 +139,7 @@ def main() -> int:
         if "contents" in (permissions or [])
     }
     inventory_contents = set(inventory.get("contentsWriteAuthority") or [])
-    classified_contents = direct | orchestrators | state_writers
+    classified_contents = direct | orchestrators | state_writers | maintenance_writers
     if approved_contents != inventory_contents:
         fail("Actions security contents-write authority differs from inventory")
     if classified_contents != inventory_contents:
@@ -154,7 +161,7 @@ def main() -> int:
             f"authority-only={sorted(inventory_contents - declared_contents)}"
         )
 
-    for workflow in sorted(direct | orchestrators | artifacts | state_writers):
+    for workflow in sorted(direct | orchestrators | artifacts | state_writers | maintenance_writers):
         path = ROOT / workflow
         if not path.is_file():
             fail(f"Classified workflow is missing: {workflow}")
@@ -198,6 +205,43 @@ def main() -> int:
         text = (ROOT / workflow).read_text(encoding="utf-8")
         require(text, ["permissions:\n  contents: read", "persist-credentials: false", marker], workflow)
         forbid(text, ["contents: write", "git push origin HEAD:main", "git push origin HEAD:refs/heads/main"], workflow)
+
+    if len(maintenance_entries) != 1:
+        fail(f"Expected one branch-maintenance writer, found {len(maintenance_entries)}")
+    maintenance_entry = maintenance_entries[0]
+    expected_maintenance_entry = {
+        "workflow": ".github/workflows/execute-audited-branch-cleanup.yml",
+        "sourceAuthority": "owner-pushed exact branch names and immutable audited head SHAs",
+        "target": "obsolete non-operational branch refs plus the transient command branch",
+        "credential": "github.token",
+        "actor": "repository owner only",
+        "openPullRequestDeletionAllowed": False,
+        "mainMutationAllowed": False,
+        "operationalBranchMutationAllowed": False,
+        "forcePushAllowed": False,
+    }
+    if maintenance_entry != expected_maintenance_entry:
+        fail("Branch-maintenance writer inventory changed")
+
+    maintenance_workflow = (ROOT / maintenance_entry["workflow"]).read_text(encoding="utf-8")
+    require(
+        maintenance_workflow,
+        [
+            "branches:\n      - automation/branch-cleanup",
+            "if: github.actor == github.repository_owner",
+            "Branch moved after audit",
+            "Open pull request protects branch",
+            "recoverable from a closed PR nor contained in main",
+            "main release-state distribution automation/releases automation/development-packages automation/branch-cleanup",
+            "--method DELETE",
+        ],
+        maintenance_entry["workflow"],
+    )
+    forbid(
+        maintenance_workflow,
+        ["force: true", "git push --force", "refs/heads/main"],
+        maintenance_entry["workflow"],
+    )
 
     if len(state_entries) != 2:
         fail(f"Expected two release-state writers, found {len(state_entries)}")

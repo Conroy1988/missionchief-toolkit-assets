@@ -24,11 +24,11 @@ function extractFunction(name) {
 }
 
 const group = (name, count) => `<div class="mcms-control-group" data-control-group="${name}">${Array.from({ length: count }, () => "<button></button>").join("")}</div>`;
-const dom = new JSDOM(`<!doctype html><html><body><div id="map"><div id="dock"><div class="mcms-launch-row"></div><div class="mcms-floating-filter">${group("visibility", 4)}${group("intelligence", 5)}${group("dashboard", 4)}${group("performance", 1)}</div><div class="mcms-screen-pins"><button></button><button></button><button></button><button></button></div></div><div id="panel"></div></div></body></html>`);
+const dom = new JSDOM(`<!doctype html><html><body><div id="map"><div id="dock" class="mcms-pos-bl"><div class="mcms-launch-row"></div><div class="mcms-floating-filter">${group("visibility", 4)}${group("intelligence", 5)}${group("dashboard", 4)}${group("performance", 1)}</div><div class="mcms-screen-pins"><button></button><button></button><button></button><button></button></div></div><div id="panel"></div></div></body></html>`);
 const control = dom.window.document.getElementById("dock");
 const mapElement = dom.window.document.getElementById("map");
 const viewport = { width: 1688, height: 1384, offsetLeft: 0, offsetTop: 0 };
-let mapRect = { left: 15, right: 930, top: 160, bottom: 722 };
+const mapRect = { left: 15, right: 1130, top: 160, bottom: 722 };
 control.querySelector(".mcms-launch-row").getBoundingClientRect = () => ({ width: 109, height: 56 });
 mapElement.getBoundingClientRect = () => mapRect;
 const sandbox = {
@@ -42,22 +42,22 @@ vm.createContext(sandbox);
 vm.runInContext(`${extractFunction("resolveDesktopDockWorkspace")}\n${extractFunction("resolveDesktopDockGrid")}\n${extractFunction("clearDesktopDockSizing")}\n${extractFunction("applyDesktopDockLayout")}\nthis.apply = applyDesktopDockLayout;`, sandbox);
 
 assert.equal(sandbox.apply(mapElement, control), true);
-assert.equal(control.dataset.mcmsDesktopDockFlow, "balanced");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-group-columns"), "2");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-width"), "646px");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-width"), "646px");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-max-height"), "36px");
-assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-offset-x"), "134px");
-assert.equal(control.dataset.mcmsDesktopDockScroll, "false");
-assert.deepEqual(Array.from(control.querySelectorAll(".mcms-control-group"), node => node.style.getPropertyValue("--mcms-desktop-group-width")), ["320px", "320px", "320px", "320px"]);
-
-mapRect = { left: 15, right: 1130, top: 160, bottom: 722 };
-sandbox.state.nudge.x = 0;
-assert.equal(sandbox.apply(mapElement, control), true);
-assert.equal(control.dataset.mcmsDesktopDockFlow, "compact", "wide workspace did not retain its compact command band");
+assert.equal(control.dataset.mcmsDesktopDockFlow, "compact");
 assert.equal(control.dataset.mcmsDesktopPinsInline, "true");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-width"), "1095px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-filter-width"), "730px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-width"), "244px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-pin-max-height"), "64px");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-offset-x"), "0px");
+assert.equal(control.dataset.mcmsDesktopDockScroll, "false");
+assert.deepEqual(Array.from(control.querySelectorAll(".mcms-control-group"), node => node.style.getPropertyValue("--mcms-desktop-group-width")), ["178px", "264px", "178px", "92px"]);
+assert.deepEqual(Array.from(control.querySelectorAll(".mcms-control-group"), node => node.style.getPropertyValue("--mcms-desktop-button-columns")), ["2", "3", "2", "1"]);
+
+sandbox.state.nudge.x = 30;
+assert.equal(sandbox.apply(mapElement, control), true);
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-offset-x"), "0px", "full-width deck retained an unsafe positive offset");
 
 sandbox.activeDeviceLayout = "tablet";
 assert.equal(sandbox.apply(mapElement, control), false);
-assert.equal(control.dataset.mcmsDesktopDockFlow, undefined);
-console.log("Issue #683 balanced Desktop command deck runtime regression passed.");
+assert.equal(control.style.getPropertyValue("--mcms-desktop-dock-offset-x"), "");
+console.log("Issue #685 compact offset Desktop command deck runtime regression passed.");

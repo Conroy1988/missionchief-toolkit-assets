@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.5.4] - 2026-08-03
+
+### Compact offset Desktop command deck
+
+- Reclaims the safe horizontal map corridor that was incorrectly discarded when the Desktop command bar had a saved horizontal nudge.
+- Turns the supplied 1690×1276 layout from a tall 44px two-by-two block into one shallow band of compact 36px controls.
+- Keeps Quick Jump inline inside the same band and clamps the effective offset so every control remains within the live map.
+- Retains the balanced fallback for genuinely narrow Desktop maps and the existing contained scroll fallback for short maps.
+- Leaves Settings, Tablet, protected iOS, saved layout data, auto-hide and themes unchanged with no new idle map work.
+
 ## [10.5.3] - 2026-08-03
 
 ### Balanced Desktop command deck

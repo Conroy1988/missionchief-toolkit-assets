@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.8
+// @version      10.3.9
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.8',
+        version: '10.3.9',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -523,14 +523,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.3.8",
-        title: "Smooth map interaction",
+        version: "10.3.9",
+        title: "Stable map colours during movement",
         highlights: Object.freeze([
-            "Pauses Toolkit layer, DOM, label and overlay work during every map pan or zoom, then performs one consolidated refresh after the gesture settles.",
-            "Tracks dirty mission, vehicle and building registries while ignoring tile-only mutation noise, preventing cluster churn from repeatedly invalidating caches or rebuilding the command UI.",
-            "Moves up to 200 Coverage Rings onto one shared Leaflet Canvas renderer and redraws them only after the viewport has settled.",
-            "Temporarily suspends Toolkit-owned marker and interface animations, map-skin tile filters and backdrop blur during movement, restoring every effect automatically afterwards.",
-            "Adds a 1,000-change movement stress regression while preserving all features, saved settings, themes, the memory repair and Desktop, Tablet and iOS behaviour without new network activity."
+            "Keeps the selected map skin and Road Priority colour treatment continuously visible while panning and zooming, eliminating the bright default-tile flash.",
+            "Hands movement-time colour processing from individual tiles to one Leaflet tile-pane composite, retaining the v10.3.8 compositing relief without changing the chosen skin.",
+            "Continues pausing Toolkit marker and interface animations, transitions, backdrop blur and will-change hints during gestures, then restores them after settling.",
+            "Preserves universal movement batching, tile-noise suppression, one settled refresh, shared Canvas Coverage Rings and every saved feature setting.",
+            "Adds parity coverage for all eleven map skins and their Road Priority variants without adding a timer, listener, observer, request or polling cadence."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -9071,7 +9071,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-economy="true"] #radio_messages_important li {
             content-visibility:auto !important; contain-intrinsic-size:0 58px !important;
         }html[data-mcms-economy="true"] .progress-bar-striped.active,
-        html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }html[data-mcms-map-moving="true"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }html[data-mcms-map-moving="true"] .leaflet-pane [class*="mcms-"],
+        html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="default"] .leaflet-tile-pane { filter:none !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="control"] .leaflet-tile-pane { filter:invert(92%) hue-rotate(182deg) brightness(62%) contrast(112%) saturate(72%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="incident"] .leaflet-tile-pane { filter:brightness(108%) contrast(142%) saturate(118%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="roads"] .leaflet-tile-pane { filter:grayscale(28%) brightness(104%) contrast(126%) saturate(70%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="urban"] .leaflet-tile-pane { filter:grayscale(100%) invert(88%) brightness(61%) contrast(122%) saturate(54%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="rural"] .leaflet-tile-pane { filter:grayscale(42%) brightness(94%) contrast(108%) saturate(58%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="nightshift"] .leaflet-tile-pane { filter:invert(88%) hue-rotate(165deg) brightness(68%) contrast(119%) saturate(72%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="fireCommand"] .leaflet-tile-pane { filter:grayscale(38%) sepia(58%) hue-rotate(335deg) saturate(145%) brightness(76%) contrast(124%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="policeTactical"] .leaflet-tile-pane { filter:grayscale(24%) invert(89%) sepia(18%) saturate(118%) hue-rotate(166deg) brightness(64%) contrast(126%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="medicalControl"] .leaflet-tile-pane { filter:grayscale(18%) invert(88%) sepia(22%) saturate(126%) hue-rotate(126deg) brightness(68%) contrast(116%) !important; }html[data-mcms-map-moving="true"][data-mc-map-skin="coastalCommand"] .leaflet-tile-pane { filter:grayscale(22%) sepia(24%) hue-rotate(145deg) saturate(138%) brightness(82%) contrast(118%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="default"] .leaflet-tile-pane { filter:grayscale(18%) brightness(106%) contrast(132%) saturate(82%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="control"] .leaflet-tile-pane { filter:invert(92%) hue-rotate(182deg) brightness(68%) contrast(132%) saturate(70%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="incident"] .leaflet-tile-pane { filter:brightness(112%) contrast(156%) saturate(110%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="roads"] .leaflet-tile-pane { filter:grayscale(35%) brightness(110%) contrast(150%) saturate(58%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="urban"] .leaflet-tile-pane { filter:grayscale(100%) invert(88%) brightness(68%) contrast(144%) saturate(50%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="rural"] .leaflet-tile-pane { filter:grayscale(48%) brightness(101%) contrast(130%) saturate(52%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="nightshift"] .leaflet-tile-pane { filter:invert(88%) hue-rotate(165deg) brightness(73%) contrast(136%) saturate(68%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="fireCommand"] .leaflet-tile-pane { filter:grayscale(42%) sepia(62%) hue-rotate(335deg) saturate(150%) brightness(82%) contrast(142%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="policeTactical"] .leaflet-tile-pane { filter:grayscale(28%) invert(89%) sepia(18%) saturate(112%) hue-rotate(166deg) brightness(70%) contrast(144%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="medicalControl"] .leaflet-tile-pane { filter:grayscale(22%) invert(88%) sepia(22%) saturate(122%) hue-rotate(126deg) brightness(74%) contrast(134%) !important; }html[data-mcms-map-moving="true"][data-mcms-road-priority="true"][data-mc-map-skin="coastalCommand"] .leaflet-tile-pane { filter:grayscale(26%) sepia(24%) hue-rotate(145deg) saturate(132%) brightness(88%) contrast(136%) !important; }html[data-mcms-map-moving="true"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }html[data-mcms-map-moving="true"] .leaflet-pane [class*="mcms-"],
         html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-mission,
         html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-vehicle,
         html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-building { animation-play-state:paused !important; transition:none !important; will-change:auto !important; }html[data-mcms-map-moving="true"] body #${SCRIPT.controlId},

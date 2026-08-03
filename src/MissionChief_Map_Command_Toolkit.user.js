@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.7
+// @version      10.3.8
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.7',
+        version: '10.3.8',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -523,14 +523,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.3.7",
-        title: "Accurate launch patch notes",
+        version: "10.3.8",
+        title: "Smooth map interaction",
         highlights: Object.freeze([
-            "Replaces the fixed v10.2 launch briefing with the title and highlights for the installed Toolkit release.",
-            "Binds the briefing version, release title and highlights to the canonical userscript version and current changelog entry.",
-            "Makes validation fail when a future version is prepared without refreshing its launch patch notes, preventing silent release drift.",
-            "Adds a direct Full Patch Notes action to the immutable GitHub release while keeping the official TKB installer route.",
-            "Preserves once-per-version display, opt-out, manual reopen, feature badges and Desktop, Tablet and iOS behaviour without adding runtime activity."
+            "Pauses Toolkit layer, DOM, label and overlay work during every map pan or zoom, then performs one consolidated refresh after the gesture settles.",
+            "Tracks dirty mission, vehicle and building registries while ignoring tile-only mutation noise, preventing cluster churn from repeatedly invalidating caches or rebuilding the command UI.",
+            "Moves up to 200 Coverage Rings onto one shared Leaflet Canvas renderer and redraws them only after the viewport has settled.",
+            "Temporarily suspends Toolkit-owned marker and interface animations, map-skin tile filters and backdrop blur during movement, restoring every effect automatically afterwards.",
+            "Adds a 1,000-change movement stress regression while preserving all features, saved settings, themes, the memory repair and Desktop, Tablet and iOS behaviour without new network activity."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1261,6 +1261,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const VEHICLE_CODE_STATUS_BY_CODE = new Map(VEHICLE_CODE_STATUS_DEFINITIONS.map(item => [item.code, item]));
     const VEHICLE_API_MIN_REFRESH_MS = 20 * 1000;
     const DOM_REFRESH_DEBOUNCE_MS = 260;
+    const MAP_INTERACTION_SETTLE_MS = 90;
     const STARTUP_IDLE_TIMEOUT_MS = 2500;
     const STARTUP_OPERATIONAL_DELAY_MS = 700;
     const STARTUP_OBSERVER_DELAY_MS = 900;
@@ -1489,10 +1490,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const economyLeafletOptionSnapshots = new Map();
     let economyLayerSyncTimer = null;
     let economyLayerEnforcement = false;
-    let economyMapMoving = false;
-    let economyDeferredMapRefresh = false;
-    let economyDeferredDomMutation = false;
-    let economyCanvasRenderer = null;
+    let mapInteractionMoving = false;
+    let mapInteractionSettling = false;
+    let mapInteractionDeferredRefresh = false;
+    let mapInteractionDeferredSnapshots = false;
+    let mapInteractionDeferredDomMutation = false;
+    let mapInteractionMarkerSyncNeeded = false;
+    const mapInteractionDirtyScopes = new Set();
+    let coverageCanvasRenderer = null;
     let allianceCreditGroup = null;
     let allianceCreditTimer = null;
     let missionAgeGroup = null;
@@ -9066,7 +9071,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-economy="true"] #radio_messages_important li {
             content-visibility:auto !important; contain-intrinsic-size:0 58px !important;
         }html[data-mcms-economy="true"] .progress-bar-striped.active,
-        html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId} { visibility:hidden !important; }html[data-mcms-economy="true"] #${SCRIPT.controlId},
+        html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }html[data-mcms-map-moving="true"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }html[data-mcms-map-moving="true"] .leaflet-pane [class*="mcms-"],
+        html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-mission,
+        html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-vehicle,
+        html[data-mcms-map-moving="true"] .leaflet-marker-icon.mcms-marker-building { animation-play-state:paused !important; transition:none !important; will-change:auto !important; }html[data-mcms-map-moving="true"] body #${SCRIPT.controlId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.panelId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.vehicleStatusId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.pressureBoardId},
+        html[data-mcms-map-moving="true"] body #${SCRIPT.majorIncidentFeedId},
+        html[data-mcms-map-moving="true"][data-mcms-custom-theme="true"] body #${SCRIPT.controlId},
+        html[data-mcms-map-moving="true"][data-mcms-custom-theme="true"] body #${SCRIPT.panelId} { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; filter:none !important; }html[data-mcms-map-moving="true"] #${SCRIPT.controlId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.panelId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.vehicleStatusId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.pressureBoardId} *,
+        html[data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId} * { animation-play-state:paused !important; transition:none !important; will-change:auto !important; }html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId} { visibility:hidden !important; }html[data-mcms-economy="true"] #${SCRIPT.controlId},
         html[data-mcms-economy="true"] #${SCRIPT.panelId},
         html[data-mcms-economy="true"] #${SCRIPT.vehicleStatusId},
         html[data-mcms-economy="true"] #${SCRIPT.majorIncidentFeedId},
@@ -14539,7 +14557,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function updateAllianceCreditLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         if (!state.allianceCredits || !state.visibility.allianceMissions) {
         clearAllianceCreditLabels();
         return;
@@ -14624,6 +14642,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function scheduleAllianceCreditRefresh(delay = 220) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(allianceCreditTimer);
         allianceCreditTimer = runtimeSetTimeout(updateAllianceCreditLabels, state.economyMode ? Math.max(700, delay) : delay);
     }
@@ -14709,9 +14728,10 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         });
     }
     function missionAgeRefreshPlan({enabled=true,moving=false,mapReady=true,markers=0,candidates=0,labels=0}={}){if(!enabled)return{clear:true,delay:0};if(moving||!mapReady)return{clear:!mapReady,delay:700};if(!markers||(!labels&&candidates))return{clear:false,delay:1000};return{clear:false,delay:MISSION_AGE_LABEL_REFRESH_MS};}
-    function updateMissionAgeLabels() { const enabled=Boolean(state.missionAge&&state.visibility.myMissions);if(!enabled){clearMissionAgeLabels();return;}if(state.economyMode&&economyMapMoving){scheduleMissionAgeRefresh(700);return;}scanInlineMissionMarkerData(true);installMissionMarkerAddHook();const map=findLeafletMapInstance(false);if(!map||!pageWindow.L||typeof pageWindow.L.layerGroup!=='function'||typeof pageWindow.L.marker!=='function'||typeof pageWindow.L.divIcon!=='function'){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}const floatPane=ensureMissionFloatPane(map);if(!floatPane){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}let markers=getMissionMarkerIndex().markers;if(!markers.length){invalidateMarkerRegistryCaches('mission');markers=getMissionMarkerIndex().markers;}const economyBounds=state.economyMode?economyPaddedBounds(map,0.08):null,activeMissionIds=new Set(),now=Date.now();let candidates=0,rendered=0,missingEvidence=0;try{if(!missionAgeGroup||missionAgeGroup._map!==map){clearMissionAgeLabels();missionAgeGroup=pageWindow.L.layerGroup();missionAgeGroup.__mcmsMissionAgeLayer=true;missionAgeGroup.addTo(map);}for(const marker of markers){const missionId=normaliseMissionId(marker?.mission_id??marker?.missionId??marker?.options?.mission_id??marker?.options?.missionId);if(missionId===null)continue;if(!missionKnownPersonal(marker,missionId)){if(!missionHasExplicitAllianceOwner(marker,missionId))missingEvidence+=1;continue;}candidates+=1;const existingLabel=missionAgeLabels.get(missionId);let latLng;try{latLng=marker.getLatLng?.();}catch(error){latLng=null;}if(!latLng||(economyBounds&&!economyBounds.contains?.(latLng)))continue;try{const onMap=typeof map.hasLayer==='function'?map.hasLayer(marker):Boolean(marker._map);if(!onMap){if(existingLabel)activeMissionIds.add(missionId);continue;}}catch(error){if(existingLabel)activeMissionIds.add(missionId);continue;}let createdAt=getMissionCreatedAt(marker,missionId);if(createdAt===null){captureMissionMarkerData(marker);createdAt=getMissionCreatedAt(marker,missionId);}if(createdAt===null){missingEvidence+=1;if(existingLabel)activeMissionIds.add(missionId);continue;}const ageMs=Math.max(0,now-createdAt),ageText=formatMissionAge(createdAt,now),severity=missionAgeSeverity(ageMs);activeMissionIds.add(missionId);let label=existingLabel;const attached=Boolean(label&&typeof missionAgeGroup.hasLayer==='function'&&missionAgeGroup.hasLayer(label));if(!label||!attached){if(label)try{missionAgeGroup.removeLayer(label);}catch(error){}label=pageWindow.L.marker(latLng,{interactive:false,keyboard:false,bubblingMouseEvents:false,pane:floatPane,zIndexOffset:0,icon:makeMissionAgeIcon(ageText,severity)});label.__mcmsMissionAgeLabel=true;label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;label.__mcmsMissionAgeSourceMarker=marker;label.addTo(missionAgeGroup);missionAgeLabels.set(missionId,label);}else{try{label.setLatLng(latLng);}catch(error){}label.__mcmsMissionAgeSourceMarker=marker;if(label.__mcmsMissionAgeText!==ageText||label.__mcmsMissionAgeSeverityRank!==severity.rank||label.__mcmsMissionAgeCreatedAt!==createdAt){label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;try{label.setIcon(makeMissionAgeIcon(ageText,severity));}catch(error){}}}rendered+=1;}for(const[missionId,label]of missionAgeLabels.entries()){if(activeMissionIds.has(missionId))continue;missionAgeLabels.delete(missionId);try{missionAgeGroup.removeLayer(label);}catch(error){}}const plan=missionAgeRefreshPlan({enabled,moving:false,mapReady:true,markers:markers.length,candidates:candidates+missingEvidence,labels:rendered});if(!document.hidden)scheduleMissionAgeRefresh(plan.delay);}catch(error){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(1000);} }
+    function updateMissionAgeLabels() { const enabled=Boolean(state.missionAge&&state.visibility.myMissions);if(!enabled){clearMissionAgeLabels();return;}if(deferMapInteractionRefresh())return;scanInlineMissionMarkerData(true);installMissionMarkerAddHook();const map=findLeafletMapInstance(false);if(!map||!pageWindow.L||typeof pageWindow.L.layerGroup!=='function'||typeof pageWindow.L.marker!=='function'||typeof pageWindow.L.divIcon!=='function'){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}const floatPane=ensureMissionFloatPane(map);if(!floatPane){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}let markers=getMissionMarkerIndex().markers;if(!markers.length){invalidateMarkerRegistryCaches('mission');markers=getMissionMarkerIndex().markers;}const economyBounds=state.economyMode?economyPaddedBounds(map,0.08):null,activeMissionIds=new Set(),now=Date.now();let candidates=0,rendered=0,missingEvidence=0;try{if(!missionAgeGroup||missionAgeGroup._map!==map){clearMissionAgeLabels();missionAgeGroup=pageWindow.L.layerGroup();missionAgeGroup.__mcmsMissionAgeLayer=true;missionAgeGroup.addTo(map);}for(const marker of markers){const missionId=normaliseMissionId(marker?.mission_id??marker?.missionId??marker?.options?.mission_id??marker?.options?.missionId);if(missionId===null)continue;if(!missionKnownPersonal(marker,missionId)){if(!missionHasExplicitAllianceOwner(marker,missionId))missingEvidence+=1;continue;}candidates+=1;const existingLabel=missionAgeLabels.get(missionId);let latLng;try{latLng=marker.getLatLng?.();}catch(error){latLng=null;}if(!latLng||(economyBounds&&!economyBounds.contains?.(latLng)))continue;try{const onMap=typeof map.hasLayer==='function'?map.hasLayer(marker):Boolean(marker._map);if(!onMap){if(existingLabel)activeMissionIds.add(missionId);continue;}}catch(error){if(existingLabel)activeMissionIds.add(missionId);continue;}let createdAt=getMissionCreatedAt(marker,missionId);if(createdAt===null){captureMissionMarkerData(marker);createdAt=getMissionCreatedAt(marker,missionId);}if(createdAt===null){missingEvidence+=1;if(existingLabel)activeMissionIds.add(missionId);continue;}const ageMs=Math.max(0,now-createdAt),ageText=formatMissionAge(createdAt,now),severity=missionAgeSeverity(ageMs);activeMissionIds.add(missionId);let label=existingLabel;const attached=Boolean(label&&typeof missionAgeGroup.hasLayer==='function'&&missionAgeGroup.hasLayer(label));if(!label||!attached){if(label)try{missionAgeGroup.removeLayer(label);}catch(error){}label=pageWindow.L.marker(latLng,{interactive:false,keyboard:false,bubblingMouseEvents:false,pane:floatPane,zIndexOffset:0,icon:makeMissionAgeIcon(ageText,severity)});label.__mcmsMissionAgeLabel=true;label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;label.__mcmsMissionAgeSourceMarker=marker;label.addTo(missionAgeGroup);missionAgeLabels.set(missionId,label);}else{try{label.setLatLng(latLng);}catch(error){}label.__mcmsMissionAgeSourceMarker=marker;if(label.__mcmsMissionAgeText!==ageText||label.__mcmsMissionAgeSeverityRank!==severity.rank||label.__mcmsMissionAgeCreatedAt!==createdAt){label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;try{label.setIcon(makeMissionAgeIcon(ageText,severity));}catch(error){}}}rendered+=1;}for(const[missionId,label]of missionAgeLabels.entries()){if(activeMissionIds.has(missionId))continue;missionAgeLabels.delete(missionId);try{missionAgeGroup.removeLayer(label);}catch(error){}}const plan=missionAgeRefreshPlan({enabled,moving:false,mapReady:true,markers:markers.length,candidates:candidates+missingEvidence,labels:rendered});if(!document.hidden)scheduleMissionAgeRefresh(plan.delay);}catch(error){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(1000);} }
 
     function scheduleMissionAgeRefresh(delay = 220) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(missionAgeTimer);
         missionAgeTimer = runtimeSetTimeout(updateMissionAgeLabels, state.economyMode ? Math.max(700, delay) : delay);
     }
@@ -14765,7 +14785,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function updateUnitCommitmentLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         if (!state.unitCommitment) { clearUnitCommitmentLabels(); return; }
         const vehicleDataFreshnessMs = state.economyMode ? 5 * 60 * 1000 : VEHICLE_API_REFRESH_MS;
         if (!vehicleApiReady || Date.now() - vehicleApiLastFetch >= vehicleDataFreshnessMs) refreshPersonalVehicleData(false);
@@ -14822,6 +14842,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function scheduleUnitCommitmentRefresh(delay = 400) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(unitCommitmentTimer);
         unitCommitmentTimer = runtimeSetTimeout(updateUnitCommitmentLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
@@ -14959,7 +14980,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function updateTransportWatcherLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(transportWatcherTimer);
         transportWatcherTimer = null;
         if (!state.transportWatcher) {
@@ -15042,6 +15063,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function scheduleTransportWatcherRefresh(delay = 320) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(transportWatcherTimer);
         transportWatcherTimer = runtimeSetTimeout(updateTransportWatcherLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
@@ -17071,7 +17093,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateResourceGapLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(resourceGapTimer);
         resourceGapTimer = null;
         if (!state.resourceGap.enabled) { clearResourceGapLabels(); return; }
@@ -17127,6 +17149,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleResourceGapRefresh(delay = 420) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(resourceGapTimer);
         resourceGapTimer = runtimeSetTimeout(updateResourceGapLabels, state.economyMode ? Math.max(1500, delay) : delay);
     }
@@ -17308,10 +17331,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             economyLayerSyncTimer = null;
             restoreEconomyLayers(existingMap);
             restoreLeafletEconomyPolicy();
-            disposeEconomyCanvasRenderer(existingMap);
-            document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
-            economyDeferredMapRefresh = false;
-            economyDeferredDomMutation = false;
         }
         updateUI();
         return;
@@ -17328,15 +17347,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         economyLayerSyncTimer = null;
         restoreEconomyLayers(map);
         restoreLeafletEconomyPolicy();
-        document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
         try { map?.invalidateSize?.({ animate: false }); } catch (err) {}
         }
         runtimeRescheduleTasks(!next);
         coverageRenderSignature = '';
         majorIncidentFeedRenderSignature = '';
-        economyDeferredMapRefresh = false;
-        economyDeferredDomMutation = false;
-        if (!next) disposeEconomyCanvasRenderer(map);
         if (state.coverage.enabled) { clearCoverageRings(); scheduleCoverageRefresh(); }
         scheduleMajorIncidentFeedRender(0);
         scheduleEnabledMapRefreshes({ includeSnapshots: true, positionPanel: true });
@@ -17760,6 +17775,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleMarkerStateSync(delay = 20, trailing = false) {
+        if (deferMapInteractionRefresh({ markerSync: true, fullRefresh: false })) return;
         const timerName = trailing ? 'markerStateTrailingTimer' : 'markerStateSyncTimer';
         const currentTimer = trailing ? markerStateTrailingTimer : markerStateSyncTimer;
         runtimeClearTimeout(currentTimer);
@@ -17777,6 +17793,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleMarkerClassification() {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(classifyTimer);
         classifyTimer = runtimeSetTimeout(classifyMarkersNow, state.economyMode ? 420 : 180);
     }
@@ -17814,7 +17831,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function isToolkitLeafletLayer(layer) {
         return Boolean(layer && (
-        layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer ||
+        layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer || layer.__mcmsCoverageRenderer ||
         layer.__mcmsAllianceCreditLabel || layer.__mcmsAllianceCreditLayer ||
         layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
         layer.__mcmsUnitCommitmentLabel || layer.__mcmsUnitCommitmentLayer ||
@@ -17829,11 +17846,95 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     let enabledMapRefreshTimer = null;
     let pendingEnabledMapRefresh = { includeSnapshots: false, positionPanel: false, refreshOperational: false, fullRefresh: false };
 
+    function mapInteractionWorkDeferred() {
+        return mapInteractionMoving || mapInteractionSettling;
+    }
+
+    function deferMapInteractionRefresh({ scope = '', includeSnapshots = false, markerSync = false, domMutation = false, fullRefresh = true } = {}) {
+        if (!mapInteractionWorkDeferred()) return false;
+        if (scope) mapInteractionDirtyScopes.add(['mission', 'vehicle', 'building'].includes(scope) ? scope : 'all');
+        mapInteractionDeferredRefresh ||= Boolean(fullRefresh);
+        mapInteractionDeferredSnapshots ||= Boolean(includeSnapshots);
+        mapInteractionMarkerSyncNeeded ||= Boolean(markerSync);
+        mapInteractionDeferredDomMutation ||= Boolean(domMutation);
+        return true;
+    }
+
+    function cancelPendingMapRenderWork() {
+        const fullRefreshPending = [classifyTimer, allianceCreditTimer, missionAgeTimer, unitCommitmentTimer, transportWatcherTimer, resourceGapTimer, stuckMissionTimer].some(timer => timer !== null);
+        const markerSyncPending = markerStateSyncTimer !== null || markerStateTrailingTimer !== null;
+        const snapshotPending = missionSnapshotTimer !== null;
+        const domMutationPending = mutationTimer !== null;
+        for (const timer of [mutationTimer, classifyTimer, markerStateSyncTimer, markerStateTrailingTimer, coverageTimer, allianceCreditTimer, missionAgeTimer, unitCommitmentTimer, transportWatcherTimer, resourceGapTimer, stuckMissionTimer, missionSnapshotTimer]) runtimeClearTimeout(timer);
+        mutationTimer = null;
+        classifyTimer = null;
+        markerStateSyncTimer = null;
+        markerStateTrailingTimer = null;
+        coverageTimer = null;
+        allianceCreditTimer = null;
+        missionAgeTimer = null;
+        unitCommitmentTimer = null;
+        transportWatcherTimer = null;
+        resourceGapTimer = null;
+        stuckMissionTimer = null;
+        missionSnapshotTimer = null;
+        mapInteractionDeferredRefresh ||= fullRefreshPending;
+        mapInteractionMarkerSyncNeeded ||= markerSyncPending;
+        mapInteractionDeferredSnapshots ||= snapshotPending;
+        mapInteractionDeferredDomMutation ||= domMutationPending;
+    }
+
+    function beginMapInteractionBatch() {
+        mapInteractionMoving = true;
+        mapInteractionSettling = false;
+        if (enabledMapRefreshTimer !== null) {
+        runtimeClearTimeout(enabledMapRefreshTimer);
+        enabledMapRefreshTimer = null;
+        }
+        cancelPendingMapRenderWork();
+        document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
+    }
+
+    function completeMapInteractionBatch() {
+        const scopes = Array.from(mapInteractionDirtyScopes);
+        if (mapInteractionDeferredDomMutation && !scopes.length) scopes.push('all');
+        const summary = {
+        scopes,
+        fullRefresh: mapInteractionDeferredRefresh || mapInteractionDeferredDomMutation || scopes.length > 0,
+        includeSnapshots: mapInteractionDeferredSnapshots || mapInteractionDeferredDomMutation || scopes.some(scope => scope !== 'building'),
+        markerSync: mapInteractionMarkerSyncNeeded || scopes.length > 0,
+        domMutation: mapInteractionDeferredDomMutation
+        };
+        mapInteractionMoving = false;
+        mapInteractionSettling = false;
+        mapInteractionDeferredRefresh = false;
+        mapInteractionDeferredSnapshots = false;
+        mapInteractionDeferredDomMutation = false;
+        mapInteractionMarkerSyncNeeded = false;
+        mapInteractionDirtyScopes.clear();
+        document.documentElement?.setAttribute?.('data-mcms-map-moving', 'false');
+        if (scopes.includes('all')) invalidateMarkerRegistryCaches('all');
+        else for (const scope of scopes) invalidateMarkerRegistryCaches(scope);
+        return summary;
+    }
+
     function flushEnabledMapRefreshes() {
         enabledMapRefreshTimer = null;
         if (runtime.destroyed) return;
         const request = pendingEnabledMapRefresh;
         pendingEnabledMapRefresh = { includeSnapshots: false, positionPanel: false, refreshOperational: false, fullRefresh: false };
+        const movement = mapInteractionSettling ? completeMapInteractionBatch() : null;
+        if (movement) {
+        request.fullRefresh ||= movement.fullRefresh;
+        request.includeSnapshots ||= movement.includeSnapshots;
+        if (movement.domMutation) {
+            invalidateMapElementCache();
+            refreshSuppression();
+            fitControlToMap();
+        }
+        if (movement.markerSync) scheduleMarkerStateSync(0, false);
+        if (state.economyMode) scheduleEconomyLayerSync(80);
+        }
         if (state.safeMode.enabled) { if (request.positionPanel && !dragState) schedulePanelPosition(true, 60); return; }
 
         if (request.fullRefresh && markerClassificationNeeded()) scheduleMarkerClassification();
@@ -17857,9 +17958,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         pendingEnabledMapRefresh.positionPanel ||= Boolean(positionPanel);
         pendingEnabledMapRefresh.refreshOperational ||= Boolean(refreshOperational);
         pendingEnabledMapRefresh.fullRefresh ||= !mapOnly;
-        if (state.economyMode && economyMapMoving) return;
+        if (mapInteractionMoving) return;
         if (enabledMapRefreshTimer !== null) return;
-        enabledMapRefreshTimer = runtimeSetTimeout(flushEnabledMapRefreshes, state.economyMode ? 180 : 35);
+        enabledMapRefreshTimer = runtimeSetTimeout(flushEnabledMapRefreshes, mapInteractionSettling ? MAP_INTERACTION_SETTLE_MS : state.economyMode ? 180 : 35);
     }
 
     function reconcileFeatureRefreshes({ includeSnapshots = true, positionPanel = false } = {}) {
@@ -17996,13 +18097,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const onLayerAdd = event => {
         const layer = event?.layer;
         if (isToolkitLeafletLayer(layer) || economyLayerEnforcement) return;
-        if (state.economyMode) applyEconomyToLeafletLayer(map, layer);
         const scope = inferScope(layer);
+        if (deferMapInteractionRefresh({
+            scope,
+            includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all',
+            markerSync: scope === 'vehicle' || scope === 'building'
+        })) return;
+        if (state.economyMode) applyEconomyToLeafletLayer(map, layer);
         invalidateMarkerRegistryCaches(scope);
-        if (state.economyMode && economyMapMoving) {
-            economyDeferredMapRefresh = true;
-            return;
-        }
 
         const isVehicleLayer = scope === 'vehicle';
         if (isVehicleLayer && layer?._icon) markVehicleIcon(layer._icon);
@@ -18021,16 +18123,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const layer = event?.layer;
         if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || enforcingNativeAllianceBuildingVisibility || economyLayerEnforcement) return;
         const scope = inferScope(layer);
+        if (deferMapInteractionRefresh({
+            scope,
+            includeSnapshots: scope !== 'building',
+            markerSync: scope === 'vehicle' || scope === 'building'
+        })) return;
         if (scope === 'vehicle' && followedVehicleMarker === layer) stopVehicleFollow(true);
         invalidateMarkerRegistryCaches(scope);
-        if (state.economyMode && economyMapMoving) {
-            economyDeferredMapRefresh = true;
-            return;
-        }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope !== 'building', positionPanel: false });
         };
 
         const onNativeOverlayChange = () => {
+        if (deferMapInteractionRefresh({ scope: 'building', markerSync: true })) return;
         invalidateMarkerRegistryCaches('building');
         scheduleMarkerStateSync(0, false);
         scheduleMarkerStateSync(180, true);
@@ -18038,23 +18142,16 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
         const onMapMoveStart = () => {
         if (followedVehicleId && !vehicleFollowRecentering) stopVehicleFollow(true);
-        economyMapMoving = true;
-        document.documentElement.setAttribute('data-mcms-map-moving', 'true');
+        beginMapInteractionBatch();
         };
 
-        const onMapMove = () => {
-        economyMapMoving = false;
-        document.documentElement.setAttribute('data-mcms-map-moving', 'false');
-        const deferredRefresh = economyDeferredMapRefresh || economyDeferredDomMutation;
-        economyDeferredMapRefresh = false;
-        economyDeferredDomMutation = false;
-        if (deferredRefresh) {
-            invalidateMarkerRegistryCaches('all');
-            ensureUi();
-        }
-        if (state.economyMode) scheduleEconomyLayerSync(80);
-        if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement(map)) scheduleMarkerStateSync(0, false);
-        scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
+        const onMapMove = event => {
+        if (event?.type === 'viewreset' && mapInteractionMoving) return;
+        mapInteractionMoving = false;
+        mapInteractionSettling = true;
+        mapInteractionMarkerSyncNeeded ||= Boolean(!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement(map));
+        document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
+        scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: true, refreshOperational: false, mapOnly: true });
         };
 
         const onTabletQuickWheel = event => {
@@ -18110,24 +18207,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
     }
 
-    function economyLeafletPathRenderer(map) {
-        if (!state.economyMode || !map || typeof pageWindow.L?.canvas !== 'function') return undefined;
+    function coverageLeafletPathRenderer(map) {
+        if (!map || typeof pageWindow.L?.canvas !== 'function') return undefined;
         try {
-        if (!economyCanvasRenderer || economyCanvasRenderer._map !== map) {
-            const previousRenderer = economyCanvasRenderer;
+        if (!coverageCanvasRenderer || coverageCanvasRenderer._map !== map) {
+            const previousRenderer = coverageCanvasRenderer;
             if (previousRenderer?._map && previousRenderer._map !== map) {
                 try { previousRenderer._map.removeLayer?.(previousRenderer); } catch (err) {}
             }
-            economyCanvasRenderer = pageWindow.L.canvas({ padding: 0.08, tolerance: 2 });
-            economyCanvasRenderer.__mcmsEconomyRenderer = true;
+            coverageCanvasRenderer = pageWindow.L.canvas({ padding: 0.08, tolerance: 2 });
+            coverageCanvasRenderer.__mcmsCoverageRenderer = true;
         }
-        return economyCanvasRenderer;
+        return coverageCanvasRenderer;
         } catch (err) { return undefined; }
     }
 
-    function disposeEconomyCanvasRenderer(map = findLeafletMapInstance(false)) {
-        const renderer = economyCanvasRenderer;
-        economyCanvasRenderer = null;
+    function disposeCoverageCanvasRenderer(map = findLeafletMapInstance(false)) {
+        const renderer = coverageCanvasRenderer;
+        coverageCanvasRenderer = null;
         if (!renderer || !map) return;
         try { if (map.hasLayer?.(renderer)) map.removeLayer(renderer); } catch (err) {}
     }
@@ -18161,7 +18258,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateCoverageRings() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh({ fullRefresh: false })) return;
         if (!state.coverage.enabled) { clearCoverageRings(); return; }
         const map = findLeafletMapInstance(false);
 
@@ -18190,7 +18287,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         coverageRenderSignature = signature;
 
         const metres = radiusMi * 1609.344;
-        const renderer = economyLeafletPathRenderer(map);
+        const renderer = coverageLeafletPathRenderer(map);
         for (const layer of layers) {
             const ring = pageWindow.L.circle(layer.getLatLng(), {
                 radius: metres,
@@ -18214,6 +18311,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleCoverageRefresh() {
+        if (deferMapInteractionRefresh({ fullRefresh: false })) return;
         runtimeClearTimeout(coverageTimer);
         coverageTimer = runtimeSetTimeout(updateCoverageRings, state.economyMode ? 650 : 220);
     }
@@ -19508,6 +19606,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleMissionSnapshotRefresh(delay = 600) {
+        if (deferMapInteractionRefresh({ includeSnapshots: true, fullRefresh: false })) return;
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
         if (runtime.destroyed || document.hidden || !missionSnapshotsNeeded()) return;
@@ -21385,7 +21484,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function updateStuckMissionLabels() {
-        if (state.economyMode && economyMapMoving) return;
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(stuckMissionTimer);
         stuckMissionTimer = null;
         if (!state.stuckDetector.enabled) {
@@ -21472,6 +21571,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function scheduleStuckMissionRefresh(delay = 300) {
+        if (deferMapInteractionRefresh()) return;
         runtimeClearTimeout(stuckMissionTimer);
         stuckMissionTimer = runtimeSetTimeout(updateStuckMissionLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
@@ -30806,6 +30906,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return elementCount > 0;
     }
 
+    function mutationIsLeafletTileNoise(mutation) {
+        if (!mutation || mutation.type !== 'childList') return false;
+        const target = mutation.target;
+        if (target?.nodeType === 1 && (target.matches?.('.leaflet-tile-pane, .leaflet-tile-container') || target.closest?.('.leaflet-tile-pane'))) return true;
+        const nodes = [...Array.from(mutation.addedNodes || []), ...Array.from(mutation.removedNodes || [])].filter(node => node?.nodeType === 1);
+        return nodes.length > 0 && nodes.every(node => node.matches?.('.leaflet-tile-pane, .leaflet-tile-container, .leaflet-tile'));
+    }
+
     function mutationAddsLeafletMarkerIcon(mutation) {
         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
         for (const node of mutation.addedNodes) {
@@ -31404,10 +31512,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 10 * 60 * 1000
         });
         runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredMapRefresh = true;
-                return;
-            }
+            if (deferMapInteractionRefresh({ includeSnapshots: missionSnapshotsNeeded() })) return;
             installMissionMarkerAddHook();
             installRadioMessageHook();
             installCreditsUpdateHook();
@@ -31468,8 +31573,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runBootIntegration('credits observer', observeCreditValue);
         runBootIntegration('custom vehicle badges', installCustomVehicleBadges);
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredDomMutation = true;
+            if (mapInteractionWorkDeferred()) {
+                if (!mutations.every(mutationIsLeafletTileNoise)) deferMapInteractionRefresh({ includeSnapshots: true, domMutation: true });
                 return;
             }
             let externalMutationFound = false;
@@ -31478,6 +31583,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             let layoutChanged = false;
             let toolkitUiRemoved = false;
             for (const mutation of mutations) {
+                if (mutationIsLeafletTileNoise(mutation)) continue;
                 const removesToolkitUi = mutationRemovesToolkitUi(mutation);
                 if (removesToolkitUi) toolkitUiRemoved = true;
                 if (mutationBelongsToToolkit(mutation) && !removesToolkitUi) continue;
@@ -31500,14 +31606,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (!state.visibility.buildings || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
             }
             if (layoutChanged) invalidateMapElementCache();
-            if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+            if (document.hidden || dragState || mapInteractionWorkDeferred()) return;
             runtimeClearTimeout(mutationTimer);
             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
             const mutationDelay = startupSettling
                 ? STARTUP_MUTATION_DEBOUNCE_MS
                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
             mutationTimer = runtimeSetTimeout(() => {
-                if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+                if (dragState || document.hidden || runtime.destroyed || mapInteractionWorkDeferred()) return;
                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
@@ -31627,10 +31733,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             document.removeEventListener('touchcancel', endPanelDrag, true);
             document.documentElement.style.cursor = '';
             if (document.body) document.body.style.userSelect = '';
+            mapInteractionMoving = false;
+            mapInteractionSettling = false;
+            mapInteractionDeferredRefresh = false;
+            mapInteractionDeferredSnapshots = false;
+            mapInteractionDeferredDomMutation = false;
+            mapInteractionMarkerSyncNeeded = false;
+            mapInteractionDirtyScopes.clear();
+            document.documentElement?.setAttribute?.('data-mcms-map-moving', 'false');
             restoreEconomyLayers();
             restoreLeafletEconomyPolicy();
             releaseNativeAllianceBuildingVisibility(cachedMap);
-            disposeEconomyCanvasRenderer();
+            disposeCoverageCanvasRenderer();
             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
             majorIncidentFeedLayoutTimer = null;
             const originalBuildingVisibility = state.visibility.buildings;

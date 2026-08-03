@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 666,
-    "version": "10.3.7",
-    "sourceBytes": 2149007,
-    "sourceLines": 32513,
-    "sourceSha256": "3360d13bea3766738acdc15da1136c263176f74190663a3cb028bf6a1f2a56ad",
-    "templateBytes": 786077,
-    "templateLines": 9387,
-    "templateSha256": "7749c5fdbe4f8aab99fab992a471cdad22b57f0037358097477f7c414bc8b5e2",
-    "canonicalCssSha256": "c6b5ae0ad0ba1dfeb313f8cb71616162bedce904d6fb32847020d8f255ec79fd",
-    "maxSourceBytes": 2160000,
-    "maxSourceLines": 32650,
+    "issue": 668,
+    "version": "10.3.8",
+    "sourceBytes": 2156553,
+    "sourceLines": 32627,
+    "sourceSha256": "453afc7d520ae16f340e59b80b51af0445615f573c4c119444768c3c04cc4561",
+    "templateBytes": 787688,
+    "templateLines": 9400,
+    "templateSha256": "4441736af2d3570b23acd04b4b4b2de8255ae4c8262983fa1a88d150a14fceea",
+    "canonicalCssSha256": "c39d21c848906529e888e0a636faf68839e24b0b22c996c5a03e3295c93f5f45",
+    "maxSourceBytes": 2180000,
+    "maxSourceLines": 32900,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.6",
+    "baseline": "10.3.7",
     "approvedGrowth": {
-      "sourceBytes": 938,
-      "sourceLines": 20,
-      "templateBytes": 182,
-      "templateLines": 4
+      "sourceBytes": 7546,
+      "sourceLines": 114,
+      "templateBytes": 1611,
+      "templateLines": 13
     },
-    "scope": "Issue #666 installed-release briefing data, changelog parity validation and direct immutable patch-note navigation"
+    "scope": "Issue #668 universal map-movement batching, tile-noise suppression, shared Canvas Coverage Rings and temporary compositing relief"
   }
 }

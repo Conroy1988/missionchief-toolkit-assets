@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.3.8] - 2026-08-02
+
+### Smooth map interaction
+
+- Pauses Toolkit layer, DOM, label and overlay work during every map pan or zoom, then performs one consolidated refresh after the gesture settles.
+- Tracks dirty mission, vehicle and building registries while ignoring tile-only mutation noise, preventing cluster churn from repeatedly invalidating caches or rebuilding the command UI.
+- Moves up to 200 Coverage Rings onto one shared Leaflet Canvas renderer and redraws them only after the viewport has settled.
+- Temporarily suspends Toolkit-owned marker and interface animations, map-skin tile filters and backdrop blur during movement, restoring every effect automatically afterwards.
+- Adds a 1,000-change movement stress regression while preserving all features, saved settings, themes, the memory repair and Desktop, Tablet and iOS behaviour without new network activity.
+
 ## [10.3.7] - 2026-08-02
 
 ### Accurate launch patch notes

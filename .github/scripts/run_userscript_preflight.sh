@@ -22,6 +22,7 @@ node .github/scripts/test_issue641_desktop_dock_fit_runtime.mjs
 node .github/scripts/test_issue645_desktop_command_workspace_runtime.mjs
 node .github/scripts/test_issue664_wide_desktop_command_band_runtime.mjs
 node .github/scripts/test_issue666_update_briefing_runtime.mjs
+node .github/scripts/test_issue668_map_interaction_runtime.mjs
 node .github/scripts/test_issue517_incident_command_wire_runtime.js
 node .github/scripts/test_issue564_incident_feed_attended_runtime.js
 node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs

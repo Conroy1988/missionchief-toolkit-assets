@@ -9399,9 +9399,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #mc-map-command-toolkit-map-measure .mcms-measure-readout strong { color:#fff !important; font-size:20px !important; line-height:1.1 !important; }
         #mc-map-command-toolkit-map-measure .mcms-measure-readout span { color:#9bb3c2 !important; font-size:9px !important; line-height:1.4 !important; }
         #mc-map-command-toolkit-map-measure .mcms-measure-guidance { color:#8fa7b6 !important; font-size:8.5px !important; line-height:1.4 !important; }
-        #mc-map-command-toolkit-command-experience .mcms-incident-card-preview { display:grid !important; gap:10px !important; }
-        #mc-map-command-toolkit-command-experience .mcms-incident-card-preview img { display:block !important; width:100% !important; height:auto !important; aspect-ratio:16/9 !important; border:1px solid rgba(104,211,255,.38) !important; border-radius:12px !important; background:#071018 !important; box-shadow:0 14px 38px rgba(0,0,0,.4) !important; }
-        #mc-map-command-toolkit-command-experience .mcms-incident-card-preview p { margin:0 !important; color:#9fb5c3 !important; font-size:10px !important; line-height:1.45 !important; }
         html[data-mcms-economy="true"] #mc-map-command-toolkit-map-measure { box-shadow:0 12px 30px rgba(0,0,0,.54) !important; }
         @media (max-width:620px) {
             #mc-map-command-toolkit-map-measure { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; }

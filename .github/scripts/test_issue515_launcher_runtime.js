@@ -125,6 +125,7 @@ const sandbox = {
     fullscreenMapTarget: null,
     settingsPanelActivated: false,
     operationalStartupComplete: true,
+    mapMeasureRuntime: { active: false, map: null },
     isTouchLayoutActive: () => false,
     getLargestLeafletMap: () => documentStub.mainMap,
     createControl: map => { calls.push(map); return control; },
@@ -139,6 +140,7 @@ const sandbox = {
     maybeShowUpdateBriefing() {},
     maybeShowSetupWizard() { return false; },
     positionPayoutFlashOverlay() {},
+    stopMapMeasure() {},
     teardownToolkitCommandShell() { teardownCount += 1; },
 };
 vm.createContext(sandbox);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.3.9
+// @version      10.4.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.3.9',
+        version: '10.4.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -481,6 +481,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         helpCenterId: 'mc-map-command-toolkit-help-center',
         commandPaletteId: 'mc-map-command-toolkit-command-palette',
         commandExperienceModalId: 'mc-map-command-toolkit-command-experience',
+        mapMeasureHudId: 'mc-map-command-toolkit-map-measure',
         contextMenuId: 'mc-map-command-toolkit-context-menu',
         vehicleFollowId: 'mc-map-command-toolkit-vehicle-follow',
         quickWheelId: 'mc-map-command-toolkit-quick-wheel',
@@ -523,14 +524,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.3.9",
-        title: "Stable map colours during movement",
+        version: "10.4.0",
+        title: "On-demand map measurement and incident cards",
         highlights: Object.freeze([
-            "Keeps the selected map skin and Road Priority colour treatment continuously visible while panning and zooming, eliminating the bright default-tile flash.",
-            "Hands movement-time colour processing from individual tiles to one Leaflet tile-pane composite, retaining the v10.3.8 compositing relief without changing the chosen skin.",
-            "Continues pausing Toolkit marker and interface animations, transitions, backdrop blur and will-change hints during gestures, then restores them after settling.",
-            "Preserves universal movement batching, tile-noise suppression, one settled refresh, shared Canvas Coverage Rings and every saved feature setting.",
-            "Adds parity coverage for all eleven map skins and their Road Priority variants without adding a timer, listener, observer, request or polling cadence."
+            "Adds a deliberate Map Measure mode for distance, route length, operational boundaries and area, with miles, kilometres, square miles and hectares shown live.",
+            "Adds a branded 16:9 Incident Card generated locally from the currently open mission, ready to copy or download for Discord.",
+            "Makes Incident Cards available from Mission Operations, the Command Palette and a mission's contextual menu.",
+            "Keeps both tools dormant until explicitly opened and removes every temporary listener, Leaflet layer and image reference when closed.",
+            "Preserves the v10.3.8–v10.3.9 movement governor, stable map colours, every theme and all saved Toolkit settings without adding background cadence."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -863,7 +864,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
         'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
         'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
-        'financialIntelligence', 'toolkitDoctor', 'safeMode', 'sessionCleanup'
+        'financialIntelligence', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
+        'mapMeasure', 'incidentCard'
     ]);
     const toolkitAnalyticsSessionSignals = new Set();
 
@@ -1677,6 +1679,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let dockGestureStart = null;
     let dockGestureConsumed = false;
     let contextCommandTarget = null;
+    const mapMeasureRuntime = {
+        active: false,
+        mode: 'distance',
+        map: null,
+        group: null,
+        renderer: null,
+        points: [],
+        clickHandler: null,
+        keyHandler: null,
+        hud: null
+    };
+    let incidentCardRuntime = null;
+    runtime.cleanupCallbacks.push(() => {
+        stopMapMeasure(false);
+        clearIncidentCardRuntime();
+    });
     const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'finance', 'locations', 'appearance', 'settings']);
     const COMMAND_SECTION_META = Object.freeze({
         map: Object.freeze({ label: 'Map', title: 'Map Controls', icon: '◎', description: 'Visibility, overlays and map tools' }),
@@ -2564,7 +2582,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function removeOldInstances() {
-        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandPaletteId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.contextMenuId}, #${SCRIPT.quickWheelId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.vehicleFollowId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandPaletteId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.mapMeasureHudId}, #${SCRIPT.contextMenuId}, #${SCRIPT.quickWheelId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.vehicleFollowId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
         .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
@@ -11969,6 +11987,36 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.quickWheelId} > button[role="menuitem"] { margin:0 !important; transform:translate(-50%,-50%) rotate(var(--mcms-wheel-angle,0deg)) translateY(-108px) rotate(calc(var(--mcms-wheel-angle,0deg) * -1)) !important; }
         #${SCRIPT.quickWheelId} > .mcms-quick-wheel-centre { width:54px !important; min-height:54px !important; margin:0 !important; border-radius:50% !important; border-color:#ff9e9e !important; color:#ffb2b2 !important; font-size:24px !important; }
         #${SCRIPT.quickWheelId} > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
+        #${SCRIPT.mapMeasureHudId} {
+            position:fixed !important; top:max(74px,calc(env(safe-area-inset-top) + 12px)) !important; right:max(12px,env(safe-area-inset-right)) !important;
+            z-index:2147483400 !important; width:min(330px,calc(100vw - 24px)) !important; display:grid !important; gap:9px !important;
+            padding:13px !important; border:1px solid rgba(104,211,255,.6) !important; border-radius:14px !important;
+            background:linear-gradient(150deg,rgba(14,31,43,.98),rgba(4,11,17,.985)) !important; color:#eef9ff !important;
+            box-shadow:0 18px 50px rgba(0,0,0,.62),0 0 28px rgba(66,193,245,.13) !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
+        }
+        #${SCRIPT.mapMeasureHudId},#${SCRIPT.mapMeasureHudId} * { box-sizing:border-box !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-head span { display:block !important; color:#66d3ff !important; font-size:8px !important; font-weight:950 !important; letter-spacing:.14em !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-head strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:17px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-close { width:40px !important; min-width:40px !important; height:40px !important; min-height:40px !important; padding:0 !important; border:1px solid rgba(255,255,255,.22) !important; border-radius:9px !important; background:rgba(255,255,255,.055) !important; color:#fff !important; font-size:23px !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-modes,#${SCRIPT.mapMeasureHudId} .mcms-measure-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+        #${SCRIPT.mapMeasureHudId} button { min-height:42px !important; padding:7px 9px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:9px !important; background:rgba(255,255,255,.055) !important; color:#dcecf5 !important; font-size:10px !important; font-weight:850 !important; cursor:pointer !important; touch-action:manipulation !important; }
+        #${SCRIPT.mapMeasureHudId} button[aria-pressed="true"] { border-color:#66d3ff !important; background:rgba(35,151,204,.24) !important; color:#fff !important; box-shadow:0 0 0 2px rgba(102,211,255,.08) inset !important; }
+        #${SCRIPT.mapMeasureHudId} button:disabled { opacity:.38 !important; cursor:default !important; }
+        #${SCRIPT.mapMeasureHudId} button:focus-visible { outline:3px solid #7bd9ff !important; outline-offset:2px !important; }
+        html[data-mcms-map-measuring="true"] .leaflet-container { cursor:crosshair !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-readout { display:grid !important; gap:4px !important; min-height:72px !important; padding:11px 12px !important; border-left:3px solid #62d3ff !important; border-radius:8px !important; background:rgba(8,22,32,.88) !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-readout strong { color:#fff !important; font-size:20px !important; line-height:1.1 !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-readout span { color:#9bb3c2 !important; font-size:9px !important; line-height:1.4 !important; }
+        #${SCRIPT.mapMeasureHudId} .mcms-measure-guidance { color:#8fa7b6 !important; font-size:8.5px !important; line-height:1.4 !important; }
+        #${SCRIPT.commandExperienceModalId} .mcms-incident-card-preview { display:grid !important; gap:10px !important; }
+        #${SCRIPT.commandExperienceModalId} .mcms-incident-card-preview img { display:block !important; width:100% !important; height:auto !important; aspect-ratio:16/9 !important; border:1px solid rgba(104,211,255,.38) !important; border-radius:12px !important; background:#071018 !important; box-shadow:0 14px 38px rgba(0,0,0,.4) !important; }
+        #${SCRIPT.commandExperienceModalId} .mcms-incident-card-preview p { margin:0 !important; color:#9fb5c3 !important; font-size:10px !important; line-height:1.45 !important; }
+        html[data-mcms-economy="true"] #${SCRIPT.mapMeasureHudId} { box-shadow:0 12px 30px rgba(0,0,0,.54) !important; }
+        @media (max-width:620px) {
+            #${SCRIPT.mapMeasureHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; }
+            #${SCRIPT.mapMeasureHudId} button { min-height:46px !important; font-size:11px !important; }
+        }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} .mcms-tab-panel { gap:11px !important; padding:13px !important; }
@@ -17839,7 +17887,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         layer.__mcmsResourceGapLabel || layer.__mcmsResourceGapLayer ||
         layer.__mcmsStuckMissionLabel || layer.__mcmsStuckMissionLayer ||
         layer.__mcmsMissionSpawnLabel || layer.__mcmsMissionSpawnRing || layer.__mcmsMissionSpawnLayer ||
-        layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer
+        layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer ||
+        layer.__mcmsMapMeasureLayer
         ));
     }
 
@@ -18203,8 +18252,259 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return true;
         } catch (err) {
         showToast('Map jump failed');
+            return false;
+        }
+    }
+
+    const MAP_MEASURE_MAX_POINTS = 64;
+    const MAP_MEASURE_EARTH_RADIUS_METRES = 6371008.8;
+
+    function mapMeasureRadians(value) {
+        return Number(value) * Math.PI / 180;
+    }
+
+    function mapMeasurePointDistance(left, right) {
+        if (!left || !right) return 0;
+        const lat1 = mapMeasureRadians(left.lat);
+        const lat2 = mapMeasureRadians(right.lat);
+        const deltaLat = lat2 - lat1;
+        const deltaLng = mapMeasureRadians(Number(right.lng) - Number(left.lng));
+        const haversine = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+        return 2 * MAP_MEASURE_EARTH_RADIUS_METRES * Math.asin(Math.min(1, Math.sqrt(Math.max(0, haversine))));
+    }
+
+    function mapMeasureLineDistance(points = mapMeasureRuntime.points, closePath = false) {
+        const values = Array.from(points || []);
+        let metres = 0;
+        for (let index = 1; index < values.length; index += 1) metres += mapMeasurePointDistance(values[index - 1], values[index]);
+        if (closePath && values.length > 2) metres += mapMeasurePointDistance(values[values.length - 1], values[0]);
+        return metres;
+    }
+
+    function mapMeasureArea(points = mapMeasureRuntime.points) {
+        const values = Array.from(points || []);
+        if (values.length < 3) return 0;
+        let sum = 0;
+        for (let index = 0; index < values.length; index += 1) {
+        const current = values[index];
+        const next = values[(index + 1) % values.length];
+        sum += mapMeasureRadians(Number(next.lng) - Number(current.lng)) *
+            (2 + Math.sin(mapMeasureRadians(current.lat)) + Math.sin(mapMeasureRadians(next.lat)));
+        }
+        return Math.abs(sum * MAP_MEASURE_EARTH_RADIUS_METRES * MAP_MEASURE_EARTH_RADIUS_METRES / 2);
+    }
+
+    function mapMeasureFormatDistance(metres) {
+        const safeMetres = Math.max(0, Number(metres) || 0);
+        const miles = safeMetres / 1609.344;
+        const kilometres = safeMetres / 1000;
+        const primary = miles < 0.1 ? `${Math.round(safeMetres).toLocaleString('en-GB')} m` : `${miles.toLocaleString('en-GB', { maximumFractionDigits: miles < 10 ? 2 : 1 })} mi`;
+        return { primary, secondary: `${kilometres.toLocaleString('en-GB', { maximumFractionDigits: kilometres < 10 ? 2 : 1 })} km` };
+    }
+
+    function mapMeasureFormatArea(squareMetres) {
+        const safeArea = Math.max(0, Number(squareMetres) || 0);
+        const squareMiles = safeArea / 2589988.110336;
+        const hectares = safeArea / 10000;
+        return {
+        primary: `${squareMiles.toLocaleString('en-GB', { maximumFractionDigits: squareMiles < 10 ? 3 : 2 })} mi²`,
+        secondary: `${hectares.toLocaleString('en-GB', { maximumFractionDigits: hectares < 10 ? 2 : 1 })} ha`
+        };
+    }
+
+    function mapMeasureReadout() {
+        const pointCount = mapMeasureRuntime.points.length;
+        if (mapMeasureRuntime.mode === 'area') {
+        const area = mapMeasureFormatArea(mapMeasureArea());
+        const perimeter = mapMeasureFormatDistance(mapMeasureLineDistance(mapMeasureRuntime.points, true));
+        return pointCount < 3
+            ? { primary: `${pointCount} point${pointCount === 1 ? '' : 's'}`, secondary: `Add ${3 - pointCount} more to close an operational boundary.` }
+            : { primary: area.primary, secondary: `${area.secondary} · perimeter ${perimeter.primary}` };
+        }
+        const distance = mapMeasureFormatDistance(mapMeasureLineDistance());
+        return pointCount < 2
+        ? { primary: `${pointCount} point${pointCount === 1 ? '' : 's'}`, secondary: 'Click the map to begin a route measurement.' }
+        : { primary: distance.primary, secondary: `${distance.secondary} · ${pointCount - 1} segment${pointCount === 2 ? '' : 's'}` };
+    }
+
+    function mapMeasureClearLayers() {
+        try { mapMeasureRuntime.group?.clearLayers?.(); } catch (err) {}
+    }
+
+    function renderMapMeasureLayers() {
+        const { group, points, mode } = mapMeasureRuntime;
+        mapMeasureClearLayers();
+        if (!group || !pageWindow.L) return;
+        const pathOptions = {
+        color: '#62d3ff',
+        weight: 3,
+        opacity: 0.95,
+        interactive: false,
+        bubblingMouseEvents: false,
+        className: 'mcms-map-measure-path',
+        renderer: mapMeasureRuntime.renderer || undefined
+        };
+        try {
+        if (points.length >= 2) {
+            const path = mode === 'area' && points.length >= 3 && typeof pageWindow.L.polygon === 'function'
+            ? pageWindow.L.polygon(points, { ...pathOptions, fill: true, fillColor: '#2fb7ef', fillOpacity: 0.15 })
+            : pageWindow.L.polyline(points, pathOptions);
+            path.__mcmsMapMeasureLayer = true;
+            path.addTo(group);
+        }
+        if (typeof pageWindow.L.circleMarker === 'function') {
+            points.forEach((point, index) => {
+            const marker = pageWindow.L.circleMarker(point, {
+                radius: index === 0 ? 6 : 5,
+                color: index === 0 ? '#ffffff' : '#62d3ff',
+                weight: 2,
+                fillColor: index === 0 ? '#ffbd59' : '#0a8fc6',
+                fillOpacity: 1,
+                interactive: false,
+                bubblingMouseEvents: false,
+                className: 'mcms-map-measure-point',
+                renderer: mapMeasureRuntime.renderer || undefined
+            });
+            marker.__mcmsMapMeasureLayer = true;
+            marker.addTo(group);
+            });
+        }
+        } catch (err) {}
+    }
+
+    function updateMapMeasureHud() {
+        const hud = mapMeasureRuntime.hud;
+        if (!hud?.isConnected) return;
+        const readout = mapMeasureReadout();
+        hud.querySelectorAll('[data-measure-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.measureMode === mapMeasureRuntime.mode)));
+        const primary = hud.querySelector('[data-measure-primary]');
+        const secondary = hud.querySelector('[data-measure-secondary]');
+        if (primary) primary.textContent = readout.primary;
+        if (secondary) secondary.textContent = readout.secondary;
+        const undo = hud.querySelector('[data-measure-action="undo"]');
+        const clear = hud.querySelector('[data-measure-action="clear"]');
+        if (undo) undo.disabled = mapMeasureRuntime.points.length === 0;
+        if (clear) clear.disabled = mapMeasureRuntime.points.length === 0;
+    }
+
+    function mapMeasureUndo() {
+        if (!mapMeasureRuntime.active || !mapMeasureRuntime.points.length) return false;
+        mapMeasureRuntime.points.pop();
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        return true;
+    }
+
+    function mapMeasureClear() {
+        if (!mapMeasureRuntime.active) return false;
+        mapMeasureRuntime.points = [];
+        mapMeasureClearLayers();
+        updateMapMeasureHud();
+        return true;
+    }
+
+    function setMapMeasureMode(mode) {
+        const nextMode = mode === 'area' ? 'area' : 'distance';
+        if (mapMeasureRuntime.mode === nextMode) return false;
+        mapMeasureRuntime.mode = nextMode;
+        mapMeasureClear();
+        showToast(nextMode === 'area' ? 'Boundary measurement ready' : 'Distance measurement ready');
+        return true;
+    }
+
+    function stopMapMeasure(announce = true) {
+        const wasActive = mapMeasureRuntime.active;
+        const map = mapMeasureRuntime.map;
+        const renderer = mapMeasureRuntime.renderer;
+        try { mapMeasureRuntime.map?.off?.('click', mapMeasureRuntime.clickHandler); } catch (err) {}
+        if (mapMeasureRuntime.keyHandler) runtimeUnlisten(document, 'keydown', mapMeasureRuntime.keyHandler, true);
+        runtimeUnlistenTarget(mapMeasureRuntime.hud, true);
+        mapMeasureClearLayers();
+        try { mapMeasureRuntime.group?.remove?.(); } catch (err) {}
+        try { if (renderer && map?.hasLayer?.(renderer)) map.removeLayer(renderer); } catch (err) {}
+        mapMeasureRuntime.hud?.remove?.();
+        mapMeasureRuntime.active = false;
+        mapMeasureRuntime.map = null;
+        mapMeasureRuntime.group = null;
+        mapMeasureRuntime.renderer = null;
+        mapMeasureRuntime.points = [];
+        mapMeasureRuntime.clickHandler = null;
+        mapMeasureRuntime.keyHandler = null;
+        mapMeasureRuntime.hud = null;
+        document.documentElement?.removeAttribute?.('data-mcms-map-measuring');
+        if (wasActive && announce) showToast('Map Measure closed');
+        return wasActive;
+    }
+
+    function startMapMeasure() {
+        if (state.safeMode.enabled) { showToast('Map Measure is unavailable in Toolkit Safe Mode'); return false; }
+        if (mapMeasureRuntime.active) {
+        try { mapMeasureRuntime.hud?.querySelector?.('[data-measure-mode][aria-pressed="true"]')?.focus?.({ preventScroll: true }); } catch (err) {}
+        return true;
+        }
+        const map = findLeafletMapInstance(true);
+        if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof map.on !== 'function') {
+        showToast('Map Measure is unavailable on this page');
         return false;
         }
+        closePanel();
+        const hud = document.createElement('section');
+        hud.id = SCRIPT.mapMeasureHudId;
+        hud.setAttribute('role', 'dialog');
+        hud.setAttribute('aria-label', 'Map Measure');
+        hud.innerHTML = `
+            <div class="mcms-measure-head"><div><span>MAP COMMAND · ON-DEMAND</span><strong>Map Measure</strong></div><button class="mcms-measure-close" type="button" data-measure-action="close" aria-label="Close Map Measure">×</button></div>
+            <div class="mcms-measure-modes"><button type="button" data-measure-mode="distance" aria-pressed="true">Distance / Route</button><button type="button" data-measure-mode="area" aria-pressed="false">Boundary / Area</button></div>
+            <div class="mcms-measure-readout"><strong data-measure-primary>0 points</strong><span data-measure-secondary>Click the map to begin a route measurement.</span></div>
+            <div class="mcms-measure-actions"><button type="button" data-measure-action="undo" disabled>Undo Point</button><button type="button" data-measure-action="clear" disabled>Clear</button></div>
+            <div class="mcms-measure-guidance">Click map positions to add up to ${MAP_MEASURE_MAX_POINTS} points. Dragging and zooming remain native. Escape closes; Backspace undoes.</div>`;
+        document.body.appendChild(hud);
+        const group = pageWindow.L.layerGroup();
+        group.__mcmsMapMeasureLayer = true;
+        const renderer = typeof pageWindow.L.canvas === 'function' ? pageWindow.L.canvas({ padding: 0.08, tolerance: 2 }) : null;
+        if (renderer) renderer.__mcmsMapMeasureLayer = true;
+        try { group.addTo(map); } catch (err) { hud.remove(); showToast('Map Measure could not attach to this map'); return false; }
+
+        mapMeasureRuntime.active = true;
+        mapMeasureRuntime.mode = 'distance';
+        mapMeasureRuntime.map = map;
+        mapMeasureRuntime.group = group;
+        mapMeasureRuntime.renderer = renderer;
+        mapMeasureRuntime.points = [];
+        mapMeasureRuntime.hud = hud;
+        mapMeasureRuntime.clickHandler = event => {
+        if (!mapMeasureRuntime.active || mapMeasureRuntime.map !== map || !event?.latlng) return;
+        if (mapMeasureRuntime.points.length >= MAP_MEASURE_MAX_POINTS) { showToast(`Map Measure is capped at ${MAP_MEASURE_MAX_POINTS} points`); return; }
+        const lat = Number(event.latlng.lat);
+        const lng = Number(event.latlng.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        mapMeasureRuntime.points.push({ lat, lng });
+        renderMapMeasureLayers();
+        updateMapMeasureHud();
+        };
+        mapMeasureRuntime.keyHandler = event => {
+        if (!mapMeasureRuntime.active || event.defaultPrevented || event.target?.matches?.('input,textarea,select,[contenteditable="true"]')) return;
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); stopMapMeasure(); }
+        else if (event.key === 'Backspace') { event.preventDefault(); event.stopPropagation(); mapMeasureUndo(); }
+        };
+        map.on('click', mapMeasureRuntime.clickHandler);
+        runtimeListen(document, 'keydown', mapMeasureRuntime.keyHandler, true);
+        runtimeListen(hud, 'click', event => {
+        const modeButton = closestEventTarget(event, '[data-measure-mode]');
+        const actionButton = closestEventTarget(event, '[data-measure-action]');
+        if (modeButton) { event.preventDefault(); setMapMeasureMode(modeButton.dataset.measureMode); return; }
+        if (!actionButton) return;
+        event.preventDefault();
+        if (actionButton.dataset.measureAction === 'undo') mapMeasureUndo();
+        else if (actionButton.dataset.measureAction === 'clear') mapMeasureClear();
+        else if (actionButton.dataset.measureAction === 'close') stopMapMeasure();
+        });
+        ['dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu'].forEach(type => runtimeListen(hud, type, stopMapInteraction, { passive: false }));
+        document.documentElement?.setAttribute?.('data-mcms-map-measuring', 'true');
+        updateMapMeasureHud();
+        toolkitAnalyticsRecordFeature('mapMeasure');
+        showToast('Map Measure active · click the map to add points');
+        return true;
     }
 
     function coverageLeafletPathRenderer(map) {
@@ -19514,6 +19814,376 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         snapshot
         });
         return snapshot;
+    }
+
+    function incidentCardWindowRoot(missionId = null) {
+        const wanted = normaliseMissionId(missionId);
+        const roots = typeof transportSweepVisibleWindowRoots === 'function' ? transportSweepVisibleWindowRoots() : [];
+        for (const root of roots) {
+        const id = missionValuePopupMissionId(root) ?? missionValueIdFromElement(root);
+        if (id !== null && (wanted === null || String(id) === String(wanted))) return root;
+        }
+        return null;
+    }
+
+    function incidentCardMissionId(explicitMissionId = null) {
+        const explicit = normaliseMissionId(explicitMissionId);
+        if (explicit !== null) return explicit;
+        const root = incidentCardWindowRoot();
+        const rootId = root ? (missionValuePopupMissionId(root) ?? missionValueIdFromElement(root)) : null;
+        if (rootId !== null) return rootId;
+        return missionValueIdFromUrl(pageWindow.location?.href || location.href);
+    }
+
+    function incidentCardRootText(root, selectors) {
+        if (!root) return '';
+        for (const selector of selectors) {
+        let nodes = [];
+        try { nodes = Array.from(root.querySelectorAll?.(selector) || []); } catch (err) {}
+        for (const node of nodes) {
+            const text = String(node?.textContent || node?.value || '').replace(/\s+/gu, ' ').trim();
+            if (text) return text;
+        }
+        }
+        return '';
+    }
+
+    function incidentCardModel(missionId) {
+        const id = normaliseMissionId(missionId);
+        if (id === null) return null;
+        const markerIndex = getMissionMarkerIndex();
+        const marker = markerIndex.byId.get(id) || markerIndex.byId.get(String(id)) || null;
+        const existing = liveMissionSnapshots.get(id) || liveMissionSnapshots.get(String(id));
+        const root = incidentCardWindowRoot(id);
+        const overlay = missionOverlayData.get(id) || {};
+        const fallbackUnits = personalUnitCommitmentForMission(id);
+        const snapshot = existing || (marker ? missionSnapshotFromMarker(marker, Date.now()) : {
+        missionId: id,
+        marker,
+        caption: getMissionCaption(marker, id),
+        address: getMissionAddress(marker, id),
+        postcode: normaliseMissionPostcode(overlay.postcode || overlay.address || ''),
+        city: normaliseMissionCity(overlay.city || overlay.address || '', overlay.postcode || ''),
+        area: normaliseMissionCity(overlay.city || overlay.address || '', overlay.postcode || ''),
+        ownership: 'unknown',
+        averageCredits: getMissionAverageCredits(marker, id),
+        units: fallbackUnits,
+        missingText: normaliseMissingRequirementText(overlay.missingText || ''),
+        patientsCount: Number.isFinite(Number(overlay.patientsCount)) ? Number(overlay.patientsCount) : null,
+        prisonersCount: Number.isFinite(Number(overlay.prisonersCount)) ? Number(overlay.prisonersCount) : null,
+        liveCurrentValue: normaliseMissionLiveCurrentValue(overlay.liveCurrentValue),
+        lat: Number(marker?.getLatLng?.()?.lat),
+        lng: Number(marker?.getLatLng?.()?.lng)
+        });
+        const rootCaption = incidentCardRootText(root, ['#missionH1', '[data-mission-caption]', '.mission_caption', 'h1', 'h2']);
+        const rootAddress = incidentCardRootText(root, ['#mission_address', '[id^="mission_address_"]', '.mission_address', '[data-mission-address]', 'address']);
+        const rootMissing = incidentCardRootText(root, ['#missing_text', '[data-missing-text]', '.missing_text']);
+        const title = normaliseMissionCaption(rootCaption || snapshot?.caption || `Mission ${id}`) || `Mission ${id}`;
+        const address = String(snapshot?.address || rootAddress || '').replace(/\s+/gu, ' ').trim();
+        const postcode = normaliseMissionPostcode(snapshot?.postcode || address);
+        const area = String(snapshot?.area || snapshot?.city || normaliseMissionCity(address, postcode) || '').trim();
+        const missingText = normaliseMissingRequirementText(snapshot?.missingText || rootMissing || '');
+        const requirementGroups = resourceRequirementsFromSnapshot({ ...snapshot, missingText });
+        let requirements = [
+        ...requirementGroups.vehicles.map(item => ({ ...item, kind: 'VEHICLE' })),
+        ...requirementGroups.personnel.map(item => ({ ...item, kind: 'PERSONNEL' })),
+        ...requirementGroups.other.map(item => ({ ...item, kind: 'OTHER' }))
+        ];
+        if (!requirements.length && missingText) {
+        requirements = splitRequirementItems(missingText)
+            .map(parseCountedRequirement)
+            .filter(Boolean)
+            .map(item => ({ ...item, kind: 'REQUIREMENT' }));
+        }
+        const units = snapshot?.units || fallbackUnits;
+        const progress = criticalMissionClearingProgress(snapshot);
+        const lat = Number(snapshot?.lat);
+        const lng = Number(snapshot?.lng);
+        return {
+        missionId: id,
+        title,
+        address,
+        postcode,
+        area,
+        ownership: snapshot?.ownership === 'alliance' ? 'ALLIANCE INCIDENT' : snapshot?.ownership === 'personal' ? 'PERSONAL INCIDENT' : 'ACTIVE INCIDENT',
+        value: formatMissionWindowValue(snapshot?.averageCredits) || 'UNCONFIRMED',
+        progress: progress?.completion ?? null,
+        totalUnits: Math.max(0, Number(units?.total) || 0),
+        enRouteUnits: Math.max(0, Number(units?.onWay ?? units?.travelling) || 0),
+        onSceneUnits: Math.max(0, Number(units?.onScene) || 0),
+        patients: Math.max(0, Number(snapshot?.patientsCount) || 0),
+        prisoners: Math.max(0, Number(snapshot?.prisonersCount) || 0),
+        requirements: requirements.slice(0, 8),
+        requirementOverflow: Math.max(0, requirements.length - 8),
+        missingText,
+        lat: Number.isFinite(lat) ? lat : null,
+        lng: Number.isFinite(lng) ? lng : null,
+        generatedAt: new Date()
+        };
+    }
+
+    function incidentCardRoundRect(context, x, y, width, height, radius, fill, stroke = '') {
+        const r = Math.max(0, Math.min(Number(radius) || 0, width / 2, height / 2));
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.arcTo(x + width, y, x + width, y + height, r);
+        context.arcTo(x + width, y + height, x, y + height, r);
+        context.arcTo(x, y + height, x, y, r);
+        context.arcTo(x, y, x + width, y, r);
+        context.closePath();
+        if (fill) { context.fillStyle = fill; context.fill(); }
+        if (stroke) { context.strokeStyle = stroke; context.stroke(); }
+    }
+
+    function incidentCardTextLines(context, value, maxWidth, maxLines = 2) {
+        const words = String(value || '').replace(/\s+/gu, ' ').trim().split(' ').filter(Boolean);
+        if (!words.length) return [];
+        const lines = [];
+        let line = '';
+        for (const word of words) {
+        const next = line ? `${line} ${word}` : word;
+        if (line && context.measureText(next).width > maxWidth) {
+            lines.push(line);
+            line = word;
+            if (lines.length >= maxLines) break;
+        } else line = next;
+        }
+        if (lines.length < maxLines && line) lines.push(line);
+        if (lines.join(' ').length < words.join(' ').length && lines.length) {
+        let last = lines.length - 1;
+        while (lines[last] && context.measureText(`${lines[last]}…`).width > maxWidth) lines[last] = lines[last].slice(0, -1).trimEnd();
+        lines[last] = `${lines[last]}…`;
+        }
+        return lines;
+    }
+
+    function drawIncidentCardMetric(context, x, y, width, label, value, accent = '#64d5ff') {
+        incidentCardRoundRect(context, x, y, width, 74, 12, 'rgba(255,255,255,.045)', 'rgba(255,255,255,.13)');
+        context.fillStyle = accent;
+        context.fillRect(x, y, 4, 74);
+        context.fillStyle = '#8fa8b8';
+        context.font = '800 12px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText(String(label).toUpperCase(), x + 18, y + 14);
+        context.fillStyle = '#ffffff';
+        context.font = '850 25px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText(String(value), x + 18, y + 36);
+    }
+
+    function drawIncidentCardLocator(context, model, x, y, width, height) {
+        incidentCardRoundRect(context, x, y, width, height, 15, 'rgba(8,25,37,.92)', 'rgba(98,211,255,.34)');
+        context.save();
+        context.beginPath();
+        context.rect(x + 1, y + 1, width - 2, height - 2);
+        context.clip();
+        context.strokeStyle = 'rgba(98,211,255,.08)';
+        context.lineWidth = 1;
+        for (let gridX = x + 20; gridX < x + width; gridX += 32) { context.beginPath(); context.moveTo(gridX, y); context.lineTo(gridX, y + height); context.stroke(); }
+        for (let gridY = y + 20; gridY < y + height; gridY += 32) { context.beginPath(); context.moveTo(x, gridY); context.lineTo(x + width, gridY); context.stroke(); }
+        const centreX = x + width - 66;
+        const centreY = y + 68;
+        context.strokeStyle = '#63d4ff';
+        context.lineWidth = 2;
+        context.beginPath(); context.arc(centreX, centreY, 25, 0, Math.PI * 2); context.stroke();
+        context.beginPath(); context.moveTo(centreX - 37, centreY); context.lineTo(centreX + 37, centreY); context.moveTo(centreX, centreY - 37); context.lineTo(centreX, centreY + 37); context.stroke();
+        context.fillStyle = '#ffbd59';
+        context.beginPath(); context.arc(centreX, centreY, 5, 0, Math.PI * 2); context.fill();
+        context.restore();
+        context.fillStyle = '#65d4ff';
+        context.font = '850 12px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText('INCIDENT LOCATION', x + 18, y + 16);
+        context.fillStyle = '#ffffff';
+        context.font = '800 18px system-ui, -apple-system, Segoe UI, sans-serif';
+        const location = model.postcode || model.area || 'LOCATION UNCONFIRMED';
+        context.fillText(location, x + 18, y + 43);
+        context.fillStyle = '#9eb4c2';
+        context.font = '650 12px system-ui, -apple-system, Segoe UI, sans-serif';
+        incidentCardTextLines(context, model.address || model.area || 'MissionChief location data unavailable', width - 36, 3).forEach((line, index) => context.fillText(line, x + 18, y + 98 + index * 18));
+        if (model.lat !== null && model.lng !== null) {
+        context.fillStyle = '#6f8a9a';
+        context.font = '700 10px ui-monospace, SFMono-Regular, Consolas, monospace';
+        context.fillText(`${model.lat.toFixed(5)}, ${model.lng.toFixed(5)}`, x + 18, y + height - 23);
+        }
+    }
+
+    function renderIncidentCardCanvas(model) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1200;
+        canvas.height = 675;
+        const context = canvas.getContext('2d', { alpha: false });
+        if (!context) throw new Error('Canvas rendering is unavailable');
+        const background = context.createLinearGradient(0, 0, 1200, 675);
+        background.addColorStop(0, '#071723');
+        background.addColorStop(0.58, '#071018');
+        background.addColorStop(1, '#03080d');
+        context.fillStyle = background;
+        context.fillRect(0, 0, 1200, 675);
+        const glow = context.createRadialGradient(190, 40, 10, 190, 40, 520);
+        glow.addColorStop(0, 'rgba(39,174,231,.26)');
+        glow.addColorStop(1, 'rgba(39,174,231,0)');
+        context.fillStyle = glow;
+        context.fillRect(0, 0, 1200, 675);
+        context.strokeStyle = 'rgba(120,211,249,.045)';
+        context.lineWidth = 1;
+        for (let x = -300; x < 1500; x += 54) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x + 470, 675); context.stroke(); }
+        context.fillStyle = '#55cdfa';
+        context.fillRect(0, 0, 9, 675);
+        context.fillStyle = '#62d3ff';
+        context.font = '900 14px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText('MISSIONCHIEF · MAP COMMAND TOOLKIT', 70, 43);
+        context.fillStyle = '#7894a5';
+        context.font = '800 12px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText(`${model.ownership} · MISSION ${model.missionId}`, 70, 70);
+        context.fillStyle = '#ffffff';
+        context.font = '900 46px system-ui, -apple-system, Segoe UI, sans-serif';
+        incidentCardTextLines(context, model.title, 680, 2).forEach((line, index) => context.fillText(line, 70, 105 + index * 52));
+        const progressY = 218;
+        context.fillStyle = '#6f8796';
+        context.font = '800 11px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText(model.progress === null ? 'LIVE OPERATIONAL STATUS' : `MISSION PROGRESS · ${model.progress}%`, 70, progressY - 20);
+        incidentCardRoundRect(context, 70, progressY, 680, 8, 4, 'rgba(255,255,255,.1)');
+        if (model.progress !== null) incidentCardRoundRect(context, 70, progressY, 680 * model.progress / 100, 8, 4, model.progress >= 100 ? '#70e3a9' : '#62d3ff');
+        const metricWidth = 159;
+        drawIncidentCardMetric(context, 70, 255, metricWidth, 'Mission value', model.value, '#ffcb68');
+        drawIncidentCardMetric(context, 243, 255, metricWidth, 'Responding', model.totalUnits, '#62d3ff');
+        drawIncidentCardMetric(context, 416, 255, metricWidth, 'En route', model.enRouteUnits, '#ffbd59');
+        drawIncidentCardMetric(context, 589, 255, metricWidth, 'On scene', model.onSceneUnits, '#70e3a9');
+        drawIncidentCardLocator(context, model, 790, 36, 340, 294);
+        incidentCardRoundRect(context, 70, 365, 1060, 245, 15, 'rgba(5,16,24,.88)', 'rgba(255,255,255,.12)');
+        context.fillStyle = '#62d3ff';
+        context.font = '900 13px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText('CURRENT REQUIREMENTS', 92, 386);
+        const operationalCounts = [model.patients ? `${model.patients} PATIENT${model.patients === 1 ? '' : 'S'}` : '', model.prisoners ? `${model.prisoners} PRISONER${model.prisoners === 1 ? '' : 'S'}` : ''].filter(Boolean).join(' · ');
+        if (operationalCounts) {
+        context.fillStyle = '#ffcb68';
+        context.font = '850 11px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText(operationalCounts, 1110 - context.measureText(operationalCounts).width, 386);
+        }
+        if (!model.requirements.length) {
+        context.fillStyle = '#70e3a9';
+        context.font = '800 20px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText('✓ All exposed requirements currently satisfied', 92, 445);
+        } else {
+        model.requirements.forEach((requirement, index) => {
+            const column = index >= 4 ? 1 : 0;
+            const row = index % 4;
+            const x = 92 + column * 515;
+            const y = 425 + row * 42;
+            context.fillStyle = '#ffbd59';
+            context.font = '900 13px system-ui, -apple-system, Segoe UI, sans-serif';
+            context.fillText(String(requirement.count || 1).padStart(2, '0'), x, y + 4);
+            context.fillStyle = '#eef8fd';
+            context.font = '760 14px system-ui, -apple-system, Segoe UI, sans-serif';
+            const label = incidentCardTextLines(context, requirement.name, 390, 1)[0] || 'Requirement';
+            context.fillText(label, x + 35, y + 2);
+            context.fillStyle = '#6f8999';
+            context.font = '800 9px system-ui, -apple-system, Segoe UI, sans-serif';
+            context.fillText(requirement.kind, x + 35, y + 21);
+        });
+        if (model.requirementOverflow) {
+            context.fillStyle = '#8ba2b1';
+            context.font = '750 10px system-ui, -apple-system, Segoe UI, sans-serif';
+            context.fillText(`+${model.requirementOverflow} additional exposed requirement${model.requirementOverflow === 1 ? '' : 's'}`, 92, 590);
+        }
+        }
+        context.fillStyle = '#6f8999';
+        context.font = '700 10px system-ui, -apple-system, Segoe UI, sans-serif';
+        context.fillText(`Generated ${model.generatedAt.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })} · local image · no mission data uploaded`, 70, 642);
+        context.fillStyle = '#8eb8cc';
+        context.font = '800 10px ui-monospace, SFMono-Regular, Consolas, monospace';
+        const footerId = `MC-${model.missionId}`;
+        context.fillText(footerId, 1130 - context.measureText(footerId).width, 642);
+        return canvas;
+    }
+
+    function incidentCardCanvasBlob(canvas) {
+        return new Promise((resolve, reject) => {
+        if (typeof canvas?.toBlob === 'function') {
+            canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG generation failed')), 'image/png');
+            return;
+        }
+        try {
+            const dataUrl = canvas.toDataURL('image/png');
+            const binary = pageWindow.atob(dataUrl.split(',')[1] || '');
+            const bytes = new Uint8Array(binary.length);
+            for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+            resolve(new Blob([bytes], { type: 'image/png' }));
+        } catch (err) { reject(err); }
+        });
+    }
+
+    function incidentCardFilename(model) {
+        const safeTitle = String(model?.title || `Mission ${model?.missionId || ''}`).replace(/[^a-z0-9]+/giu, '-').replace(/^-+|-+$/gu, '').slice(0, 70) || 'Mission';
+        return `Map-Command-Incident-${model?.missionId || 'Card'}-${safeTitle}.png`;
+    }
+
+    function clearIncidentCardRuntime() {
+        incidentCardRuntime = null;
+    }
+
+    function downloadIncidentCard() {
+        if (!incidentCardRuntime?.blob) { showToast('Incident Card image is no longer available'); return false; }
+        const urlApi = pageWindow.URL || globalThis.URL;
+        const url = urlApi.createObjectURL(incidentCardRuntime.blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = incidentCardRuntime.filename;
+        link.rel = 'noopener';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        runtimeSetTimeout(() => urlApi.revokeObjectURL(url), 0);
+        showToast('Incident Card downloaded');
+        return true;
+    }
+
+    async function copyIncidentCard() {
+        if (!incidentCardRuntime?.blob) { showToast('Incident Card image is no longer available'); return false; }
+        const clipboard = (pageWindow.navigator || navigator)?.clipboard;
+        const ClipboardItemCtor = pageWindow.ClipboardItem || globalThis.ClipboardItem;
+        if (typeof clipboard?.write !== 'function' || typeof ClipboardItemCtor !== 'function') {
+        showToast('Image copy is unavailable here · use Download PNG');
+        return false;
+        }
+        try {
+        await clipboard.write([new ClipboardItemCtor({ 'image/png': incidentCardRuntime.blob })]);
+        showToast('Incident Card copied · paste into Discord');
+        return true;
+        } catch (err) {
+        showToast('Image copy was blocked · use Download PNG');
+        return false;
+        }
+    }
+
+    async function openIncidentCard(explicitMissionId = null) {
+        const missionId = incidentCardMissionId(explicitMissionId);
+        if (missionId === null) { showToast('Open a mission first, then create its Incident Card'); return false; }
+        closePanel();
+        showToast('Generating Incident Card locally…');
+        try {
+        const model = incidentCardModel(missionId);
+        if (!model) throw new Error('Mission data is unavailable');
+        const canvas = renderIncidentCardCanvas(model);
+        const [blob, dataUrl] = await Promise.all([
+            incidentCardCanvasBlob(canvas),
+            Promise.resolve(canvas.toDataURL('image/png'))
+        ]);
+        const overlay = openCommandExperienceModal({
+            kind: 'Incident Card',
+            title: model.title,
+            subtitle: `${model.postcode || model.area || `Mission ${model.missionId}`} · generated locally`,
+            body: '<div class="mcms-incident-card-preview"><img alt="Generated shareable incident card preview"><p>Copy the PNG directly into Discord where supported, or download it for upload. The image was generated entirely on this device.</p></div>',
+            actions: '<button type="button" data-mcms-command-action="incident-card-copy">Copy Image</button><button class="mcms-primary" type="button" data-mcms-command-action="incident-card-download">Download PNG</button>'
+        });
+        const image = overlay.querySelector('.mcms-incident-card-preview img');
+        if (image) image.src = dataUrl;
+        incidentCardRuntime = { blob, dataUrl, filename: incidentCardFilename(model), missionId: model.missionId };
+        toolkitAnalyticsRecordFeature('incidentCard');
+        return true;
+        } catch (err) {
+        clearIncidentCardRuntime();
+        showToast(`Incident Card failed · ${err?.message || 'unable to render image'}`);
+        return false;
+        }
     }
 
     function refreshMissionSnapshots() {
@@ -21323,7 +21993,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         menu.__mcmsReturnFocus = element instanceof HTMLElement ? element : null;
         contextCommandTarget = record;
         const actions = record.kind === 'mission'
-            ? [['focus', 'Focus on map'], ['open', 'Open mission'], ['search', 'Find in Command Palette']]
+            ? [['focus', 'Focus on map'], ['open', 'Open mission'], ['card', 'Create Incident Card'], ['search', 'Find in Command Palette']]
             : [['open', `Open ${record.kind}`], ['search', 'Find in Command Palette']];
         setInnerHtmlIfChanged(menu, `<strong>${escapeHtml(record.label)}</strong>` + actions.map(([command, label]) => `<button type="button" role="menuitem" data-mcms-command-action="context-command" data-context-command="${command}">${escapeHtml(label)}</button>`).join(''));
         document.body.appendChild(menu);
@@ -21342,6 +22012,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!record) return false;
         closeContextCommandMenu();
         if (command === 'focus' && record.kind === 'mission') return focusMissionById(record.id, false);
+        if (command === 'card' && record.kind === 'mission') { void openIncidentCard(record.id); return true; }
         if (command === 'search') { openCommandPalette({ initialQuery: `${record.kind} ${record.id}` }); return true; }
         if (command === 'open') {
         try {
@@ -21804,6 +22475,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const overlay = commandExperienceElement(SCRIPT.commandExperienceModalId);
         if (!overlay) return false;
         const closingSetupWizard = overlay.dataset.kind === 'Setup Wizard';
+        const closingIncidentCard = overlay.dataset.kind === 'Incident Card';
         const acknowledgeBriefing = restoreFocus && overlay.dataset.kind === 'Update Briefing' && state.updateBriefing.seenVersion !== SCRIPT.version;
         overlay.remove();
         document.documentElement.removeAttribute('data-mcms-command-experience-open');
@@ -21813,6 +22485,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         commandExperienceReturnFocus = null;
         if (closingSetupWizard && restoreFocus) setupWizardDraft = null;
+        if (closingIncidentCard) clearIncidentCardRuntime();
         if (acknowledgeBriefing) {
         state.updateBriefing.seenVersion = SCRIPT.version;
         saveState();
@@ -21920,7 +22593,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function safeModeSuspendedModules() {
-        return ['Map overlays', 'Mission intelligence', 'Pressure Board', 'Vehicle Codes', 'Quick Wheel', 'Command Palette', 'Themes and MissionChief reskin', 'Sounds and payout effects', 'Context menus and gestures'];
+        return ['Map overlays and Measure', 'Mission intelligence and Incident Card', 'Pressure Board', 'Vehicle Codes', 'Quick Wheel', 'Command Palette', 'Themes and MissionChief reskin', 'Sounds and payout effects', 'Context menus and gestures'];
     }
 
     function setToolkitSafeMode(enabled, announce = true) {
@@ -21935,6 +22608,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         closeTabletQuickWheel();
         closeCommandPalette({ restoreFocus: false });
         closeContextCommandMenu();
+        stopMapMeasure(false);
+        if (commandExperienceElement(SCRIPT.commandExperienceModalId)?.dataset.kind === 'Incident Card') closeCommandExperienceModal({ restoreFocus: false });
         closeVehicleCodeStatus();
         closeOperationalPressureBoard();
         removeMajorIncidentFeed();
@@ -23113,6 +23788,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (action === 'transfer-apply') { applyPendingSettingsTransfer(); return true; }
         if (action === 'doctor-run') { void runToolkitDoctor(); return true; }
         if (action === 'doctor-repair') { repairToolkitUi(); return true; }
+        if (action === 'incident-card-copy') { void copyIncidentCard(); return true; }
+        if (action === 'incident-card-download') { downloadIncidentCard(); return true; }
         if (action === 'context-command') { executeContextCommand(button.dataset.contextCommand); return true; }
         if (action === 'briefing-open-feature') { openFeatureRoute(button.dataset.feature); return true; }
         if (action === 'unit-locator-locate') {
@@ -27700,6 +28377,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
     function teardownToolkitCommandShell(reason = 'ineligible command-shell context') {
         disposeVersionStatus();
+        stopMapMeasure(false);
+        clearIncidentCardRuntime();
         const nodeIds = [
             SCRIPT.controlId,
             SCRIPT.panelId,
@@ -27712,6 +28391,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             SCRIPT.helpCenterId,
             SCRIPT.commandPaletteId,
             SCRIPT.commandExperienceModalId,
+            SCRIPT.mapMeasureHudId,
             SCRIPT.contextMenuId,
             SCRIPT.quickWheelId,
             SCRIPT.fullscreenExitId,
@@ -28446,6 +29126,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         add('pressure-board', `${operationalPressureBoardOpen() ? 'Close' : 'Open'} Operational Pressure Board`, 'Live demand and response pressure across active missions', 'mission board dashboard demand radar', () => toggleOperationalPressureBoard(), true);
         add('vehicle-codes', `${commandExperienceElement(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ? 'Close' : 'Open'} Vehicle Code Status`, 'Inspect current personal-unit availability by FMS code', 'vehicles units availability status fms codes', () => toggleVehicleCodeStatus(), true);
         add('fullscreen', `${state.fullscreenMap ? 'Exit' : 'Enter'} Full-Screen Map`, `Map full-screen mode · currently ${state.fullscreenMap ? 'on' : 'off'}`, 'fullscreen maximise maximize restore', () => setMapFullscreen(!state.fullscreenMap), true);
+        add('map-measure', `${mapMeasureRuntime.active ? 'Return to' : 'Open'} Map Measure`, 'Measure routes, distance, operational boundaries and area only while the tool is active', 'ruler range miles kilometres km boundary perimeter hectares area', () => startMapMeasure(), true);
+        add('incident-card', 'Create Incident Card', 'Generate a local 16:9 PNG from the currently open mission for Discord', 'mission image graphic png copy download share discord', () => { void openIncidentCard(); }, true);
         add('doctor', 'Run Toolkit Doctor', 'Safe user-triggered diagnostics and UI repair', 'health report warning repair diagnostic', () => { void runToolkitDoctor(); }, true);
         add('help', 'Open Help Centre', 'Search the complete Toolkit guide', 'documentation instructions support guide', () => openHelpCenter());
         add('briefing', 'Open Update Briefing', `Review what changed in Toolkit ${SCRIPT.version}`, 'release notes whats new version', () => openUpdateBriefing({ manual: true }));
@@ -29797,6 +30479,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
+                    <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-map-measure" title="Deliberately measure routes, distances, operational boundaries and areas. No listener or layer exists until opened."><span class="mcms-iconbox">↔</span><span class="mcms-text"><span class="mcms-label">Map Measure</span><span class="mcms-pill">OPEN</span></span></button>
                 </div>
                 <div class="mcms-row" style="margin-top:8px">
                     <span class="mcms-row-label">Ring radius</span>
@@ -29862,6 +30545,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     </button>
                     ${makeActionToggleButton('open-pressure-board', '▲', 'Pressure Board', 'Open or close the live Operational Pressure Board. Shortcut: B', 'mcms-pressure-board-toggle')}
                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-unit-locator" data-feature-beacon="unitLocator" title="Search personal vehicles and start deliberate Follow Mode"><span class="mcms-iconbox">⌖</span><span class="mcms-text"><span class="mcms-label">Unit Locator</span><span class="mcms-pill">OPEN</span></span></button>
+                    <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-incident-card" title="Generate a local 16:9 PNG from the currently open mission for Discord"><span class="mcms-iconbox">▣</span><span class="mcms-text"><span class="mcms-label">Incident Card</span><span class="mcms-pill">CREATE</span></span></button>
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
@@ -30239,6 +30923,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         if (action === 'open-help-center') { openHelpCenter(); return; }
         if (action === 'open-command-palette') { openCommandPalette({ returnFocus: button }); return; }
+        if (action === 'open-map-measure') { startMapMeasure(); return; }
+        if (action === 'open-incident-card') { void openIncidentCard(); return; }
         if (action === 'open-personalisation-studio') { openPersonalisationStudio('layout'); return; }
         if (action === 'open-layout-studio') { openPersonalisationStudio('layout'); return; }
         if (action === 'open-theme-studio') { openPersonalisationStudio('theme'); return; }
@@ -30799,6 +31485,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (state.fullscreenMap || fullscreenMapTarget) applyMapFullscreenState();
         if (mapEl) {
             const map = findLeafletMapInstance(false);
+            if (mapMeasureRuntime.active && mapMeasureRuntime.map !== map) stopMapMeasure(false);
             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
             if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
             else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
@@ -30871,6 +31558,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 target.id === SCRIPT.majorIncidentFeedId ||
                 target.id === SCRIPT.commandPaletteId ||
                 target.id === SCRIPT.commandExperienceModalId ||
+                target.id === SCRIPT.mapMeasureHudId ||
                 target.id === SCRIPT.quickWheelId ||
                 target.id === SCRIPT.fullscreenExitId ||
                 target.closest?.(`#${SCRIPT.controlId}`) ||
@@ -30882,6 +31570,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
                 target.closest?.(`#${SCRIPT.commandPaletteId}`) ||
                 target.closest?.(`#${SCRIPT.commandExperienceModalId}`) ||
+                target.closest?.(`#${SCRIPT.mapMeasureHudId}`) ||
                 target.closest?.(`#${SCRIPT.quickWheelId}`) ||
                 target.closest?.(`#${SCRIPT.fullscreenExitId}`) ||
                 false
@@ -30893,7 +31582,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (String(className).startsWith('mcms-')) return true;
             }
         }
-        const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
+        const toolkitSelector = `.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label, .mcms-map-measure-path, .mcms-map-measure-point, #${SCRIPT.mapMeasureHudId}`;
         let elementCount = 0;
         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
             if (!collection?.length) continue;

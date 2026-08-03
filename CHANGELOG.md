@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.4.0] - 2026-08-03
+
+### On-demand map measurement and incident cards
+
+- Adds a deliberate Map Measure mode for distance, route length, operational boundaries and area, with miles, kilometres, square miles and hectares shown live.
+- Adds a branded 16:9 Incident Card generated locally from the currently open mission, ready to copy or download for Discord.
+- Makes Incident Cards available from Mission Operations, the Command Palette and a mission's contextual menu.
+- Keeps both tools dormant until explicitly opened and removes every temporary listener, Leaflet layer and image reference when closed.
+- Preserves the v10.3.8–v10.3.9 movement governor, stable map colours, every theme and all saved Toolkit settings without adding background cadence.
+
 ## [10.3.9] - 2026-08-03
 
 ### Stable map colours during movement

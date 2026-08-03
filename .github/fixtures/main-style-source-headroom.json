@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 670,
-    "version": "10.3.9",
-    "sourceBytes": 2160821,
-    "sourceLines": 32627,
-    "sourceSha256": "4af0252f060f96cab8629ea8f0c37d719f119d29c39441c84d068a050e8e0152",
-    "templateBytes": 791981,
-    "templateLines": 9400,
-    "templateSha256": "273a48118f77a8537072f617bd642e05eaa7534ea8d2e2b4f7cffd9a23d28fdb",
-    "canonicalCssSha256": "2404926c561194063819947bd83aa7b61a30f49124d0536e4eba8c35efc76795",
-    "maxSourceBytes": 2180000,
-    "maxSourceLines": 32900,
+    "issue": 673,
+    "version": "10.4.0",
+    "sourceBytes": 2202971,
+    "sourceLines": 33316,
+    "sourceSha256": "e23376d0ca76c379ca37a9b9bbe87c6a5ab4b208cd4fe5757f08f82af27cadf4",
+    "templateBytes": 796767,
+    "templateLines": 9430,
+    "templateSha256": "e4e3d887a7fc733be8077160bfd7998e84383cc4fa46891d55aa28f058ada343",
+    "canonicalCssSha256": "fb40b17f21ce9b752cae652ac93ea691c4398be6d1ef19d649422114eb239d40",
+    "maxSourceBytes": 2223000,
+    "maxSourceLines": 33550,
     "minTemplateBytes": 500000,
-    "baseline": "10.3.8",
+    "baseline": "10.3.9",
     "approvedGrowth": {
-      "sourceBytes": 4268,
-      "sourceLines": 0,
-      "templateBytes": 4293,
-      "templateLines": 0
+      "sourceBytes": 42150,
+      "sourceLines": 689,
+      "templateBytes": 4786,
+      "templateLines": 30
     },
-    "scope": "Issue #670 stable movement-time map colours through a shared tile-pane filter composite"
+    "scope": "Issue #673 bounded on-demand Map Measure and locally rendered Shareable Incident Card"
   }
 }

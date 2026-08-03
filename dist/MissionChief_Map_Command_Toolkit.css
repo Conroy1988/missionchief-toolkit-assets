@@ -9377,6 +9377,36 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #mc-map-command-toolkit-quick-wheel > button[role="menuitem"] { margin:0 !important; transform:translate(-50%,-50%) rotate(var(--mcms-wheel-angle,0deg)) translateY(-108px) rotate(calc(var(--mcms-wheel-angle,0deg) * -1)) !important; }
         #mc-map-command-toolkit-quick-wheel > .mcms-quick-wheel-centre { width:54px !important; min-height:54px !important; margin:0 !important; border-radius:50% !important; border-color:#ff9e9e !important; color:#ffb2b2 !important; font-size:24px !important; }
         #mc-map-command-toolkit-quick-wheel > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
+        #mc-map-command-toolkit-map-measure {
+            position:fixed !important; top:max(74px,calc(env(safe-area-inset-top) + 12px)) !important; right:max(12px,env(safe-area-inset-right)) !important;
+            z-index:2147483400 !important; width:min(330px,calc(100vw - 24px)) !important; display:grid !important; gap:9px !important;
+            padding:13px !important; border:1px solid rgba(104,211,255,.6) !important; border-radius:14px !important;
+            background:linear-gradient(150deg,rgba(14,31,43,.98),rgba(4,11,17,.985)) !important; color:#eef9ff !important;
+            box-shadow:0 18px 50px rgba(0,0,0,.62),0 0 28px rgba(66,193,245,.13) !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
+        }
+        #mc-map-command-toolkit-map-measure,#mc-map-command-toolkit-map-measure * { box-sizing:border-box !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:10px !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-head span { display:block !important; color:#66d3ff !important; font-size:8px !important; font-weight:950 !important; letter-spacing:.14em !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-head strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:17px !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-close { width:40px !important; min-width:40px !important; height:40px !important; min-height:40px !important; padding:0 !important; border:1px solid rgba(255,255,255,.22) !important; border-radius:9px !important; background:rgba(255,255,255,.055) !important; color:#fff !important; font-size:23px !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-modes,#mc-map-command-toolkit-map-measure .mcms-measure-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+        #mc-map-command-toolkit-map-measure button { min-height:42px !important; padding:7px 9px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:9px !important; background:rgba(255,255,255,.055) !important; color:#dcecf5 !important; font-size:10px !important; font-weight:850 !important; cursor:pointer !important; touch-action:manipulation !important; }
+        #mc-map-command-toolkit-map-measure button[aria-pressed="true"] { border-color:#66d3ff !important; background:rgba(35,151,204,.24) !important; color:#fff !important; box-shadow:0 0 0 2px rgba(102,211,255,.08) inset !important; }
+        #mc-map-command-toolkit-map-measure button:disabled { opacity:.38 !important; cursor:default !important; }
+        #mc-map-command-toolkit-map-measure button:focus-visible { outline:3px solid #7bd9ff !important; outline-offset:2px !important; }
+        html[data-mcms-map-measuring="true"] .leaflet-container { cursor:crosshair !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-readout { display:grid !important; gap:4px !important; min-height:72px !important; padding:11px 12px !important; border-left:3px solid #62d3ff !important; border-radius:8px !important; background:rgba(8,22,32,.88) !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-readout strong { color:#fff !important; font-size:20px !important; line-height:1.1 !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-readout span { color:#9bb3c2 !important; font-size:9px !important; line-height:1.4 !important; }
+        #mc-map-command-toolkit-map-measure .mcms-measure-guidance { color:#8fa7b6 !important; font-size:8.5px !important; line-height:1.4 !important; }
+        #mc-map-command-toolkit-command-experience .mcms-incident-card-preview { display:grid !important; gap:10px !important; }
+        #mc-map-command-toolkit-command-experience .mcms-incident-card-preview img { display:block !important; width:100% !important; height:auto !important; aspect-ratio:16/9 !important; border:1px solid rgba(104,211,255,.38) !important; border-radius:12px !important; background:#071018 !important; box-shadow:0 14px 38px rgba(0,0,0,.4) !important; }
+        #mc-map-command-toolkit-command-experience .mcms-incident-card-preview p { margin:0 !important; color:#9fb5c3 !important; font-size:10px !important; line-height:1.45 !important; }
+        html[data-mcms-economy="true"] #mc-map-command-toolkit-map-measure { box-shadow:0 12px 30px rgba(0,0,0,.54) !important; }
+        @media (max-width:620px) {
+            #mc-map-command-toolkit-map-measure { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; }
+            #mc-map-command-toolkit-map-measure button { min-height:46px !important; font-size:11px !important; }
+        }
         #mc-map-command-toolkit-panel .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #mc-map-command-toolkit-panel :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #mc-map-command-toolkit-panel .mcms-tab-panel { gap:11px !important; padding:13px !important; }

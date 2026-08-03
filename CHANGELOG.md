@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.5.3] - 2026-08-03
+
+### Balanced Desktop command deck
+
+- Uses available map height when a centred or horizontally constrained Desktop command bar would otherwise collapse into a shallow three-column block.
+- Balances Visibility, Intelligence, Dashboard and Performance into a two-by-two deck with larger 44px controls and more breathing room.
+- Expands Quick Jump across the full command-deck width as the bottom row while retaining the map attribution safety strip.
+- Keeps the efficient one-band treatment on genuinely wide maps and the existing contained scroll fallback on short maps.
+- Leaves Settings, Tablet, protected iOS, saved layouts, auto-hide and themes unchanged with no new idle map work.
+
 ## [10.5.2] - 2026-08-03
 
 ### Responsive Desktop command surface

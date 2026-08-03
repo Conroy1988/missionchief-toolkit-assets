@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 681,
-    "version": "10.5.2",
-    "sourceBytes": 2214754,
-    "sourceLines": 33395,
-    "sourceSha256": "1a0db8b4b24fe00dd2c7d13889ef50babde4cc7fd8d74e0f05018e3698f1570b",
+    "issue": 683,
+    "version": "10.5.3",
+    "sourceBytes": 2216380,
+    "sourceLines": 33409,
+    "sourceSha256": "e02b281e707161636aaa068318318b5899254798cf5f1cbbd9445cd6aba08edf",
     "templateBytes": 805091,
     "templateLines": 9493,
     "templateSha256": "d074571a8cc17058b941d9eb0f1d419cbbe6bca3e456543f246726fec8ce933a",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2225000,
     "maxSourceLines": 33500,
     "minTemplateBytes": 500000,
-    "baseline": "10.5.1",
+    "baseline": "10.5.2",
     "approvedGrowth": {
-      "sourceBytes": 4047,
-      "sourceLines": 33,
-      "templateBytes": 2742,
-      "templateLines": 14
+      "sourceBytes": 1626,
+      "sourceLines": 14,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issue #681 responsive mid-sized Desktop command surface and balanced Settings card columns"
+    "scope": "Issue #683 balanced Desktop command deck for tall, horizontally constrained map workspaces"
   }
 }

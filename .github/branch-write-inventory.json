@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-08-02",
-  "reviewedMainCommit": "c9fb4222465014dbe51809f3cade9ff4131b1a4a",
+  "reviewedAt": "2026-08-03",
+  "reviewedMainCommit": "94c25e574d24ad7b758e1fc5c448bcfe89b61c28",
   "strictProtectionEnabled": false,
   "directMainWriters": [],
   "indirectMainWriteOrchestrators": [
@@ -165,8 +165,22 @@
       "replacementIdentity": "narrowly scoped GitHub App"
     }
   ],
+  "branchMaintenanceWriters": [
+    {
+      "workflow": ".github/workflows/execute-audited-branch-cleanup.yml",
+      "sourceAuthority": "owner-pushed exact branch names and immutable audited head SHAs",
+      "target": "obsolete non-operational branch refs plus the transient command branch",
+      "credential": "github.token",
+      "actor": "repository owner only",
+      "openPullRequestDeletionAllowed": false,
+      "mainMutationAllowed": false,
+      "operationalBranchMutationAllowed": false,
+      "forcePushAllowed": false
+    }
+  ],
   "contentsWriteAuthority": [
     ".github/workflows/auto-release-after-validation.yml",
+    ".github/workflows/execute-audited-branch-cleanup.yml",
     ".github/workflows/owner-release-command.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml"

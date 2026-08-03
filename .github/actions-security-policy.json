@@ -22,6 +22,9 @@
     ".github/workflows/discord-release-preview.yml": [
       "issues"
     ],
+    ".github/workflows/execute-audited-branch-cleanup.yml": [
+      "contents"
+    ],
     ".github/workflows/github-pages.yml": [
       "id-token",
       "pages"

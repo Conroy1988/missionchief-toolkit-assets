@@ -39,7 +39,7 @@ const scenarios = [
   { name: "2560x1440", width: 2200, height: 1080, columns: 4, size: "wide", maxRows: 1 },
   { name: "1920x1080", width: 1700, height: 780, columns: 4, size: "wide", maxRows: 1 },
   { name: "1366x768", width: 1200, height: 520, columns: 4, size: "wide", maxRows: 2 },
-  { name: "1024x768", width: 900, height: 520, columns: 3, size: "standard" },
+  { name: "1024x768", width: 900, height: 520, columns: 2, size: "standard", balanced: true },
   { name: "603px forced Desktop", width: 564, height: 700, columns: 2, size: "compact" },
   { name: "480px forced Desktop", width: 440, height: 700, columns: 1, size: "tight" },
 ];
@@ -49,6 +49,7 @@ for (const scenario of scenarios) {
   assert.ok(grid.dockWidth > 240, `${scenario.name} retained the old narrow column`);
   assert.ok(grid.dockWidth <= scenario.width, `${scenario.name} exceeded the visible map width`);
   assert.equal(grid.groupColumns, scenario.columns, `${scenario.name} chose the wrong group grid`);
+  assert.equal(grid.balanced, Boolean(scenario.balanced), `${scenario.name} chose the wrong spacing flow`);
   assert.ok(grid.groupWidth > 0, `${scenario.name} lost its command-group width`);
   assert.equal(grid.groupWidths.length, 4, `${scenario.name} lost a content-sized group track`);
   if (scenario.columns === 4) {

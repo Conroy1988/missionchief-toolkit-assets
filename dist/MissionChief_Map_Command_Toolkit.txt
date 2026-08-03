@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.5.2
+// @version      10.5.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.5.2',
+        version: '10.5.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -524,14 +524,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.5.2",
-        title: "Responsive Desktop command surface",
+        version: "10.5.3",
+        title: "Balanced Desktop command deck",
         highlights: Object.freeze([
-            "Uses free horizontal space in mid-sized Desktop windows to expand the default command surface up to 1,040px while capping tall-window height at 760px.",
-            "Balances Settings cards into up to three content-sized columns, removing the large row-height gaps created by unequal cards such as Tablet Quick Wheel and Map Command Bar.",
-            "Compacts the section navigation rail while retaining every label, description, search control, header action and footer status.",
-            "Preserves custom panel widths and heights, saved panel positions, map-aware viewport clamping and the existing proportional fallback on short Desktop windows.",
-            "Leaves Tablet and protected iOS layouts unchanged and adds no polling, timer, observer, request, map listener or idle map work."
+            "Uses available map height when a centred or horizontally constrained Desktop command bar would otherwise collapse into a shallow three-column block.",
+            "Balances Visibility, Intelligence, Dashboard and Performance into a two-by-two deck with larger 44px controls and more breathing room.",
+            "Expands Quick Jump across the full command-deck width as the bottom row while retaining the map attribution safety strip.",
+            "Keeps the efficient one-band treatment on genuinely wide maps and the existing contained scroll fallback on short maps.",
+            "Leaves Settings, Tablet, protected iOS, saved layouts, auto-hide and themes unchanged with no new idle map work."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -12456,12 +12456,17 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const availableDockWidth = Math.min(1680, safeWidth);
         const safeLaunchWidth = Math.min(availableDockWidth, Math.max(56, Math.floor(finite(launchWidth) ? launchWidth : 117)));
         const availableContentWidth = Math.max(1, availableDockWidth - safeLaunchWidth - safeGap);
-        const groupColumns = availableContentWidth >= 900 ? 4 : availableContentWidth >= 620 ? 3 : availableContentWidth >= 360 ? 2 : 1;
+        let groupColumns = availableContentWidth >= 900 ? 4 : availableContentWidth >= 620 ? 3 : availableContentWidth >= 360 ? 2 : 1;
+        const balanced = groupColumns === 3 && safeHeight >= 280;
+        if (balanced) groupColumns = 2;
         const counts = Array.isArray(groupControlCounts) && groupControlCounts.length
         ? groupControlCounts.map(count => Math.max(0, Math.floor(Number(count) || 0)))
         : [4, 5, 3, 1];
         const safePinCount = Math.max(0, Math.floor(Number(pinCount) || 0));
-        const buttonGap = 4;
+        const buttonGap = balanced ? 6 : 4;
+        const buttonHeight = balanced ? 44 : 36;
+        const groupChromeHeight = balanced ? 22 : 18;
+        const pinButtonHeight = balanced ? 36 : 30;
         const minimumButtonWidth = 82;
         const preferredPinButtonWidth = 92;
         const minimumPinButtonWidth = 72;
@@ -12469,7 +12474,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const measureGroupHeight = (count, columns) => {
         if (!count) return 0;
         const rows = Math.max(1, Math.ceil(count / Math.max(1, columns)));
-        return 18 + (rows * 36) + (Math.max(0, rows - 1) * buttonGap);
+        return groupChromeHeight + (rows * buttonHeight) + (Math.max(0, rows - 1) * buttonGap);
         };
         const measurePinTrack = (widthBudget, allowEmpty = false) => {
         if (!safePinCount) return { columns: 1, rows: 0, width: 0, height: 0 };
@@ -12481,7 +12486,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             columns,
             rows,
             width: Math.min(budget, (columns * preferredPinButtonWidth) + (Math.max(0, columns - 1) * buttonGap)),
-            height: (rows * 30) + (Math.max(0, rows - 1) * buttonGap)
+            height: (rows * pinButtonHeight) + (Math.max(0, rows - 1) * buttonGap)
         };
         };
 
@@ -12537,7 +12542,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
 
         if (!groupButtonColumns) {
-        const preferredGroupWidth = groupColumns >= 3 ? 210 : groupColumns === 2 ? 220 : availableContentWidth;
+        const preferredGroupWidth = balanced ? Math.min(320, Math.floor((availableContentWidth - safeGap) / 2)) : groupColumns >= 3 ? 210 : groupColumns === 2 ? 220 : availableContentWidth;
         contentWidth = Math.min(availableContentWidth, (preferredGroupWidth * groupColumns) + (safeGap * Math.max(0, groupColumns - 1)));
         const groupWidth = Math.max(1, Math.floor((contentWidth - (safeGap * Math.max(0, groupColumns - 1))) / groupColumns));
         const fallbackMinimumButtonWidth = groupWidth >= 330 ? 92 : groupWidth >= 220 ? 88 : 82;
@@ -12554,7 +12559,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         naturalFilterHeight = Math.max(1, naturalFilterHeight);
         const pins = measurePinTrack(contentWidth);
         pinColumns = pins.columns || 1;
-        pinWidth = pins.width;
+        pinWidth = balanced && pins.height ? contentWidth : pins.width;
         naturalPinHeight = pins.height;
         }
 
@@ -12586,6 +12591,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         pinMaxHeight,
         pinMargin,
         scrollFallback: naturalHeight > safeHeight,
+        balanced,
         size: availableDockWidth >= 1000 ? 'wide' : availableDockWidth >= 760 ? 'standard' : availableDockWidth >= 520 ? 'compact' : 'tight'
         };
     }
@@ -12601,6 +12607,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         delete control.dataset.mcmsDesktopDockSize;
         delete control.dataset.mcmsDesktopDockScroll;
         delete control.dataset.mcmsDesktopPinsInline;
+        delete control.dataset.mcmsDesktopDockFlow;
     }
 
     function applyDesktopDockLayout(mapEl = getLargestLeafletMap(), control = document.querySelector?.('#' + SCRIPT.controlId)) {
@@ -12656,6 +12663,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         control.dataset.mcmsDesktopDockSize = grid.size;
         control.dataset.mcmsDesktopDockScroll = grid.scrollFallback ? 'true' : 'false';
         control.dataset.mcmsDesktopPinsInline = grid.pinsInline ? 'true' : 'false';
+        control.dataset.mcmsDesktopDockFlow = grid.balanced ? 'balanced' : 'compact';
         return Boolean(filter);
     }
 
@@ -12912,6 +12920,12 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-pins-inline="true"] .mcms-screen-pins{align-self:center!important;margin-top:0!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-screen-pins{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pin-btn{width:100%!important;min-width:0!important;max-width:none!important;height:30px!important;min-height:30px!important;padding:0 8px!important;font-size:9px!important;pointer-events:auto!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-floating-filter{align-items:stretch!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-control-group{gap:6px!important;padding:7px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] :is(.mcms-float-btn,.mcms-economy-btn){height:44px!important;min-height:44px!important;padding:5px 8px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-control-group[data-control-group="performance"] .mcms-economy-btn{height:auto!important;align-self:stretch!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-screen-pins{gap:6px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-screen-pin-btn{height:36px!important;min-height:36px!important}
         html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-floating-filter,.mcms-screen-pins){display:none!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}

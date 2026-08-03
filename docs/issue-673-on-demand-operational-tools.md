@@ -5,11 +5,11 @@ Toolkit `v10.4.0` adds Map Measure and Shareable Incident Card without adding id
 ## Map Measure
 
 - Opens only after an explicit Map tools, Command Palette or equivalent action.
-- Adds one Leaflet click listener and one owned layer group while active.
+- Adds one Leaflet click listener and one owned layer group while active; keyboard handling reuses the Toolkit's existing global owner.
 - Measures an open distance/route or a closed operational boundary with a maximum of 64 points.
 - Shows miles and kilometres for distance, plus square miles, hectares and perimeter for boundaries.
 - Tags every temporary Leaflet object as Toolkit-owned so normal mission, vehicle and building refresh logic ignores it.
-- Removes the click listener, keyboard listener, layer group, points and HUD on close, Safe Mode, route teardown or runtime replacement.
+- Removes the click listener, element-owned handlers, Canvas renderer, layer group, points and HUD on close, Safe Mode, route teardown or runtime replacement.
 
 ## Shareable Incident Card
 

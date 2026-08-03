@@ -1687,7 +1687,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         renderer: null,
         points: [],
         clickHandler: null,
-        keyHandler: null,
         hud: null
     };
     let incidentCardRuntime = null;
@@ -18417,7 +18416,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const map = mapMeasureRuntime.map;
         const renderer = mapMeasureRuntime.renderer;
         try { mapMeasureRuntime.map?.off?.('click', mapMeasureRuntime.clickHandler); } catch (err) {}
-        if (mapMeasureRuntime.keyHandler) runtimeUnlisten(document, 'keydown', mapMeasureRuntime.keyHandler, true);
         runtimeUnlistenTarget(mapMeasureRuntime.hud, true);
         mapMeasureClearLayers();
         try { mapMeasureRuntime.group?.remove?.(); } catch (err) {}
@@ -18429,7 +18427,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         mapMeasureRuntime.renderer = null;
         mapMeasureRuntime.points = [];
         mapMeasureRuntime.clickHandler = null;
-        mapMeasureRuntime.keyHandler = null;
         mapMeasureRuntime.hud = null;
         document.documentElement?.removeAttribute?.('data-mcms-map-measuring');
         if (wasActive && announce) showToast('Map Measure closed');
@@ -18452,12 +18449,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         hud.id = SCRIPT.mapMeasureHudId;
         hud.setAttribute('role', 'dialog');
         hud.setAttribute('aria-label', 'Map Measure');
-        hud.innerHTML = `
+        setInnerHtmlIfChanged(hud, `
             <div class="mcms-measure-head"><div><span>MAP COMMAND · ON-DEMAND</span><strong>Map Measure</strong></div><button class="mcms-measure-close" type="button" data-measure-action="close" aria-label="Close Map Measure">×</button></div>
             <div class="mcms-measure-modes"><button type="button" data-measure-mode="distance" aria-pressed="true">Distance / Route</button><button type="button" data-measure-mode="area" aria-pressed="false">Boundary / Area</button></div>
             <div class="mcms-measure-readout"><strong data-measure-primary>0 points</strong><span data-measure-secondary>Click the map to begin a route measurement.</span></div>
             <div class="mcms-measure-actions"><button type="button" data-measure-action="undo" disabled>Undo Point</button><button type="button" data-measure-action="clear" disabled>Clear</button></div>
-            <div class="mcms-measure-guidance">Click map positions to add up to ${MAP_MEASURE_MAX_POINTS} points. Dragging and zooming remain native. Escape closes; Backspace undoes.</div>`;
+            <div class="mcms-measure-guidance">Click map positions to add up to ${MAP_MEASURE_MAX_POINTS} points. Dragging and zooming remain native. Escape closes; Backspace undoes.</div>`);
         document.body.appendChild(hud);
         const group = pageWindow.L.layerGroup();
         group.__mcmsMapMeasureLayer = true;
@@ -18482,14 +18479,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         renderMapMeasureLayers();
         updateMapMeasureHud();
         };
-        mapMeasureRuntime.keyHandler = event => {
-        if (!mapMeasureRuntime.active || event.defaultPrevented || event.target?.matches?.('input,textarea,select,[contenteditable="true"]')) return;
-        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); stopMapMeasure(); }
-        else if (event.key === 'Backspace') { event.preventDefault(); event.stopPropagation(); mapMeasureUndo(); }
-        };
         map.on('click', mapMeasureRuntime.clickHandler);
-        runtimeListen(document, 'keydown', mapMeasureRuntime.keyHandler, true);
-        runtimeListen(hud, 'click', event => {
+        hud.onclick = event => {
         const modeButton = closestEventTarget(event, '[data-measure-mode]');
         const actionButton = closestEventTarget(event, '[data-measure-action]');
         if (modeButton) { event.preventDefault(); setMapMeasureMode(modeButton.dataset.measureMode); return; }
@@ -18498,8 +18489,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (actionButton.dataset.measureAction === 'undo') mapMeasureUndo();
         else if (actionButton.dataset.measureAction === 'clear') mapMeasureClear();
         else if (actionButton.dataset.measureAction === 'close') stopMapMeasure();
-        });
-        ['dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu'].forEach(type => runtimeListen(hud, type, stopMapInteraction, { passive: false }));
+        };
+        ['dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu'].forEach(type => { hud[`on${type}`] = stopMapInteraction; });
         document.documentElement?.setAttribute?.('data-mcms-map-measuring', 'true');
         updateMapMeasureHud();
         toolkitAnalyticsRecordFeature('mapMeasure');
@@ -20131,7 +20122,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         document.body.appendChild(link);
         link.click();
         link.remove();
-        runtimeSetTimeout(() => urlApi.revokeObjectURL(url), 0);
+        queueMicrotask(() => urlApi.revokeObjectURL(url));
         showToast('Incident Card downloaded');
         return true;
     }
@@ -29748,6 +29739,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!toolkitCommandShellContextActive()) {
             teardownToolkitCommandShell('keyboard event outside canonical map context');
             return;
+        }
+        if (mapMeasureRuntime.active && !event.defaultPrevented && !isTypingTarget(event.target)) {
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); stopMapMeasure(); return; }
+            if (event.key === 'Backspace') { event.preventDefault(); event.stopPropagation(); mapMeasureUndo(); return; }
         }
         if (event.key === 'Escape' && closeContextCommandMenu({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeCommandPalette({ restoreFocus: true })) { event.preventDefault(); return; }

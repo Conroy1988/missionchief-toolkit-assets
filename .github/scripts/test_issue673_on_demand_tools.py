@@ -30,8 +30,8 @@ def main() -> int:
         "function stopMapMeasure(",
         "map.on('click', mapMeasureRuntime.clickHandler)",
         "mapMeasureRuntime.map?.off?.('click', mapMeasureRuntime.clickHandler)",
-        "runtimeListen(document, 'keydown', mapMeasureRuntime.keyHandler, true)",
-        "runtimeUnlisten(document, 'keydown', mapMeasureRuntime.keyHandler, true)",
+        "hud.onclick = event =>",
+        "hud[`on${type}`] = stopMapInteraction",
         "group.__mcmsMapMeasureLayer = true",
         "renderer.__mcmsMapMeasureLayer = true",
         "renderer: mapMeasureRuntime.renderer || undefined",
@@ -51,6 +51,7 @@ def main() -> int:
         "GM_xmlhttpRequest(",
         "fetch(",
         "runtimeRequestAnimationFrame(",
+        "runtimeListen(",
     ]:
         assert forbidden not in measure, forbidden
 
@@ -90,6 +91,8 @@ def main() -> int:
         "stopMapMeasure(false)",
         "clearIncidentCardRuntime()",
         "mapMeasureRuntime.active && mapMeasureRuntime.map !== map",
+        "if (mapMeasureRuntime.active && !event.defaultPrevented && !isTypingTarget(event.target))",
+        "queueMicrotask(() => urlApi.revokeObjectURL(url))",
         "toolkitAnalyticsRecordFeature('mapMeasure')",
         "toolkitAnalyticsRecordFeature('incidentCard')",
     ]:

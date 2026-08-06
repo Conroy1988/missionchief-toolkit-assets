@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Release title assertions must track the installed RELEASE_BRIEFING exactly.
+// This contract is intentionally touched to recover the protected PR gate after the 2026-08-06 Actions outage.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";

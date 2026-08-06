@@ -47,7 +47,7 @@ vm.runInContext(
 const { RELEASE_BRIEFING, updateBriefingBody, openToolkitReleaseNotes, openUpdateBriefing } = sandbox.__api;
 const body = updateBriefingBody();
 assert.match(body, /NOW INSTALLED/u);
-assert.match(body, /v10\.5\.4/u);
+assert.match(body, /v10\.6\.0/u);
 assert.match(body, /Compact offset Desktop command deck/u);
 for (const highlight of RELEASE_BRIEFING.highlights) assert.ok(body.includes(sandbox.escapeHtml(highlight)), highlight);
 for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alliance Chat", "Unit Locator &amp; Follow", "Session Cleanup</b>"]) {

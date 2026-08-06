@@ -48,7 +48,7 @@ const { RELEASE_BRIEFING, updateBriefingBody, openToolkitReleaseNotes, openUpdat
 const body = updateBriefingBody();
 assert.match(body, /NOW INSTALLED/u);
 assert.match(body, /v10\.6\.0/u);
-assert.match(body, /Compact offset Desktop command deck/u);
+assert.match(body, /Persistent Patient Transport Sweep reports/u);
 for (const highlight of RELEASE_BRIEFING.highlights) assert.ok(body.includes(sandbox.escapeHtml(highlight)), highlight);
 for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alliance Chat", "Unit Locator &amp; Follow", "Session Cleanup</b>"]) {
   assert.ok(!body.includes(stale), stale);
@@ -57,7 +57,7 @@ for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alli
 assert.equal(openUpdateBriefing(), true);
 assert.equal(modal.kind, "Update Briefing");
 assert.equal(modal.title, "What’s New & Feature Beacon · v10.6.0");
-assert.equal(modal.subtitle, "Compact offset Desktop command deck");
+assert.equal(modal.subtitle, "Persistent Patient Transport Sweep reports");
 assert.equal(modal.body, body);
 
 sandbox.state.updateBriefing.enabled = false;

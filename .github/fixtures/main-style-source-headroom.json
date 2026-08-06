@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 685,
-    "version": "10.5.4",
-    "sourceBytes": 2216987,
-    "sourceLines": 33415,
-    "sourceSha256": "3b7f344883f9d44980a7a416cba3dfff1d68cfa5571ce9612a9565390fc21a77",
-    "templateBytes": 805091,
-    "templateLines": 9493,
-    "templateSha256": "d074571a8cc17058b941d9eb0f1d419cbbe6bca3e456543f246726fec8ce933a",
-    "canonicalCssSha256": "e15180dae7b3d1b5345cf937e22eb916b037c91730d2c7f7022f5a3051ecb1ba",
-    "maxSourceBytes": 2225000,
-    "maxSourceLines": 33500,
+    "issue": 689,
+    "version": "10.6.0",
+    "sourceBytes": 2237606,
+    "sourceLines": 33674,
+    "sourceSha256": "7997630cb369914b84719085326ec2d65197e5117bff45c3bcf1e69454525858",
+    "templateBytes": 809759,
+    "templateLines": 9494,
+    "templateSha256": "5998e23febbf2df55a82e42d57772f6a1e6f2f8e2453c7713ac05394e5b3419d",
+    "canonicalCssSha256": "6f78c73700f22263675ddfb7ffff4a47f152bc8ef4414ef3d707f78c7a3dafc3",
+    "maxSourceBytes": 2246000,
+    "maxSourceLines": 33760,
     "minTemplateBytes": 500000,
-    "baseline": "10.5.3",
+    "baseline": "10.5.4",
     "approvedGrowth": {
-      "sourceBytes": 607,
-      "sourceLines": 6,
-      "templateBytes": 0,
-      "templateLines": 0
+      "sourceBytes": 20619,
+      "sourceLines": 259,
+      "templateBytes": 4668,
+      "templateLines": 1
     },
-    "scope": "Issue #685 compact offset Desktop command deck using the full safe map corridor"
+    "scope": "Issue #689 persistent aggregate Patient Transport Sweep report with exact-once Discord completion delivery"
   }
 }

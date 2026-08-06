@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.6.0] - 2026-08-06
+
+### Persistent Patient Transport Sweep reports
+
+- Keeps the latest Patient Transport Sweep result visible until you dismiss it or start a replacement sweep, including after a page reload.
+- Records mission coverage, patients cleared, skipped actions, errors, success rate, duration and final outcome from one immutable completion snapshot.
+- Automatically posts the same aggregate-only completion snapshot once when a valid Discord webhook is already saved.
+- Shows Discord delivery state in the report and provides a deliberate retry without allowing webhook failure to interrupt the sweep.
+- Adds no polling, observers or idle map work and preserves every native MissionChief safety check used by the sweep.
+
 ## [10.5.4] - 2026-08-03
 
 ### Compact offset Desktop command deck

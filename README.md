@@ -140,7 +140,7 @@ These are not colour swaps. Each system retunes surfaces, borders, signals, typo
 | **Quiet when inactive** | The Toolkit avoids pointless background work and offers Economy Mode plus reduced motion for constrained devices. |
 | **A clean return path** | Disable the userscript and MissionChief is **The One We Knew Before**. The native game remains the boundary and the fallback. |
 
-Protected settings backups, encrypted full transfer and safe export support deliberate recovery. No configuration transfer is silent; no Discord report is automatic.
+Protected settings backups, encrypted full transfer and safe export support deliberate recovery. No configuration transfer is silent. Finance and SITREP reports remain manual; Patient Transport Sweep completion posts automatically only when you have already saved a Discord webhook, and contains aggregate outcome statistics only.
 
 ---
 

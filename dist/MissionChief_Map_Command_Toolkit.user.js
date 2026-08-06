@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.5.4
+// @version      10.6.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.5.4',
+        version: '10.6.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -498,6 +498,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         payoutHistoryState: 'mc_map_command_toolkit_payout_history_v200',
         sessionPerformanceState: 'mc_map_command_toolkit_session_v200',
         missionProgressState: 'mc_map_command_toolkit_mission_progress_v250',
+        transportSweepReportState: 'mc_map_command_toolkit_transport_sweep_report_v1',
         discordWebhookState: 'mc_map_command_toolkit_discord_webhook_v300',
         discordLastReportState: 'mc_map_command_toolkit_discord_last_report_v310',
         financeVaultState: 'mc_map_command_toolkit_finance_vault_v450',
@@ -524,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.5.4",
-        title: "Compact offset Desktop command deck",
+        version: "10.6.0",
+        title: "Persistent Patient Transport Sweep reports",
         highlights: Object.freeze([
-            "Reclaims the safe horizontal map corridor that was incorrectly discarded when the Desktop command bar had a saved horizontal nudge.",
-            "Turns the supplied 1690×1276 layout from a tall 44px two-by-two block into one shallow band of compact 36px controls.",
-            "Keeps Quick Jump inline inside the same band and clamps the effective offset so every control remains within the live map.",
-            "Retains the balanced fallback for genuinely narrow Desktop maps and the existing contained scroll fallback for short maps.",
-            "Leaves Settings, Tablet, protected iOS, saved layout data, auto-hide and themes unchanged with no new idle map work."
+            "Keeps the latest Patient Transport Sweep result visible until you dismiss it or start a replacement sweep, including after a page reload.",
+            "Records mission coverage, patients cleared, skipped actions, errors, success rate, duration and final outcome from one immutable completion snapshot.",
+            "Automatically posts the same aggregate-only completion snapshot once when a valid Discord webhook is already saved.",
+            "Shows Discord delivery state in the report and provides a deliberate retry without allowing webhook failure to interrupt the sweep.",
+            "Adds no polling, observers or idle map work and preserves every native MissionChief safety check used by the sweep."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1592,6 +1593,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let ukKnowledgeLoadPromise = null;
     let ukKnowledgeActiveRequirement = null;
     let ukKnowledgeReturnFocus = null;
+    const restoredTransportSweepReport = loadTransportSweepReport();
     const transportSweepRuntime = {
         running: false,
         stopRequested: false,
@@ -1620,11 +1622,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionIndex: 0,
         missionTotal: 0,
         completedMissionCount: 0,
+        missionsChecked: 0,
         currentItem: '',
         statusMessage: '',
         statusLevel: 'info',
-        hudFinal: false,
-        hudDismissTimer: null,
+        hudFinal: Boolean(restoredTransportSweepReport),
+        lastReport: restoredTransportSweepReport,
+        discordPosting: false,
         log: []
     };
     const personalVehicleApiCache = new Map();
@@ -3044,7 +3048,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
         #${SCRIPT.panelId} .mcms-pin-btn:hover { background: rgba(255,255,255,.14) !important; }#${SCRIPT.panelId} .mcms-quick-row { display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; gap: 6px !important; margin-bottom: 6px !important; }#${SCRIPT.panelId} .mcms-bookmark-row { display: grid !important; grid-template-columns: minmax(0,1fr) 32px 38px 36px 26px !important; gap: 5px !important; align-items: center !important; margin-bottom: 5px !important; }#${SCRIPT.panelId} .mcms-bookmark-name { color: rgba(255,255,255,.86) !important; font-size: 10px !important; font-weight: 850 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }#${SCRIPT.panelId} .mcms-status { margin-top: 8px !important; padding: 7px !important; border-radius: 9px !important; border: 1px solid rgba(255,255,255,.12) !important; background: rgba(255,255,255,.055) !important; color: rgba(255,255,255,.68) !important; font-size: 9px !important; line-height: 1.25 !important; }#${SCRIPT.panelId} .mcms-input,
         #${SCRIPT.panelId} .mcms-select { user-select: text !important; }#${SCRIPT.panelId} .mcms-discord-wide { grid-template-columns: 92px minmax(0,1fr) !important; }#${SCRIPT.panelId} .mcms-discord-preview { margin-top:8px !important; min-height:72px !important; }#${SCRIPT.panelId} .mcms-discord-empty { padding:14px 10px !important; border:1px dashed rgba(88,166,255,.28) !important; border-radius:10px !important; background:linear-gradient(135deg,rgba(88,166,255,.06),rgba(124,77,255,.05)) !important; color:rgba(255,255,255,.58) !important; font-size:9px !important; line-height:1.35 !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-discord-card { padding:10px !important; border-radius:12px !important; border:1px solid rgba(255,255,255,.14) !important; background:linear-gradient(145deg,rgba(22,28,38,.96),rgba(11,15,22,.98)) !important; box-shadow:inset 0 1px rgba(255,255,255,.04),0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="positive"] { border-color:rgba(46,204,113,.48) !important; box-shadow:inset 3px 0 #2ecc71,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="negative"] { border-color:rgba(231,76,60,.52) !important; box-shadow:inset 3px 0 #e74c3c,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="neutral"] { border-color:rgba(241,196,15,.42) !important; box-shadow:inset 3px 0 #f1c40f,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-head { display:flex !important; justify-content:space-between !important; align-items:flex-start !important; gap:8px !important; margin-bottom:8px !important; }#${SCRIPT.panelId} .mcms-discord-title { color:#fff !important; font-size:10px !important; font-weight:950 !important; letter-spacing:.35px !important; }#${SCRIPT.panelId} .mcms-discord-date { margin-top:2px !important; color:rgba(255,255,255,.54) !important; font-size:8px !important; font-weight:800 !important; }#${SCRIPT.panelId} .mcms-discord-result { padding:3px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; font-size:8px !important; font-weight:950 !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-stats { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; }#${SCRIPT.panelId} .mcms-discord-stat { min-width:0 !important; padding:7px 5px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-discord-stat span { display:block !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:900 !important; text-transform:uppercase !important; letter-spacing:.5px !important; }#${SCRIPT.panelId} .mcms-discord-stat strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:10px !important; font-weight:950 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.panelId} .mcms-discord-breakdowns { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-discord-breakdown { min-width:0 !important; padding:7px !important; border-radius:8px !important; background:rgba(255,255,255,.04) !important; }#${SCRIPT.panelId} .mcms-discord-breakdown b { display:block !important; margin-bottom:4px !important; color:#bbdefb !important; font-size:7.5px !important; text-transform:uppercase !important; letter-spacing:.55px !important; }#${SCRIPT.panelId} .mcms-discord-line { display:flex !important; justify-content:space-between !important; gap:5px !important; margin-top:3px !important; color:rgba(255,255,255,.68) !important; font-size:7.5px !important; }#${SCRIPT.panelId} .mcms-discord-line span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-line strong { color:#fff !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-foot { margin-top:7px !important; padding-top:6px !important; border-top:1px solid rgba(255,255,255,.08) !important; color:rgba(255,255,255,.48) !important; font-size:7.5px !important; line-height:1.3 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="good"] { border-color:rgba(46,204,113,.38) !important; color:#9be8b8 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="bad"] { border-color:rgba(231,76,60,.42) !important; color:#ffaaa1 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="busy"] { border-color:rgba(52,152,219,.42) !important; color:#9bd5ff !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:6px !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats span { min-width:0 !important; padding:5px 4px !important; border-radius:7px !important; background:rgba(88,166,255,.07) !important; color:rgba(255,255,255,.52) !important; font-size:6.8px !important; font-weight:850 !important; text-align:center !important; text-transform:uppercase !important; letter-spacing:.3px !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats b { display:block !important; margin-top:2px !important; color:#fff !important; font-size:7.8px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-chart { display:block !important; width:100% !important; margin-top:8px !important; border-radius:9px !important; border:1px solid rgba(255,255,255,.11) !important; background:#0b1018 !important; }#${SCRIPT.panelId} .mcms-discord-date-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; }#${SCRIPT.panelId} .mcms-discord-date-grid .mcms-row { grid-template-columns:56px minmax(0,1fr) !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin:7px 0 !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary span { min-width:0 !important; padding:7px 5px !important; border:1px solid rgba(88,166,255,.18) !important; border-radius:8px !important; background:rgba(88,166,255,.055) !important; color:rgba(255,255,255,.54) !important; font-size:6.8px !important; font-weight:850 !important; text-align:center !important; text-transform:uppercase !important; letter-spacing:.3px !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary b { display:block !important; margin-bottom:2px !important; color:#fff !important; font-size:8px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary small { grid-column:1/-1 !important; padding:5px 7px !important; border-radius:7px !important; background:rgba(255,255,255,.035) !important; color:rgba(255,255,255,.48) !important; font-size:7.2px !important; line-height:1.35 !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-finance-private-note { border-color:rgba(241,196,15,.34) !important; color:#f5d984 !important; }#${SCRIPT.panelId} .mcms-sweep-card { margin-top:8px !important; padding:8px !important; border-radius:9px !important; border:1px solid rgba(255,183,72,.28) !important; background:rgba(88,46,4,.13) !important; }#${SCRIPT.panelId} .mcms-sweep-head { display:flex !important; justify-content:space-between !important; align-items:center !important; gap:8px !important; color:#ffe0a3 !important; font-size:9px !important; font-weight:950 !important; }#${SCRIPT.panelId} .mcms-sweep-state { padding:2px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; color:rgba(255,255,255,.78) !important; font-size:7px !important; letter-spacing:.35px !important; }#${SCRIPT.panelId} .mcms-sweep-state.mcms-running { background:rgba(255,145,24,.28) !important; color:#fff1cf !important; }#${SCRIPT.panelId} .mcms-sweep-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-stat { min-width:0 !important; padding:5px 3px !important; border-radius:7px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-sweep-stat b { display:block !important; color:#fff !important; font-size:11px !important; line-height:1 !important; }#${SCRIPT.panelId} .mcms-sweep-stat span { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.50) !important; font-size:6.5px !important; font-weight:900 !important; text-transform:uppercase !important; }#${SCRIPT.panelId} .mcms-sweep-queue { display:grid !important; gap:4px !important; max-height:128px !important; overflow-y:auto !important; margin-top:7px !important; padding-right:2px !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }#${SCRIPT.panelId} .mcms-sweep-entry { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:6px !important; padding:6px !important; border-radius:7px !important; border:1px solid rgba(255,255,255,.08) !important; background:rgba(255,255,255,.04) !important; }#${SCRIPT.panelId} .mcms-sweep-entry.mcms-current { border-color:rgba(255,177,57,.62) !important; background:rgba(255,145,24,.11) !important; }#${SCRIPT.panelId} .mcms-sweep-title { min-width:0 !important; color:#f7f8fb !important; font-size:8.5px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.panelId} .mcms-sweep-meta { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:800 !important; }#${SCRIPT.panelId} .mcms-sweep-count { color:#ffc86b !important; font-size:9px !important; font-weight:950 !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-sweep-log { max-height:72px !important; overflow-y:auto !important; margin-top:7px !important; padding:6px !important; border-radius:7px !important; background:rgba(0,0,0,.18) !important; color:rgba(255,255,255,.64) !important; font:700 7px/1.35 Arial,Helvetica,sans-serif !important; white-space:normal !important; }#${SCRIPT.transportSweepHudId} { position:fixed !important; top:max(12px,env(safe-area-inset-top)) !important; right:max(12px,env(safe-area-inset-right)) !important; z-index:2147482000 !important; width:min(340px,calc(100vw - 24px)) !important; padding:11px !important; border:1px solid rgba(255,184,72,.72) !important; border-radius:12px !important; background:linear-gradient(145deg,rgba(18,23,31,.97),rgba(34,22,8,.97)) !important; color:#f8fbff !important; box-shadow:0 18px 55px rgba(0,0,0,.55),0 0 0 1px rgba(255,184,72,.08) inset !important; font:800 11px/1.25 Arial,Helvetica,sans-serif !important; pointer-events:none !important; touch-action:none !important; user-select:none !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; }#${SCRIPT.transportSweepHudId}[data-state="complete"] { border-color:rgba(70,229,139,.78) !important; background:linear-gradient(145deg,rgba(12,29,25,.98),rgba(8,47,31,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-state="error"] { border-color:rgba(255,100,108,.82) !important; background:linear-gradient(145deg,rgba(35,17,21,.98),rgba(54,12,18,.97)) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head span { min-width:0 !important; display:flex !important; align-items:center !important; gap:7px !important; color:#ffe3ad !important; font-size:11px !important; font-weight:950 !important; letter-spacing:.15px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head i { width:8px !important; height:8px !important; flex:0 0 8px !important; border-radius:50% !important; background:#ffb648 !important; box-shadow:0 0 0 4px rgba(255,182,72,.13),0 0 12px rgba(255,182,72,.58) !important; }#${SCRIPT.transportSweepHudId}[data-state="complete"] .mcms-sweep-hud-head i { background:#46e58b !important; box-shadow:0 0 0 4px rgba(70,229,139,.13),0 0 12px rgba(70,229,139,.58) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head b { flex:0 0 auto !important; padding:3px 7px !important; border-radius:999px !important; background:rgba(255,255,255,.09) !important; color:rgba(255,255,255,.74) !important; font-size:7px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.45px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-status { margin-top:9px !important; color:#fff !important; font-size:10px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { margin-top:3px !important; color:rgba(255,255,255,.58) !important; font-size:8px !important; font-weight:750 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin-top:9px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats span { min-width:0 !important; padding:7px 4px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats b { display:block !important; color:#fff !important; font-size:13px !important; line-height:1 !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats small { display:block !important; margin-top:4px !important; color:rgba(255,255,255,.48) !important; font-size:6.4px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.25px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared { background:rgba(70,229,139,.15) !important; box-shadow:0 0 0 1px rgba(70,229,139,.24) inset !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared b { color:#73f2ab !important; font-size:17px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-foot { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:7px !important; border-top:1px solid rgba(255,255,255,.09) !important; color:rgba(255,255,255,.42) !important; font-size:7px !important; font-weight:850 !important; text-transform:uppercase !important; letter-spacing:.25px !important; }
-        @media (max-width:700px) {#${SCRIPT.transportSweepHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; padding:9px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { display:none !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { gap:3px !important; }
+        #${SCRIPT.panelId} .mcms-sweep-last-report { margin-top:8px !important; padding:9px !important; border:1px solid rgba(70,229,139,.42) !important; border-radius:10px !important; background:linear-gradient(145deg,rgba(14,40,31,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="partial"] { border-color:rgba(255,182,72,.46) !important; background:linear-gradient(145deg,rgba(49,32,10,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="error"] { border-color:rgba(255,100,108,.48) !important; background:linear-gradient(145deg,rgba(49,17,22,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="stopped"] { border-color:rgba(149,165,166,.45) !important; }#${SCRIPT.panelId} .mcms-sweep-report-summary { margin-top:7px !important; color:#f7fbff !important; font-size:9px !important; font-weight:900 !important; line-height:1.3 !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid span { min-width:0 !important; padding:6px 3px !important; border-radius:7px !important; background:rgba(255,255,255,.055) !important; color:rgba(255,255,255,.50) !important; font-size:6.5px !important; font-weight:900 !important; text-align:center !important; text-transform:uppercase !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid b { display:block !important; margin-bottom:3px !important; color:#fff !important; font-size:11px !important; line-height:1 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:7px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:850 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="good"] { color:#73f2ab !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="bad"] { color:#ff8b92 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="busy"] { color:#8bd3ff !important; }#${SCRIPT.panelId} .mcms-sweep-report-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-report-actions > :only-child { grid-column:1/-1 !important; }#${SCRIPT.transportSweepHudId}[data-state="partial"] { border-color:rgba(255,182,72,.82) !important; background:linear-gradient(145deg,rgba(35,25,10,.98),rgba(54,31,8,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-state="stopped"] { border-color:rgba(149,165,166,.78) !important; background:linear-gradient(145deg,rgba(24,29,31,.98),rgba(34,39,41,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-final="true"] { pointer-events:auto !important; touch-action:auto !important; user-select:auto !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:8px !important; border-top:1px solid rgba(255,255,255,.09) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span { min-width:0 !important; color:rgba(255,255,255,.58) !important; font-size:7px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="good"] { color:#73f2ab !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="bad"] { color:#ff8b92 !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="busy"] { color:#8bd3ff !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > div { display:flex !important; gap:5px !important; flex:0 0 auto !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions button { min-height:26px !important; padding:4px 8px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:7px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font:900 7px/1 Arial,Helvetica,sans-serif !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions button:hover { background:rgba(255,255,255,.16) !important; }
+        @media (max-width:700px) {#${SCRIPT.transportSweepHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; padding:9px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { display:none !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { gap:3px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions { align-items:flex-end !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span { white-space:normal !important; }
         }#${SCRIPT.panelId} .mcms-footer { margin: 9px 0 0 0 !important; padding: 7px 0 0 0 !important; border-top: 1px solid rgba(255,255,255,.10) !important; color: rgba(233,238,245,.58) !important; font-size: 9px !important; line-height: 1.25 !important; overflow: hidden !important; }#${SCRIPT.panelId} .mcms-build { display: block !important; margin-top: 4px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }.mcms-mission-float-pane,
         .mcms-mission-float-pane * {
             pointer-events: none !important;
@@ -15230,6 +15235,150 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         return runtimeDelay(ms);
     }
 
+    function normaliseTransportSweepReport(value) {
+        let source = value;
+        if (typeof source === 'string') {
+        try { source = JSON.parse(source); } catch (err) { return null; }
+        }
+        if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+        const sweepId = String(source.sweepId || '').trim();
+        const outcome = String(source.outcome || '').trim();
+        const completedAt = Math.max(0, Number(source.completedAt) || 0);
+        if (!/^sweep-\d{10,16}-[a-z0-9]{6}$/u.test(sweepId) || !['successful', 'partial', 'failed', 'manually-stopped'].includes(outcome) || !completedAt) return null;
+        const number = input => Math.max(0, Math.round(Number(input) || 0));
+        const missionsChecked = number(source.missionsChecked);
+        const eligibleMissions = number(source.eligibleMissions);
+        const missionsCompleted = Math.min(eligibleMissions, number(source.missionsCompleted));
+        const cleared = number(source.cleared);
+        const skipped = number(source.skipped);
+        const errors = number(source.errors);
+        const processed = number(source.processed);
+        const successRate = processed ? Math.round((cleared / processed) * 100) : 0;
+        const rawDiscord = source.discord && typeof source.discord === 'object' ? source.discord : {};
+        const discordStatus = ['not-configured', 'sending', 'sent', 'failed'].includes(rawDiscord.status) ? rawDiscord.status : 'not-configured';
+        const discordMessage = String(rawDiscord.message || '').trim().slice(0, 180);
+        return Object.freeze({
+        schemaVersion: 1,
+        sweepId,
+        toolkitVersion: String(source.toolkitVersion || SCRIPT.version).trim().slice(0, 24),
+        startedAt: Math.max(0, Number(source.startedAt) || 0),
+        completedAt,
+        durationMs: Math.min(86400000, Math.max(0, Number(source.durationMs) || 0)),
+        outcome,
+        missionsChecked,
+        eligibleMissions,
+        missionsCompleted,
+        cleared,
+        skipped,
+        errors,
+        processed,
+        successRate,
+        discord: Object.freeze({
+            status: discordStatus,
+            message: discordMessage,
+            sentAt: Math.max(0, Number(rawDiscord.sentAt) || 0)
+        })
+        });
+    }
+
+    function loadTransportSweepReport() {
+        const report = normaliseTransportSweepReport(gmGetValueSafe(SCRIPT.transportSweepReportState, ''));
+        if (!report || report.discord.status !== 'sending') return report;
+        return normaliseTransportSweepReport({
+        ...report,
+        discord: { status: 'failed', message: 'Delivery was interrupted before Discord confirmed receipt.', sentAt: 0 }
+        });
+    }
+
+    function persistTransportSweepReport(report) {
+        const clean = normaliseTransportSweepReport(report);
+        if (!clean) return false;
+        return gmSetValueSafe(SCRIPT.transportSweepReportState, JSON.stringify(clean));
+    }
+
+    function setTransportSweepReport(report, { render = true } = {}) {
+        const clean = normaliseTransportSweepReport(report);
+        if (!clean) return null;
+        transportSweepRuntime.lastReport = clean;
+        transportSweepRuntime.hudFinal = true;
+        persistTransportSweepReport(clean);
+        if (render) renderTransportSweepPanel();
+        return clean;
+    }
+
+    function dismissTransportSweepReport({ quiet = false, render = true } = {}) {
+        transportSweepRuntime.lastReport = null;
+        transportSweepRuntime.hudFinal = false;
+        gmDeleteValueSafe(SCRIPT.transportSweepReportState);
+        removeTransportSweepHud();
+        if (render) renderTransportSweepPanel();
+        if (!quiet) showToast('Patient Transport Sweep report dismissed');
+    }
+
+    function transportSweepOutcomeMeta(outcome) {
+        if (outcome === 'successful') return { label: 'Successful', tone: 'complete', colour: 0x46e58b };
+        if (outcome === 'failed') return { label: 'Failed', tone: 'error', colour: 0xff646c };
+        if (outcome === 'manually-stopped') return { label: 'Manually stopped', tone: 'stopped', colour: 0x95a5a6 };
+        return { label: 'Partial', tone: 'partial', colour: 0xffb648 };
+    }
+
+    function transportSweepDiscordMeta(report) {
+        const status = String(report?.discord?.status || 'not-configured');
+        if (status === 'sent') return { label: 'Discord: Sent', tone: 'good', retryLabel: '' };
+        if (status === 'sending') return { label: 'Discord: Sending…', tone: 'busy', retryLabel: '' };
+        if (status === 'failed') return { label: 'Discord: Failed', tone: 'bad', retryLabel: 'Retry Discord' };
+        return { label: 'Discord: Not configured', tone: 'neutral', retryLabel: 'Send to Discord' };
+    }
+
+    function formatTransportSweepDuration(durationMs) {
+        const totalSeconds = Math.max(0, Math.round((Number(durationMs) || 0) / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (hours) return `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+        return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+    }
+
+    function createTransportSweepReport(wasStopped, missionProgress) {
+        const completedAt = Date.now();
+        const cleared = Math.max(0, Number(transportSweepRuntime.cleared) || 0);
+        const skipped = Math.max(0, Number(transportSweepRuntime.skipped) || 0);
+        const errors = Math.max(0, Number(transportSweepRuntime.errors) || 0);
+        const processed = Math.max(0, Number(transportSweepRuntime.processed) || 0);
+        const outcome = wasStopped ? 'manually-stopped'
+        : errors > 0 && cleared === 0 ? 'failed'
+        : errors > 0 || skipped > 0 ? 'partial'
+        : 'successful';
+        const webhookConfigured = Boolean(getDiscordWebhookUrl());
+        return normaliseTransportSweepReport({
+        schemaVersion: 1,
+        sweepId: `sweep-${completedAt}-${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`,
+        toolkitVersion: SCRIPT.version,
+        startedAt: Math.max(0, Number(transportSweepRuntime.startedAt) || completedAt),
+        completedAt,
+        durationMs: Math.max(0, completedAt - (Number(transportSweepRuntime.startedAt) || completedAt)),
+        outcome,
+        missionsChecked: transportSweepRuntime.missionsChecked,
+        eligibleMissions: missionProgress.total,
+        missionsCompleted: missionProgress.completed,
+        cleared,
+        skipped,
+        errors,
+        processed,
+        discord: {
+            status: webhookConfigured ? 'sending' : 'not-configured',
+            message: webhookConfigured ? 'Posting aggregate sweep statistics…' : 'Save a Discord webhook in Finance to send this report.',
+            sentAt: 0
+        }
+        });
+    }
+
+    function updateTransportSweepReportDiscord(sweepId, discord) {
+        const current = transportSweepRuntime.lastReport;
+        if (!current || current.sweepId !== sweepId) return null;
+        return setTransportSweepReport({ ...current, discord: { ...current.discord, ...discord } });
+    }
+
     function transportSweepElementVisible(element) {
         if (!element || !element.isConnected) return false;
         try {
@@ -15270,18 +15419,20 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const now = Date.now();
         const queue = [];
         const seen = new Set();
+        let missionsChecked = 0;
         for (const marker of getMissionMarkerIndex().markers) {
         const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
         if (missionId === null || seen.has(missionId)) continue;
+        seen.add(missionId);
         const personal = isPersonalMissionLayer(marker, missionId);
         if (personal) continue;
+        missionsChecked += 1;
         const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
         const requirement = transportRequirementFromSnapshot(snapshot);
         const patientCount = Math.max(0, Number(snapshot?.patientsCount) || 0);
         if (!requirement || requirement.type === 'prisoner') continue;
         if (requirement.type !== 'patient' && patientCount <= 0) continue;
         const count = Math.max(1, Math.min(99, Number(requirement.count) || patientCount || 1));
-        seen.add(missionId);
         queue.push({
             missionId,
             caption: String(snapshot?.caption || `Alliance mission ${missionId}`),
@@ -15292,6 +15443,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         }
         queue.sort((a, b) => (a.createdAt || Number.MAX_SAFE_INTEGER) - (b.createdAt || Number.MAX_SAFE_INTEGER));
         transportSweepRuntime.queue = queue;
+        transportSweepRuntime.missionsChecked = missionsChecked;
         transportSweepRuntime.scannedAt = now;
         renderTransportSweepPanel();
         return queue;
@@ -15318,25 +15470,22 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         hud.setAttribute('role', 'status');
         hud.setAttribute('aria-live', 'polite');
         hud.setAttribute('aria-atomic', 'true');
+        hud.addEventListener('click', event => {
+        const button = event.target?.closest?.('[data-sweep-report-action]');
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (button.dataset.sweepReportAction === 'dismiss') dismissTransportSweepReport();
+        if (button.dataset.sweepReportAction === 'retry') void postTransportSweepDiscordReport(transportSweepRuntime.lastReport, { manual: true });
+        });
         mount.appendChild(hud);
         return hud;
     }
 
     function removeTransportSweepHud() {
-        runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
-        transportSweepRuntime.hudDismissTimer = null;
         for (const hud of transportSweepHudElements()) {
         try { hud.remove(); } catch (err) {}
         }
-    }
-
-    function scheduleTransportSweepHudDismiss(delay = 6500) {
-        runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
-        transportSweepRuntime.hudDismissTimer = runtimeSetTimeout(() => {
-        transportSweepRuntime.hudDismissTimer = null;
-        transportSweepRuntime.hudFinal = false;
-        removeTransportSweepHud();
-        }, Math.max(0, Number(delay) || 0));
     }
 
     function transportSweepHudElapsed() {
@@ -15390,24 +15539,44 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     function renderTransportSweepHud() {
         const sweep = transportSweepRuntime;
-        const visible = sweep.running || sweep.stopRequested || sweep.hudFinal;
+        const finalReport = !sweep.running && !sweep.stopRequested && sweep.hudFinal ? sweep.lastReport : null;
+        const visible = sweep.running || sweep.stopRequested || Boolean(finalReport);
         if (!visible) {
         removeTransportSweepHud();
         return;
         }
         const hud = ensureTransportSweepHud();
         if (!hud) return;
+        if (finalReport) {
+        const outcome = transportSweepOutcomeMeta(finalReport.outcome);
+        const discord = transportSweepDiscordMeta(finalReport);
+        const completed = new Date(finalReport.completedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const retry = discord.retryLabel ? `<button type="button" data-sweep-report-action="retry">${escapeHtml(discord.retryLabel)}</button>` : '';
+        hud.dataset.state = outcome.tone;
+        hud.dataset.final = 'true';
+        setInnerHtmlIfChanged(hud, `<div class="mcms-sweep-hud-head"><span><i></i>Patient Transport Sweep</span><b>${escapeHtml(outcome.label)}</b></div><div class="mcms-sweep-hud-status">${finalReport.cleared} patient${finalReport.cleared === 1 ? '' : 's'} cleared across ${finalReport.eligibleMissions} eligible mission${finalReport.eligibleMissions === 1 ? '' : 's'}</div><div class="mcms-sweep-hud-current">${finalReport.missionsChecked} checked · ${finalReport.missionsCompleted}/${finalReport.eligibleMissions} completed · ${escapeHtml(completed)}</div><div class="mcms-sweep-hud-stats"><span><b>${finalReport.missionsCompleted}/${finalReport.eligibleMissions}</b><small>Missions</small></span><span class="mcms-sweep-hud-cleared"><b>${finalReport.cleared}</b><small>Patients cleared</small></span><span><b>${finalReport.skipped}</b><small>Skipped</small></span><span><b>${finalReport.errors}</b><small>Errors</small></span></div><div class="mcms-sweep-hud-foot"><span>${escapeHtml(formatTransportSweepDuration(finalReport.durationMs))} duration</span><span>${finalReport.successRate}% success</span></div><div class="mcms-sweep-hud-actions"><span data-tone="${escapeHtml(discord.tone)}" title="${escapeHtml(finalReport.discord.message)}">${escapeHtml(discord.label)}</span><div>${retry}<button type="button" data-sweep-report-action="dismiss">Dismiss</button></div></div>`);
+        return;
+        }
         const progress = transportSweepMissionProgress();
-        const phase = sweep.hudFinal ? (sweep.statusLevel === 'error' ? 'Finished with errors' : 'Sweep complete')
-        : sweep.stopRequested ? 'Stopping'
+        const phase = sweep.stopRequested ? 'Stopping'
         : 'Sweep running';
         const current = String(sweep.currentItem || '').trim();
         const message = String(sweep.statusMessage || (sweep.running ? 'Preparing patient transport sweep' : phase)).trim();
-        hud.dataset.state = sweep.hudFinal ? (sweep.errors ? 'error' : 'complete') : sweep.stopRequested ? 'stopping' : 'running';
-        hud.innerHTML = `<div class="mcms-sweep-hud-head"><span><i></i>Patient Transport Sweep</span><b>${escapeHtml(phase)}</b></div><div class="mcms-sweep-hud-status">${escapeHtml(message)}</div>${current ? `<div class="mcms-sweep-hud-current">${escapeHtml(current)}</div>` : ''}<div class="mcms-sweep-hud-stats"><span><b>${escapeHtml(progress.text)}</b><small>Missions</small></span><span class="mcms-sweep-hud-cleared"><b>${Math.max(0, Number(sweep.cleared) || 0)}</b><small>Patients cleared</small></span><span><b>${Math.max(0, Number(sweep.skipped) || 0)}</b><small>Skipped</small></span><span><b>${Math.max(0, Number(sweep.errors) || 0)}</b><small>Errors</small></span></div><div class="mcms-sweep-hud-foot"><span>${escapeHtml(transportSweepHudElapsed())} elapsed</span><span>${Math.max(0, Number(sweep.processed) || 0)} processed</span></div>`;
+        hud.dataset.state = sweep.stopRequested ? 'stopping' : 'running';
+        hud.dataset.final = 'false';
+        setInnerHtmlIfChanged(hud, `<div class="mcms-sweep-hud-head"><span><i></i>Patient Transport Sweep</span><b>${escapeHtml(phase)}</b></div><div class="mcms-sweep-hud-status">${escapeHtml(message)}</div>${current ? `<div class="mcms-sweep-hud-current">${escapeHtml(current)}</div>` : ''}<div class="mcms-sweep-hud-stats"><span><b>${escapeHtml(progress.text)}</b><small>Missions</small></span><span class="mcms-sweep-hud-cleared"><b>${Math.max(0, Number(sweep.cleared) || 0)}</b><small>Patients cleared</small></span><span><b>${Math.max(0, Number(sweep.skipped) || 0)}</b><small>Skipped</small></span><span><b>${Math.max(0, Number(sweep.errors) || 0)}</b><small>Errors</small></span></div><div class="mcms-sweep-hud-foot"><span>${escapeHtml(transportSweepHudElapsed())} elapsed</span><span>${Math.max(0, Number(sweep.processed) || 0)} processed</span></div>`);
     }
 
     runtimeOnCleanup(removeTransportSweepHud);
+
+    function transportSweepReportPanelHtml(report) {
+        if (!report) return '';
+        const outcome = transportSweepOutcomeMeta(report.outcome);
+        const discord = transportSweepDiscordMeta(report);
+        const completed = new Date(report.completedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const retry = discord.retryLabel ? `<button class="mcms-small-btn" type="button" data-action="retry-transport-sweep-discord">${escapeHtml(discord.retryLabel)}</button>` : '';
+        return `<div class="mcms-sweep-last-report" data-tone="${escapeHtml(outcome.tone)}"><div class="mcms-sweep-head"><span>Last Sweep Report</span><span class="mcms-sweep-state">${escapeHtml(outcome.label)}</span></div><div class="mcms-sweep-report-summary">${report.cleared} patient${report.cleared === 1 ? '' : 's'} cleared · ${report.successRate}% success · ${escapeHtml(formatTransportSweepDuration(report.durationMs))}</div><div class="mcms-sweep-report-grid"><span><b>${report.missionsChecked}</b>Checked</span><span><b>${report.eligibleMissions}</b>Eligible</span><span><b>${report.missionsCompleted}</b>Completed</span><span><b>${report.processed}</b>Processed</span></div><div class="mcms-sweep-report-meta"><span data-tone="${escapeHtml(discord.tone)}" title="${escapeHtml(report.discord.message)}">${escapeHtml(discord.label)}</span><time datetime="${new Date(report.completedAt).toISOString()}">${escapeHtml(completed)}</time></div><div class="mcms-sweep-report-actions">${retry}<button class="mcms-small-btn" type="button" data-action="dismiss-transport-sweep-report">Dismiss Report</button></div></div>`;
+    }
 
     function renderTransportSweepPanel() {
         renderTransportSweepHud();
@@ -15426,7 +15595,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No sweep activity yet.</div>';
-        const html = `<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Patient Transport Sweep</span><span class="mcms-sweep-state ${runtime.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${escapeHtml(missionProgress.text)}</b><span>Mission progress</span></div><div class="mcms-sweep-stat"><b>${runtime.cleared}</b><span>Cleared</span></div><div class="mcms-sweep-stat"><b>${runtime.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtime.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${list}</div><div class="mcms-sweep-log">${logs}</div></div>`;
+        const html = `${transportSweepReportPanelHtml(runtime.lastReport)}<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Patient Transport Sweep</span><span class="mcms-sweep-state ${runtime.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${escapeHtml(missionProgress.text)}</b><span>Mission progress</span></div><div class="mcms-sweep-stat"><b>${runtime.cleared}</b><span>Cleared</span></div><div class="mcms-sweep-stat"><b>${runtime.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtime.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${list}</div><div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
         const start = document.querySelector(`#${SCRIPT.panelId} [data-action="start-transport-sweep"]`);
         const stop = document.querySelector(`#${SCRIPT.panelId} [data-action="stop-transport-sweep"]`);
@@ -16291,6 +16460,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
 The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control or Cancel Transport control. Your own verified vehicle IDs are always excluded. Continue?`);
         if (!confirmed) return;
+        dismissTransportSweepReport({ quiet: true, render: false });
         toolkitAnalyticsRecordFeature('patientTransportSweep');
         transportSweepRuntime.running = true;
         transportSweepRuntime.stopRequested = false;
@@ -16312,8 +16482,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         transportSweepRuntime.ownedWindowLayers = new Set();
         transportSweepRuntime.activeWindowCreatedLayer = false;
         transportSweepRuntime.lastCandidateStats = null;
-        runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
-        transportSweepRuntime.hudDismissTimer = null;
         transportSweepRuntime.startedAt = Date.now();
         transportSweepRuntime.completedMissionCount = 0;
         setTransportSweepMissionProgress(queue.length ? 1 : 0, queue.length, {
@@ -16367,13 +16535,15 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             transportSweepRuntime.activeWindowRoot = null;
             transportSweepRuntime.ownedWindowLayers = new Set();
             transportSweepRuntime.activeWindowCreatedLayer = false;
-            transportSweepRuntime.hudFinal = true;
+            transportSweepRuntime.hudFinal = false;
             const missionProgress = finaliseTransportSweepMissionProgress(wasStopped);
+            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: missions ${missionProgress.text}, ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`, transportSweepRuntime.errors ? 'error' : 'info');
+            const finalReport = setTransportSweepReport(createTransportSweepReport(wasStopped, missionProgress), { render: false });
             buildTransportSweepQueue();
             scheduleTransportWatcherRefresh(0);
             showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared · ${transportSweepRuntime.skipped} skipped · ${missionProgress.text} missions` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared · ${transportSweepRuntime.skipped} skipped · ${missionProgress.text} missions`);
-            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: missions ${missionProgress.text}, ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`, transportSweepRuntime.errors ? 'error' : 'info');
-            scheduleTransportSweepHudDismiss(6500);
+            renderTransportSweepPanel();
+            if (finalReport) void postTransportSweepDiscordReport(finalReport);
         }
     }
 
@@ -28181,6 +28351,93 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return response;
     }
 
+    function buildTransportSweepDiscordPayload(report) {
+        const outcome = transportSweepOutcomeMeta(report.outcome);
+        const completionUnix = Math.floor(report.completedAt / 1000);
+        const title = report.outcome === 'manually-stopped'
+        ? '🚑 Patient Transport Sweep Stopped'
+        : '🚑 Patient Transport Sweep Complete';
+        return {
+        username: 'MissionChief Map Command Toolkit',
+        allowed_mentions: { parse: [] },
+        embeds: [{
+            title,
+            description: `**${report.cleared} patient${report.cleared === 1 ? '' : 's'} cleared** across ${report.eligibleMissions} eligible mission${report.eligibleMissions === 1 ? '' : 's'}.`,
+            color: outcome.colour,
+            fields: [
+            { name: 'Final status', value: outcome.label, inline: true },
+            { name: 'Success rate', value: `${report.successRate}%`, inline: true },
+            { name: 'Duration', value: formatTransportSweepDuration(report.durationMs), inline: true },
+            { name: 'Missions checked', value: String(report.missionsChecked), inline: true },
+            { name: 'Eligible missions', value: String(report.eligibleMissions), inline: true },
+            { name: 'Missions completed', value: String(report.missionsCompleted), inline: true },
+            { name: 'Patients cleared', value: String(report.cleared), inline: true },
+            { name: 'Skipped', value: String(report.skipped), inline: true },
+            { name: 'Errors', value: String(report.errors), inline: true },
+            { name: 'Processed', value: String(report.processed), inline: true },
+            { name: 'Completed', value: `<t:${completionUnix}:F>`, inline: false }
+            ],
+            footer: { text: `Map Command Toolkit v${report.toolkitVersion} · Aggregate-only sweep report` },
+            timestamp: new Date(report.completedAt).toISOString()
+        }]
+        };
+    }
+
+    async function postTransportSweepDiscordReport(report = transportSweepRuntime.lastReport, { manual = false } = {}) {
+        const clean = normaliseTransportSweepReport(report);
+        const current = transportSweepRuntime.lastReport;
+        if (!clean || !current || current.sweepId !== clean.sweepId) return false;
+        if (current.discord.status === 'sent') {
+        if (manual) showToast('This sweep report is already on Discord');
+        return true;
+        }
+        if (transportSweepRuntime.discordPosting) return false;
+        const webhookUrl = getDiscordWebhookUrl();
+        if (!webhookUrl) {
+        updateTransportSweepReportDiscord(clean.sweepId, {
+            status: 'not-configured',
+            message: 'Save a Discord webhook in Finance, then choose Send to Discord.',
+            sentAt: 0
+        });
+        if (manual) showToast('Save a Discord webhook in Finance first');
+        return false;
+        }
+        transportSweepRuntime.discordPosting = true;
+        updateTransportSweepReportDiscord(clean.sweepId, {
+        status: 'sending',
+        message: 'Posting aggregate sweep statistics…',
+        sentAt: 0
+        });
+        try {
+        const payload = buildTransportSweepDiscordPayload(clean);
+        const response = await sendDiscordWithRetry(() => discordHttpRequest({
+            method: 'POST',
+            url: discordWebhookEndpoint(webhookUrl, { wait: true }),
+            headers: { 'Content-Type': 'application/json' },
+            data: JSON.stringify(payload)
+        }));
+        if (response.status < 200 || response.status >= 300) throw new Error(parseDiscordError(response));
+        updateTransportSweepReportDiscord(clean.sweepId, {
+            status: 'sent',
+            message: 'Discord confirmed receipt of the aggregate sweep report.',
+            sentAt: Date.now()
+        });
+        showToast('Patient Transport Sweep report sent to Discord');
+        return true;
+        } catch (err) {
+        updateTransportSweepReportDiscord(clean.sweepId, {
+            status: 'failed',
+            message: String(err?.message || 'Discord delivery failed.').slice(0, 180),
+            sentAt: 0
+        });
+        showToast('Sweep complete · Discord delivery failed');
+        return false;
+        } finally {
+        transportSweepRuntime.discordPosting = false;
+        renderTransportSweepPanel();
+        }
+    }
+
     function operationalSitrepMissionLink(action) {
         const origin = String(pageWindow.location?.origin || 'https://www.missionchief.co.uk').replace(/\/+$/u, '');
         return `${origin}/missions/${encodeURIComponent(action.missionId)}`;
@@ -31043,6 +31300,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (action === 'scan-transport-sweep') { const queue = buildTransportSweepQueue(); showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found'); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
+        if (action === 'retry-transport-sweep-discord') { void postTransportSweepDiscordReport(transportSweepRuntime.lastReport, { manual: true }); return; }
+        if (action === 'dismiss-transport-sweep-report') { dismissTransportSweepReport(); return; }
         if (action === 'reset-session') { resetSessionPerformance(); return; }
         if (action === 'clear-payout-history') { clearPayoutHistory(); return; }
         if (action === 'profile-save') { saveMapProfile(Number(button.dataset.slot)); return; }

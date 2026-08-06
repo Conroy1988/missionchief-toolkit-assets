@@ -50,7 +50,7 @@ def main() -> int:
     expect_briefing_failure(
         validator,
         source.replace(
-            "Reclaims the safe horizontal map corridor that was incorrectly discarded when the Desktop command bar had a saved horizontal nudge.",
+            "Keeps the latest Patient Transport Sweep result visible until you dismiss it or start a replacement sweep, including after a page reload.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

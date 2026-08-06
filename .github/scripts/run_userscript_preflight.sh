@@ -17,6 +17,7 @@ node .github/scripts/test_issue523_transport_sweep_progress_runtime.js
 node .github/scripts/test_issue527_transport_sweep_skipped_patients_runtime.js
 node .github/scripts/test_issue530_transport_sweep_discharge_confirmation_runtime.js
 node .github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs
+node .github/scripts/test_issue689_transport_sweep_report.js
 node .github/scripts/test_issue515_launcher_runtime.js
 node .github/scripts/test_issue638_command_shell_route_runtime.mjs
 node .github/scripts/test_issue641_desktop_dock_fit_runtime.mjs

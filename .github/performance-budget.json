@@ -317,6 +317,13 @@
       "approvedNetworkRequestDelta": 1,
       "scope": "User-triggered MissionChief UK Guide capability, unit and personnel enrichment with schema validation, bounded durable cache, offline fallback, privacy-safe catalogue-drift reporting and deterministic request cancellation.",
       "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 689,
+      "version": "10.6.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Completion-triggered aggregate Patient Transport Sweep report reusing the existing saved Discord webhook request primitive, with persistent local state, exact-once delivery and no timer, observer, polling or idle map work.",
+      "approvedMutationObserverDelta": 0
     }
   ]
 }

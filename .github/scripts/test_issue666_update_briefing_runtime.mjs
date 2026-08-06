@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Release title assertions must track the installed RELEASE_BRIEFING exactly.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";

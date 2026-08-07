@@ -43,11 +43,13 @@ const context = vm.createContext({
     MISSION_PROGRESS_PAGE_REFRESH_MS: 30_000,
     missionProgressPageLastSuccessAt: Date.now(),
     missionProgressPageMissionIds: pageMissionIds,
+    missionProgressPageMissionRecords: new Map(),
     missionOverlayData: overlays,
     liveMissionSnapshots: new Map(),
     transportSweepRuntime: runtime,
     document: { querySelectorAll: () => [missionRoot] },
     normaliseMissionId,
+    transportSweepMissionIdFromListEntry: entry => normaliseMissionId(String(entry?.id || '').match(/^mission_(\d+)$/u)?.[1]),
     missionIdFromMarker: marker => normaliseMissionId(marker?.missionId),
     getMissionMarkerIndex: () => markerIndex,
     missionSnapshotFromMarker: () => null,
@@ -70,6 +72,8 @@ const context = vm.createContext({
     renderTransportSweepPanel: () => {},
     transportSweepLog: message => runtime.log.push(message),
     scanInlineMissionMarkerData: () => 0,
+    captureTransportSweepMissionListDataFromDocument: () => new Map(),
+    hydrateTransportSweepMobileMissions: async () => 0,
     refreshMissionProgressFromPage: async () => {
         refreshCalls += 1;
         pageMissionIds.add('101');

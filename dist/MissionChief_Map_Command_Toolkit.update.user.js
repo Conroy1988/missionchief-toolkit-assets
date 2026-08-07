@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.6.1
+// @version      10.6.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.6.1',
+        version: '10.6.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -525,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.6.1",
-        title: "iOS Patient Transport Sweep discovery repair",
+        version: "10.6.2",
+        title: "iOS Patient Transport Sweep parity repair",
         highlights: Object.freeze([
-            "Fixes Patient Transport Sweep scans returning zero missions on iPhone and iOS Safari when MissionChief does not expose its Leaflet mission-marker registry.",
-            "Refreshes MissionChief's current mission payload only when you deliberately press Scan or Start Sweep, then uses the captured current mission IDs as the iOS-safe fallback.",
-            "Requires positive alliance ownership before any fallback mission can enter the queue, so personal and unknown-owner missions remain excluded.",
-            "Preserves prisoner filtering, verified personal-vehicle exclusion and MissionChief's native Cancel Transport and Discharge patient controls.",
-            "Keeps v10.6.0 persistent sweep reports and exact-once Discord delivery unchanged, with no new timer, observer, poller or background request."
+            "Restores Patient Transport Sweep mission parity on iPhone when MissionChief serves mobile mission lists without desktop missionMarkerAdd scripts or a Leaflet marker registry.",
+            "Reads current suffixed alliance lists and mission_id records, then requires positive alliance evidence before any mission can be checked or queued.",
+            "Hydrates only current patient-bearing alliance candidates through bounded same-origin mission-page requests triggered by your deliberate Scan or Start Sweep action.",
+            "Keeps personal, unknown-owner, stale, prisoner and non-transport missions excluded while preserving verified personal-vehicle and native discharge safeguards.",
+            "Adds a real-mobile empty-marker regression with desktop parity and retains persistent reports and exact-once Discord delivery without new polling, observers or timers."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1286,6 +1286,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const TRANSPORT_SWEEP_DELAY_OPTIONS = [1500, 2000, 2500, 3000, 4000, 5000];
     const TRANSPORT_SWEEP_MAX_REQUESTS = 50;
     const TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION = 40;
+    const TRANSPORT_SWEEP_MAX_MOBILE_DISCOVERY_MISSIONS = 80;
+    const TRANSPORT_SWEEP_MOBILE_DISCOVERY_CONCURRENCY = 4;
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -1543,6 +1545,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let missionProgressPageLastFetch = 0;
     let missionProgressPageLastSuccessAt = 0;
     let missionProgressPageMissionIds = new Set();
+    let missionProgressPageMissionRecords = new Map();
     let missionSnapshotReady = false;
     let vehicleApiFetchPromise = null;
     let vehicleApiLastFetch = 0;
@@ -13642,7 +13645,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         if (missionProgressPageFetchPromise) return missionProgressPageFetchPromise;
 
         missionProgressPageFetchPromise = (async () => {
-        let succeeded = false;
         try {
             const requestModes = [
                 { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' },
@@ -13657,12 +13659,15 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
                 });
                 if (!response.ok) continue;
                 const html = await response.text();
-                if (!html || !html.includes('missionMarkerAdd')) continue;
+                if (!html) continue;
                 const doc = new DOMParser().parseFromString(html, 'text/html');
                 const missionIds = new Set();
-                if (captureMissionMarkerDataFromDocument(doc, missionIds) > 0) {
+                const markerRecords = captureMissionMarkerDataFromDocument(doc, missionIds);
+                const mobileRecords = captureTransportSweepMissionListDataFromDocument(doc);
+                for (const missionId of mobileRecords.keys()) missionIds.add(missionId);
+                if (markerRecords > 0 || mobileRecords.size > 0) {
                     missionProgressPageMissionIds = missionIds;
-                    succeeded = true;
+                    missionProgressPageMissionRecords = mobileRecords;
                     missionProgressPageLastSuccessAt = Date.now();
                     return true;
                 }
@@ -15423,21 +15428,166 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         renderTransportSweepPanel();
     }
 
+    function transportSweepMissionIdFromListEntry(entry) {
+        if (!entry) return null;
+        const explicit = entry.getAttribute?.('mission_id') ?? entry.getAttribute?.('data-mission-id') ?? entry.getAttribute?.('data-mission_id');
+        const idMatch = String(entry.id || '').match(/^mission_(\d+)$/u);
+        let hrefMatch = null;
+        try {
+            const href = entry.matches?.('a[href*="/missions/"]') ? entry.getAttribute('href') : entry.querySelector?.('a[href*="/missions/"]')?.getAttribute('href');
+            hrefMatch = String(href || '').match(/\/missions\/(\d+)(?:\/|$|[?#])/u);
+        } catch (err) {}
+        const missionId = normaliseMissionId(explicit ?? idMatch?.[1] ?? hrefMatch?.[1]);
+        return /^\d+$/u.test(String(missionId || '')) ? missionId : null;
+    }
+
+    function transportSweepMissionListOwnership(entry) {
+        if (!entry) return 'unknown';
+        const list = entry.closest?.('[id^="mission_list"]');
+        const listId = String(list?.id || '').toLowerCase();
+        const ownerId = entry.getAttribute?.('user_id') ?? entry.getAttribute?.('data-user-id') ?? entry.getAttribute?.('data-user_id')
+            ?? list?.getAttribute?.('user_id') ?? list?.getAttribute?.('data-user-id') ?? list?.getAttribute?.('data-user_id');
+        const currentUserId = currentMissionUserId();
+        if (ownerId !== undefined && ownerId !== null && ownerId !== '' && currentUserId !== null) {
+            return String(ownerId) === currentUserId ? 'personal' : 'alliance';
+        }
+        if (/^mission_list_alliance(?:_|$)/u.test(listId)) return 'alliance';
+        if (listId === 'mission_list' || /^mission_list_(?:sicherheitswache|event)(?:_|$)/u.test(listId)) return 'personal';
+        const signal = `${entry.className || ''} ${list?.className || ''} ${entry.getAttribute?.('data-mission-source') || ''} ${entry.getAttribute?.('data-source') || ''}`.toLowerCase();
+        return /(?:^|[\s_-])(?:alliance|verband|association)(?:$|[\s_-])/u.test(signal) ? 'alliance' : 'unknown';
+    }
+
+    function transportSweepMissionListRecord(entry) {
+        const missionId = transportSweepMissionIdFromListEntry(entry);
+        if (missionId === null || entry.classList?.contains('mission_deleted')) return null;
+        const ownership = transportSweepMissionListOwnership(entry);
+        const patientCountNode = entry.querySelector?.('.mission_list_patient_icon + strong, [data-patients-count], [data-patients_count]');
+        const rawPatientCount = patientCountNode?.getAttribute?.('data-patients-count') ?? patientCountNode?.getAttribute?.('data-patients_count') ?? patientCountNode?.textContent;
+        const patientCountMatch = String(rawPatientCount || '').match(/\d+/u);
+        const patientsCount = patientCountMatch ? Number(patientCountMatch[0]) : null;
+        const entryText = String(entry.textContent || '').replace(/\s+/g, ' ').trim();
+        const patientSignal = Boolean(
+            entry.querySelector?.('.mission_list_patient_icon, [id^="mission_patient_summary_"], [id^="mission_patients_"], .mission_patient, [data-patients-count], [data-patients_count]')
+            || /\b(?:patient|casualt|injur|ambulance|hospital|transport)\b/i.test(entryText)
+        );
+        const missingNode = entry.querySelector?.('[data-missing-text], [data-missing_text], .missing_text');
+        const rawMissingText = missingNode?.getAttribute?.('data-missing-text') ?? missingNode?.getAttribute?.('data-missing_text') ?? missingNode?.textContent ?? '';
+        const missingTextKnown = Boolean(missingNode);
+        const captionNode = entry.querySelector?.('.mission_caption, .mission-caption, .panel-title, a[href*="/missions/"]');
+        const caption = normaliseMissionCaption(captionNode?.textContent || entry.getAttribute?.('mission_caption') || entry.getAttribute?.('data-mission-caption') || '');
+        const createdAt = parseMissionTimestamp(entry.getAttribute?.('created_at') ?? entry.getAttribute?.('data-created-at') ?? entry.getAttribute?.('data-created_at')) || 0;
+        return {
+            missionId,
+            ownership,
+            caption,
+            createdAt,
+            patientsCount,
+            prisonersCount: null,
+            patientSignal,
+            missingText: normaliseMissingRequirementText(rawMissingText),
+            missingTextKnown
+        };
+    }
+
+    function captureTransportSweepMissionListDataFromDocument(doc) {
+        const records = new Map();
+        let entries = [];
+        try {
+            entries = Array.from(doc?.querySelectorAll?.([
+                '#missions-panel-body .missionSideBarEntry',
+                '[id^="mission_list"] .missionSideBarEntry',
+                '[id^="mission_list"] [mission_id]',
+                '[id^="mission_list"] [data-mission-id]',
+                '[id^="mission_list"] [data-mission_id]',
+                '[id^="mission_list"] [id^="mission_"]'
+            ].join(', ')) || []);
+        } catch (err) {}
+        for (const entry of entries) {
+            const record = transportSweepMissionListRecord(entry);
+            if (!record) continue;
+            const previous = records.get(record.missionId);
+            if (!previous) {
+                records.set(record.missionId, record);
+                continue;
+            }
+            const ownership = [previous.ownership, record.ownership].includes('personal') ? 'personal'
+                : [previous.ownership, record.ownership].includes('alliance') ? 'alliance' : 'unknown';
+            records.set(record.missionId, {
+                ...previous,
+                ...record,
+                ownership,
+                caption: record.caption || previous.caption,
+                createdAt: record.createdAt || previous.createdAt,
+                patientsCount: record.patientsCount ?? previous.patientsCount,
+                patientSignal: Boolean(previous.patientSignal || record.patientSignal),
+                missingText: record.missingTextKnown ? record.missingText : previous.missingText,
+                missingTextKnown: Boolean(previous.missingTextKnown || record.missingTextKnown)
+            });
+        }
+        return records;
+    }
+
+    function transportSweepSnapshotFromMissionDocument(doc, record) {
+        if (!doc || !record || record.ownership !== 'alliance') return null;
+        const missingRoot = doc.getElementById?.('missing_text') || doc.querySelector?.('[data-requirement-type="vehicles"], [data-requirement-type="patients"], [data-requirement-type="prisoners"]')?.closest?.('div');
+        if (!missingRoot) return null;
+        const patientsCount = Math.max(Number(record.patientsCount) || 0, doc.querySelectorAll?.('.mission_patient, [id^="patient_"]')?.length || 0);
+        const prisonersCount = doc.querySelectorAll?.('.mission_prisoner, [id^="prisoner_"]')?.length || 0;
+        const caption = normaliseMissionCaption(doc.querySelector?.('#missionH1, h1')?.textContent || record.caption || '');
+        return {
+            ...record,
+            caption,
+            patientsCount,
+            prisonersCount,
+            missingText: normaliseMissingRequirementText(missingRoot.textContent || ''),
+            missingTextKnown: true
+        };
+    }
+
+    async function hydrateTransportSweepMobileMissions() {
+        const now = Date.now();
+        if (!missionProgressPageLastSuccessAt || now - missionProgressPageLastSuccessAt > MISSION_PROGRESS_PAGE_REFRESH_MS * 2) return 0;
+        const candidates = Array.from(missionProgressPageMissionRecords.values())
+            .filter(record => {
+                if (record.ownership !== 'alliance' || !record.patientSignal || record.missingTextKnown) return false;
+                const overlay = missionOverlayData.get(record.missionId);
+                return !(overlay?.missingTextKnown === true || Object.prototype.hasOwnProperty.call(overlay || {}, 'missingText'));
+            })
+            .sort((a, b) => (a.createdAt || Number.MAX_SAFE_INTEGER) - (b.createdAt || Number.MAX_SAFE_INTEGER))
+            .slice(0, TRANSPORT_SWEEP_MAX_MOBILE_DISCOVERY_MISSIONS);
+        if (!candidates.length) return 0;
+
+        transportSweepLog(`Checking ${candidates.length} current iOS patient mission${candidates.length === 1 ? '' : 's'}`);
+        let cursor = 0;
+        let hydrated = 0;
+        const worker = async () => {
+            while (cursor < candidates.length && !runtime.destroyed && !transportSweepRuntime.stopRequested) {
+                const record = candidates[cursor++];
+                const fetched = await transportSweepFetchMissionDocument(record.missionId);
+                const snapshot = transportSweepSnapshotFromMissionDocument(fetched?.doc, record);
+                if (!snapshot) continue;
+                missionProgressPageMissionRecords.set(record.missionId, snapshot);
+                hydrated += 1;
+            }
+        };
+        await Promise.all(Array.from({ length: Math.min(TRANSPORT_SWEEP_MOBILE_DISCOVERY_CONCURRENCY, candidates.length) }, worker));
+        return hydrated;
+    }
+
     function transportSweepFallbackMissionIds(now = Date.now()) {
         const ids = new Set();
         if (missionProgressPageLastSuccessAt && now - missionProgressPageLastSuccessAt <= MISSION_PROGRESS_PAGE_REFRESH_MS * 2) {
             for (const missionId of missionProgressPageMissionIds) ids.add(String(missionId));
+            for (const missionId of missionProgressPageMissionRecords.keys()) ids.add(String(missionId));
         }
 
         const roots = [];
-        try { roots.push(...document.querySelectorAll('#missions, #mission_list, .missions-panel, .mission-list')); } catch (err) {}
+        try { roots.push(...document.querySelectorAll('#missions, #missions-panel-body, [id^="mission_list"], .missions-panel, .mission-list')); } catch (err) {}
         for (const root of roots) {
             let entries = [];
-            try { entries = Array.from(root.querySelectorAll('[id^="mission_"], [data-mission-id], [data-mission_id]')); } catch (err) {}
+            try { entries = Array.from(root.querySelectorAll('[id^="mission_"], [mission_id], [data-mission-id], [data-mission_id], a[href*="/missions/"]')); } catch (err) {}
             for (const entry of entries) {
-                const explicit = entry.getAttribute?.('data-mission-id') ?? entry.getAttribute?.('data-mission_id');
-                const idMatch = String(entry.id || '').match(/^mission_(\d+)$/u);
-                const missionId = normaliseMissionId(explicit ?? idMatch?.[1]);
+                const missionId = transportSweepMissionIdFromListEntry(entry);
                 if (missionId !== null) ids.add(missionId);
             }
         }
@@ -15447,16 +15597,20 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     function transportSweepSnapshotFromOverlay(missionId) {
         const id = normaliseMissionId(missionId);
         if (id === null) return null;
-        const overlay = missionOverlayData.get(id);
-        if (!overlay || missionWatchOwnership(null, id, overlay) !== 'alliance') return null;
+        const overlay = missionOverlayData.get(id) || null;
+        const pageRecord = missionProgressPageMissionRecords.get(id) || null;
+        const overlayOwnership = overlay ? missionWatchOwnership(null, id, overlay) : 'personal';
+        if (overlay?.userId && overlayOwnership !== 'alliance') return null;
+        if (pageRecord?.ownership !== 'alliance' && overlayOwnership !== 'alliance') return null;
+        const missingText = pageRecord?.missingTextKnown ? pageRecord.missingText : overlay?.missingText;
         const finiteNumber = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
         return {
             missionId: id,
-            caption: getMissionCaption(null, id) || `Alliance mission ${id}`,
-            createdAt: getMissionCreatedAt(null, id) || 0,
-            missingText: normaliseMissingRequirementText(overlay.missingText),
-            patientsCount: finiteNumber(overlay.patientsCount),
-            prisonersCount: finiteNumber(overlay.prisonersCount),
+            caption: pageRecord?.caption || getMissionCaption(null, id) || `Alliance mission ${id}`,
+            createdAt: pageRecord?.createdAt || getMissionCreatedAt(null, id) || 0,
+            missingText: normaliseMissingRequirementText(missingText),
+            patientsCount: finiteNumber(pageRecord?.patientsCount ?? overlay?.patientsCount),
+            prisonersCount: finiteNumber(pageRecord?.prisonersCount ?? overlay?.prisonersCount),
             source: 'alliance',
             ownership: 'alliance'
         };
@@ -15513,10 +15667,17 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         if (transportSweepRuntime.scanPromise) return transportSweepRuntime.scanPromise;
         const scanPromise = (async () => {
             scanInlineMissionMarkerData(true);
+            const liveRecords = captureTransportSweepMissionListDataFromDocument(document);
+            if (liveRecords.size) {
+                missionProgressPageMissionRecords = liveRecords;
+                missionProgressPageMissionIds = new Set(liveRecords.keys());
+                missionProgressPageLastSuccessAt = Date.now();
+            }
             let queue = buildTransportSweepQueue();
             if (!queue.length || getMissionMarkerIndex().markers.length === 0) {
                 transportSweepLog('Refreshing current missions for iOS-compatible transport scan');
                 await refreshMissionProgressFromPage(true, 5000);
+                await hydrateTransportSweepMobileMissions();
                 queue = buildTransportSweepQueue();
             }
             return queue;
@@ -15913,14 +16074,13 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         };
     }
 
-    async function transportSweepFetchMissionCandidates(missionId) {
+    async function transportSweepFetchMissionDocument(missionId) {
         const id = normaliseMissionId(missionId);
         if (id === null || transportSweepRuntime.stopRequested) return null;
         const requestModes = [
         { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' } },
             { headers: { Accept: 'text/html,application/xhtml+xml' } }
         ];
-        let bestResult = null;
         for (const mode of requestModes) {
             if (transportSweepRuntime.stopRequested) return null;
             try {
@@ -15934,17 +16094,21 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 const html = await response.text();
                 if (!html || html.length < 100) continue;
                 const doc = new DOMParser().parseFromString(html, 'text/html');
-                const anchors = Array.from(doc.querySelectorAll('a[href*="/vehicles/"]'))
-                    .filter(anchor => transportSweepVehicleIdFromHref(anchor.getAttribute('href')));
-                if (!anchors.length) continue;
-                const result = { ...collectTransportSweepStaticCandidates(anchors, 'mission HTML'), htmlLength: html.length };
-                if (!bestResult || result.stats.totalLinks > bestResult.stats.totalLinks) bestResult = result;
-                if (result.candidates.length) return result;
+                if (doc) return { doc, htmlLength: html.length };
             } catch (err) {
                 // Try the next request mode.
             }
         }
-        return bestResult;
+        return null;
+    }
+
+    async function transportSweepFetchMissionCandidates(missionId) {
+        const fetched = await transportSweepFetchMissionDocument(missionId);
+        if (!fetched?.doc) return null;
+        const anchors = Array.from(fetched.doc.querySelectorAll('a[href*="/vehicles/"]'))
+            .filter(anchor => transportSweepVehicleIdFromHref(anchor.getAttribute('href')));
+        const result = { ...collectTransportSweepStaticCandidates(anchors, 'mission HTML'), htmlLength: fetched.htmlLength };
+        return result;
     }
 
     async function collectTransportSweepVehicleCandidatesForMission(missionId) {

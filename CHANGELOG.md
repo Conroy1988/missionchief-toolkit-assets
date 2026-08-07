@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.6.2] - 2026-08-07
+
+### iOS Patient Transport Sweep parity repair
+
+- Restores Patient Transport Sweep mission parity on iPhone when MissionChief serves mobile mission lists without desktop missionMarkerAdd scripts or a Leaflet marker registry.
+- Reads current suffixed alliance lists and mission_id records, then requires positive alliance evidence before any mission can be checked or queued.
+- Hydrates only current patient-bearing alliance candidates through bounded same-origin mission-page requests triggered by your deliberate Scan or Start Sweep action.
+- Keeps personal, unknown-owner, stale, prisoner and non-transport missions excluded while preserving verified personal-vehicle and native discharge safeguards.
+- Adds a real-mobile empty-marker regression with desktop parity and retains persistent reports and exact-once Discord delivery without new polling, observers or timers.
+
 ## [10.6.1] - 2026-08-07
 
 ### iOS Patient Transport Sweep discovery repair

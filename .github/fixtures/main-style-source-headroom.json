@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 694,
-    "version": "10.6.1",
-    "sourceBytes": 2241921,
-    "sourceLines": 33756,
-    "sourceSha256": "9f317ef98ff1c61667a7b81200d9eed7991fea94521cf8c95480d5e97a6cb54e",
+    "issue": 696,
+    "version": "10.6.2",
+    "sourceBytes": 2252290,
+    "sourceLines": 33920,
+    "sourceSha256": "4ad97c2a15da2c99559a379387ce17057ae2c9536f7434716e03a521d7fe40ff",
     "templateBytes": 809759,
     "templateLines": 9494,
     "templateSha256": "5998e23febbf2df55a82e42d57772f6a1e6f2f8e2453c7713ac05394e5b3419d",
     "canonicalCssSha256": "6f78c73700f22263675ddfb7ffff4a47f152bc8ef4414ef3d707f78c7a3dafc3",
-    "maxSourceBytes": 2251000,
-    "maxSourceLines": 33850,
+    "maxSourceBytes": 2261000,
+    "maxSourceLines": 34100,
     "minTemplateBytes": 500000,
-    "baseline": "10.6.0",
+    "baseline": "10.6.1",
     "approvedGrowth": {
-      "sourceBytes": 4315,
-      "sourceLines": 82,
+      "sourceBytes": 10369,
+      "sourceLines": 164,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #694 iOS Patient Transport Sweep discovery fallback using current MissionChief payload IDs and positive alliance ownership"
+    "scope": "Issue #696 iOS Patient Transport Sweep parity using current mobile mission lists, positive alliance evidence and bounded manual mission-page hydration"
   }
 }

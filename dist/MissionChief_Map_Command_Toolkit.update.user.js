@@ -996,9 +996,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return Promise.reject(new Error('Browser fetch is unavailable.'));
         }
         const options = controller ? { ...requestInit, signal: controller.signal } : requestInit;
-        const timeoutId = controller && timeoutMs ? runtimeSetTimeout(() => controller.abort(), timeoutMs) : null;
+        let requestSettled = false;
+        if (controller && timeoutMs) {
+        runtimeDelay(timeoutMs).then(completed => {
+            if (completed && !requestSettled) controller.abort();
+        });
+        }
         const cleanup = () => {
-        if (timeoutId !== null) runtimeClearTimeout(timeoutId);
+        requestSettled = true;
         if (controller) runtime.fetchControllers.delete(controller);
         };
         try {

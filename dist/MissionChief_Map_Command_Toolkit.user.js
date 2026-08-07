@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.6.0
+// @version      10.6.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.6.0',
+        version: '10.6.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -525,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.6.0",
-        title: "Persistent Patient Transport Sweep reports",
+        version: "10.6.1",
+        title: "iOS Patient Transport Sweep discovery repair",
         highlights: Object.freeze([
-            "Keeps the latest Patient Transport Sweep result visible until you dismiss it or start a replacement sweep, including after a page reload.",
-            "Records mission coverage, patients cleared, skipped actions, errors, success rate, duration and final outcome from one immutable completion snapshot.",
-            "Automatically posts the same aggregate-only completion snapshot once when a valid Discord webhook is already saved.",
-            "Shows Discord delivery state in the report and provides a deliberate retry without allowing webhook failure to interrupt the sweep.",
-            "Adds no polling, observers or idle map work and preserves every native MissionChief safety check used by the sweep."
+            "Fixes Patient Transport Sweep scans returning zero missions on iPhone and iOS Safari when MissionChief does not expose its Leaflet mission-marker registry.",
+            "Refreshes MissionChief's current mission payload only when you deliberately press Scan or Start Sweep, then uses the captured current mission IDs as the iOS-safe fallback.",
+            "Requires positive alliance ownership before any fallback mission can enter the queue, so personal and unknown-owner missions remain excluded.",
+            "Preserves prisoner filtering, verified personal-vehicle exclusion and MissionChief's native Cancel Transport and Discharge patient controls.",
+            "Keeps v10.6.0 persistent sweep reports and exact-once Discord delivery unchanged, with no new timer, observer, poller or background request."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1542,6 +1542,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let missionProgressPageFetchPromise = null;
     let missionProgressPageLastFetch = 0;
     let missionProgressPageLastSuccessAt = 0;
+    let missionProgressPageMissionIds = new Set();
     let missionSnapshotReady = false;
     let vehicleApiFetchPromise = null;
     let vehicleApiLastFetch = 0;
@@ -1597,6 +1598,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const transportSweepRuntime = {
         running: false,
         stopRequested: false,
+        scanPromise: null,
         queue: [],
         scannedAt: 0,
         currentMissionId: null,
@@ -13602,7 +13604,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return null;
     }
 
-    function captureMissionMarkerDataFromSource(source) {
+    function captureMissionMarkerDataFromSource(source, capturedMissionIds = null) {
         const content = String(source || '');
         if (!content.includes('missionMarkerAdd')) return 0;
         const matcher = /missionMarkerAdd\s*\(/g;
@@ -13614,7 +13616,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const objectText = readBalancedObject(content, cursor);
         if (!objectText) continue;
         try {
-            captureMissionMarkerData(JSON.parse(objectText));
+            const payload = JSON.parse(objectText);
+            captureMissionMarkerData(payload);
+            if (capturedMissionIds instanceof Set) {
+                for (const candidate of resolveMissionMarkerCandidates(payload)) capturedMissionIds.add(candidate.missionId);
+            }
             captured += 1;
         } catch (err) {}
         matcher.lastIndex = cursor + objectText.length;
@@ -13622,9 +13628,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return captured;
     }
 
-    function captureMissionMarkerDataFromDocument(doc) {
+    function captureMissionMarkerDataFromDocument(doc, capturedMissionIds = null) {
         let captured = 0;
-        for (const script of Array.from(doc?.scripts || [])) captured += captureMissionMarkerDataFromSource(script.textContent || '');
+        for (const script of Array.from(doc?.scripts || [])) captured += captureMissionMarkerDataFromSource(script.textContent || '', capturedMissionIds);
         return captured;
     }
     function scanInlineMissionMarkerData(force = false) { if(inlineMissionDataScanned&&!force)return 0;const captured=captureMissionMarkerDataFromDocument(document);inlineMissionDataScanned=captured>0;return captured; }
@@ -13653,7 +13659,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
                 const html = await response.text();
                 if (!html || !html.includes('missionMarkerAdd')) continue;
                 const doc = new DOMParser().parseFromString(html, 'text/html');
-                if (captureMissionMarkerDataFromDocument(doc) > 0) {
+                const missionIds = new Set();
+                if (captureMissionMarkerDataFromDocument(doc, missionIds) > 0) {
+                    missionProgressPageMissionIds = missionIds;
                     succeeded = true;
                     missionProgressPageLastSuccessAt = Date.now();
                     return true;
@@ -15415,19 +15423,71 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         renderTransportSweepPanel();
     }
 
+    function transportSweepFallbackMissionIds(now = Date.now()) {
+        const ids = new Set();
+        if (missionProgressPageLastSuccessAt && now - missionProgressPageLastSuccessAt <= MISSION_PROGRESS_PAGE_REFRESH_MS * 2) {
+            for (const missionId of missionProgressPageMissionIds) ids.add(String(missionId));
+        }
+
+        const roots = [];
+        try { roots.push(...document.querySelectorAll('#missions, #mission_list, .missions-panel, .mission-list')); } catch (err) {}
+        for (const root of roots) {
+            let entries = [];
+            try { entries = Array.from(root.querySelectorAll('[id^="mission_"], [data-mission-id], [data-mission_id]')); } catch (err) {}
+            for (const entry of entries) {
+                const explicit = entry.getAttribute?.('data-mission-id') ?? entry.getAttribute?.('data-mission_id');
+                const idMatch = String(entry.id || '').match(/^mission_(\d+)$/u);
+                const missionId = normaliseMissionId(explicit ?? idMatch?.[1]);
+                if (missionId !== null) ids.add(missionId);
+            }
+        }
+        return ids;
+    }
+
+    function transportSweepSnapshotFromOverlay(missionId) {
+        const id = normaliseMissionId(missionId);
+        if (id === null) return null;
+        const overlay = missionOverlayData.get(id);
+        if (!overlay || missionWatchOwnership(null, id, overlay) !== 'alliance') return null;
+        const finiteNumber = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+        return {
+            missionId: id,
+            caption: getMissionCaption(null, id) || `Alliance mission ${id}`,
+            createdAt: getMissionCreatedAt(null, id) || 0,
+            missingText: normaliseMissingRequirementText(overlay.missingText),
+            patientsCount: finiteNumber(overlay.patientsCount),
+            prisonersCount: finiteNumber(overlay.prisonersCount),
+            source: 'alliance',
+            ownership: 'alliance'
+        };
+    }
+
+    function transportSweepMissionRecords(now = Date.now()) {
+        const records = [];
+        const seen = new Set();
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = missionIdFromMarker(marker);
+            if (missionId === null || seen.has(missionId)) continue;
+            seen.add(missionId);
+            const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
+            if (snapshot) records.push({ missionId, marker, snapshot, fallback: false });
+        }
+        for (const missionId of transportSweepFallbackMissionIds(now)) {
+            if (seen.has(missionId)) continue;
+            seen.add(missionId);
+            const snapshot = transportSweepSnapshotFromOverlay(missionId);
+            if (snapshot) records.push({ missionId, marker: null, snapshot, fallback: true });
+        }
+        return records;
+    }
+
     function buildTransportSweepQueue() {
         const now = Date.now();
         const queue = [];
-        const seen = new Set();
         let missionsChecked = 0;
-        for (const marker of getMissionMarkerIndex().markers) {
-        const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-        if (missionId === null || seen.has(missionId)) continue;
-        seen.add(missionId);
-        const personal = isPersonalMissionLayer(marker, missionId);
-        if (personal) continue;
+        for (const { missionId, marker, snapshot, fallback } of transportSweepMissionRecords(now)) {
+        if (fallback ? snapshot.ownership !== 'alliance' : isPersonalMissionLayer(marker, missionId)) continue;
         missionsChecked += 1;
-        const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
         const requirement = transportRequirementFromSnapshot(snapshot);
         const patientCount = Math.max(0, Number(snapshot?.patientsCount) || 0);
         if (!requirement || requirement.type === 'prisoner') continue;
@@ -15447,6 +15507,28 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         transportSweepRuntime.scannedAt = now;
         renderTransportSweepPanel();
         return queue;
+    }
+
+    async function scanTransportSweepQueue() {
+        if (transportSweepRuntime.scanPromise) return transportSweepRuntime.scanPromise;
+        const scanPromise = (async () => {
+            scanInlineMissionMarkerData(true);
+            let queue = buildTransportSweepQueue();
+            if (!queue.length || getMissionMarkerIndex().markers.length === 0) {
+                transportSweepLog('Refreshing current missions for iOS-compatible transport scan');
+                await refreshMissionProgressFromPage(true, 5000);
+                queue = buildTransportSweepQueue();
+            }
+            return queue;
+        })();
+        transportSweepRuntime.scanPromise = scanPromise;
+        renderTransportSweepPanel();
+        try {
+            return await scanPromise;
+        } finally {
+            if (transportSweepRuntime.scanPromise === scanPromise) transportSweepRuntime.scanPromise = null;
+            renderTransportSweepPanel();
+        }
     }
 
 
@@ -15586,7 +15668,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const queue = runtime.queue || [];
         const missionProgress = transportSweepMissionProgress();
         const currentId = normaliseMissionId(runtime.currentMissionId);
-        const status = runtime.running ? 'RUNNING' : runtime.stopRequested ? 'STOPPING' : queue.length ? 'READY' : 'IDLE';
+        const status = runtime.running ? 'RUNNING' : runtime.stopRequested ? 'STOPPING' : runtime.scanPromise ? 'SCANNING' : queue.length ? 'READY' : 'IDLE';
         const list = queue.length ? queue.map((item, index) => {
             const current = currentId !== null && normaliseMissionId(item.missionId) === currentId;
         return `<div class="mcms-sweep-entry ${current ? 'mcms-current' : ''}"><div><span class="mcms-sweep-title">${escapeHtml(`${index + 1}. ${item.caption}`)}</span><span class="mcms-sweep-meta">Mission ${escapeHtml(item.missionId)} · ${escapeHtml(item.requirement)}</span></div><span class="mcms-sweep-count">${escapeHtml(item.count)} req</span></div>`;
@@ -15600,9 +15682,9 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const start = document.querySelector(`#${SCRIPT.panelId} [data-action="start-transport-sweep"]`);
         const stop = document.querySelector(`#${SCRIPT.panelId} [data-action="stop-transport-sweep"]`);
         const scan = document.querySelector(`#${SCRIPT.panelId} [data-action="scan-transport-sweep"]`);
-        if (start) start.disabled = runtime.running;
+        if (start) start.disabled = runtime.running || Boolean(runtime.scanPromise);
         if (stop) stop.disabled = !runtime.running;
-        if (scan) scan.disabled = runtime.running;
+        if (scan) scan.disabled = runtime.running || Boolean(runtime.scanPromise);
     }
 
     function transportSweepVehicleIdFromHref(href) {
@@ -16442,7 +16524,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     async function startTransportSweep() {
         if (transportSweepRuntime.running) return;
-        const queue = buildTransportSweepQueue();
+        const queue = await scanTransportSweepQueue();
         if (!queue.length) {
             showToast('No alliance patient transports found');
             return;
@@ -31297,7 +31379,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (action === 'open-session-cleanup') { openSessionCleanup(); return; }
         if (action === 'refresh-pressure-board') { refreshOperationalPressureBoard(true); return; }
         if (action === 'post-operational-sitrep') { postOperationalSitrep(); return; }
-        if (action === 'scan-transport-sweep') { const queue = buildTransportSweepQueue(); showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found'); return; }
+        if (action === 'scan-transport-sweep') { void scanTransportSweepQueue().then(queue => showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found')); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
         if (action === 'retry-transport-sweep-discord') { void postTransportSweepDiscordReport(transportSweepRuntime.lastReport, { manual: true }); return; }

@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.6.1] - 2026-08-07
+
+### iOS Patient Transport Sweep discovery repair
+
+- Fixes Patient Transport Sweep scans returning zero missions on iPhone and iOS Safari when MissionChief does not expose its Leaflet mission-marker registry.
+- Refreshes MissionChief's current mission payload only when you deliberately press Scan or Start Sweep, then uses the captured current mission IDs as the iOS-safe fallback.
+- Requires positive alliance ownership before any fallback mission can enter the queue, so personal and unknown-owner missions remain excluded.
+- Preserves prisoner filtering, verified personal-vehicle exclusion and MissionChief's native Cancel Transport and Discharge patient controls.
+- Keeps v10.6.0 persistent sweep reports and exact-once Discord delivery unchanged, with no new timer, observer, poller or background request.
+
 ## [10.6.0] - 2026-08-06
 
 ### Persistent Patient Transport Sweep reports

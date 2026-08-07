@@ -324,6 +324,13 @@
       "approvedNetworkRequestDelta": 0,
       "scope": "Completion-triggered aggregate Patient Transport Sweep report reusing the existing saved Discord webhook request primitive, with persistent local state, exact-once delivery and no timer, observer, polling or idle map work.",
       "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 694,
+      "version": "10.6.1",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Manual iOS Transport Sweep discovery fallback reusing the existing current-mission page refresh request site, with positive alliance ownership and no timer, observer, poller or background request.",
+      "approvedMutationObserverDelta": 0
     }
   ]
 }

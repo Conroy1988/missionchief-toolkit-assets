@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.6.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.6.1"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.6.0"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.6.1"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Keeps the latest Patient Transport Sweep result visible until you dismiss it or start a replacement sweep, including after a page reload.",
+            "Fixes Patient Transport Sweep scans returning zero missions on iPhone and iOS Safari when MissionChief does not expose its Leaflet mission-marker registry.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

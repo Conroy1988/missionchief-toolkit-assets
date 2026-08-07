@@ -164,9 +164,9 @@
         },
         {
           "name": "Patient Transport Sweep",
-          "summary": "Uses MissionChief's native patient release controls, preserves the final aggregate result and can post the same completion snapshot to a saved Discord webhook.",
+          "summary": "Finds current alliance patient transports on Desktop, Tablet and iOS, uses MissionChief's native release controls, preserves the final result and can post the same completion snapshot to Discord.",
           "details": [
-            "Mission-by-mission FMS 5 discovery",
+            "Mission-by-mission FMS 5 discovery with an iOS-safe current-payload fallback",
             "Cancel Transport link/button/input support",
             "Discharge patient compatibility",
             "Patient isn’t transported verification",
@@ -792,7 +792,7 @@
         },
         {
           "heading": "Patient Transport Sweep",
-          "body": "The manual bounded alliance workflow excludes the signed-in player's vehicles and uses MissionChief's native vehicle-window discharge control for one verified eligible ambulance at a time. Its final aggregate report persists until dismissed or replaced; when a valid Discord webhook is already saved, the same privacy-safe snapshot posts once automatically and delivery failure never changes the sweep result."
+          "body": "The manual bounded alliance workflow discovers current missions from live map markers or, on iOS, a deliberate current-payload refresh; fallback entries require positive alliance ownership. It excludes the signed-in player's vehicles and uses MissionChief's native vehicle-window discharge control for one verified eligible ambulance at a time. Its final aggregate report persists until dismissed or replaced; when a valid Discord webhook is already saved, the same privacy-safe snapshot posts once automatically and delivery failure never changes the sweep result."
         }
       ]
     },

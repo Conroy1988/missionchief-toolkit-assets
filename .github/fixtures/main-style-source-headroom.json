@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 689,
-    "version": "10.6.0",
-    "sourceBytes": 2237606,
-    "sourceLines": 33674,
-    "sourceSha256": "7997630cb369914b84719085326ec2d65197e5117bff45c3bcf1e69454525858",
+    "issue": 694,
+    "version": "10.6.1",
+    "sourceBytes": 2241921,
+    "sourceLines": 33756,
+    "sourceSha256": "9f317ef98ff1c61667a7b81200d9eed7991fea94521cf8c95480d5e97a6cb54e",
     "templateBytes": 809759,
     "templateLines": 9494,
     "templateSha256": "5998e23febbf2df55a82e42d57772f6a1e6f2f8e2453c7713ac05394e5b3419d",
     "canonicalCssSha256": "6f78c73700f22263675ddfb7ffff4a47f152bc8ef4414ef3d707f78c7a3dafc3",
-    "maxSourceBytes": 2246000,
-    "maxSourceLines": 33760,
+    "maxSourceBytes": 2251000,
+    "maxSourceLines": 33850,
     "minTemplateBytes": 500000,
-    "baseline": "10.5.4",
+    "baseline": "10.6.0",
     "approvedGrowth": {
-      "sourceBytes": 20619,
-      "sourceLines": 259,
-      "templateBytes": 4668,
-      "templateLines": 1
+      "sourceBytes": 4315,
+      "sourceLines": 82,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issue #689 persistent aggregate Patient Transport Sweep report with exact-once Discord completion delivery"
+    "scope": "Issue #694 iOS Patient Transport Sweep discovery fallback using current MissionChief payload IDs and positive alliance ownership"
   }
 }

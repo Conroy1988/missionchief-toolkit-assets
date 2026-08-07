@@ -21,6 +21,7 @@ node .github/scripts/test_issue689_transport_sweep_report.js
 node .github/scripts/test_issue694_ios_transport_sweep_discovery_runtime.js
 node .github/scripts/test_issue696_ios_transport_sweep_parity_runtime.mjs
 node .github/scripts/test_issue698_ios_transport_request_timeout_runtime.mjs
+node .github/scripts/test_issue701_ios_patient_timer_parity_runtime.mjs
 node .github/scripts/test_issue515_launcher_runtime.js
 node .github/scripts/test_issue638_command_shell_route_runtime.mjs
 node .github/scripts/test_issue641_desktop_dock_fit_runtime.mjs

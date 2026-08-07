@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.6.4] - 2026-08-07
+
+### Native iOS patient-state parity repair
+
+- Fixes the physical-iPhone failure where all 80 current patient missions were checked but zero transports were found while desktop reported 13.
+- Reads MissionChief's live native patient state independently of the Leaflet marker registry and desktop-shaped mission HTML.
+- Requires current positive alliance ownership and complete per-mission patient coverage before native iOS state can decide queue eligibility.
+- Keeps bounded mission-page hydration as a fallback while preserving personal and prisoner exclusions plus verified native discharge safeguards.
+- Adds an 80-patient real-device regression proving that iOS and desktop return the same 13 transport missions.
+
 ## [10.6.3] - 2026-08-07
 
 ### iOS Patient Transport Sweep hydration repair

@@ -33,8 +33,7 @@ const context = vm.createContext({
     Promise,
     runtime,
     pageWindow,
-    runtimeSetTimeout: (callback, delay) => setTimeout(callback, delay),
-    runtimeClearTimeout: timer => clearTimeout(timer)
+    runtimeDelay: delay => new Promise(resolve => setTimeout(() => resolve(true), delay))
 });
 vm.runInContext(source.slice(start, end), context, { filename: 'issue698-bounded-runtime-fetch.js' });
 

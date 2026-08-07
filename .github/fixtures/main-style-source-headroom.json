@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 696,
-    "version": "10.6.2",
-    "sourceBytes": 2252290,
-    "sourceLines": 33920,
-    "sourceSha256": "4ad97c2a15da2c99559a379387ce17057ae2c9536f7434716e03a521d7fe40ff",
+    "issue": 698,
+    "version": "10.6.3",
+    "sourceBytes": 2256076,
+    "sourceLines": 33978,
+    "sourceSha256": "205f7833b1e682f4e653020a55515681d7615d0c55ceb72c6c210f35abb743b9",
     "templateBytes": 809759,
     "templateLines": 9494,
     "templateSha256": "5998e23febbf2df55a82e42d57772f6a1e6f2f8e2453c7713ac05394e5b3419d",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 2261000,
     "maxSourceLines": 34100,
     "minTemplateBytes": 500000,
-    "baseline": "10.6.1",
+    "baseline": "10.6.2",
     "approvedGrowth": {
-      "sourceBytes": 10369,
-      "sourceLines": 164,
+      "sourceBytes": 3786,
+      "sourceLines": 58,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #696 iOS Patient Transport Sweep parity using current mobile mission lists, positive alliance evidence and bounded manual mission-page hydration"
+    "scope": "Issue #698 iOS Patient Transport Sweep hydration using concrete live-request evidence, bounded requests and visible progress"
   }
 }

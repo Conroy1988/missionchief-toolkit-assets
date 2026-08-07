@@ -37,10 +37,10 @@ const mobileHtml = `<!doctype html><html><body>
 assert.ok(!mobileHtml.includes('missionMarkerAdd'), 'The iOS fixture must not contain desktop marker scripts');
 const emptyDocument = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://www.missionchief.co.uk/' }).window.document;
 const missionDocuments = new Map([
-    ['101', new JSDOM('<!doctype html><h1 id="missionH1">Alliance Patient A</h1><div id="missing_text"><div data-requirement-type="patients">Patient transport required</div></div><div class="mission_patient"></div>').window.document],
+    ['101', new JSDOM('<!doctype html><h1 id="missionH1">Alliance Patient A</h1><div class="alert alert-danger"><a class="btn btn-success" href="/vehicles/501">Choose hospital</a></div><table id="mission_vehicle_at_mission"><tr id="vehicle_row_501"><td class="building_list_fms_5">5</td><td><a href="/vehicles/501" vehicle_type_id="5">Alliance Ambulance</a></td></tr></table><div class="mission_patient"></div>').window.document],
     ['103', new JSDOM('<!doctype html><h1 id="missionH1">Alliance Prisoner</h1><div id="missing_text"><div data-requirement-type="prisoners">Prisoner transport required</div></div><div class="mission_prisoner"></div>').window.document],
     ['104', new JSDOM('<!doctype html><h1 id="missionH1">Alliance No Transport</h1><div id="missing_text"><div data-requirement-type="vehicles">Requires 2 fire engines</div></div><div class="mission_patient"></div>').window.document],
-    ['107', new JSDOM('<!doctype html><h1 id="missionH1">Alliance Patient B</h1><div id="missing_text"><div data-requirement-type="patients">2 patients require transport</div></div><div class="mission_patient"></div><div class="mission_patient"></div>').window.document],
+    ['107', new JSDOM('<!doctype html><h1 id="missionH1">Alliance Patient B</h1><div class="alert alert-danger"><a class="btn btn-success" href="/vehicles/507">Choose hospital</a><a class="btn btn-success" href="/vehicles/508">Choose hospital</a></div><table id="mission_vehicle_at_mission"><tr id="vehicle_row_507"><td class="building_list_fms_5">5</td><td><a href="/vehicles/507" vehicle_type_id="5">Alliance Ambulance B</a></td></tr><tr id="vehicle_row_508"><td class="building_list_fms_5">5</td><td><a href="/vehicles/508" vehicle_type_id="5">Alliance Ambulance C</a></td></tr></table><div class="mission_patient"></div><div class="mission_patient"></div>').window.document],
     ['108', new JSDOM('<!doctype html><h1 id="missionH1">Alliance Fire</h1><div id="missing_text"><div data-requirement-type="patients">Patient transport required</div></div>').window.document]
 ]);
 
@@ -69,6 +69,7 @@ const context = vm.createContext({
     missionProgressPageLastSuccessAt: 0,
     missionProgressPageMissionIds: new Set(),
     missionProgressPageMissionRecords: new Map(),
+    personalVehicleApiCache: new Map(),
     missionOverlayData: new Map([
         ['106', { userId: 'alliance-user', caption: 'Stale Alliance Patient', missingText: 'Patient transport required', patientsCount: 1 }]
     ]),
@@ -117,7 +118,9 @@ const iosQueue = await context.scanTransportSweepQueue();
 const iosMissionIds = Array.from(iosQueue, item => item.missionId);
 assert.equal(refreshCalls, 1, 'An empty-registry iOS scan must refresh current mission-list HTML once');
 assert.deepEqual(iosMissionIds, ['101', '107']);
+assert.equal(iosQueue[0].requirement, 'Patient transport required', 'Concrete iOS FMS-5 patient-vehicle evidence must recover a mission when #missing_text is absent');
 assert.equal(iosQueue[1].count, 2);
+assert.ok(sweep.log.some(message => message.includes('Scan complete: 2 alliance patient transport missions ready')), 'The mobile scan must report a terminal result instead of silently returning to IDLE');
 assert.deepEqual(fetchedMissionIds.sort(), ['101', '103', '104', '107'], 'Only current, positively alliance-owned patient candidates may be hydrated');
 assert.ok(!fetchedMissionIds.includes('102'), 'Personal missions must never be probed');
 assert.ok(!fetchedMissionIds.includes('105'), 'Unknown-owner missions must never be probed');

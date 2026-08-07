@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.6.3] - 2026-08-07
+
+### iOS Patient Transport Sweep hydration repair
+
+- Fixes iPhone scans discovering up to 80 current patient missions but discarding the entire queue when mobile mission HTML omits the desktop missing-requirements block.
+- Accepts a positively owned alliance mission only when its same-origin page contains concrete FMS-5 ambulance or patient-vehicle evidence.
+- Shows hydration progress every ten missions and bounds each mobile mission request so the scan cannot remain silently stalled.
+- Preserves refreshed ownership verification, personal-vehicle exclusion and the requirement for MissionChief's visible native discharge or cancel control before any action.
+- Extends the real-mobile regression with a missing-requirements fixture while retaining desktop parity, persistent reports and exact-once Discord delivery.
+
 ## [10.6.2] - 2026-08-07
 
 ### iOS Patient Transport Sweep parity repair

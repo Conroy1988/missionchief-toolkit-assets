@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.6.3
+// @version      10.6.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.6.3',
+        version: '10.6.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -525,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.6.3",
-        title: "iOS Patient Transport Sweep hydration repair",
+        version: "10.6.4",
+        title: "Native iOS patient-state parity repair",
         highlights: Object.freeze([
-            "Fixes iPhone scans discovering up to 80 current patient missions but discarding the entire queue when mobile mission HTML omits the desktop missing-requirements block.",
-            "Accepts a positively owned alliance mission only when its same-origin page contains concrete FMS-5 ambulance or patient-vehicle evidence.",
-            "Shows hydration progress every ten missions and bounds each mobile mission request so the scan cannot remain silently stalled.",
-            "Preserves refreshed ownership verification, personal-vehicle exclusion and the requirement for MissionChief's visible native discharge or cancel control before any action.",
-            "Extends the real-mobile regression with a missing-requirements fixture while retaining desktop parity, persistent reports and exact-once Discord delivery."
+            "Fixes the physical-iPhone failure where all 80 current patient missions were checked but zero transports were found while desktop reported 13.",
+            "Reads MissionChief's live native patient state independently of the Leaflet marker registry and desktop-shaped mission HTML.",
+            "Requires current positive alliance ownership and complete per-mission patient coverage before native iOS state can decide queue eligibility.",
+            "Keeps bounded mission-page hydration as a fallback while preserving personal and prisoner exclusions plus verified native discharge safeguards.",
+            "Adds an 80-patient real-device regression proving that iOS and desktop return the same 13 transport missions."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -15596,6 +15596,60 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         };
     }
 
+    function transportSweepPatientTimerEvidence() {
+        let rawTimers = null;
+        try { rawTimers = pageWindow.patient_timers; } catch (err) {}
+        const timers = Array.isArray(rawTimers)
+            ? rawTimers
+            : rawTimers && typeof rawTimers === 'object' ? Object.values(rawTimers) : [];
+        const missions = new Map();
+        timers.forEach((timer, index) => {
+            const params = timer?.params && typeof timer.params === 'object' ? timer.params : timer;
+            const missionId = normaliseMissionId(params?.mission_id ?? params?.missionId);
+            if (missionId === null) return;
+            const patientId = String(params?.id ?? params?.patient_id ?? timer?.patient_id ?? `timer-${index}`);
+            const missingText = normaliseMissingRequirementText(params?.missing_text ?? params?.missingText ?? '');
+            const requirement = transportRequirementFromSnapshot({ missingText, patientsCount: 1, prisonersCount: 0 });
+            const current = missions.get(missionId) || { patients: new Set(), transportPatients: new Set(), missingTexts: [] };
+            current.patients.add(patientId);
+            if (missingText) current.missingTexts.push(missingText);
+            if (requirement?.type === 'patient') current.transportPatients.add(patientId);
+            missions.set(missionId, current);
+        });
+        return { missions, timers: timers.length };
+    }
+
+    function hydrateTransportSweepPatientTimerMissions() {
+        const evidence = transportSweepPatientTimerEvidence();
+        let coveredMissions = 0;
+        let transportMissions = 0;
+        let transportPatients = 0;
+        for (const [missionId, record] of missionProgressPageMissionRecords.entries()) {
+            if (record?.ownership !== 'alliance' || !record.patientSignal) continue;
+            const patientState = evidence.missions.get(String(missionId));
+            if (!patientState?.patients?.size) continue;
+            const expectedPatients = Math.max(0, Number(record.patientsCount) || 0);
+            if (expectedPatients && patientState.patients.size < expectedPatients) continue;
+            const requestCount = patientState.transportPatients.size;
+            const missingText = requestCount
+                ? `Patient transport required (${requestCount})`
+                : patientState.missingTexts.join(' · ');
+            missionProgressPageMissionRecords.set(String(missionId), {
+                ...record,
+                patientsCount: requestCount,
+                prisonersCount: 0,
+                missingText,
+                missingTextKnown: true
+            });
+            coveredMissions += 1;
+            if (requestCount) {
+                transportMissions += 1;
+                transportPatients += requestCount;
+            }
+        }
+        return { ...evidence, coveredMissions, transportMissions, transportPatients };
+    }
+
     async function hydrateTransportSweepMobileMissions() {
         const now = Date.now();
         if (!missionProgressPageLastSuccessAt || now - missionProgressPageLastSuccessAt > MISSION_PROGRESS_PAGE_REFRESH_MS * 2) return 0;
@@ -15735,6 +15789,10 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             if (!queue.length || getMissionMarkerIndex().markers.length === 0) {
                 transportSweepLog('Refreshing current missions for iOS-compatible transport scan');
                 await refreshMissionProgressFromPage(true, 5000);
+                const patientState = hydrateTransportSweepPatientTimerMissions();
+                if (patientState.timers) {
+                    transportSweepLog(`Read ${patientState.timers} live iOS patient states · ${patientState.transportMissions} transport mission${patientState.transportMissions === 1 ? '' : 's'} identified`);
+                }
                 await hydrateTransportSweepMobileMissions();
                 queue = buildTransportSweepQueue();
             }

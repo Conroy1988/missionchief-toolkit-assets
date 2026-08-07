@@ -73,6 +73,7 @@ const context = vm.createContext({
     transportSweepLog: message => runtime.log.push(message),
     scanInlineMissionMarkerData: () => 0,
     captureTransportSweepMissionListDataFromDocument: () => new Map(),
+    hydrateTransportSweepPatientTimerMissions: () => ({ timers: 0, transportMissions: 0 }),
     hydrateTransportSweepMobileMissions: async () => 0,
     refreshMissionProgressFromPage: async () => {
         refreshCalls += 1;

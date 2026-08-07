@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.6.2
+// @version      10.6.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.6.2',
+        version: '10.6.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -525,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.6.2",
-        title: "iOS Patient Transport Sweep parity repair",
+        version: "10.6.3",
+        title: "iOS Patient Transport Sweep hydration repair",
         highlights: Object.freeze([
-            "Restores Patient Transport Sweep mission parity on iPhone when MissionChief serves mobile mission lists without desktop missionMarkerAdd scripts or a Leaflet marker registry.",
-            "Reads current suffixed alliance lists and mission_id records, then requires positive alliance evidence before any mission can be checked or queued.",
-            "Hydrates only current patient-bearing alliance candidates through bounded same-origin mission-page requests triggered by your deliberate Scan or Start Sweep action.",
-            "Keeps personal, unknown-owner, stale, prisoner and non-transport missions excluded while preserving verified personal-vehicle and native discharge safeguards.",
-            "Adds a real-mobile empty-marker regression with desktop parity and retains persistent reports and exact-once Discord delivery without new polling, observers or timers."
+            "Fixes iPhone scans discovering up to 80 current patient missions but discarding the entire queue when mobile mission HTML omits the desktop missing-requirements block.",
+            "Accepts a positively owned alliance mission only when its same-origin page contains concrete FMS-5 ambulance or patient-vehicle evidence.",
+            "Shows hydration progress every ten missions and bounds each mobile mission request so the scan cannot remain silently stalled.",
+            "Preserves refreshed ownership verification, personal-vehicle exclusion and the requirement for MissionChief's visible native discharge or cancel control before any action.",
+            "Extends the real-mobile regression with a missing-requirements fixture while retaining desktop parity, persistent reports and exact-once Discord delivery."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -985,6 +985,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function runtimeFetch(input, init = {}) {
         if (runtime.destroyed) return Promise.reject(new Error('Toolkit runtime stopped.'));
+        const { timeoutMs: rawTimeoutMs, ...requestInit } = init || {};
+        const timeoutMs = Math.max(0, Number(rawTimeoutMs) || 0);
         const Controller = pageWindow.AbortController || globalThis.AbortController;
         const controller = typeof Controller === 'function' ? new Controller() : null;
         if (controller) runtime.fetchControllers.add(controller);
@@ -993,9 +995,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (controller) runtime.fetchControllers.delete(controller);
         return Promise.reject(new Error('Browser fetch is unavailable.'));
         }
-        const options = controller ? { ...init, signal: controller.signal } : init;
-        return Promise.resolve(fetchFunction.call(pageWindow, input, options))
-        .finally(() => { if (controller) runtime.fetchControllers.delete(controller); });
+        const options = controller ? { ...requestInit, signal: controller.signal } : requestInit;
+        const timeoutId = controller && timeoutMs ? runtimeSetTimeout(() => controller.abort(), timeoutMs) : null;
+        const cleanup = () => {
+        if (timeoutId !== null) runtimeClearTimeout(timeoutId);
+        if (controller) runtime.fetchControllers.delete(controller);
+        };
+        try {
+        return Promise.resolve(fetchFunction.call(pageWindow, input, options)).finally(cleanup);
+        } catch (err) {
+        cleanup();
+        return Promise.reject(err);
+        }
     }
 
     runtimeOnCleanup(() => {
@@ -1288,6 +1299,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION = 40;
     const TRANSPORT_SWEEP_MAX_MOBILE_DISCOVERY_MISSIONS = 80;
     const TRANSPORT_SWEEP_MOBILE_DISCOVERY_CONCURRENCY = 4;
+    const TRANSPORT_SWEEP_MOBILE_REQUEST_TIMEOUT_MS = 6500;
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -15527,19 +15539,54 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         return records;
     }
 
+    function transportSweepPatientRequestIdsFromDocument(doc) {
+        const patientVehicleIds = new Set();
+        const ownVehicleIds = new Set(Array.from(transportSweepRuntime.ownVehicleIds || [], id => String(id)));
+        for (const id of personalVehicleApiCache.keys()) ownVehicleIds.add(String(id));
+        const anchors = Array.from(doc?.querySelectorAll?.('a[href*="/vehicles/"]') || []);
+        for (const anchor of anchors) {
+            const href = String(anchor.getAttribute?.('href') || '');
+            const vehicleId = href.match(/\/vehicles\/(\d+)(?:\/|$|[?#])/u)?.[1];
+            if (!vehicleId || ownVehicleIds.has(vehicleId)) continue;
+            const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, li, [id^="vehicle_row_"], [class*="vehicle_row"]');
+            if (!row?.querySelector?.('.building_list_fms_5')) continue;
+            const vehicleTypeId = String(anchor.getAttribute?.('vehicle_type_id') || anchor.getAttribute?.('data-vehicle-type-id') || '');
+            const text = `${anchor.textContent || ''} ${row.textContent || ''}`;
+            if (vehicleTypeId !== '5' && !/ambulance|patient|paramedic|rettungs|krankentransport|rtw\b/i.test(text)) continue;
+            patientVehicleIds.add(vehicleId);
+        }
+
+        const requestIds = new Set();
+        const requestAnchors = Array.from(doc?.querySelectorAll?.([
+            '.alert.alert-danger:not(.alert-missing-vehicles) a.btn.btn-success[href^="/vehicles/"]',
+            '#mission_vehicle_at_mission a.btn.btn-success[href^="/vehicles/"]',
+            '[data-transport-request="true"][data-transport-request-type="patient"] a[href^="/vehicles/"]'
+        ].join(', ')) || []);
+        for (const anchor of requestAnchors) {
+            const href = String(anchor.getAttribute?.('href') || '');
+            const vehicleId = href.match(/\/vehicles\/(\d+)(?:\/|$|[?#])/u)?.[1];
+            if (vehicleId && patientVehicleIds.has(vehicleId)) requestIds.add(vehicleId);
+        }
+        return requestIds;
+    }
+
     function transportSweepSnapshotFromMissionDocument(doc, record) {
         if (!doc || !record || record.ownership !== 'alliance') return null;
         const missingRoot = doc.getElementById?.('missing_text') || doc.querySelector?.('[data-requirement-type="vehicles"], [data-requirement-type="patients"], [data-requirement-type="prisoners"]')?.closest?.('div');
-        if (!missingRoot) return null;
+        const patientRequestIds = transportSweepPatientRequestIdsFromDocument(doc);
         const patientsCount = Math.max(Number(record.patientsCount) || 0, doc.querySelectorAll?.('.mission_patient, [id^="patient_"]')?.length || 0);
         const prisonersCount = doc.querySelectorAll?.('.mission_prisoner, [id^="prisoner_"]')?.length || 0;
         const caption = normaliseMissionCaption(doc.querySelector?.('#missionH1, h1')?.textContent || record.caption || '');
+        const missingText = normaliseMissingRequirementText(missingRoot?.textContent || '');
+        const missingRequirement = transportRequirementFromSnapshot({ missingText, patientsCount, prisonersCount });
+        if (!patientRequestIds.size && missingRequirement?.type !== 'patient') return null;
+        const requestCount = patientRequestIds.size || Math.max(1, Number(missingRequirement?.count) || patientsCount || 1);
         return {
             ...record,
             caption,
-            patientsCount,
+            patientsCount: requestCount,
             prisonersCount,
-            missingText: normaliseMissingRequirementText(missingRoot.textContent || ''),
+            missingText: patientRequestIds.size ? `Patient transport required (${requestCount})` : missingText,
             missingTextKnown: true
         };
     }
@@ -15560,14 +15607,20 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         transportSweepLog(`Checking ${candidates.length} current iOS patient mission${candidates.length === 1 ? '' : 's'}`);
         let cursor = 0;
         let hydrated = 0;
+        let checked = 0;
         const worker = async () => {
             while (cursor < candidates.length && !runtime.destroyed && !transportSweepRuntime.stopRequested) {
                 const record = candidates[cursor++];
                 const fetched = await transportSweepFetchMissionDocument(record.missionId);
                 const snapshot = transportSweepSnapshotFromMissionDocument(fetched?.doc, record);
-                if (!snapshot) continue;
-                missionProgressPageMissionRecords.set(record.missionId, snapshot);
-                hydrated += 1;
+                if (snapshot) {
+                    missionProgressPageMissionRecords.set(record.missionId, snapshot);
+                    hydrated += 1;
+                }
+                checked += 1;
+                if (checked === candidates.length || checked % 10 === 0) {
+                    transportSweepLog(`Checked ${checked}/${candidates.length} iOS patient missions · ${hydrated} transport mission${hydrated === 1 ? '' : 's'} found`);
+                }
             }
         };
         await Promise.all(Array.from({ length: Math.min(TRANSPORT_SWEEP_MOBILE_DISCOVERY_CONCURRENCY, candidates.length) }, worker));
@@ -15665,7 +15718,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     async function scanTransportSweepQueue() {
         if (transportSweepRuntime.scanPromise) return transportSweepRuntime.scanPromise;
-        const scanPromise = (async () => {
+        const scanPromise = Promise.resolve().then(async () => {
             scanInlineMissionMarkerData(true);
             const liveRecords = captureTransportSweepMissionListDataFromDocument(document);
             if (liveRecords.size) {
@@ -15680,8 +15733,11 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 await hydrateTransportSweepMobileMissions();
                 queue = buildTransportSweepQueue();
             }
+            transportSweepLog(queue.length
+                ? `Scan complete: ${queue.length} alliance patient transport mission${queue.length === 1 ? '' : 's'} ready`
+                : 'Scan complete: no active alliance patient transports found', queue.length ? 'info' : 'warn');
             return queue;
-        })();
+        });
         transportSweepRuntime.scanPromise = scanPromise;
         renderTransportSweepPanel();
         try {
@@ -16078,8 +16134,8 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const id = normaliseMissionId(missionId);
         if (id === null || transportSweepRuntime.stopRequested) return null;
         const requestModes = [
-        { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' } },
-            { headers: { Accept: 'text/html,application/xhtml+xml' } }
+            { headers: { Accept: 'text/html,application/xhtml+xml' } },
+            { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' } }
         ];
         for (const mode of requestModes) {
             if (transportSweepRuntime.stopRequested) return null;
@@ -16088,7 +16144,8 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                     method: 'GET',
                     credentials: 'same-origin',
                     cache: 'no-store',
-                    headers: mode.headers
+                    headers: mode.headers,
+                    timeoutMs: TRANSPORT_SWEEP_MOBILE_REQUEST_TIMEOUT_MS
                 });
                 if (!response.ok) continue;
                 const html = await response.text();
@@ -16096,6 +16153,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 const doc = new DOMParser().parseFromString(html, 'text/html');
                 if (doc) return { doc, htmlLength: html.length };
             } catch (err) {
+                if (err?.name === 'AbortError') return null;
                 // Try the next request mode.
             }
         }

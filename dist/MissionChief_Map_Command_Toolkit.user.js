@@ -17960,7 +17960,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     function renderDispatchRecruitmentPanel() {
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         const host = panel?.querySelector?.('[data-dispatch-recruitment]');
         if (!host) return;
         const runtimeState = dispatchRecruitmentRuntime;
@@ -18023,7 +18023,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     function readDispatchRecruitmentPlan() {
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         const phase = String(panel?.querySelector?.('[data-setting="dispatch-recruitment-hiring-phase"]')?.value ?? state.dispatchRecruitment.hiringPhase);
         const personnelText = String(panel?.querySelector?.('[data-setting="dispatch-recruitment-personnel"]')?.value ?? state.dispatchRecruitment.personnelDesired).trim();
         const delay = Number(panel?.querySelector?.('[data-setting="dispatch-recruitment-delay"]')?.value ?? state.dispatchRecruitment.delayMs);

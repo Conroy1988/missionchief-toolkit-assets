@@ -59,6 +59,7 @@ const context = vm.createContext({
     pageWindow,
     runtime: { destroyed: false },
     SCRIPT: { panelId: 'panel' },
+    commandExperienceElement: id => shell.window.document.querySelector(`#${id}`),
     state: { dispatchRecruitment: { dispatchId: '77', hiringPhase: '3', personnelDesired: '5', delayMs: 1500 } },
     dispatchRecruitmentRuntime,
     DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS: Object.freeze(['0', '1', '2', '3', 'automatic']),

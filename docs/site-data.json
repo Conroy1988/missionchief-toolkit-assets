@@ -888,7 +888,7 @@
     },
     {
       "title": "Dispatch Recruitment",
-      "items": [
+      "sections": [
         {
           "heading": "Selection workflow",
           "body": "Load MissionChief's current Dispatch Centres and building types, scan one centre, filter by any returned station types, then keep all matching stations or choose an exact checkbox subset. Apply confirms the centre, station count, types, Hiring Phase and Personnel (Desired)."

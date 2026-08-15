@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
   "candidateVersion": "5.0.7",
@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 701,
-    "version": "10.6.4",
-    "sourceBytes": 2259305,
-    "sourceLines": 34041,
-    "sourceSha256": "c48db8b2c73d6915e069e1ea5147580edd0c25eb7e673a0fa6b826bc91e2f77d",
-    "templateBytes": 809759,
-    "templateLines": 9494,
-    "templateSha256": "5998e23febbf2df55a82e42d57772f6a1e6f2f8e2453c7713ac05394e5b3419d",
-    "canonicalCssSha256": "6f78c73700f22263675ddfb7ffff4a47f152bc8ef4414ef3d707f78c7a3dafc3",
-    "maxSourceBytes": 2261000,
-    "maxSourceLines": 34100,
+    "issue": 704,
+    "version": "10.7.0",
+    "sourceBytes": 2302385,
+    "sourceLines": 34608,
+    "sourceSha256": "d0c2738f83ae4a18c38b948cda47c86fb6d6d3aaa5f4e22b5dcdb44a05ff5c87",
+    "templateBytes": 810686,
+    "templateLines": 9508,
+    "templateSha256": "98cd9f5f102c4d34e327debd9ac33ec5d5bf53d3a89c7b277c042a1e3cd5400a",
+    "canonicalCssSha256": "3d0898b546d4d5a331390b492d6ac19801d4b10e689272912d862878dabb50af",
+    "maxSourceBytes": 2303000,
+    "maxSourceLines": 34700,
     "minTemplateBytes": 500000,
-    "baseline": "10.6.3",
+    "baseline": "10.6.4",
     "approvedGrowth": {
-      "sourceBytes": 3162,
-      "sourceLines": 58,
-      "templateBytes": 0,
-      "templateLines": 0
+      "sourceBytes": 43080,
+      "sourceLines": 567,
+      "templateBytes": 927,
+      "templateLines": 14
     },
-    "scope": "Issue #701 native iOS patient-state parity with complete alliance-owned patient coverage and desktop-equivalent transport queues"
+    "scope": "Issue #704 Alliance Admin navigation, day-coded Alliance Courses, verified academy mapping, native maximum-room submission safeguards, visible busy/unmapped scan findings and setup guidance"
   }
 }

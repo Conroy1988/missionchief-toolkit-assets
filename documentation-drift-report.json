@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "10.6.3",
+  "userscriptVersion": "10.7.0",
   "versionState": "source-transition",
   "documentedThemes": [
     "Map Command",
@@ -56,10 +56,10 @@
       "action": "Open Toolkit Command Palette"
     }
   ],
-  "featureCount": 29,
+  "featureCount": 30,
   "publicDocumentCount": 2,
   "failures": [],
   "warnings": [
-    "Validated guarded source transition 10.6.3 is ahead of dashboard version 10.3.2."
+    "Validated guarded source transition 10.7.0 is ahead of dashboard version 10.3.2."
   ]
 }

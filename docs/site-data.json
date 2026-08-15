@@ -290,8 +290,27 @@
     },
     {
       "name": "Alliance operations",
-      "description": "Manage alliance-member visibility and ordering without losing native MissionChief controls.",
+      "description": "Run bounded alliance-admin workflows without bypassing native MissionChief permissions or controls.",
       "features": [
+        {
+          "name": "Alliance Courses",
+          "summary": "Starts ready day-coded academy courses sequentially through MissionChief's verified native education form.",
+          "details": [
+            "Ambulance, Police, Fire and Coastal / Rescue academy mappings",
+            "Today or explicit weekday selection",
+            "Maximum currently available classrooms",
+            "Configurable 1 hour, 12 hours, 1 day or 2 days alliance sharing",
+            "Fresh scan and explicit confirmation",
+            "0 Credits, sequential pacing and no automatic retry"
+          ],
+          "visual": "alliance-courses",
+          "tags": [
+            "alliance",
+            "courses",
+            "admin",
+            "native"
+          ]
+        },
         {
           "name": "Alliance Member Manager",
           "summary": "Filters and sorts alliance members by role and current activity, with explicit sequential loading of additional pages.",
@@ -793,6 +812,23 @@
         {
           "heading": "Patient Transport Sweep",
           "body": "The manual bounded alliance workflow discovers current missions from live map markers or, on iOS, a deliberate current-payload refresh; fallback entries require positive alliance ownership. It excludes the signed-in player's vehicles and uses MissionChief's native vehicle-window discharge control for one verified eligible ambulance at a time. Its final aggregate report persists until dismissed or replaced; when a valid Discord webhook is already saved, the same privacy-safe snapshot posts once automatically and delivery failure never changes the sweep result."
+        }
+      ]
+    },
+    {
+      "title": "Alliance administration",
+      "sections": [
+        {
+          "heading": "Alliance Admin section",
+          "body": "Alliance Courses and Co-admin Patient Transport Sweep share one top-level Toolkit section. Both remain manual, bounded workflows and require MissionChief's current native controls."
+        },
+        {
+          "heading": "Alliance Courses building setup",
+          "body": "Name each academy for one course and include SUN, MON, TUE, WED, THU, FRI or SAT, or the corresponding full English day name, as a separate token. The native academy icon separates crossover names such as Dog Handling and Drone Operator; AD, AE, AF and AI are accepted fallback prefixes."
+        },
+        {
+          "heading": "Alliance Courses safety",
+          "body": "A fresh scan requires the native green course action. Start requires explicit confirmation, discovers the current course option value, selects the maximum native classroom option, uses the configured sharing duration at 0 Credits and verifies new matching course evidence. Unknown names, changed forms and ambiguous options are skipped rather than guessed, and unverified submissions are never retried automatically."
         }
       ]
     },

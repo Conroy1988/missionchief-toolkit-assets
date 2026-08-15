@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.6.4
+// @version      10.7.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.6.4',
+        version: '10.7.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -525,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.6.4",
-        title: "Native iOS patient-state parity repair",
+        version: "10.7.0",
+        title: "Alliance Courses command automation",
         highlights: Object.freeze([
-            "Fixes the physical-iPhone failure where all 80 current patient missions were checked but zero transports were found while desktop reported 13.",
-            "Reads MissionChief's live native patient state independently of the Leaflet marker registry and desktop-shaped mission HTML.",
-            "Requires current positive alliance ownership and complete per-mission patient coverage before native iOS state can decide queue eligibility.",
-            "Keeps bounded mission-page hydration as a fallback while preserving personal and prisoner exclusions plus verified native discharge safeguards.",
-            "Adds an 80-patient real-device regression proving that iOS and desktop return the same 13 transport missions."
+            "Adds a dedicated Alliance Admin section for co-admin and alliance-management workflows.",
+            "Starts day-coded Alliance Courses by matching academy and building names to verified native course labels.",
+            "Uses the maximum classroom count exposed by MissionChief and shares courses for the configured 1 hour, 12 hours, 1 day or 2 days.",
+            "Requires a fresh scan and explicit confirmation, submits sequentially with pacing, and never retries an unverified course automatically.",
+            "Moves Patient Transport Sweep into Alliance Admin and includes an in-tool naming and setup guide."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -865,7 +865,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
         'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
         'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
-        'financialIntelligence', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
+        'financialIntelligence', 'allianceCourses', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
         'mapMeasure'
     ]);
     const toolkitAnalyticsSessionSignals = new Set();
@@ -1305,6 +1305,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const TRANSPORT_SWEEP_MAX_MOBILE_DISCOVERY_MISSIONS = 80;
     const TRANSPORT_SWEEP_MOBILE_DISCOVERY_CONCURRENCY = 4;
     const TRANSPORT_SWEEP_MOBILE_REQUEST_TIMEOUT_MS = 6500;
+    const ALLIANCE_COURSE_DAY_OPTIONS = Object.freeze(['today', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+    const ALLIANCE_COURSE_SHARE_DURATION_OPTIONS = Object.freeze([3600, 43200, 86400, 172800]);
+    const ALLIANCE_COURSE_DELAY_OPTIONS = Object.freeze([1000, 1500, 2000, 3000, 5000]);
+    const ALLIANCE_COURSE_SCAN_LIMIT = 150;
+    const ALLIANCE_COURSE_START_LIMIT = 100;
+    const ALLIANCE_COURSE_REQUEST_TIMEOUT_MS = 12000;
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -1653,6 +1659,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         discordPosting: false,
         log: []
     };
+    const allianceCourseRuntime = {
+        running: false,
+        stopRequested: false,
+        scanPromise: null,
+        queue: [],
+        summary: null,
+        scannedAt: 0,
+        scannedDay: '',
+        currentBuildingId: '',
+        currentItem: '',
+        processed: 0,
+        created: 0,
+        skipped: 0,
+        errors: 0,
+        log: []
+    };
+    runtimeOnCleanup(() => {
+        allianceCourseRuntime.stopRequested = true;
+    });
     const personalVehicleApiCache = new Map();
     const missionCommitmentIndex = new Map();
     const payoutHistory = loadPayoutHistory();
@@ -1729,10 +1754,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     runtime.cleanupCallbacks.push(() => {
         stopMapMeasure(false);
     });
-    const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'finance', 'locations', 'appearance', 'settings']);
+    const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'alliance', 'finance', 'locations', 'appearance', 'settings']);
     const COMMAND_SECTION_META = Object.freeze({
         map: Object.freeze({ label: 'Map', title: 'Map Controls', icon: '◎', description: 'Visibility, overlays and map tools' }),
         missions: Object.freeze({ label: 'Missions', title: 'Mission Operations', icon: '◆', description: 'Intelligence, resources and response tools' }),
+        alliance: Object.freeze({ label: 'Alliance Admin', title: 'Alliance Administration', icon: '♜', description: 'Courses, transports and alliance controls' }),
         finance: Object.freeze({ label: 'Finance', title: 'Finance Command', icon: '£', description: 'Reports, payouts and financial archive' }),
         locations: Object.freeze({ label: 'Locations', title: 'Saved Locations', icon: '⌂', description: 'Jumps, bookmarks and map profiles' }),
         appearance: Object.freeze({ label: 'Appearance', title: 'Appearance', icon: '◈', description: 'Interface themes and map skins' }),
@@ -1756,6 +1782,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         discord: 'finance',
         places: 'locations',
         fleet: 'missions',
+        allianceAdmin: 'alliance',
     });
     let commandSearchOpen = false;
     let commandSearchQuery = '';
@@ -1997,6 +2024,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         resourceGap: { enabled: false, radiusMi: 25 },
         pressureBoard: { pinnedMissionIds: [] },
         transportSweep: { delayMs: 2000, maxPerRun: 25 },
+        allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
@@ -2023,6 +2051,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
         pressureBoard: { ...base.pressureBoard, ...(parsed.pressureBoard || {}) },
         transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
+        allianceCourses: { ...base.allianceCourses, ...(parsed.allianceCourses || {}) },
         majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
@@ -2113,6 +2142,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         )).slice(-12);
         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+        merged.allianceCourses.day = ALLIANCE_COURSE_DAY_OPTIONS.includes(String(merged.allianceCourses.day)) ? String(merged.allianceCourses.day) : 'today';
+        merged.allianceCourses.shareDuration = ALLIANCE_COURSE_SHARE_DURATION_OPTIONS.includes(Number(merged.allianceCourses.shareDuration)) ? Number(merged.allianceCourses.shareDuration) : 86400;
+        merged.allianceCourses.delayMs = ALLIANCE_COURSE_DELAY_OPTIONS.includes(Number(merged.allianceCourses.delayMs)) ? Number(merged.allianceCourses.delayMs) : 1500;
         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
         const loadedPayoutDuration = Number(parsed?.payoutFlash?.durationMs);
@@ -12115,6 +12147,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             #${SCRIPT.mapMeasureHudId} .mcms-measure-readout strong { font-size:17px !important; }
             #${SCRIPT.mapMeasureHudId} .mcms-measure-guidance { font-size:9px !important; }
         }
+        #${SCRIPT.panelId} .mcms-alliance-course-guide {
+            margin-top:8px !important;
+            padding:7px 8px !important;
+            border:1px solid rgba(98,211,255,.25) !important;
+            border-radius:9px !important;
+            background:rgba(15,71,91,.13) !important;
+            color:rgba(255,255,255,.70) !important;
+            font-size:8px !important;
+            line-height:1.38 !important;
+        }
+        #${SCRIPT.panelId} .mcms-alliance-course-guide summary { color:#a9e8ff !important; font-size:8.5px !important; font-weight:950 !important; cursor:pointer !important; }
+        #${SCRIPT.panelId} .mcms-alliance-course-guide p { margin:7px 0 0 !important; }
+        #${SCRIPT.panelId} .mcms-course-card { border-color:rgba(98,211,255,.30) !important; background:rgba(8,61,82,.14) !important; }
+        #${SCRIPT.panelId} .mcms-course-card .mcms-sweep-head { color:#b9ecff !important; }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} .mcms-tab-panel { gap:11px !important; padding:13px !important; }
@@ -16919,6 +16965,457 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         transportSweepRuntime.stopRequested = true;
         transportSweepLog('Stop requested — finishing the current action');
         renderTransportSweepPanel();
+    }
+
+    const ALLIANCE_COURSE_DAY_META = Object.freeze({
+        sun: Object.freeze({ label: 'Sunday', tokens: Object.freeze(['sun', 'sunday']) }),
+        mon: Object.freeze({ label: 'Monday', tokens: Object.freeze(['mon', 'monday']) }),
+        tue: Object.freeze({ label: 'Tuesday', tokens: Object.freeze(['tue', 'tues', 'tuesday']) }),
+        wed: Object.freeze({ label: 'Wednesday', tokens: Object.freeze(['wed', 'weds', 'wednesday']) }),
+        thu: Object.freeze({ label: 'Thursday', tokens: Object.freeze(['thu', 'thur', 'thurs', 'thursday']) }),
+        fri: Object.freeze({ label: 'Friday', tokens: Object.freeze(['fri', 'friday']) }),
+        sat: Object.freeze({ label: 'Saturday', tokens: Object.freeze(['sat', 'saturday']) })
+    });
+    const ALLIANCE_COURSE_WEEK = Object.freeze(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+    const ALLIANCE_COURSE_ACADEMIES = Object.freeze({
+        ambulance: Object.freeze({ label: 'Ambulance Academy', prefixes: Object.freeze(['AD']), icons: Object.freeze(['building_rettungsschule']) }),
+        police: Object.freeze({ label: 'Police Academy', prefixes: Object.freeze(['AE']), icons: Object.freeze(['policechief_building_polizeischule', 'building_polizeischule']) }),
+        fire: Object.freeze({ label: 'Fire Academy', prefixes: Object.freeze(['AF']), icons: Object.freeze(['building_fireschool']) }),
+        rescue: Object.freeze({ label: 'Coastal / Rescue Academy', prefixes: Object.freeze(['AI']), icons: Object.freeze(['building_water_rescue_school']) })
+    });
+    const ALLIANCE_COURSE_CATALOG = Object.freeze({
+        ambulance: Object.freeze([
+            Object.freeze({ key: 'ambulance-officer', nativeLabel: 'Ambulance Officer', aliases: Object.freeze(['ambulance officer']) }),
+            Object.freeze({ key: 'critical-care', nativeLabel: 'Critical care', aliases: Object.freeze(['critical care']) }),
+            Object.freeze({ key: 'hart', nativeLabel: 'HART Training', aliases: Object.freeze(['hart training', 'hart']) }),
+            Object.freeze({ key: 'midwifery', nativeLabel: 'Midwifery Training', aliases: Object.freeze(['midwifery training', 'midwifery']) }),
+            Object.freeze({ key: 'sort', nativeLabel: 'SORT Training', aliases: Object.freeze(['sort training', 'sort']) }),
+            Object.freeze({ key: 'tactical-command', nativeLabel: 'Tactical Command Course', aliases: Object.freeze(['tactical command course', 'tactical command']) })
+        ]),
+        police: Object.freeze([
+            Object.freeze({ key: 'dog-handling', nativeLabel: 'Dog handling', aliases: Object.freeze(['dog handling']) }),
+            Object.freeze({ key: 'drone-operator', nativeLabel: 'Drone Operator Training', aliases: Object.freeze(['drone operator training', 'drone operator']) }),
+            Object.freeze({ key: 'firearms', nativeLabel: 'Firearms training', aliases: Object.freeze(['firearms training', 'firearms']) }),
+            Object.freeze({ key: 'level-1-public-order', nativeLabel: 'Level 1 Public Order Training', aliases: Object.freeze(['level 1 public order training', 'level 1 public order']) }),
+            Object.freeze({ key: 'level-2-public-order', nativeLabel: 'Level 2 Public Order Training', aliases: Object.freeze(['level 2 public order training', 'level 2 public order']) }),
+            Object.freeze({ key: 'mounted-police', nativeLabel: 'Mounted Training', aliases: Object.freeze(['mounted police', 'mounted training']) }),
+            Object.freeze({ key: 'police-aviation', nativeLabel: 'Police aviation', aliases: Object.freeze(['police aviation']) }),
+            Object.freeze({ key: 'police-inspector', nativeLabel: 'Police Inspector Training', aliases: Object.freeze(['police inspector training', 'police inspector']) }),
+            Object.freeze({ key: 'police-medic', nativeLabel: 'Police Medic Training', aliases: Object.freeze(['police medic training', 'police medic']) }),
+            Object.freeze({ key: 'police-search-advisor', nativeLabel: 'Police Search Advisor Training', aliases: Object.freeze(['police search advisor training', 'police search advisor']) }),
+            Object.freeze({ key: 'police-sergeant', nativeLabel: 'Police Sergeant Training', aliases: Object.freeze(['police sergeant training', 'police sergeant']) }),
+            Object.freeze({ key: 'roads-policing', nativeLabel: 'Roads Policing Officer Training', aliases: Object.freeze(['roads policing officer training', 'roads policing officer', 'roads policing']) })
+        ]),
+        fire: Object.freeze([
+            Object.freeze({ key: 'arf', nativeLabel: 'Aircraft Rescue and Firefighting', aliases: Object.freeze(['aircraft rescue and firefighting', 'arf']) }),
+            Object.freeze({ key: 'co-responder', nativeLabel: 'Co-Responder Training', aliases: Object.freeze(['co responder training', 'co responder']) }),
+            Object.freeze({ key: 'drone-operator', nativeLabel: 'Drone Operator Training', aliases: Object.freeze(['fire drone operator', 'drone operator training', 'drone operator']) }),
+            Object.freeze({ key: 'lifeguard', nativeLabel: 'Lifeguard Training', aliases: Object.freeze(['fire lifeguard', 'lifeguard training', 'lifeguard']) }),
+            Object.freeze({ key: 'hazmat', nativeLabel: 'HazMat', aliases: Object.freeze(['hazmat']) }),
+            Object.freeze({ key: 'hvpt', nativeLabel: 'High Volume Pump Training', aliases: Object.freeze(['high volume pump training', 'high volume pump', 'hvpt']) }),
+            Object.freeze({ key: 'mobile-command', nativeLabel: 'Mobile command', aliases: Object.freeze(['mobile command']) })
+        ]),
+        rescue: Object.freeze([
+            Object.freeze({ key: 'cave-rescue', nativeLabel: 'Cave Rescue Training', aliases: Object.freeze(['cave rescue training', 'cave rescue']) }),
+            Object.freeze({ key: 'coastal-air-rescue', nativeLabel: 'Coastal Air Rescue Operations Training', aliases: Object.freeze(['coastal air rescue operations training', 'coastal air rescue operations', 'coastal air rescue']) }),
+            Object.freeze({ key: 'coastal-command', nativeLabel: 'Coastal Command Training', aliases: Object.freeze(['coastal command training', 'coastal command']) }),
+            Object.freeze({ key: 'coastal-search-advisor', nativeLabel: 'Coastguard Search Advisor Training', aliases: Object.freeze(['coastal search advisor', 'coastal search advis', 'coastguard search advisor']) }),
+            Object.freeze({ key: 'dog-handling', nativeLabel: 'Dog handling', aliases: Object.freeze(['dog handling']) }),
+            Object.freeze({ key: 'drone-operator', nativeLabel: 'Drone Operator Training', aliases: Object.freeze(['drone operator training', 'drone operator']) }),
+            Object.freeze({ key: 'flood-first-responder', nativeLabel: 'Flood First Responder Training', aliases: Object.freeze(['flood first responder training', 'flood first responder']) }),
+            Object.freeze({ key: 'hovercraft-command', nativeLabel: 'Hovercraft Commander Training', aliases: Object.freeze(['hovercraft commander training', 'hovercraft command', 'hovercraft commander']) }),
+            Object.freeze({ key: 'jet-ski-handling', nativeLabel: 'Jet Ski Handling', aliases: Object.freeze(['jet ski handling']) }),
+            Object.freeze({ key: 'lifeboat-operations', nativeLabel: 'Lifeboat Operations Training', aliases: Object.freeze(['lifeboat operations training', 'lifeboat operations']) }),
+            Object.freeze({ key: 'lifeguard', nativeLabel: 'Lifeguard Training', aliases: Object.freeze(['lifeguard training', 'lifeguard']) }),
+            Object.freeze({ key: 'mud-rescue', nativeLabel: 'Mud Rescue Training', aliases: Object.freeze(['mud rescue training', 'mud rescue']) }),
+            Object.freeze({ key: 'rope-rescue', nativeLabel: 'Rope Rescue Training', aliases: Object.freeze(['rope rescue training', 'rope rescue']) }),
+            Object.freeze({ key: 'search-management', nativeLabel: 'Search Management Training', aliases: Object.freeze(['sar search management', 'search management training', 'search management']) })
+        ])
+    });
+
+    function normaliseAllianceCourseText(value) {
+        let text = String(value || '').toLowerCase();
+        try { text = text.normalize('NFKD'); } catch (err) {}
+        return text.replace(/[\u0300-\u036f]/gu, '').replace(/&/gu, ' and ').replace(/[^a-z0-9]+/gu, ' ').trim().replace(/\s+/gu, ' ');
+    }
+
+    function allianceCourseResolvedDay(value = state.allianceCourses.day, date = new Date()) {
+        const requested = String(value || 'today');
+        if (requested !== 'today' && ALLIANCE_COURSE_DAY_META[requested]) return requested;
+        return ALLIANCE_COURSE_WEEK[Math.max(0, Math.min(6, Number(date?.getDay?.()) || 0))];
+    }
+
+    function allianceCourseDayLabel(day = allianceCourseResolvedDay()) {
+        return ALLIANCE_COURSE_DAY_META[day]?.label || 'Selected day';
+    }
+
+    function allianceCourseShareLabel(duration = state.allianceCourses.shareDuration) {
+        return ({ 3600: '1 hour', 43200: '12 hours', 86400: '1 day', 172800: '2 days' })[Number(duration)] || '1 day';
+    }
+
+    function allianceCourseNameMatchesDay(name, day) {
+        const words = new Set(normaliseAllianceCourseText(name).split(' ').filter(Boolean));
+        return Boolean(ALLIANCE_COURSE_DAY_META[day]?.tokens.some(token => words.has(token)));
+    }
+
+    function allianceCourseAcademyFromRow(row, name) {
+        const iconSignal = Array.from(row?.querySelectorAll?.('img[src]') || []).map(image => String(image.getAttribute('src') || '').toLowerCase()).join(' ');
+        for (const [key, academy] of Object.entries(ALLIANCE_COURSE_ACADEMIES)) {
+            if (academy.icons.some(icon => iconSignal.includes(icon))) return key;
+        }
+        const prefix = String(name || '').match(/^\s*#?\s*([A-Za-z]{2})\b/u)?.[1]?.toUpperCase() || '';
+        for (const [key, academy] of Object.entries(ALLIANCE_COURSE_ACADEMIES)) {
+            if (academy.prefixes.includes(prefix)) return key;
+        }
+        return '';
+    }
+
+    function allianceCourseDefinitionForName(name, academyKey) {
+        const signal = ` ${normaliseAllianceCourseText(name)} `;
+        const matches = [];
+        for (const definition of ALLIANCE_COURSE_CATALOG[academyKey] || []) {
+            const matchingAliases = definition.aliases
+                .map(normaliseAllianceCourseText)
+                .filter(alias => alias && signal.includes(` ${alias} `))
+                .sort((left, right) => right.length - left.length);
+            if (matchingAliases.length) matches.push({ definition, alias: matchingAliases[0] });
+        }
+        const unique = Array.from(new Map(matches.map(match => [match.definition.key, match])).values());
+        return unique.length === 1 ? unique[0].definition : null;
+    }
+
+    function allianceCourseBuildingReference(href) {
+        try {
+            const url = new URL(String(href || ''), document.baseURI || pageWindow.location.href);
+            if (url.origin !== pageWindow.location.origin) return null;
+            const match = url.pathname.match(/^\/buildings\/(\d+)\/?$/u);
+            return match ? { id: match[1], path: `/buildings/${match[1]}` } : null;
+        } catch (err) { return null; }
+    }
+
+    function allianceCourseBuildingName(row) {
+        const named = row?.querySelector?.('.search_attribute');
+        const linked = Array.from(row?.querySelectorAll?.('a[href*="/buildings/"]') || []).find(anchor => !anchor.classList.contains('btn'));
+        return String(named?.textContent || linked?.textContent || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function buildAllianceCourseQueue(doc, selectedDay) {
+        const rows = Array.from(doc?.querySelectorAll?.('tr.alliance_buildings_table_searchable') || []);
+        const queue = [];
+        const summary = { totalRows: rows.length, matching: 0, inspected: 0, ready: 0, busy: 0, unmapped: 0, truncated: 0, busyNames: [], unmappedNames: [] };
+        for (const row of rows) {
+            const name = allianceCourseBuildingName(row);
+            if (!name || !allianceCourseNameMatchesDay(name, selectedDay)) continue;
+            summary.matching += 1;
+            if (summary.inspected >= ALLIANCE_COURSE_SCAN_LIMIT) {
+                summary.truncated += 1;
+                continue;
+            }
+            summary.inspected += 1;
+            const academyKey = allianceCourseAcademyFromRow(row, name);
+            const definition = academyKey ? allianceCourseDefinitionForName(name, academyKey) : null;
+            if (!academyKey || !definition) {
+                summary.unmapped += 1;
+                if (summary.unmappedNames.length < 12) summary.unmappedNames.push(name);
+                continue;
+            }
+            const action = Array.from(row.querySelectorAll('a.btn-success[href*="/buildings/"]')).find(anchor => /start\s+a\s+new\s+training\s+course/iu.test(String(anchor.textContent || '')));
+            const building = allianceCourseBuildingReference(action?.getAttribute('href'));
+            if (!building) {
+                summary.busy += 1;
+                if (summary.busyNames.length < 12) summary.busyNames.push(name);
+                continue;
+            }
+            queue.push({
+                buildingId: building.id,
+                path: building.path,
+                name,
+                academyKey,
+                academyLabel: ALLIANCE_COURSE_ACADEMIES[academyKey].label,
+                courseKey: definition.key,
+                nativeLabel: definition.nativeLabel,
+                outcome: 'ready',
+                outcomeDetail: ''
+            });
+            summary.ready += 1;
+        }
+        return { queue, summary };
+    }
+
+    function allianceCourseLog(message, level = 'info') {
+        const clean = String(message || '').trim();
+        if (!clean) return;
+        allianceCourseRuntime.log.unshift({ time: Date.now(), message: clean, level: String(level || 'info') });
+        if (allianceCourseRuntime.log.length > 18) allianceCourseRuntime.log.length = 18;
+        renderAllianceCoursesPanel();
+    }
+
+    async function fetchAllianceCourseDocument(pathOrUrl) {
+        const url = new URL(pathOrUrl, document.baseURI || pageWindow.location.href);
+        if (url.origin !== pageWindow.location.origin) throw new Error('Blocked an unexpected external Alliance Courses URL.');
+        const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'text/html,application/xhtml+xml' },
+            timeoutMs: ALLIANCE_COURSE_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
+        const html = await response.text();
+        return { doc: new DOMParser().parseFromString(html, 'text/html'), url: response.url || url.href };
+    }
+
+    async function scanAllianceCourseQueue({ force = true } = {}) {
+        if (allianceCourseRuntime.scanPromise) return allianceCourseRuntime.scanPromise;
+        if (allianceCourseRuntime.running) return allianceCourseRuntime.queue;
+        const selectedDay = allianceCourseResolvedDay();
+        if (!force && allianceCourseRuntime.scannedDay === selectedDay && allianceCourseRuntime.scannedAt) return allianceCourseRuntime.queue;
+        allianceCourseRuntime.currentItem = `Scanning ${allianceCourseDayLabel(selectedDay)} buildings`;
+        const scanPromise = (async () => {
+            try {
+                const localRows = document.querySelectorAll?.('tr.alliance_buildings_table_searchable');
+                const sourceDocument = isAllianceBuildingsPath(pageWindow.location.pathname) && localRows?.length
+                    ? document
+                    : (await fetchAllianceCourseDocument('/verband/gebauede')).doc;
+                const result = buildAllianceCourseQueue(sourceDocument, selectedDay);
+                allianceCourseRuntime.queue = result.queue;
+                allianceCourseRuntime.summary = result.summary;
+                allianceCourseRuntime.scannedAt = Date.now();
+                allianceCourseRuntime.scannedDay = selectedDay;
+                allianceCourseRuntime.currentItem = '';
+                allianceCourseRuntime.processed = 0;
+                allianceCourseRuntime.created = 0;
+                allianceCourseRuntime.skipped = 0;
+                allianceCourseRuntime.errors = 0;
+                allianceCourseRuntime.log = [];
+                allianceCourseLog(`${allianceCourseDayLabel(selectedDay)} scan: ${result.summary.ready} ready, ${result.summary.busy} busy or unavailable, ${result.summary.unmapped} unmapped`);
+                if (result.summary.truncated) allianceCourseLog(`${result.summary.truncated} additional day-matched buildings were left outside the ${ALLIANCE_COURSE_SCAN_LIMIT}-building scan limit`, 'warn');
+                return allianceCourseRuntime.queue;
+            } catch (err) {
+                allianceCourseRuntime.queue = [];
+                allianceCourseRuntime.summary = null;
+                allianceCourseRuntime.scannedAt = 0;
+                allianceCourseRuntime.scannedDay = '';
+                allianceCourseRuntime.currentItem = '';
+                allianceCourseLog(`Course scan failed: ${err?.message || 'unknown error'}`, 'error');
+                return [];
+            }
+        })();
+        allianceCourseRuntime.scanPromise = scanPromise;
+        renderAllianceCoursesPanel();
+        try { return await scanPromise; }
+        finally {
+            if (allianceCourseRuntime.scanPromise === scanPromise) allianceCourseRuntime.scanPromise = null;
+            renderAllianceCoursesPanel();
+        }
+    }
+
+    function normaliseAllianceCourseOptionLabel(value) {
+        return normaliseAllianceCourseText(String(value || '').replace(/\s*\(\s*\d+\s+days?\s*\)\s*$/iu, ''));
+    }
+
+    function countAllianceCourseEvidence(doc, nativeLabel) {
+        const expected = normaliseAllianceCourseOptionLabel(nativeLabel);
+        return Array.from(doc?.querySelectorAll?.('#building_schooling_table [sortvalue]') || [])
+            .filter(node => normaliseAllianceCourseOptionLabel(node.getAttribute('sortvalue')) === expected).length;
+    }
+
+    function allianceCourseSafeSkip(message) {
+        const error = new Error(message);
+        error.allianceCourseSafeSkip = true;
+        return error;
+    }
+
+    function prepareAllianceCourseSubmission(doc, item, shareDuration) {
+        const form = Array.from(doc?.querySelectorAll?.('form[action]') || []).find(candidate => {
+            try {
+                const action = new URL(candidate.getAttribute('action'), document.baseURI || pageWindow.location.href);
+                return action.origin === pageWindow.location.origin && action.pathname === `/buildings/${item.buildingId}/education`;
+            } catch (err) { return false; }
+        });
+        if (!form) throw allianceCourseSafeSkip('native education form is unavailable');
+        const roomSelect = form.querySelector('#building_rooms_use[name="building_rooms_use"]');
+        const roomOptions = Array.from(roomSelect?.options || []).filter(option => !option.disabled && /^\d+$/u.test(String(option.value)) && Number(option.value) > 0);
+        if (!roomOptions.length) throw allianceCourseSafeSkip('no native classroom option is available');
+        const roomOption = roomOptions.sort((left, right) => Number(right.value) - Number(left.value))[0];
+        const courseSelect = form.querySelector('#education_select[name="education_select"]');
+        const expectedCourse = normaliseAllianceCourseOptionLabel(item.nativeLabel);
+        const courseOptions = Array.from(courseSelect?.options || []).filter(option => !option.disabled && String(option.value || '').trim() && normaliseAllianceCourseOptionLabel(option.textContent) === expectedCourse);
+        if (courseOptions.length !== 1) throw allianceCourseSafeSkip(`expected one native “${item.nativeLabel}” option; found ${courseOptions.length}`);
+        const durationSelect = form.querySelector('#alliance_duration[name="alliance[duration]"]');
+        const durationOption = Array.from(durationSelect?.options || []).find(option => !option.disabled && Number(option.value) === Number(shareDuration));
+        if (!durationOption) throw allianceCourseSafeSkip(`native ${allianceCourseShareLabel(shareDuration)} sharing option is unavailable`);
+        const costSelect = form.querySelector('#alliance_cost[name="alliance[cost]"]');
+        const freeOption = Array.from(costSelect?.options || []).find(option => !option.disabled && Number(option.value) === 0);
+        if (!freeOption) throw allianceCourseSafeSkip('native 0 Credits alliance-cost option is unavailable');
+        const token = form.querySelector('input[name="authenticity_token"]')?.value;
+        if (!token) throw allianceCourseSafeSkip('native authenticity token is unavailable');
+        const action = new URL(form.getAttribute('action'), document.baseURI || pageWindow.location.href);
+        if (action.origin !== pageWindow.location.origin || action.pathname !== `/buildings/${item.buildingId}/education`) throw allianceCourseSafeSkip('native education action changed unexpectedly');
+        const params = new URLSearchParams();
+        for (const input of form.querySelectorAll('input[type="hidden"][name]')) {
+            if (!input.disabled) params.append(input.name, input.value || '');
+        }
+        params.set('authenticity_token', token);
+        params.set('building_rooms_use', String(roomOption.value));
+        params.set('education_select', String(courseOptions[0].value));
+        params.set('alliance[duration]', String(durationOption.value));
+        params.set('alliance[cost]', String(freeOption.value));
+        params.set('commit', 'Educate');
+        return {
+            action: action.href,
+            body: params.toString(),
+            roomCount: Number(roomOption.value),
+            baseline: countAllianceCourseEvidence(doc, item.nativeLabel)
+        };
+    }
+
+    async function submitAllianceCourse(item, shareDuration) {
+        const building = await fetchAllianceCourseDocument(item.path);
+        const prepared = prepareAllianceCourseSubmission(building.doc, item, shareDuration);
+        const response = await runtimeFetch(prepared.action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: {
+                Accept: 'text/html,application/xhtml+xml',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: prepared.body,
+            timeoutMs: ALLIANCE_COURSE_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while starting the course`);
+        const responseHtml = await response.text();
+        const responseDocument = new DOMParser().parseFromString(responseHtml, 'text/html');
+        const evidence = countAllianceCourseEvidence(responseDocument, item.nativeLabel);
+        if (evidence <= prepared.baseline) throw new Error('MissionChief did not return new matching course evidence; no automatic retry was made');
+        return { roomCount: prepared.roomCount, evidenceAdded: evidence - prepared.baseline };
+    }
+
+    function renderAllianceCoursesPanel() {
+        const host = document.querySelector(`#${SCRIPT.panelId} [data-alliance-courses]`);
+        if (!host) return;
+        const runtimeState = allianceCourseRuntime;
+        const summary = runtimeState.summary || { matching: 0, ready: 0, busy: 0, unmapped: 0 };
+        const status = runtimeState.running ? (runtimeState.stopRequested ? 'STOPPING' : 'RUNNING') : runtimeState.scanPromise ? 'SCANNING' : runtimeState.scannedAt ? (runtimeState.processed ? 'COMPLETE' : 'READY') : 'IDLE';
+        const runStats = runtimeState.running || runtimeState.processed
+            ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(runtimeState.queue.length, ALLIANCE_COURSE_START_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.created}</b><span>Created</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtimeState.errors}</b><span>Errors</span></div>`
+            : `<div class="mcms-sweep-stat"><b>${summary.matching}</b><span>Day match</span></div><div class="mcms-sweep-stat"><b>${summary.ready}</b><span>Ready</span></div><div class="mcms-sweep-stat"><b>${summary.busy}</b><span>Busy</span></div><div class="mcms-sweep-stat"><b>${summary.unmapped}</b><span>Unmapped</span></div>`;
+        const visibleQueue = runtimeState.queue.slice(0, 50);
+        const list = visibleQueue.length ? visibleQueue.map((item, index) => {
+            const current = runtimeState.currentBuildingId === item.buildingId;
+            const outcome = item.outcome === 'created' ? 'CREATED' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : 'READY';
+            return `<div class="mcms-sweep-entry ${current ? 'mcms-current' : ''}"><div><span class="mcms-sweep-title">${escapeHtml(`${index + 1}. ${item.name}`)}</span><span class="mcms-sweep-meta">${escapeHtml(item.academyLabel)} · ${escapeHtml(item.nativeLabel)}${item.outcomeDetail ? ` · ${escapeHtml(item.outcomeDetail)}` : ''}</span></div><span class="mcms-sweep-count">${outcome}</span></div>`;
+        }).join('') : `<div class="mcms-empty-state">Scan the selected day to find mapped academy buildings with MissionChief’s green Start a new training course action.</div>`;
+        const hiddenCount = Math.max(0, runtimeState.queue.length - visibleQueue.length);
+        const findingGroups = [
+            { label: 'Busy / unavailable', total: Number(summary.busy) || 0, names: Array.isArray(summary.busyNames) ? summary.busyNames : [] },
+            { label: 'Unmapped / ambiguous', total: Number(summary.unmapped) || 0, names: Array.isArray(summary.unmappedNames) ? summary.unmappedNames : [] }
+        ].filter(group => group.total > 0);
+        const findings = findingGroups.length ? `<div class="mcms-sweep-log">${findingGroups.map(group => {
+            const names = group.names.map(name => `<div>${escapeHtml(name)}</div>`).join('');
+            const remaining = Math.max(0, group.total - group.names.length);
+            return `<div><b>${escapeHtml(group.label)} (${group.total})</b>${names}${remaining ? `<div>+ ${remaining} more</div>` : ''}</div>`;
+        }).join('')}</div>` : '';
+        const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
+            const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
+        }).join('') : '<div>No course activity yet.</div>';
+        const html = `<div class="mcms-sweep-card mcms-course-card"><div class="mcms-sweep-head"><span>Alliance Courses · ${escapeHtml(allianceCourseDayLabel(allianceCourseResolvedDay()))}</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-sweep-queue">${list}${hiddenCount ? `<div class="mcms-empty-state">${hiddenCount} more ready buildings are retained in this scan.</div>` : ''}</div>${findings}<div class="mcms-sweep-log">${logs}</div></div>`;
+        setInnerHtmlIfChanged(host, html);
+        const start = document.querySelector(`#${SCRIPT.panelId} [data-action="start-alliance-courses"]`);
+        const stop = document.querySelector(`#${SCRIPT.panelId} [data-action="stop-alliance-courses"]`);
+        const scan = document.querySelector(`#${SCRIPT.panelId} [data-action="scan-alliance-courses"]`);
+        if (start) start.disabled = runtimeState.running || Boolean(runtimeState.scanPromise);
+        if (stop) stop.disabled = !runtimeState.running;
+        if (scan) scan.disabled = runtimeState.running || Boolean(runtimeState.scanPromise);
+        const settingsLocked = runtimeState.running || Boolean(runtimeState.scanPromise);
+        document.querySelectorAll(`#${SCRIPT.panelId} [data-setting^="alliance-course-"]`).forEach(control => updateUiSetProperty(control, 'disabled', settingsLocked));
+    }
+
+    async function startAllianceCourses() {
+        if (allianceCourseRuntime.running) return;
+        const queue = await scanAllianceCourseQueue({ force: true });
+        if (allianceCourseRuntime.running || runtime.destroyed) return;
+        const planned = queue.slice(0, ALLIANCE_COURSE_START_LIMIT);
+        if (!planned.length) {
+            showToast('No mapped Alliance Courses are currently ready');
+            return;
+        }
+        const day = allianceCourseResolvedDay();
+        const duration = state.allianceCourses.shareDuration;
+        const confirmed = pageWindow.confirm(`Alliance Courses will start ${planned.length} ${allianceCourseDayLabel(day)} course${planned.length === 1 ? '' : 's'}.
+
+Each course will use the maximum classroom count currently exposed by MissionChief, share with the alliance for ${allianceCourseShareLabel(duration)}, and keep alliance cost at 0 Credits. Courses are submitted one at a time and an unverified result is never retried automatically. Continue?`);
+        if (!confirmed) return;
+        toolkitAnalyticsRecordFeature('allianceCourses');
+        allianceCourseRuntime.running = true;
+        allianceCourseRuntime.stopRequested = false;
+        allianceCourseRuntime.currentBuildingId = '';
+        allianceCourseRuntime.currentItem = '';
+        allianceCourseRuntime.processed = 0;
+        allianceCourseRuntime.created = 0;
+        allianceCourseRuntime.skipped = 0;
+        allianceCourseRuntime.errors = 0;
+        allianceCourseRuntime.log = [];
+        for (const item of allianceCourseRuntime.queue) {
+            item.outcome = 'ready';
+            item.outcomeDetail = '';
+        }
+        allianceCourseLog(`Run started: ${planned.length} ${allianceCourseDayLabel(day)} courses · ${allianceCourseShareLabel(duration)} sharing · maximum rooms`);
+        try {
+            for (let index = 0; index < planned.length; index += 1) {
+                if (runtime.destroyed || allianceCourseRuntime.stopRequested) break;
+                const item = planned[index];
+                allianceCourseRuntime.currentBuildingId = item.buildingId;
+                allianceCourseRuntime.currentItem = item.name;
+                renderAllianceCoursesPanel();
+                allianceCourseLog(`Checking ${item.name} for ${item.nativeLabel}`);
+                try {
+                    const result = await submitAllianceCourse(item, duration);
+                    item.outcome = 'created';
+                    item.outcomeDetail = `${result.roomCount} room${result.roomCount === 1 ? '' : 's'}`;
+                    allianceCourseRuntime.created += 1;
+                    allianceCourseLog(`Started ${item.nativeLabel} at ${item.name} using ${result.roomCount} room${result.roomCount === 1 ? '' : 's'}`);
+                } catch (err) {
+                    if (err?.allianceCourseSafeSkip) {
+                        item.outcome = 'skipped';
+                        item.outcomeDetail = String(err.message || 'native form mismatch');
+                        allianceCourseRuntime.skipped += 1;
+                        allianceCourseLog(`Skipped ${item.name}: ${item.outcomeDetail}`, 'warn');
+                    } else {
+                        item.outcome = 'error';
+                        item.outcomeDetail = String(err?.message || 'unknown error');
+                        allianceCourseRuntime.errors += 1;
+                        allianceCourseLog(`Error at ${item.name}: ${item.outcomeDetail}`, 'error');
+                    }
+                } finally {
+                    allianceCourseRuntime.processed += 1;
+                    renderAllianceCoursesPanel();
+                }
+                if (index < planned.length - 1 && !allianceCourseRuntime.stopRequested) {
+                    const completedDelay = await runtimeDelay(state.allianceCourses.delayMs);
+                    if (!completedDelay) break;
+                }
+            }
+        } finally {
+            const wasStopped = allianceCourseRuntime.stopRequested || runtime.destroyed;
+            allianceCourseRuntime.running = false;
+            allianceCourseRuntime.stopRequested = false;
+            allianceCourseRuntime.currentBuildingId = '';
+            allianceCourseRuntime.currentItem = '';
+            allianceCourseLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${allianceCourseRuntime.created} created, ${allianceCourseRuntime.skipped} skipped, ${allianceCourseRuntime.errors} errors`, allianceCourseRuntime.errors ? 'error' : 'info');
+            showToast(`${wasStopped ? 'Alliance Courses stopped' : 'Alliance Courses complete'} · ${allianceCourseRuntime.created} created · ${allianceCourseRuntime.skipped} skipped · ${allianceCourseRuntime.errors} errors`);
+            renderAllianceCoursesPanel();
+        }
+    }
+
+    function stopAllianceCourses() {
+        if (!allianceCourseRuntime.running) return;
+        allianceCourseRuntime.stopRequested = true;
+        allianceCourseLog('Stop requested — the active MissionChief request will finish, then no further courses will start', 'warn');
+        renderAllianceCoursesPanel();
     }
 
     function vehicleTargetInfo(vehicle) {
@@ -30998,7 +31495,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const headingId = `mcms-card-${section.dataset.panel}-${slug}`;
                 node.id = headingId;
                 card.setAttribute('aria-labelledby', headingId);
-                if (['co-admin-patient-transport-sweep', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
+                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
                     card.classList.add('mcms-command-card-wide');
                 }
                 fragment.appendChild(card);
@@ -31040,8 +31537,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             payout.remove();
         }
         const locations = rename('places', 'locations');
+        const alliance = byLegacyName.alliance;
         const settings = byLegacyName.settings;
-        const sections = { map, missions, finance, locations, appearance, settings };
+        const sections = { map, missions, alliance, finance, locations, appearance, settings };
 
         const layout = document.createElement('div');
         layout.className = 'mcms-command-layout';
@@ -31231,7 +31729,30 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
                 <div class="mcms-status">Ready.</div>
             </section>
-            <section class="mcms-tab-panel" data-panel="resources">
+            <section class="mcms-tab-panel" data-panel="alliance">
+                <div class="mcms-section-label">Alliance Courses</div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="scan-alliance-courses">Scan Courses</button>
+                    <button class="mcms-small-btn" type="button" data-action="start-alliance-courses">Start Courses</button>
+                    <button class="mcms-small-btn" type="button" data-action="stop-alliance-courses">Stop</button>
+                </div>
+                <div class="mcms-row"><span class="mcms-row-label">Building day</span><select class="mcms-select" data-setting="alliance-course-day"><option value="today">Today</option><option value="sun">Sunday</option><option value="mon">Monday</option><option value="tue">Tuesday</option><option value="wed">Wednesday</option><option value="thu">Thursday</option><option value="fri">Friday</option><option value="sat">Saturday</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Share with alliance</span><select class="mcms-select" data-setting="alliance-course-duration"><option value="3600">1 hour</option><option value="43200">12 hours</option><option value="86400">1 day</option><option value="172800">2 days</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Delay between courses</span><select class="mcms-select" data-setting="alliance-course-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
+                <div class="mcms-status"><strong>Fixed safeguards:</strong> maximum rooms exposed by MissionChief · 0 Credits · fresh scan · explicit confirmation · sequential submissions · no automatic retry after an unverified result. Native Admin, Co-Admin or Alliance Educator access is required.</div>
+                <div data-alliance-courses></div>
+                <details class="mcms-alliance-course-guide">
+                    <summary>Alliance setup &amp; supported building names</summary>
+                    <div>
+                        <p>Name each academy building with its course and day, for example <strong>AF - ARF - 6 - Saturday - 1</strong>. Short day codes SAT, SUN, MON, TUE, WED, THU and FRI are accepted, as are full day names.</p>
+                        <p>Academies are read from MissionChief’s academy icon first, with AD (Ambulance), AE (Police), AF (Fire) and AI (Coastal / Rescue) accepted as fallback prefixes. This safely separates crossover names such as Dog Handling and Drone Operator.</p>
+                        <p><strong>Ambulance:</strong> Ambulance Officer, Critical Care, HART, Midwifery, SORT, Tactical Command.</p>
+                        <p><strong>Police:</strong> Dog Handling, Drone Operator, Firearms, Level 1 / 2 Public Order, Mounted Police, Police Aviation, Inspector, Medic, Search Advisor, Sergeant, Roads Policing.</p>
+                        <p><strong>Fire:</strong> ARF, Co-Responder, Drone Operator, Lifeguard, Hazmat, HVPT, Mobile Command.</p>
+                        <p><strong>Coastal / Rescue:</strong> Cave Rescue, Coastal Air Rescue, Coastal Command, Coastal Search Advisor, Dog Handling, Drone Operator, Flood First Responder, Hovercraft Command, Jet Ski Handling, Lifeboat Operations, Lifeguard, Mud Rescue, Rope Rescue, SAR Search Management.</p>
+                        <p>Scan before starting. Busy/full buildings and rows without the native green course action are reported but never submitted. Unrecognised or ambiguous names are listed as unmapped and must be renamed or added in a future Toolkit update.</p>
+                    </div>
+                </details>
                 <div class="mcms-section-label">Co-admin Patient Transport Sweep</div>
                 <div class="mcms-grid-2">
                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
@@ -31242,6 +31763,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
                 <div data-transport-sweep></div>
                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+            </section>
+            <section class="mcms-tab-panel" data-panel="resources">
                 <div class="mcms-section-label">Resource Gap Finder</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('resourceGap', '⚠', 'Resource Gap', 'Show missing-resource badges and nearby available-unit estimates on the map and opened missions.')}
@@ -31664,6 +32187,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (action === 'open-session-cleanup') { openSessionCleanup(); return; }
         if (action === 'refresh-pressure-board') { refreshOperationalPressureBoard(true); return; }
         if (action === 'post-operational-sitrep') { postOperationalSitrep(); return; }
+        if (action === 'scan-alliance-courses') { void scanAllianceCourseQueue({ force: true }).then(queue => showToast(queue.length ? `${queue.length} Alliance Course${queue.length === 1 ? '' : 's'} ready` : 'No mapped Alliance Courses are currently ready')); return; }
+        if (action === 'start-alliance-courses') { void startAllianceCourses(); return; }
+        if (action === 'stop-alliance-courses') { stopAllianceCourses(); return; }
         if (action === 'scan-transport-sweep') { void scanTransportSweepQueue().then(queue => showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found')); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
@@ -31802,6 +32328,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
+        if (setting.startsWith('alliance-course-') && (allianceCourseRuntime.running || allianceCourseRuntime.scanPromise)) {
+            updateUI();
+            showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
+            return;
+        }
         if (handleDeviceLayoutSettingChange(target, setting)) return;
         if (setting === 'density-desktop' || setting === 'density-tablet') {
             const key = setting === 'density-desktop' ? 'desktop' : 'tablet';
@@ -31845,6 +32376,33 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             state.transportSweep.maxPerRun = Math.round(clamp(target.value, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
             saveState(); updateUI();
             showToast(`Transport Sweep maximum: ${state.transportSweep.maxPerRun}`);
+            return;
+        }
+        if (setting === 'alliance-course-day') {
+            state.allianceCourses.day = ALLIANCE_COURSE_DAY_OPTIONS.includes(String(target.value)) ? String(target.value) : 'today';
+            allianceCourseRuntime.queue = [];
+            allianceCourseRuntime.summary = null;
+            allianceCourseRuntime.scannedAt = 0;
+            allianceCourseRuntime.scannedDay = '';
+            allianceCourseRuntime.processed = 0;
+            allianceCourseRuntime.created = 0;
+            allianceCourseRuntime.skipped = 0;
+            allianceCourseRuntime.errors = 0;
+            allianceCourseRuntime.log = [];
+            saveState(); updateUI();
+            showToast(`Alliance Courses day: ${allianceCourseDayLabel(allianceCourseResolvedDay())}`);
+            return;
+        }
+        if (setting === 'alliance-course-duration') {
+            state.allianceCourses.shareDuration = ALLIANCE_COURSE_SHARE_DURATION_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 86400;
+            saveState(); updateUI();
+            showToast(`Alliance Courses sharing: ${allianceCourseShareLabel()}`);
+            return;
+        }
+        if (setting === 'alliance-course-delay') {
+            state.allianceCourses.delayMs = ALLIANCE_COURSE_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 1500;
+            saveState(); updateUI();
+            showToast(`Alliance Courses delay: ${state.allianceCourses.delayMs / 1000}s`);
             return;
         }
         if (setting === 'resource-gap-radius') {
@@ -32134,7 +32692,16 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (transportSweepDelay) updateUiSetProperty(transportSweepDelay, 'value', String(state.transportSweep.delayMs));
         const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
         if (transportSweepMax) updateUiSetProperty(transportSweepMax, 'value', String(state.transportSweep.maxPerRun));
-        if (panel.classList.contains('mcms-open') && state.activeTab === 'missions') renderTransportSweepPanel();
+        const allianceCourseDay = panel.querySelector('[data-setting="alliance-course-day"]');
+        if (allianceCourseDay) updateUiSetProperty(allianceCourseDay, 'value', state.allianceCourses.day);
+        const allianceCourseDuration = panel.querySelector('[data-setting="alliance-course-duration"]');
+        if (allianceCourseDuration) updateUiSetProperty(allianceCourseDuration, 'value', String(state.allianceCourses.shareDuration));
+        const allianceCourseDelay = panel.querySelector('[data-setting="alliance-course-delay"]');
+        if (allianceCourseDelay) updateUiSetProperty(allianceCourseDelay, 'value', String(state.allianceCourses.delayMs));
+        if (panel.classList.contains('mcms-open') && state.activeTab === 'alliance') {
+            renderTransportSweepPanel();
+            renderAllianceCoursesPanel();
+        }
         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
         if (payoutTemplate) updateUiSetProperty(payoutTemplate, 'value', state.payoutFlash.template);
         const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) updateUiSetProperty(resourceGapRadius, 'value', String(state.resourceGap.radiusMi));

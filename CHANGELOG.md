@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.7.0] - 2026-08-15
+
+### Alliance Courses command automation
+
+- Adds a dedicated Alliance Admin section for co-admin and alliance-management workflows.
+- Starts day-coded Alliance Courses by matching academy and building names to verified native course labels.
+- Uses the maximum classroom count exposed by MissionChief and shares courses for the configured 1 hour, 12 hours, 1 day or 2 days.
+- Requires a fresh scan and explicit confirmation, submits sequentially with pacing, and never retries an unverified course automatically.
+- Moves Patient Transport Sweep into Alliance Admin and includes an in-tool naming and setup guide.
+
 ## [10.6.4] - 2026-08-07
 
 ### Native iOS patient-state parity repair

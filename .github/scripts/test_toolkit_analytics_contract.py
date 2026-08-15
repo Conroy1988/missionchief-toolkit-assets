@@ -15,8 +15,8 @@ def require(token: str) -> None:
 
 
 for token in (
-    "// @version      10.7.0",
-    "version: '10.7.0'",
+    "// @version      10.8.0",
+    "version: '10.8.0'",
     "https://tkb-gaming.scot/api/toolkit-analytics.php",
     "runtimeFetch(TOOLKIT_ANALYTICS_ENDPOINT",
     "globalPrivacyControl",
@@ -63,6 +63,7 @@ for feature in (
     "commandPalette",
     "financialIntelligence",
     "allianceCourses",
+    "dispatchRecruitment",
     "safeMode",
 ):
     require(f"toolkitAnalyticsRecordFeature('{feature}')")

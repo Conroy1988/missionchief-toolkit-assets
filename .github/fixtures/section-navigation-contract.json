@@ -19,6 +19,12 @@
       "description": "Courses, transports and alliance controls"
     },
     {
+      "key": "dispatch",
+      "label": "Dispatch",
+      "title": "Dispatch Administration",
+      "description": "Recruitment across selected stations"
+    },
+    {
       "key": "finance",
       "label": "Finance",
       "title": "Finance Command",
@@ -47,6 +53,7 @@
     "map": ["tools"],
     "missions": ["resources", "ops"],
     "alliance": ["alliance"],
+    "dispatch": ["dispatch"],
     "finance": ["discord", "payouts"],
     "locations": ["places"],
     "appearance": ["skins"],
@@ -83,6 +90,15 @@
       "data-setting=\"alliance-course-duration\"",
       "data-alliance-courses"
     ],
+    "dispatch": [
+      "data-action=\"load-dispatch-recruitment\"",
+      "data-action=\"scan-dispatch-recruitment\"",
+      "data-action=\"apply-dispatch-recruitment\"",
+      "data-setting=\"dispatch-recruitment-centre\"",
+      "data-setting=\"dispatch-recruitment-hiring-phase\"",
+      "data-setting=\"dispatch-recruitment-personnel\"",
+      "data-dispatch-recruitment"
+    ],
     "finance": [
       "makeToggleButton('payoutFlash'",
       "data-action=\"test-payout-flash\"",
@@ -116,6 +132,8 @@
     "makeToggleButton('missionAge'",
     "data-action=\"scan-alliance-courses\"",
     "data-action=\"scan-transport-sweep\"",
+    "data-action=\"scan-dispatch-recruitment\"",
+    "data-action=\"apply-dispatch-recruitment\"",
     "data-profile-list"
   ],
   "themes": [

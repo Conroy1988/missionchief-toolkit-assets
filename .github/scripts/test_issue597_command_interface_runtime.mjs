@@ -53,6 +53,7 @@ const legacySections = [
   ["resources", "Resource planning", "resource-control"],
   ["ops", "Vehicle operations", "vehicle-control"],
   ["alliance", "Alliance Courses", "alliance-control"],
+  ["dispatch", "Dispatch Recruitment", "dispatch-control"],
   ["payouts", "Payout flash", "payout-control"],
   ["discord", "Discord reporting", "discord-control"],
   ["places", "Bookmarks", "location-control"],
@@ -109,20 +110,20 @@ this.__probe = {
 const panel = dom.window.document.querySelector("#panel");
 sandbox.__probe.upgrade(panel);
 
-const expectedSections = ["map", "missions", "alliance", "finance", "locations", "appearance", "settings"];
+const expectedSections = ["map", "missions", "alliance", "dispatch", "finance", "locations", "appearance", "settings"];
 assert.deepEqual(Array.from(sandbox.__probe.order), expectedSections);
 assert.deepEqual(
   Array.from(panel.querySelectorAll(".mcms-tabs > .mcms-tab-btn"), button => button.dataset.tab),
   expectedSections,
-  "seven-section navigation order drifted",
+  "eight-section navigation order drifted",
 );
 assert.deepEqual(
   Array.from(panel.querySelectorAll(".mcms-command-content > .mcms-tab-panel"), section => section.dataset.panel),
   expectedSections,
   "runtime panel order drifted",
 );
-assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 7, "navigation did not consolidate to seven sections");
-assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 7, "content did not consolidate to seven sections");
+assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 8, "navigation did not consolidate to eight sections");
+assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 8, "content did not consolidate to eight sections");
 assert.equal(panel.dataset.mcmsCommandInterface, "v9");
 
 const missions = panel.querySelector('[data-panel="missions"]');
@@ -138,6 +139,7 @@ for (const id of [
   "resource-control",
   "vehicle-control",
   "alliance-control",
+  "dispatch-control",
   "payout-control",
   "discord-control",
   "location-control",
@@ -167,8 +169,8 @@ assert.equal(sandbox.__probe.search(panel), 2);
 assert.equal(missions.querySelectorAll(".mcms-search-hidden").length, 0, "clearing search did not restore cards");
 
 sandbox.__probe.upgrade(panel);
-assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 7, "upgrade was not idempotent");
-assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 7, "idempotent upgrade changed panel count");
+assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 8, "upgrade was not idempotent");
+assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 8, "idempotent upgrade changed panel count");
 
 dom.window.close();
-console.log("Issue #597 command-interface runtime passed: seven sections, deterministic migration, card grouping, search and idempotence.");
+console.log("Issue #597 command-interface runtime passed: eight sections, deterministic migration, card grouping, search and idempotence.");

@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.8.0] - 2026-08-15
+
+### Dispatch Recruitment
+
+- Adds a dedicated Dispatch administration section for recruitment changes across one selected Dispatch Centre.
+- Discovers the player's current Dispatch Centres and every native MissionChief building type dynamically, with type filters and exact per-station selection.
+- Applies Hiring Phase and Personnel (Desired) through each station's current native recruitment and Edit controls.
+- Rechecks Dispatch Centre and building-type membership before every station, then verifies both resulting values through authoritative building data.
+- Requires a scanned preview and explicit confirmation, processes sequentially with pacing and Stop, and never retries an unverified action automatically.
+
 ## [10.7.0] - 2026-08-15
 
 ### Alliance Courses command automation

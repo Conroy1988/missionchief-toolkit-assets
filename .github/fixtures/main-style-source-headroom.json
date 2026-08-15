@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 704,
-    "version": "10.7.0",
-    "sourceBytes": 2302385,
-    "sourceLines": 34608,
-    "sourceSha256": "d0c2738f83ae4a18c38b948cda47c86fb6d6d3aaa5f4e22b5dcdb44a05ff5c87",
-    "templateBytes": 810686,
-    "templateLines": 9508,
-    "templateSha256": "98cd9f5f102c4d34e327debd9ac33ec5d5bf53d3a89c7b277c042a1e3cd5400a",
-    "canonicalCssSha256": "3d0898b546d4d5a331390b492d6ac19801d4b10e689272912d862878dabb50af",
-    "maxSourceBytes": 2303000,
-    "maxSourceLines": 34700,
+    "issue": 706,
+    "version": "10.8.0",
+    "sourceBytes": 2362461,
+    "sourceLines": 35426,
+    "sourceSha256": "09f6806a2029ec5abe568492923c28f7027f0670135b55fd8da91c136623486a",
+    "templateBytes": 815537,
+    "templateLines": 9534,
+    "templateSha256": "fea335d5ddf6f50b8a17ae28508609f63db2012dca2a486e7d1289be6ec09bbb",
+    "canonicalCssSha256": "65d93b2f298628e7958d0ceffb2d37cef666f87744f6bc679b34db6ab4d809a1",
+    "maxSourceBytes": 2363500,
+    "maxSourceLines": 35550,
     "minTemplateBytes": 500000,
-    "baseline": "10.6.4",
+    "baseline": "10.7.0",
     "approvedGrowth": {
-      "sourceBytes": 43080,
-      "sourceLines": 567,
-      "templateBytes": 927,
-      "templateLines": 14
+      "sourceBytes": 60076,
+      "sourceLines": 818,
+      "templateBytes": 4851,
+      "templateLines": 26
     },
-    "scope": "Issue #704 Alliance Admin navigation, day-coded Alliance Courses, verified academy mapping, native maximum-room submission safeguards, visible busy/unmapped scan findings and setup guidance"
+    "scope": "Issue #706 Dispatch Recruitment navigation, dynamic native Dispatch Centre and station-type discovery, exact station selection, verified Hiring Phase and Personnel (Desired) submissions, sequential safeguards and operator guidance"
   }
 }

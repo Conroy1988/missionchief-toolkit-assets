@@ -8,7 +8,7 @@
 - **Pipeline v4 target median:** 4m 00s
 - **Expected reduction:** 87.6%
 - **Expected throughput:** 8.1×
-- **Measured Pipeline v4 median:** 15m 30s
+- **Measured Pipeline v4 median:** 15m 34s
 - **Measured implementation-ready → green median:** 1m 30s
 
 ## Statistics
@@ -16,14 +16,15 @@
 | Metric | v3 baseline | v4 measured | v4 target |
 |---|---:|---:|---:|
 | Implementation-ready → green median | — | 1m 30s | measured only |
-| PR → verified median | 32m 13s | 15m 30s | 4m 00s |
+| PR → verified median | 32m 13s | 15m 34s | 4m 00s |
 | PR → verified P90 | 33m 24s | 93m 43s | 7m 00s |
-| Merge → verified median | 1m 40s | 51s | 1m 00s |
+| Merge → verified median | 1m 40s | 52s | 1m 00s |
 
 ## Release history
 
 | Version | Pipeline | Class | Implementation → green | Green → merge | PR → verified | Merge → GitHub | Merge → verified | TKB Website | Backup |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| 10.7.0 | v4 | normal | 1m 13s | 42m 53s | 72m 06s | 40s | 52s | 0s | 11s |
 | 10.6.4 | v4 | normal | 1m 25s | 7m 07s | 9m 21s | 54s | 1m 08s | 0s | 14s |
 | 10.6.3 | v4 | normal | 6m 23s | 25m 48s | 39m 35s | 43s | 1m 00s | 0s | 17s |
 | 10.6.2 | v4 | normal | 1m 30s | 31m 13s | 34m 19s | 42s | 1m 57s | 0s | 1m 15s |

@@ -85,6 +85,9 @@ def main() -> int:
     assert "countAllianceCourseEvidence(responseDocument, item.nativeLabel)" in implementation
     assert "if (evidence <= prepared.baseline)" in implementation
     assert "no automatic retry was made" in implementation
+    assert "busyNames: [], unmappedNames: []" in implementation
+    assert "Busy / unavailable" in implementation
+    assert "Unmapped / ambiguous" in implementation
     assert "pageWindow.confirm(`Alliance Courses will start" in implementation
     assert "for (let index = 0; index < planned.length; index += 1)" in implementation
     assert "await runtimeDelay(state.allianceCourses.delayMs)" in implementation

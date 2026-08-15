@@ -90,6 +90,8 @@ const scanDocument = { querySelectorAll: selector => selector === 'tr.alliance_b
 const scan = context.buildAllianceCourseQueue(scanDocument, 'sat');
 assert.deepEqual(Array.from(scan.queue, item => item.buildingId), ['101', '104']);
 assert.deepEqual({ matching: scan.summary.matching, ready: scan.summary.ready, busy: scan.summary.busy, unmapped: scan.summary.unmapped }, { matching: 4, ready: 2, busy: 1, unmapped: 1 });
+assert.deepEqual(Array.from(scan.summary.busyNames), ['AD - Critical Care - 6 - Sat - 1'], 'Busy buildings must remain visible in the preview');
+assert.deepEqual(Array.from(scan.summary.unmappedNames), ['AE - Unknown Specialist - Sat - 1'], 'Unmapped buildings must remain visible in the preview');
 assert.equal(scan.queue[0].nativeLabel, 'Aircraft Rescue and Firefighting');
 assert.equal(scan.queue[1].academyKey, 'rescue', 'Academy identity must disambiguate crossover Drone Operator training');
 

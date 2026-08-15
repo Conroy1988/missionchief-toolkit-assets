@@ -124,9 +124,9 @@
   "v10Candidate": {
     "issue": 704,
     "version": "10.7.0",
-    "sourceBytes": 2301442,
-    "sourceLines": 34598,
-    "sourceSha256": "f633b73dfdc2e768d9e2e0b18ed518074990823d6f5e5bff4f456fe5ed874a51",
+    "sourceBytes": 2302385,
+    "sourceLines": 34608,
+    "sourceSha256": "d0c2738f83ae4a18c38b948cda47c86fb6d6d3aaa5f4e22b5dcdb44a05ff5c87",
     "templateBytes": 810686,
     "templateLines": 9508,
     "templateSha256": "98cd9f5f102c4d34e327debd9ac33ec5d5bf53d3a89c7b277c042a1e3cd5400a",
@@ -136,11 +136,11 @@
     "minTemplateBytes": 500000,
     "baseline": "10.6.4",
     "approvedGrowth": {
-      "sourceBytes": 42137,
-      "sourceLines": 557,
+      "sourceBytes": 43080,
+      "sourceLines": 567,
       "templateBytes": 927,
       "templateLines": 14
     },
-    "scope": "Issue #704 Alliance Admin navigation, day-coded Alliance Courses, verified academy mapping, native maximum-room submission safeguards and setup guidance"
+    "scope": "Issue #704 Alliance Admin navigation, day-coded Alliance Courses, verified academy mapping, native maximum-room submission safeguards, visible busy/unmapped scan findings and setup guidance"
   }
 }

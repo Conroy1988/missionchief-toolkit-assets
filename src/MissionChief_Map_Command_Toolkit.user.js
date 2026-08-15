@@ -17102,7 +17102,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function buildAllianceCourseQueue(doc, selectedDay) {
         const rows = Array.from(doc?.querySelectorAll?.('tr.alliance_buildings_table_searchable') || []);
         const queue = [];
-        const summary = { totalRows: rows.length, matching: 0, inspected: 0, ready: 0, busy: 0, unmapped: 0, truncated: 0, unmappedNames: [] };
+        const summary = { totalRows: rows.length, matching: 0, inspected: 0, ready: 0, busy: 0, unmapped: 0, truncated: 0, busyNames: [], unmappedNames: [] };
         for (const row of rows) {
             const name = allianceCourseBuildingName(row);
             if (!name || !allianceCourseNameMatchesDay(name, selectedDay)) continue;
@@ -17123,6 +17123,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const building = allianceCourseBuildingReference(action?.getAttribute('href'));
             if (!building) {
                 summary.busy += 1;
+                if (summary.busyNames.length < 12) summary.busyNames.push(name);
                 continue;
             }
             queue.push({
@@ -17308,11 +17309,20 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             return `<div class="mcms-sweep-entry ${current ? 'mcms-current' : ''}"><div><span class="mcms-sweep-title">${escapeHtml(`${index + 1}. ${item.name}`)}</span><span class="mcms-sweep-meta">${escapeHtml(item.academyLabel)} · ${escapeHtml(item.nativeLabel)}${item.outcomeDetail ? ` · ${escapeHtml(item.outcomeDetail)}` : ''}</span></div><span class="mcms-sweep-count">${outcome}</span></div>`;
         }).join('') : `<div class="mcms-empty-state">Scan the selected day to find mapped academy buildings with MissionChief’s green Start a new training course action.</div>`;
         const hiddenCount = Math.max(0, runtimeState.queue.length - visibleQueue.length);
+        const findingGroups = [
+            { label: 'Busy / unavailable', total: Number(summary.busy) || 0, names: Array.isArray(summary.busyNames) ? summary.busyNames : [] },
+            { label: 'Unmapped / ambiguous', total: Number(summary.unmapped) || 0, names: Array.isArray(summary.unmappedNames) ? summary.unmappedNames : [] }
+        ].filter(group => group.total > 0);
+        const findings = findingGroups.length ? `<div class="mcms-sweep-log">${findingGroups.map(group => {
+            const names = group.names.map(name => `<div>${escapeHtml(name)}</div>`).join('');
+            const remaining = Math.max(0, group.total - group.names.length);
+            return `<div><b>${escapeHtml(group.label)} (${group.total})</b>${names}${remaining ? `<div>+ ${remaining} more</div>` : ''}</div>`;
+        }).join('')}</div>` : '';
         const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No course activity yet.</div>';
-        const html = `<div class="mcms-sweep-card mcms-course-card"><div class="mcms-sweep-head"><span>Alliance Courses · ${escapeHtml(allianceCourseDayLabel(allianceCourseResolvedDay()))}</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-sweep-queue">${list}${hiddenCount ? `<div class="mcms-empty-state">${hiddenCount} more ready buildings are retained in this scan.</div>` : ''}</div><div class="mcms-sweep-log">${logs}</div></div>`;
+        const html = `<div class="mcms-sweep-card mcms-course-card"><div class="mcms-sweep-head"><span>Alliance Courses · ${escapeHtml(allianceCourseDayLabel(allianceCourseResolvedDay()))}</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-sweep-queue">${list}${hiddenCount ? `<div class="mcms-empty-state">${hiddenCount} more ready buildings are retained in this scan.</div>` : ''}</div>${findings}<div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
         const start = document.querySelector(`#${SCRIPT.panelId} [data-action="start-alliance-courses"]`);
         const stop = document.querySelector(`#${SCRIPT.panelId} [data-action="stop-alliance-courses"]`);

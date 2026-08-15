@@ -13,6 +13,12 @@
       "description": "Intelligence, resources and response tools"
     },
     {
+      "key": "alliance",
+      "label": "Alliance Admin",
+      "title": "Alliance Administration",
+      "description": "Courses, transports and alliance controls"
+    },
+    {
       "key": "finance",
       "label": "Finance",
       "title": "Finance Command",
@@ -40,6 +46,7 @@
   "legacyPanelSources": {
     "map": ["tools"],
     "missions": ["resources", "ops"],
+    "alliance": ["alliance"],
     "finance": ["discord", "payouts"],
     "locations": ["places"],
     "appearance": ["skins"],
@@ -53,7 +60,8 @@
     "payouts": "finance",
     "discord": "finance",
     "places": "locations",
-    "fleet": "missions"
+    "fleet": "missions",
+    "allianceAdmin": "alliance"
   },
   "placements": {
     "map": [
@@ -63,12 +71,17 @@
       "makeToggleButton('missionAge'"
     ],
     "missions": [
-      "data-action=\"scan-transport-sweep\"",
       "makeToggleButton('resourceGap'",
       "makeToggleButton('autoLoadAllVehicles'",
       "makeToggleButton('majorIncidentFeed'",
       "makeToggleButton('missionLockAudio'",
       "data-action=\"open-vehicle-status\""
+    ],
+    "alliance": [
+      "data-action=\"scan-alliance-courses\"",
+      "data-action=\"scan-transport-sweep\"",
+      "data-setting=\"alliance-course-duration\"",
+      "data-alliance-courses"
     ],
     "finance": [
       "makeToggleButton('payoutFlash'",
@@ -101,6 +114,8 @@
     "makeToggleButton('transportWatcher'",
     "makeToggleButton('unitCommitment'",
     "makeToggleButton('missionAge'",
+    "data-action=\"scan-alliance-courses\"",
+    "data-action=\"scan-transport-sweep\"",
     "data-profile-list"
   ],
   "themes": [

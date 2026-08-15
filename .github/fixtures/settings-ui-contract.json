@@ -1,6 +1,7 @@
 {
   "fixedNow": 1784203200000,
   "tabs": [
+    "alliance",
     "appearance",
     "finance",
     "locations",
@@ -55,8 +56,11 @@
     "refresh-pressure-board",
     "reset-config",
     "reset-session",
+    "scan-alliance-courses",
     "scan-transport-sweep",
+    "start-alliance-courses",
     "start-transport-sweep",
+    "stop-alliance-courses",
     "stop-transport-sweep",
     "test-payout-flash",
     "toggle-command-search",
@@ -80,6 +84,9 @@
     "toggle-economy"
   ],
   "settings": [
+    "alliance-course-day",
+    "alliance-course-delay",
+    "alliance-course-duration",
     "alliance-credit-minimum",
     "coverage-radius",
     "discord-chart",
@@ -215,6 +222,11 @@
     "transportSweep": {
       "delayMs": 999,
       "maxPerRun": 999
+    },
+    "allianceCourses": {
+      "day": "invalid",
+      "shareDuration": 999,
+      "delayMs": 999
     },
     "payoutFlash": {
       "threshold": 0,

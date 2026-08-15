@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.7.0
+// @version      10.8.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.7.0',
+        version: '10.8.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -525,14 +525,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.7.0",
-        title: "Alliance Courses command automation",
+        version: "10.8.0",
+        title: "Dispatch Recruitment",
         highlights: Object.freeze([
-            "Adds a dedicated Alliance Admin section for co-admin and alliance-management workflows.",
-            "Starts day-coded Alliance Courses by matching academy and building names to verified native course labels.",
-            "Uses the maximum classroom count exposed by MissionChief and shares courses for the configured 1 hour, 12 hours, 1 day or 2 days.",
-            "Requires a fresh scan and explicit confirmation, submits sequentially with pacing, and never retries an unverified course automatically.",
-            "Moves Patient Transport Sweep into Alliance Admin and includes an in-tool naming and setup guide."
+            "Adds a dedicated Dispatch administration section for recruitment changes across one selected Dispatch Centre.",
+            "Discovers the player's current Dispatch Centres and every native MissionChief building type dynamically, with type filters and exact per-station selection.",
+            "Applies Hiring Phase and Personnel (Desired) through each station's current native recruitment and Edit controls.",
+            "Rechecks Dispatch Centre and building-type membership before every station, then verifies both resulting values through authoritative building data.",
+            "Requires a scanned preview and explicit confirmation, processes sequentially with pacing and Stop, and never retries an unverified action automatically."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -865,7 +865,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
         'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
         'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
-        'financialIntelligence', 'allianceCourses', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
+        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
         'mapMeasure'
     ]);
     const toolkitAnalyticsSessionSignals = new Set();
@@ -1311,6 +1311,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const ALLIANCE_COURSE_SCAN_LIMIT = 150;
     const ALLIANCE_COURSE_START_LIMIT = 100;
     const ALLIANCE_COURSE_REQUEST_TIMEOUT_MS = 12000;
+    const DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS = Object.freeze(['0', '1', '2', '3', 'automatic']);
+    const DISPATCH_RECRUITMENT_DELAY_OPTIONS = Object.freeze([1000, 1500, 2000, 3000, 5000]);
+    const DISPATCH_RECRUITMENT_SCAN_LIMIT = 2000;
+    const DISPATCH_RECRUITMENT_APPLY_LIMIT = 2000;
+    const DISPATCH_RECRUITMENT_PERSONNEL_MAX = 10000;
+    const DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS = 12000;
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -1675,8 +1681,32 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         errors: 0,
         log: []
     };
+    const dispatchRecruitmentRuntime = {
+        running: false,
+        stopRequested: false,
+        catalogPromise: null,
+        scanPromise: null,
+        dispatches: [],
+        typeLabels: {},
+        catalogAt: 0,
+        queue: [],
+        summary: null,
+        scannedAt: 0,
+        scannedDispatchId: '',
+        selectedBuildingIds: new Set(),
+        selectedTypeIds: new Set(),
+        currentBuildingId: '',
+        currentItem: '',
+        processed: 0,
+        updated: 0,
+        unchanged: 0,
+        skipped: 0,
+        errors: 0,
+        log: []
+    };
     runtimeOnCleanup(() => {
         allianceCourseRuntime.stopRequested = true;
+        dispatchRecruitmentRuntime.stopRequested = true;
     });
     const personalVehicleApiCache = new Map();
     const missionCommitmentIndex = new Map();
@@ -1754,11 +1784,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     runtime.cleanupCallbacks.push(() => {
         stopMapMeasure(false);
     });
-    const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'alliance', 'finance', 'locations', 'appearance', 'settings']);
+    const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'alliance', 'dispatch', 'finance', 'locations', 'appearance', 'settings']);
     const COMMAND_SECTION_META = Object.freeze({
         map: Object.freeze({ label: 'Map', title: 'Map Controls', icon: '◎', description: 'Visibility, overlays and map tools' }),
         missions: Object.freeze({ label: 'Missions', title: 'Mission Operations', icon: '◆', description: 'Intelligence, resources and response tools' }),
         alliance: Object.freeze({ label: 'Alliance Admin', title: 'Alliance Administration', icon: '♜', description: 'Courses, transports and alliance controls' }),
+        dispatch: Object.freeze({ label: 'Dispatch', title: 'Dispatch Administration', icon: '☷', description: 'Recruitment across selected stations' }),
         finance: Object.freeze({ label: 'Finance', title: 'Finance Command', icon: '£', description: 'Reports, payouts and financial archive' }),
         locations: Object.freeze({ label: 'Locations', title: 'Saved Locations', icon: '⌂', description: 'Jumps, bookmarks and map profiles' }),
         appearance: Object.freeze({ label: 'Appearance', title: 'Appearance', icon: '◈', description: 'Interface themes and map skins' }),
@@ -2025,6 +2056,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         pressureBoard: { pinnedMissionIds: [] },
         transportSweep: { delayMs: 2000, maxPerRun: 25 },
         allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
+        dispatchRecruitment: { dispatchId: '', hiringPhase: '3', personnelDesired: '', delayMs: 1500 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
@@ -2052,6 +2084,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         pressureBoard: { ...base.pressureBoard, ...(parsed.pressureBoard || {}) },
         transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
         allianceCourses: { ...base.allianceCourses, ...(parsed.allianceCourses || {}) },
+        dispatchRecruitment: { ...base.dispatchRecruitment, ...(parsed.dispatchRecruitment || {}) },
         majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
@@ -2145,6 +2178,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.allianceCourses.day = ALLIANCE_COURSE_DAY_OPTIONS.includes(String(merged.allianceCourses.day)) ? String(merged.allianceCourses.day) : 'today';
         merged.allianceCourses.shareDuration = ALLIANCE_COURSE_SHARE_DURATION_OPTIONS.includes(Number(merged.allianceCourses.shareDuration)) ? Number(merged.allianceCourses.shareDuration) : 86400;
         merged.allianceCourses.delayMs = ALLIANCE_COURSE_DELAY_OPTIONS.includes(Number(merged.allianceCourses.delayMs)) ? Number(merged.allianceCourses.delayMs) : 1500;
+        merged.dispatchRecruitment.dispatchId = /^\d+$/u.test(String(merged.dispatchRecruitment.dispatchId || '')) ? String(merged.dispatchRecruitment.dispatchId) : '';
+        merged.dispatchRecruitment.hiringPhase = DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes(String(merged.dispatchRecruitment.hiringPhase)) ? String(merged.dispatchRecruitment.hiringPhase) : '3';
+        const dispatchPersonnelDesired = String(merged.dispatchRecruitment.personnelDesired ?? '').trim();
+        merged.dispatchRecruitment.personnelDesired = /^\d+$/u.test(dispatchPersonnelDesired) && Number(dispatchPersonnelDesired) <= DISPATCH_RECRUITMENT_PERSONNEL_MAX ? String(Number(dispatchPersonnelDesired)) : '';
+        merged.dispatchRecruitment.delayMs = DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes(Number(merged.dispatchRecruitment.delayMs)) ? Number(merged.dispatchRecruitment.delayMs) : 1500;
         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
         const loadedPayoutDuration = Number(parsed?.payoutFlash?.durationMs);
@@ -12161,6 +12199,32 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-alliance-course-guide p { margin:7px 0 0 !important; }
         #${SCRIPT.panelId} .mcms-course-card { border-color:rgba(98,211,255,.30) !important; background:rgba(8,61,82,.14) !important; }
         #${SCRIPT.panelId} .mcms-course-card .mcms-sweep-head { color:#b9ecff !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-card { border-color:rgba(70,229,139,.30) !important; background:rgba(9,65,45,.14) !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-card .mcms-sweep-head { color:#b9f7d4 !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-filter-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; color:rgba(255,255,255,.64) !important; font-size:7.5px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.45px !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-filter-head b { color:#8af0b6 !important; font-size:7px !important; white-space:nowrap !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-filters { display:flex !important; flex-wrap:wrap !important; gap:5px !important; margin-top:6px !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-type { display:grid !important; grid-template-columns:auto minmax(0,1fr) auto !important; align-items:center !important; gap:5px !important; min-height:30px !important; max-width:100% !important; padding:5px 7px !important; border:1px solid rgba(70,229,139,.22) !important; border-radius:8px !important; background:rgba(70,229,139,.07) !important; color:rgba(255,255,255,.76) !important; cursor:pointer !important; font-size:7.5px !important; font-weight:850 !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-type input,
+        #${SCRIPT.panelId} .mcms-recruitment-station input { width:14px !important; height:14px !important; margin:0 !important; accent-color:#46e58b !important; cursor:pointer !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-type span { min-width:0 !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-type b { color:#8af0b6 !important; font-size:7px !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-stations { display:grid !important; gap:4px !important; max-height:260px !important; overflow-y:auto !important; margin-top:7px !important; padding-right:2px !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station { display:grid !important; grid-template-columns:auto minmax(0,1fr) auto !important; align-items:center !important; gap:7px !important; min-width:0 !important; padding:7px !important; border:1px solid rgba(255,255,255,.08) !important; border-radius:8px !important; background:rgba(255,255,255,.04) !important; cursor:pointer !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station.mcms-current { border-color:rgba(70,229,139,.62) !important; background:rgba(70,229,139,.10) !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station[data-outcome="updated"] { border-color:rgba(70,229,139,.34) !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station[data-outcome="error"] { border-color:rgba(255,100,108,.45) !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station > span { min-width:0 !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station strong { display:block !important; color:#f7fbff !important; font-size:8.5px !important; font-weight:950 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station small { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; line-height:1.3 !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station > b { color:#8af0b6 !important; font-size:6.8px !important; white-space:nowrap !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-findings { margin-top:7px !important; padding:6px 7px !important; border:1px solid rgba(255,182,72,.24) !important; border-radius:8px !important; background:rgba(70,40,8,.12) !important; color:rgba(255,255,255,.58) !important; font-size:7px !important; line-height:1.35 !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-findings summary { color:#ffd28a !important; cursor:pointer !important; font-weight:950 !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-type { min-height:44px !important; font-size:9px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-type input,
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-station input { width:22px !important; height:22px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-station { min-height:52px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-stations { max-height:42vh !important; }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} .mcms-tab-panel { gap:11px !important; padding:13px !important; }
@@ -17416,6 +17480,663 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         allianceCourseRuntime.stopRequested = true;
         allianceCourseLog('Stop requested — the active MissionChief request will finish, then no further courses will start', 'warn');
         renderAllianceCoursesPanel();
+    }
+
+    const DISPATCH_RECRUITMENT_PHASE_META = Object.freeze({
+        '0': Object.freeze({ label: 'Off', token: '0' }),
+        '1': Object.freeze({ label: '1 day', token: '1' }),
+        '2': Object.freeze({ label: '2 days', token: '2' }),
+        '3': Object.freeze({ label: '3 days', token: '3' }),
+        automatic: Object.freeze({ label: 'Automatic', token: 'automatic' })
+    });
+
+    function dispatchRecruitmentText(value) {
+        return String(value || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function dispatchRecruitmentPhaseLabel(value) {
+        return DISPATCH_RECRUITMENT_PHASE_META[String(value)]?.label || 'Off';
+    }
+
+    function dispatchRecruitmentCurrentPhase(value) {
+        const text = dispatchRecruitmentText(value).toLowerCase();
+        if (text.includes('auto')) return 'automatic';
+        const match = text.match(/\b([123])\b/u);
+        return match ? match[1] : '0';
+    }
+
+    function dispatchRecruitmentBuildingReference(anchor) {
+        try {
+            const url = new URL(anchor?.getAttribute?.('href') || '', document.baseURI || pageWindow.location.href);
+            const match = url.pathname.match(/^\/buildings\/(\d+)\/?$/u);
+            const typeId = String(anchor?.getAttribute?.('building_type') || '');
+            if (url.origin !== pageWindow.location.origin || !match || !/^\d+$/u.test(typeId) || url.search || url.hash) return null;
+            return { id: match[1], typeId, path: `/buildings/${match[1]}` };
+        } catch (err) { return null; }
+    }
+
+    function dispatchRecruitmentTargetReference(anchor, buildingId) {
+        try {
+            const url = new URL(anchor?.getAttribute?.('href') || '', document.baseURI || pageWindow.location.href);
+            if (url.origin !== pageWindow.location.origin || url.pathname !== `/buildings/${buildingId}/personalCountTarget` || url.search || url.hash) return null;
+            if (String(anchor?.getAttribute?.('building_id') || '') !== String(buildingId)) return null;
+            return { href: url.href, path: url.pathname };
+        } catch (err) { return null; }
+    }
+
+    function parseDispatchRecruitmentCatalog(doc) {
+        const dispatchSelect = doc?.querySelector?.('#building_leitstelle_building_id[name="building[leitstelle_building_id]"]');
+        const typeSelect = doc?.querySelector?.('#building_building_type[name="building[building_type]"]');
+        const dispatches = Array.from(dispatchSelect?.options || []).map(option => ({
+            id: String(option.value || '').trim(),
+            name: dispatchRecruitmentText(option.textContent)
+        })).filter(item => /^\d+$/u.test(item.id) && item.name);
+        const typeLabels = {};
+        for (const option of Array.from(typeSelect?.options || [])) {
+            const id = String(option.value || '').trim();
+            const label = dispatchRecruitmentText(option.textContent);
+            if (/^\d+$/u.test(id) && label && !option.disabled) typeLabels[id] = label;
+        }
+        return {
+            dispatches: Array.from(new Map(dispatches.map(item => [item.id, item])).values()),
+            typeLabels
+        };
+    }
+
+    function buildDispatchRecruitmentQueue(doc, typeLabels = {}) {
+        const allRows = Array.from(doc?.querySelectorAll?.('#building_table tr.alliance_buildings_table_searchable, tr.alliance_buildings_table_searchable') || []);
+        const rows = allRows.slice(0, DISPATCH_RECRUITMENT_SCAN_LIMIT);
+        const queue = [];
+        const seen = new Set();
+        const summary = {
+            totalRows: allRows.length,
+            eligible: 0,
+            unavailable: 0,
+            duplicates: 0,
+            truncated: Math.max(0, allRows.length - rows.length),
+            typeCounts: {},
+            unavailableNames: []
+        };
+        for (const row of rows) {
+            const cells = Array.from(row.cells || row.querySelectorAll?.('td') || []);
+            const buildingAnchor = Array.from(cells[1]?.querySelectorAll?.('a[href]') || row.querySelectorAll?.('a[href*="/buildings/"]') || [])
+                .map(anchor => ({ anchor, reference: dispatchRecruitmentBuildingReference(anchor) }))
+                .find(item => item.reference);
+            const fallbackName = dispatchRecruitmentText(cells[1]?.textContent || row.textContent) || 'Unknown station';
+            if (!buildingAnchor) {
+                summary.unavailable += 1;
+                if (summary.unavailableNames.length < 20) summary.unavailableNames.push(fallbackName);
+                continue;
+            }
+            const { id, typeId, path } = buildingAnchor.reference;
+            const name = dispatchRecruitmentText(buildingAnchor.anchor.textContent) || fallbackName;
+            if (seen.has(id)) {
+                summary.duplicates += 1;
+                continue;
+            }
+            seen.add(id);
+            const editButton = cells[5]?.querySelector?.('.personal_count_target_edit_button') || row.querySelector?.('.personal_count_target_edit_button');
+            const target = dispatchRecruitmentTargetReference(editButton, id);
+            const targetNode = cells[5]?.querySelector?.(`#building_personal_count_target_${id}`) || row.querySelector?.(`#building_personal_count_target_${id}`);
+            const desiredMatch = dispatchRecruitmentText(targetNode?.textContent || cells[5]?.textContent).match(/-?\d+/u);
+            if (!target || !desiredMatch || Number(desiredMatch[0]) < 0) {
+                summary.unavailable += 1;
+                if (summary.unavailableNames.length < 20) summary.unavailableNames.push(name);
+                continue;
+            }
+            const typeLabel = typeLabels[typeId] || `Building type ${typeId}`;
+            const item = {
+                buildingId: id,
+                buildingPath: path,
+                targetEditPath: target.path,
+                name,
+                typeId,
+                typeLabel,
+                currentPhase: dispatchRecruitmentCurrentPhase(cells[3]?.textContent),
+                currentStaff: dispatchRecruitmentText(cells[4]?.textContent) || '—',
+                currentDesired: Number(desiredMatch[0]),
+                outcome: 'ready',
+                outcomeDetail: ''
+            };
+            queue.push(item);
+            summary.eligible += 1;
+            summary.typeCounts[typeId] = (summary.typeCounts[typeId] || 0) + 1;
+        }
+        return { queue, summary };
+    }
+
+    function resetDispatchRecruitmentResults() {
+        dispatchRecruitmentRuntime.currentBuildingId = '';
+        dispatchRecruitmentRuntime.currentItem = '';
+        dispatchRecruitmentRuntime.processed = 0;
+        dispatchRecruitmentRuntime.updated = 0;
+        dispatchRecruitmentRuntime.unchanged = 0;
+        dispatchRecruitmentRuntime.skipped = 0;
+        dispatchRecruitmentRuntime.errors = 0;
+        for (const item of dispatchRecruitmentRuntime.queue) {
+            item.outcome = 'ready';
+            item.outcomeDetail = '';
+        }
+    }
+
+    function clearDispatchRecruitmentScan() {
+        dispatchRecruitmentRuntime.queue = [];
+        dispatchRecruitmentRuntime.summary = null;
+        dispatchRecruitmentRuntime.scannedAt = 0;
+        dispatchRecruitmentRuntime.scannedDispatchId = '';
+        dispatchRecruitmentRuntime.selectedBuildingIds.clear();
+        dispatchRecruitmentRuntime.selectedTypeIds.clear();
+        dispatchRecruitmentRuntime.log = [];
+        resetDispatchRecruitmentResults();
+    }
+
+    function dispatchRecruitmentLog(message, level = 'info') {
+        const clean = dispatchRecruitmentText(message);
+        if (!clean) return;
+        dispatchRecruitmentRuntime.log.unshift({ time: Date.now(), message: clean, level: String(level || 'info') });
+        if (dispatchRecruitmentRuntime.log.length > 24) dispatchRecruitmentRuntime.log.length = 24;
+        renderDispatchRecruitmentPanel();
+    }
+
+    async function fetchDispatchRecruitmentDocument(pathOrUrl) {
+        const url = new URL(pathOrUrl, document.baseURI || pageWindow.location.href);
+        if (url.origin !== pageWindow.location.origin) throw new Error('Blocked an unexpected external Dispatch Recruitment URL.');
+        const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'text/html,application/xhtml+xml' },
+            timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin) throw new Error('MissionChief redirected Dispatch Recruitment outside the current game origin.');
+        const html = await response.text();
+        return { doc: new DOMParser().parseFromString(html, 'text/html'), url: finalUrl.href };
+    }
+
+    async function fetchDispatchRecruitmentBuilding(buildingId) {
+        const id = String(buildingId || '');
+        if (!/^\d+$/u.test(id)) throw new Error('Invalid station identifier.');
+        const url = new URL(`/api/buildings/${id}`, document.baseURI || pageWindow.location.href);
+        const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+            timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while checking station ${id}.`);
+        const payload = await response.json();
+        const record = Array.isArray(payload) ? payload.find(item => String(item?.id) === id) : payload;
+        if (!record || String(record.id) !== id) throw new Error(`MissionChief did not return authoritative station ${id} data.`);
+        return record;
+    }
+
+    async function loadDispatchRecruitmentCatalog({ force = false } = {}) {
+        if (dispatchRecruitmentRuntime.catalogPromise) return dispatchRecruitmentRuntime.catalogPromise;
+        if (dispatchRecruitmentRuntime.running) return dispatchRecruitmentRuntime.dispatches;
+        if (!force && dispatchRecruitmentRuntime.catalogAt && dispatchRecruitmentRuntime.dispatches.length) return dispatchRecruitmentRuntime.dispatches;
+        dispatchRecruitmentRuntime.currentItem = 'Loading native Dispatch Centre and building-type options';
+        const catalogPromise = (async () => {
+            try {
+                const { doc } = await fetchDispatchRecruitmentDocument('/buildings/new');
+                const catalog = parseDispatchRecruitmentCatalog(doc);
+                if (!catalog.dispatches.length) throw new Error('MissionChief did not expose any Dispatch Centre options.');
+                dispatchRecruitmentRuntime.dispatches = catalog.dispatches;
+                dispatchRecruitmentRuntime.typeLabels = catalog.typeLabels;
+                dispatchRecruitmentRuntime.catalogAt = Date.now();
+                const selected = catalog.dispatches.find(item => item.id === state.dispatchRecruitment.dispatchId) || catalog.dispatches[0];
+                if (force && dispatchRecruitmentRuntime.scannedAt) clearDispatchRecruitmentScan();
+                if (state.dispatchRecruitment.dispatchId !== selected.id) {
+                    state.dispatchRecruitment.dispatchId = selected.id;
+                    clearDispatchRecruitmentScan();
+                    saveState();
+                }
+                dispatchRecruitmentRuntime.currentItem = '';
+                dispatchRecruitmentLog(`Loaded ${catalog.dispatches.length} Dispatch Centre${catalog.dispatches.length === 1 ? '' : 's'} and ${Object.keys(catalog.typeLabels).length} native building types`);
+                return catalog.dispatches;
+            } catch (err) {
+                dispatchRecruitmentRuntime.dispatches = [];
+                dispatchRecruitmentRuntime.typeLabels = {};
+                dispatchRecruitmentRuntime.catalogAt = 0;
+                dispatchRecruitmentRuntime.currentItem = '';
+                clearDispatchRecruitmentScan();
+                dispatchRecruitmentLog(`Dispatch Centre load failed: ${err?.message || 'unknown error'}`, 'error');
+                return [];
+            }
+        })();
+        dispatchRecruitmentRuntime.catalogPromise = catalogPromise;
+        renderDispatchRecruitmentPanel();
+        try { return await catalogPromise; }
+        finally {
+            if (dispatchRecruitmentRuntime.catalogPromise === catalogPromise) dispatchRecruitmentRuntime.catalogPromise = null;
+            renderDispatchRecruitmentPanel();
+        }
+    }
+
+    async function scanDispatchRecruitmentStations({ forceCatalog = false } = {}) {
+        if (dispatchRecruitmentRuntime.scanPromise) return dispatchRecruitmentRuntime.scanPromise;
+        if (dispatchRecruitmentRuntime.running) return dispatchRecruitmentRuntime.queue;
+        const dispatches = await loadDispatchRecruitmentCatalog({ force: forceCatalog });
+        if (!dispatches.length || dispatchRecruitmentRuntime.running || runtime.destroyed) return [];
+        const dispatchId = String(state.dispatchRecruitment.dispatchId || '');
+        const dispatch = dispatches.find(item => item.id === dispatchId);
+        if (!dispatch) {
+            showToast('Choose a valid Dispatch Centre before scanning');
+            return [];
+        }
+        dispatchRecruitmentRuntime.currentItem = `Scanning ${dispatch.name}`;
+        const scanPromise = (async () => {
+            try {
+                const { doc } = await fetchDispatchRecruitmentDocument(`/buildings/${dispatchId}/leitstelle-buildings`);
+                const result = buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels);
+                dispatchRecruitmentRuntime.queue = result.queue;
+                dispatchRecruitmentRuntime.summary = result.summary;
+                dispatchRecruitmentRuntime.scannedAt = Date.now();
+                dispatchRecruitmentRuntime.scannedDispatchId = dispatchId;
+                dispatchRecruitmentRuntime.selectedBuildingIds = new Set(result.queue.map(item => item.buildingId));
+                dispatchRecruitmentRuntime.selectedTypeIds = new Set(result.queue.map(item => item.typeId));
+                dispatchRecruitmentRuntime.currentItem = '';
+                dispatchRecruitmentRuntime.log = [];
+                resetDispatchRecruitmentResults();
+                dispatchRecruitmentLog(`${dispatch.name} scan: ${result.summary.eligible} editable stations across ${Object.keys(result.summary.typeCounts).length} types; ${result.summary.unavailable} unavailable`);
+                if (result.summary.truncated) dispatchRecruitmentLog(`${result.summary.truncated} rows exceed the ${DISPATCH_RECRUITMENT_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
+                return result.queue;
+            } catch (err) {
+                clearDispatchRecruitmentScan();
+                dispatchRecruitmentRuntime.currentItem = '';
+                dispatchRecruitmentLog(`Station scan failed: ${err?.message || 'unknown error'}`, 'error');
+                return [];
+            }
+        })();
+        dispatchRecruitmentRuntime.scanPromise = scanPromise;
+        renderDispatchRecruitmentPanel();
+        try { return await scanPromise; }
+        finally {
+            if (dispatchRecruitmentRuntime.scanPromise === scanPromise) dispatchRecruitmentRuntime.scanPromise = null;
+            renderDispatchRecruitmentPanel();
+        }
+    }
+
+    function dispatchRecruitmentSafeSkip(message) {
+        const error = new Error(message);
+        error.dispatchRecruitmentSafeSkip = true;
+        return error;
+    }
+
+    function dispatchRecruitmentBoolean(value) {
+        return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+    }
+
+    function dispatchRecruitmentRecordPhase(record) {
+        if (dispatchRecruitmentBoolean(record?.hiring_automatic)) return 'automatic';
+        const phase = String(Math.max(0, Math.min(3, Number(record?.hiring_phase) || 0)));
+        return DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes(phase) ? phase : '0';
+    }
+
+    function dispatchRecruitmentRecordMatches(record, plan) {
+        return Number(record?.personal_count_target) === Number(plan.personnelDesired) && dispatchRecruitmentRecordPhase(record) === plan.hiringPhase;
+    }
+
+    function dispatchRecruitmentNativeHireAction(doc, buildingId, token) {
+        const expectedPath = `/buildings/${buildingId}/hire_do/${token}`;
+        for (const anchor of Array.from(doc?.querySelectorAll?.('a[href]') || [])) {
+            try {
+                const url = new URL(anchor.getAttribute('href'), document.baseURI || pageWindow.location.href);
+                if (url.origin === pageWindow.location.origin && url.pathname === expectedPath && !url.search && !url.hash) return url.href;
+            } catch (err) {}
+        }
+        return '';
+    }
+
+    function prepareDispatchRecruitmentPersonnelSubmission(doc, item, personnelDesired) {
+        const expectedPath = `/buildings/${item.buildingId}`;
+        const forms = Array.from(doc?.querySelectorAll?.('form[action]') || []);
+        const form = forms.find(candidate => {
+            try {
+                const action = new URL(candidate.getAttribute('action'), document.baseURI || pageWindow.location.href);
+                const keys = Array.from(action.searchParams.keys());
+                return action.origin === pageWindow.location.origin && action.pathname === expectedPath && keys.length === 1 && keys[0] === 'personal_count_target_only' && action.searchParams.get('personal_count_target_only') === '1';
+            } catch (err) { return false; }
+        });
+        if (!form) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form is unavailable');
+        if (String(form.getAttribute('method') || '').toLowerCase() !== 'post') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form method changed unexpectedly');
+        const declaredBuildingId = String(form.getAttribute('building_id') || '');
+        if (declaredBuildingId && declaredBuildingId !== item.buildingId) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form belongs to another station');
+        const input = form.querySelector('input[name="building[personal_count_target]"]');
+        const token = form.querySelector('input[name="authenticity_token"]')?.value;
+        const methodOverride = form.querySelector('input[name="_method"]')?.value;
+        const submit = form.querySelector('input[type="submit"][name], button[type="submit"][name]');
+        if (!input || input.disabled || input.type !== 'number') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) number input is unavailable');
+        if (!token || String(methodOverride || '').toLowerCase() !== 'patch') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) authenticity or PATCH guard is unavailable');
+        if (!submit?.name) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) Save action is unavailable');
+        const action = new URL(form.getAttribute('action'), document.baseURI || pageWindow.location.href);
+        const params = new URLSearchParams();
+        for (const hidden of form.querySelectorAll('input[type="hidden"][name]')) {
+            if (!hidden.disabled) params.append(hidden.name, hidden.value || '');
+        }
+        params.set('authenticity_token', token);
+        params.set('_method', 'patch');
+        params.set('building[personal_count_target]', String(personnelDesired));
+        params.set(submit.name, submit.value || dispatchRecruitmentText(submit.textContent));
+        return { action: action.href, body: params.toString() };
+    }
+
+    async function prepareDispatchRecruitmentHiring(item, currentPhase, desiredPhase) {
+        if (currentPhase === desiredPhase) return null;
+        const { doc } = await fetchDispatchRecruitmentDocument(`/buildings/${item.buildingId}/hire`);
+        if (currentPhase === '0') {
+            const desiredAction = dispatchRecruitmentNativeHireAction(doc, item.buildingId, DISPATCH_RECRUITMENT_PHASE_META[desiredPhase].token);
+            if (!desiredAction) throw dispatchRecruitmentSafeSkip(`native ${dispatchRecruitmentPhaseLabel(desiredPhase)} Hiring Phase action is unavailable`);
+            return { cancelAction: '', desiredAction, originalPhase: currentPhase, desiredPhase };
+        }
+        const cancelAction = dispatchRecruitmentNativeHireAction(doc, item.buildingId, '0');
+        if (!cancelAction) throw dispatchRecruitmentSafeSkip('native Cancel recruitment phase action is unavailable');
+        return { cancelAction, desiredAction: '', originalPhase: currentPhase, desiredPhase };
+    }
+
+    async function runDispatchRecruitmentNativeAction(href, label) {
+        const url = new URL(href, document.baseURI || pageWindow.location.href);
+        if (url.origin !== pageWindow.location.origin || !/^\/buildings\/\d+\/hire_do\/(?:0|1|2|3|automatic)$/u.test(url.pathname) || url.search || url.hash) {
+            throw dispatchRecruitmentSafeSkip(`blocked an unexpected ${label} action`);
+        }
+        let response;
+        try {
+            response = await runtimeFetch(url.href, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                redirect: 'follow',
+                headers: { Accept: 'text/html,application/xhtml+xml' },
+                timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
+            });
+        } catch (err) {
+            throw new Error(`${label} did not return a verifiable response; no automatic retry was made.`);
+        }
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${label}.`);
+    }
+
+    async function applyDispatchRecruitmentHiring(item, prepared) {
+        if (!prepared) return false;
+        if (!prepared.cancelAction) {
+            await runDispatchRecruitmentNativeAction(prepared.desiredAction, `${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} Hiring Phase`);
+            return true;
+        }
+        try { await runDispatchRecruitmentNativeAction(prepared.cancelAction, 'Cancel recruitment phase'); }
+        catch (err) {
+            err.message = `${err.message} The station may need manual recruitment review.`;
+            throw err;
+        }
+        if (prepared.desiredPhase === '0') return true;
+        const { doc } = await fetchDispatchRecruitmentDocument(`/buildings/${item.buildingId}/hire`);
+        const desiredAction = dispatchRecruitmentNativeHireAction(doc, item.buildingId, DISPATCH_RECRUITMENT_PHASE_META[prepared.desiredPhase].token);
+        if (!desiredAction) {
+            const restoreAction = dispatchRecruitmentNativeHireAction(doc, item.buildingId, DISPATCH_RECRUITMENT_PHASE_META[prepared.originalPhase].token);
+            if (!restoreAction) throw new Error(`Recruitment was cancelled, but neither ${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} nor the original ${dispatchRecruitmentPhaseLabel(prepared.originalPhase)} action was available; this station needs manual review.`);
+            await runDispatchRecruitmentNativeAction(restoreAction, `restore ${dispatchRecruitmentPhaseLabel(prepared.originalPhase)} Hiring Phase`);
+            throw dispatchRecruitmentSafeSkip(`native ${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} action was unavailable after cancellation; the original phase was restored`);
+        }
+        try { await runDispatchRecruitmentNativeAction(desiredAction, `${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} Hiring Phase`); }
+        catch (err) {
+            err.message = `${err.message} The previous phase was cancelled first, so this station needs manual recruitment review.`;
+            throw err;
+        }
+        return true;
+    }
+
+    async function submitDispatchRecruitmentPersonnel(prepared) {
+        let response;
+        try {
+            response = await runtimeFetch(prepared.action, {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                redirect: 'follow',
+                headers: {
+                    Accept: 'text/html,application/xhtml+xml',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: prepared.body,
+                timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
+            });
+        } catch (err) {
+            throw new Error('Personnel (Desired) did not return a verifiable response; no automatic retry was made.');
+        }
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while saving Personnel (Desired).`);
+        return true;
+    }
+
+    async function applyDispatchRecruitmentStation(item, plan) {
+        const baseline = await fetchDispatchRecruitmentBuilding(item.buildingId);
+        if (String(baseline.leitstelle_building_id ?? '') !== plan.dispatchId) throw dispatchRecruitmentSafeSkip('station is no longer assigned to the selected Dispatch Centre');
+        if (String(baseline.building_type ?? '') !== item.typeId) throw dispatchRecruitmentSafeSkip('station type changed after the scan');
+        const currentPhase = dispatchRecruitmentRecordPhase(baseline);
+        const personnelNeedsUpdate = Number(baseline.personal_count_target) !== plan.personnelDesired;
+        const hiringNeedsUpdate = currentPhase !== plan.hiringPhase;
+        if (!personnelNeedsUpdate && !hiringNeedsUpdate) return { changed: false, record: baseline, detail: 'already matches' };
+        let personnelSubmission = null;
+        let hiringSubmission = null;
+        if (personnelNeedsUpdate) {
+            const { doc } = await fetchDispatchRecruitmentDocument(item.targetEditPath);
+            personnelSubmission = prepareDispatchRecruitmentPersonnelSubmission(doc, item, plan.personnelDesired);
+        }
+        if (hiringNeedsUpdate) hiringSubmission = await prepareDispatchRecruitmentHiring(item, currentPhase, plan.hiringPhase);
+        let hiringChanged = false;
+        let personnelChanged = false;
+        try {
+            if (hiringSubmission) hiringChanged = await applyDispatchRecruitmentHiring(item, hiringSubmission);
+            if (personnelSubmission) personnelChanged = await submitDispatchRecruitmentPersonnel(personnelSubmission);
+        } catch (err) {
+            if (hiringChanged || personnelChanged) err.message = `${err.message} Partial native update may have occurred; no automatic retry was made.`;
+            throw err;
+        }
+        const settled = await runtimeDelay(250);
+        if (!settled) throw new Error('Toolkit stopped before the station result could be verified. No automatic retry was made.');
+        let verified;
+        try { verified = await fetchDispatchRecruitmentBuilding(item.buildingId); }
+        catch (err) { throw new Error(`${err?.message || 'Station verification failed'} Native updates were submitted; no automatic retry was made.`); }
+        if (!dispatchRecruitmentRecordMatches(verified, plan)) throw new Error('MissionChief did not verify both requested recruitment values; no automatic retry was made.');
+        const changedFields = [hiringChanged ? 'Hiring Phase' : '', personnelChanged ? 'Personnel (Desired)' : ''].filter(Boolean);
+        return { changed: true, record: verified, detail: changedFields.join(' + ') };
+    }
+
+    function dispatchRecruitmentVisibleQueue() {
+        return dispatchRecruitmentRuntime.queue.filter(item => dispatchRecruitmentRuntime.selectedTypeIds.has(item.typeId));
+    }
+
+    function dispatchRecruitmentPlannedQueue() {
+        return dispatchRecruitmentVisibleQueue().filter(item => dispatchRecruitmentRuntime.selectedBuildingIds.has(item.buildingId));
+    }
+
+    function dispatchRecruitmentSelectVisible(selected) {
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise) return;
+        for (const item of dispatchRecruitmentVisibleQueue()) {
+            if (selected) dispatchRecruitmentRuntime.selectedBuildingIds.add(item.buildingId);
+            else dispatchRecruitmentRuntime.selectedBuildingIds.delete(item.buildingId);
+        }
+        resetDispatchRecruitmentResults();
+        renderDispatchRecruitmentPanel();
+    }
+
+    function renderDispatchRecruitmentPanel() {
+        const panel = document.getElementById(SCRIPT.panelId);
+        const host = panel?.querySelector?.('[data-dispatch-recruitment]');
+        if (!host) return;
+        const runtimeState = dispatchRecruitmentRuntime;
+        const locked = runtimeState.running || Boolean(runtimeState.scanPromise) || Boolean(runtimeState.catalogPromise);
+        const dispatchSelect = panel.querySelector('[data-setting="dispatch-recruitment-centre"]');
+        const dispatchOptions = runtimeState.dispatches.length
+            ? runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')
+            : `<option value="">${runtimeState.catalogPromise ? 'Loading Dispatch Centres…' : 'Load Dispatch Centres first'}</option>`;
+        setInnerHtmlIfChanged(dispatchSelect, dispatchOptions);
+        if (dispatchSelect) {
+            updateUiSetProperty(dispatchSelect, 'value', state.dispatchRecruitment.dispatchId);
+            updateUiSetProperty(dispatchSelect, 'disabled', locked || !runtimeState.dispatches.length);
+        }
+        panel.querySelectorAll('[data-setting^="dispatch-recruitment-"]').forEach(control => {
+            if (control === dispatchSelect || ['dispatch-recruitment-type', 'dispatch-recruitment-station'].includes(control.dataset.setting)) return;
+            updateUiSetProperty(control, 'disabled', locked);
+        });
+        const summary = runtimeState.summary || { totalRows: 0, eligible: 0, unavailable: 0, typeCounts: {}, unavailableNames: [] };
+        const visibleQueue = dispatchRecruitmentVisibleQueue();
+        const plannedQueue = dispatchRecruitmentPlannedQueue();
+        const status = runtimeState.running ? (runtimeState.stopRequested ? 'STOPPING' : 'RUNNING') : runtimeState.scanPromise ? 'SCANNING' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scannedAt ? (runtimeState.processed ? 'COMPLETE' : 'READY') : 'IDLE';
+        const typeEntries = Object.entries(summary.typeCounts || {}).sort((left, right) => {
+            const leftLabel = runtimeState.typeLabels[left[0]] || `Building type ${left[0]}`;
+            const rightLabel = runtimeState.typeLabels[right[0]] || `Building type ${right[0]}`;
+            return leftLabel.localeCompare(rightLabel, undefined, { sensitivity: 'base' });
+        });
+        const filters = typeEntries.length ? `<div class="mcms-recruitment-filters">${typeEntries.map(([typeId, count]) => {
+            const label = runtimeState.typeLabels[typeId] || `Building type ${typeId}`;
+            return `<label class="mcms-recruitment-type"><input type="checkbox" data-setting="dispatch-recruitment-type" value="${escapeHtml(typeId)}" ${runtimeState.selectedTypeIds.has(typeId) ? 'checked' : ''} ${locked ? 'disabled' : ''}><span>${escapeHtml(label)}</span><b>${count}</b></label>`;
+        }).join('')}</div>` : '<div class="mcms-empty-state">Scan a Dispatch Centre to load its current native station types.</div>';
+        const stationRows = visibleQueue.length ? visibleQueue.map(item => {
+            const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
+            const current = runtimeState.currentBuildingId === item.buildingId;
+            const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
+            const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
+            return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="dispatch-recruitment-station" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.typeLabel)} · Hiring ${escapeHtml(dispatchRecruitmentPhaseLabel(item.currentPhase))} · Desired ${item.currentDesired} · Staff ${escapeHtml(item.currentStaff)}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
+        }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? 'No stations match the active type filters.' : 'Load and scan a Dispatch Centre to preview editable stations.'}</div>`;
+        const runStats = runtimeState.running || runtimeState.processed
+            ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(plannedQueue.length || runtimeState.processed, DISPATCH_RECRUITMENT_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
+            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>Editable</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${typeEntries.length}</b><span>Types</span></div><div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span>Unavailable</span></div>`;
+        const unavailable = summary.unavailableNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unavailable} unavailable row${summary.unavailable === 1 ? '' : 's'}</summary>${summary.unavailableNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unavailable > summary.unavailableNames.length ? `<div>+ ${summary.unavailable - summary.unavailableNames.length} more</div>` : ''}</details>` : '';
+        const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
+            const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            return `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
+        }).join('') : '<div>No recruitment activity yet.</div>';
+        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
+        setInnerHtmlIfChanged(host, html);
+        const load = panel.querySelector('[data-action="load-dispatch-recruitment"]');
+        const scan = panel.querySelector('[data-action="scan-dispatch-recruitment"]');
+        const apply = panel.querySelector('[data-action="apply-dispatch-recruitment"]');
+        const stop = panel.querySelector('[data-action="stop-dispatch-recruitment"]');
+        const selectAll = panel.querySelector('[data-action="select-all-dispatch-recruitment"]');
+        const clear = panel.querySelector('[data-action="clear-dispatch-recruitment"]');
+        if (load) load.disabled = locked;
+        if (scan) scan.disabled = locked || !runtimeState.dispatches.length;
+        if (apply) apply.disabled = locked || !plannedQueue.length || runtimeState.scannedDispatchId !== state.dispatchRecruitment.dispatchId;
+        if (stop) stop.disabled = !runtimeState.running;
+        if (selectAll) selectAll.disabled = locked || !visibleQueue.length;
+        if (clear) clear.disabled = locked || !visibleQueue.length;
+    }
+
+    function readDispatchRecruitmentPlan() {
+        const panel = document.getElementById(SCRIPT.panelId);
+        const phase = String(panel?.querySelector?.('[data-setting="dispatch-recruitment-hiring-phase"]')?.value ?? state.dispatchRecruitment.hiringPhase);
+        const personnelText = String(panel?.querySelector?.('[data-setting="dispatch-recruitment-personnel"]')?.value ?? state.dispatchRecruitment.personnelDesired).trim();
+        const delay = Number(panel?.querySelector?.('[data-setting="dispatch-recruitment-delay"]')?.value ?? state.dispatchRecruitment.delayMs);
+        if (!DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes(phase)) throw new Error('Choose a valid Hiring Phase.');
+        if (!/^\d+$/u.test(personnelText) || Number(personnelText) > DISPATCH_RECRUITMENT_PERSONNEL_MAX) throw new Error(`Personnel (Desired) must be a whole number from 0 to ${DISPATCH_RECRUITMENT_PERSONNEL_MAX}.`);
+        state.dispatchRecruitment.hiringPhase = phase;
+        state.dispatchRecruitment.personnelDesired = String(Number(personnelText));
+        state.dispatchRecruitment.delayMs = DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes(delay) ? delay : 1500;
+        saveState();
+        return {
+            dispatchId: String(state.dispatchRecruitment.dispatchId),
+            hiringPhase: phase,
+            personnelDesired: Number(personnelText),
+            delayMs: state.dispatchRecruitment.delayMs
+        };
+    }
+
+    async function startDispatchRecruitment() {
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise) return;
+        let plan;
+        try { plan = readDispatchRecruitmentPlan(); }
+        catch (err) { showToast(err?.message || 'Check the Dispatch Recruitment values'); return; }
+        if (!dispatchRecruitmentRuntime.scannedAt || dispatchRecruitmentRuntime.scannedDispatchId !== plan.dispatchId) {
+            showToast('Scan the selected Dispatch Centre before applying recruitment');
+            return;
+        }
+        const planned = dispatchRecruitmentPlannedQueue().map(item => ({ ...item }));
+        if (!planned.length) { showToast('Select at least one station to update'); return; }
+        if (planned.length > DISPATCH_RECRUITMENT_APPLY_LIMIT) {
+            showToast(`Select no more than ${DISPATCH_RECRUITMENT_APPLY_LIMIT} stations per run`);
+            return;
+        }
+        const dispatch = dispatchRecruitmentRuntime.dispatches.find(item => item.id === plan.dispatchId);
+        if (!dispatch) { showToast('The selected Dispatch Centre is no longer available'); return; }
+        const typeLabels = Array.from(new Set(planned.map(item => item.typeLabel)));
+        const typeSummary = typeLabels.length <= 4 ? typeLabels.join(', ') : `${typeLabels.length} station types`;
+        const confirmed = pageWindow.confirm(`Dispatch Recruitment will update ${planned.length} selected station${planned.length === 1 ? '' : 's'} in ${dispatch.name}.
+
+Hiring Phase: ${dispatchRecruitmentPhaseLabel(plan.hiringPhase)}
+Personnel (Desired): ${plan.personnelDesired}
+Types: ${typeSummary}
+
+Each station will be rechecked against this Dispatch Centre, submitted through MissionChief's current native controls one at a time, and verified before it is counted as updated. Unverified actions are never retried automatically. Continue?`);
+        if (!confirmed) return;
+        toolkitAnalyticsRecordFeature('dispatchRecruitment');
+        dispatchRecruitmentRuntime.running = true;
+        dispatchRecruitmentRuntime.stopRequested = false;
+        dispatchRecruitmentRuntime.log = [];
+        resetDispatchRecruitmentResults();
+        dispatchRecruitmentLog(`Run started: ${planned.length} stations · Hiring ${dispatchRecruitmentPhaseLabel(plan.hiringPhase)} · Personnel (Desired) ${plan.personnelDesired}`);
+        try {
+            for (let index = 0; index < planned.length; index += 1) {
+                if (runtime.destroyed || dispatchRecruitmentRuntime.stopRequested) break;
+                const snapshot = planned[index];
+                const item = dispatchRecruitmentRuntime.queue.find(candidate => candidate.buildingId === snapshot.buildingId) || snapshot;
+                dispatchRecruitmentRuntime.currentBuildingId = item.buildingId;
+                dispatchRecruitmentRuntime.currentItem = item.name;
+                renderDispatchRecruitmentPanel();
+                dispatchRecruitmentLog(`Checking ${item.name}`);
+                try {
+                    const result = await applyDispatchRecruitmentStation(item, plan);
+                    if (result.changed) {
+                        item.outcome = 'updated';
+                        item.outcomeDetail = result.detail;
+                        item.currentPhase = dispatchRecruitmentRecordPhase(result.record);
+                        item.currentDesired = Number(result.record.personal_count_target);
+                        dispatchRecruitmentRuntime.updated += 1;
+                        dispatchRecruitmentLog(`Updated ${item.name}: ${result.detail}`);
+                    } else {
+                        item.outcome = 'unchanged';
+                        item.outcomeDetail = result.detail;
+                        item.currentPhase = dispatchRecruitmentRecordPhase(result.record);
+                        item.currentDesired = Number(result.record.personal_count_target);
+                        dispatchRecruitmentRuntime.unchanged += 1;
+                        dispatchRecruitmentLog(`No change at ${item.name}: values already match`);
+                    }
+                } catch (err) {
+                    item.outcomeDetail = String(err?.message || 'unknown error');
+                    if (err?.dispatchRecruitmentSafeSkip) {
+                        item.outcome = 'skipped';
+                        dispatchRecruitmentRuntime.skipped += 1;
+                        dispatchRecruitmentLog(`Skipped ${item.name}: ${item.outcomeDetail}`, 'warn');
+                    } else {
+                        item.outcome = 'error';
+                        dispatchRecruitmentRuntime.errors += 1;
+                        dispatchRecruitmentLog(`Error at ${item.name}: ${item.outcomeDetail}`, 'error');
+                    }
+                } finally {
+                    dispatchRecruitmentRuntime.processed += 1;
+                    renderDispatchRecruitmentPanel();
+                }
+                if (index < planned.length - 1 && !dispatchRecruitmentRuntime.stopRequested) {
+                    const completedDelay = await runtimeDelay(plan.delayMs);
+                    if (!completedDelay) break;
+                }
+            }
+        } finally {
+            const wasStopped = dispatchRecruitmentRuntime.stopRequested || runtime.destroyed;
+            dispatchRecruitmentRuntime.running = false;
+            dispatchRecruitmentRuntime.stopRequested = false;
+            dispatchRecruitmentRuntime.currentBuildingId = '';
+            dispatchRecruitmentRuntime.currentItem = '';
+            dispatchRecruitmentLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${dispatchRecruitmentRuntime.updated} updated, ${dispatchRecruitmentRuntime.unchanged} unchanged, ${dispatchRecruitmentRuntime.skipped} skipped, ${dispatchRecruitmentRuntime.errors} errors`, dispatchRecruitmentRuntime.errors ? 'error' : 'info');
+            showToast(`${wasStopped ? 'Dispatch Recruitment stopped' : 'Dispatch Recruitment complete'} · ${dispatchRecruitmentRuntime.updated} updated · ${dispatchRecruitmentRuntime.unchanged} unchanged · ${dispatchRecruitmentRuntime.skipped + dispatchRecruitmentRuntime.errors} issues`);
+            renderDispatchRecruitmentPanel();
+        }
+    }
+
+    function stopDispatchRecruitment() {
+        if (!dispatchRecruitmentRuntime.running) return;
+        dispatchRecruitmentRuntime.stopRequested = true;
+        dispatchRecruitmentLog('Stop requested — the active MissionChief request will finish, then no further stations will be changed', 'warn');
+        renderDispatchRecruitmentPanel();
     }
 
     function vehicleTargetInfo(vehicle) {
@@ -30330,6 +31051,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         );
 
         add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
+        add('dispatch-recruitment', 'Open Dispatch Recruitment', 'Choose one Dispatch Centre, filter station types and prepare a recruitment plan', 'dispatch centre station hiring phase personnel desired recruitment', () => commandPaletteOpenSetting('dispatch', 'dispatch-recruitment'), true);
         add('personalisation', 'Open Personalisation Studio', 'Layouts, themes, game styling, input, Quick Wheel, backups, setup and alerts', 'customize customise appearance sound notification backup wizard hotkeys gestures reskin', () => openPersonalisationStudio(), true);
         add('input-studio', 'Open Hotkey & Gesture Studio', 'Remap Toolkit keys, assign touch gestures and learn contextual commands', 'input shortcuts right click long press context menu swipe', () => openPersonalisationStudio('input'), true);
         add('shell-studio', 'Open Toolkit & Game Style', 'MissionChief reskin, smart auto-hiding dock and Safe Mode', 'theme reskin dock collapse safe recovery', () => openPersonalisationStudio('shell'), true);
@@ -31495,7 +32217,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 const headingId = `mcms-card-${section.dataset.panel}-${slug}`;
                 node.id = headingId;
                 card.setAttribute('aria-labelledby', headingId);
-                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
+                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
                     card.classList.add('mcms-command-card-wide');
                 }
                 fragment.appendChild(card);
@@ -31538,8 +32260,9 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         }
         const locations = rename('places', 'locations');
         const alliance = byLegacyName.alliance;
+        const dispatch = byLegacyName.dispatch;
         const settings = byLegacyName.settings;
-        const sections = { map, missions, alliance, finance, locations, appearance, settings };
+        const sections = { map, missions, alliance, dispatch, finance, locations, appearance, settings };
 
         const layout = document.createElement('div');
         layout.className = 'mcms-command-layout';
@@ -31763,6 +32486,29 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
                 <div data-transport-sweep></div>
                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+            </section>
+            <section class="mcms-tab-panel" data-panel="dispatch">
+                <div class="mcms-section-label">Dispatch Recruitment</div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="load-dispatch-recruitment">Load Dispatch Centres</button>
+                    <button class="mcms-small-btn" type="button" data-action="scan-dispatch-recruitment">Scan Stations</button>
+                    <button class="mcms-small-btn" type="button" data-action="apply-dispatch-recruitment">Apply to Selected</button>
+                    <button class="mcms-small-btn" type="button" data-action="stop-dispatch-recruitment">Stop</button>
+                </div>
+                <div class="mcms-row"><span class="mcms-row-label">Dispatch Centre</span><select class="mcms-select" data-setting="dispatch-recruitment-centre"><option value="">Load Dispatch Centres first</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Hiring Phase</span><select class="mcms-select" data-setting="dispatch-recruitment-hiring-phase"><option value="0">Off</option><option value="1">1 day</option><option value="2">2 days</option><option value="3">3 days</option><option value="automatic">Automatic</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Personnel (Desired)</span><input class="mcms-input" type="number" min="0" max="${DISPATCH_RECRUITMENT_PERSONNEL_MAX}" step="1" inputmode="numeric" placeholder="Required" data-setting="dispatch-recruitment-personnel"></div>
+                <div class="mcms-row"><span class="mcms-row-label">Delay between stations</span><select class="mcms-select" data-setting="dispatch-recruitment-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="select-all-dispatch-recruitment">Select All Filtered</button>
+                    <button class="mcms-small-btn" type="button" data-action="clear-dispatch-recruitment">Clear Filtered</button>
+                </div>
+                <div class="mcms-status"><strong>Preview first:</strong> scan the selected Dispatch Centre, choose any native station-type filters, then include all matching stations or tick an exact subset. Automatic recruitment is available only when MissionChief exposes that native action for the station.</div>
+                <div data-dispatch-recruitment></div>
+                <details class="mcms-alliance-course-guide">
+                    <summary>Native controls &amp; safeguards</summary>
+                    <p>The Toolkit uses each station's current Personnel (Desired) Edit form and Hiring Phase controls from MissionChief. Apply requires an explicit confirmation, rechecks every station's Dispatch Centre and type, processes one station at a time, verifies both resulting values, and never retries an unverified action automatically.</p>
+                </details>
             </section>
             <section class="mcms-tab-panel" data-panel="resources">
                 <div class="mcms-section-label">Resource Gap Finder</div>
@@ -32190,6 +32936,12 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         if (action === 'scan-alliance-courses') { void scanAllianceCourseQueue({ force: true }).then(queue => showToast(queue.length ? `${queue.length} Alliance Course${queue.length === 1 ? '' : 's'} ready` : 'No mapped Alliance Courses are currently ready')); return; }
         if (action === 'start-alliance-courses') { void startAllianceCourses(); return; }
         if (action === 'stop-alliance-courses') { stopAllianceCourses(); return; }
+        if (action === 'load-dispatch-recruitment') { void loadDispatchRecruitmentCatalog({ force: true }); return; }
+        if (action === 'scan-dispatch-recruitment') { void scanDispatchRecruitmentStations().then(queue => showToast(queue.length ? `${queue.length} editable station${queue.length === 1 ? '' : 's'} found` : 'No editable stations found')); return; }
+        if (action === 'select-all-dispatch-recruitment') { dispatchRecruitmentSelectVisible(true); return; }
+        if (action === 'clear-dispatch-recruitment') { dispatchRecruitmentSelectVisible(false); return; }
+        if (action === 'apply-dispatch-recruitment') { void startDispatchRecruitment(); return; }
+        if (action === 'stop-dispatch-recruitment') { stopDispatchRecruitment(); return; }
         if (action === 'scan-transport-sweep') { void scanTransportSweepQueue().then(queue => showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found')); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
@@ -32333,6 +33085,11 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
             return;
         }
+        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise)) {
+            updateUI();
+            showToast('Wait for Dispatch Recruitment to finish loading or scanning, or stop the active run before changing its plan');
+            return;
+        }
         if (handleDeviceLayoutSettingChange(target, setting)) return;
         if (setting === 'density-desktop' || setting === 'density-tablet') {
             const key = setting === 'density-desktop' ? 'desktop' : 'tablet';
@@ -32403,6 +33160,60 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             state.allianceCourses.delayMs = ALLIANCE_COURSE_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 1500;
             saveState(); updateUI();
             showToast(`Alliance Courses delay: ${state.allianceCourses.delayMs / 1000}s`);
+            return;
+        }
+        if (setting === 'dispatch-recruitment-centre') {
+            const dispatchId = String(target.value || '');
+            if (!dispatchRecruitmentRuntime.dispatches.some(item => item.id === dispatchId)) {
+                updateUI();
+                showToast('Choose a Dispatch Centre loaded from MissionChief');
+                return;
+            }
+            state.dispatchRecruitment.dispatchId = dispatchId;
+            clearDispatchRecruitmentScan();
+            saveState(); updateUI();
+            showToast(`Dispatch Recruitment: ${dispatchRecruitmentRuntime.dispatches.find(item => item.id === dispatchId)?.name || 'centre selected'}`);
+            return;
+        }
+        if (setting === 'dispatch-recruitment-hiring-phase') {
+            state.dispatchRecruitment.hiringPhase = DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes(String(target.value)) ? String(target.value) : '3';
+            resetDispatchRecruitmentResults();
+            saveState(); updateUI();
+            showToast(`Hiring Phase: ${dispatchRecruitmentPhaseLabel(state.dispatchRecruitment.hiringPhase)}`);
+            return;
+        }
+        if (setting === 'dispatch-recruitment-personnel') {
+            const value = String(target.value || '').trim();
+            if (value && (!/^\d+$/u.test(value) || Number(value) > DISPATCH_RECRUITMENT_PERSONNEL_MAX)) {
+                target.value = state.dispatchRecruitment.personnelDesired;
+                showToast(`Personnel (Desired) must be 0–${DISPATCH_RECRUITMENT_PERSONNEL_MAX}`);
+                return;
+            }
+            state.dispatchRecruitment.personnelDesired = value ? String(Number(value)) : '';
+            resetDispatchRecruitmentResults();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'dispatch-recruitment-delay') {
+            state.dispatchRecruitment.delayMs = DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 1500;
+            saveState(); updateUI();
+            showToast(`Dispatch Recruitment delay: ${state.dispatchRecruitment.delayMs / 1000}s`);
+            return;
+        }
+        if (setting === 'dispatch-recruitment-type') {
+            const typeId = String(target.value || '');
+            if (target.checked) dispatchRecruitmentRuntime.selectedTypeIds.add(typeId);
+            else dispatchRecruitmentRuntime.selectedTypeIds.delete(typeId);
+            resetDispatchRecruitmentResults();
+            renderDispatchRecruitmentPanel();
+            return;
+        }
+        if (setting === 'dispatch-recruitment-station') {
+            const buildingId = String(target.value || '');
+            if (target.checked) dispatchRecruitmentRuntime.selectedBuildingIds.add(buildingId);
+            else dispatchRecruitmentRuntime.selectedBuildingIds.delete(buildingId);
+            resetDispatchRecruitmentResults();
+            renderDispatchRecruitmentPanel();
             return;
         }
         if (setting === 'resource-gap-radius') {
@@ -32702,6 +33513,13 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             renderTransportSweepPanel();
             renderAllianceCoursesPanel();
         }
+        const dispatchRecruitmentPhase = panel.querySelector('[data-setting="dispatch-recruitment-hiring-phase"]');
+        if (dispatchRecruitmentPhase) updateUiSetProperty(dispatchRecruitmentPhase, 'value', state.dispatchRecruitment.hiringPhase);
+        const dispatchRecruitmentPersonnel = panel.querySelector('[data-setting="dispatch-recruitment-personnel"]');
+        if (dispatchRecruitmentPersonnel && document.activeElement !== dispatchRecruitmentPersonnel) updateUiSetProperty(dispatchRecruitmentPersonnel, 'value', state.dispatchRecruitment.personnelDesired);
+        const dispatchRecruitmentDelay = panel.querySelector('[data-setting="dispatch-recruitment-delay"]');
+        if (dispatchRecruitmentDelay) updateUiSetProperty(dispatchRecruitmentDelay, 'value', String(state.dispatchRecruitment.delayMs));
+        if (panel.classList.contains('mcms-open') && state.activeTab === 'dispatch') renderDispatchRecruitmentPanel();
         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
         if (payoutTemplate) updateUiSetProperty(payoutTemplate, 'value', state.payoutFlash.template);
         const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) updateUiSetProperty(resourceGapRadius, 'value', String(state.resourceGap.radiusMi));

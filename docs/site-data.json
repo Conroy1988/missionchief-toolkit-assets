@@ -289,9 +289,29 @@
       ]
     },
     {
-      "name": "Alliance operations",
-      "description": "Run bounded alliance-admin workflows without bypassing native MissionChief permissions or controls.",
+      "name": "Administration",
+      "description": "Run bounded station and alliance workflows without bypassing native MissionChief permissions or controls.",
       "features": [
+        {
+          "name": "Dispatch Recruitment",
+          "summary": "Applies Hiring Phase and Personnel (Desired) across an exact station selection from one Dispatch Centre.",
+          "details": [
+            "Dynamic native Dispatch Centre and station-type discovery",
+            "All filtered stations or exact per-station selection",
+            "Off, 1 day, 2 days, 3 days and native Automatic Hiring Phase",
+            "Native Personnel (Desired) Edit form",
+            "Dispatch/type membership recheck and result verification",
+            "Explicit confirmation, sequential pacing and Stop"
+          ],
+          "visual": "dispatch-recruitment",
+          "tags": [
+            "dispatch",
+            "stations",
+            "personnel",
+            "admin",
+            "native"
+          ]
+        },
         {
           "name": "Alliance Courses",
           "summary": "Starts ready day-coded academy courses sequentially through MissionChief's verified native education form.",
@@ -863,6 +883,23 @@
         {
           "heading": "Reset strategy",
           "body": "Export first, reset only the affected feature where possible and test with the default Map Command interface before a full reset."
+        }
+      ]
+    },
+    {
+      "title": "Dispatch Recruitment",
+      "items": [
+        {
+          "heading": "Selection workflow",
+          "body": "Load MissionChief's current Dispatch Centres and building types, scan one centre, filter by any returned station types, then keep all matching stations or choose an exact checkbox subset. Apply confirms the centre, station count, types, Hiring Phase and Personnel (Desired)."
+        },
+        {
+          "heading": "Native safeguards",
+          "body": "Every station is rechecked for Dispatch Centre and building-type membership. The Toolkit requires the current Personnel (Desired) Edit form and native recruitment action, submits sequentially, verifies both resulting values and never retries an unverified result automatically. Coin recruitment actions are excluded."
+        },
+        {
+          "heading": "Operator guide",
+          "body": "The complete selection, limits, native action and failure contract is documented in docs/issue-706-dispatch-recruitment.md."
         }
       ]
     }

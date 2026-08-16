@@ -133,6 +133,18 @@ def assert_has(report: dict, code: str, severity: str = "failure") -> None:
     assert any(item["code"] == code for item in items), (code, report)
 
 
+def test_first_party_live_requests_are_cache_busted() -> None:
+    original = "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/?channel=stable"
+    busted = asset_health.cache_bust(original)
+    parsed = asset_health.urllib.parse.urlparse(busted)
+    query = dict(asset_health.urllib.parse.parse_qsl(parsed.query, keep_blank_values=True))
+
+    assert parsed.path == "/mission-chief-scripts/map-command-toolkit/install/"
+    assert query["channel"] == "stable"
+    assert query["asset_health"].isdigit()
+    assert asset_health.cache_bust("https://example.com/script.user.js") == "https://example.com/script.user.js"
+
+
 def test_live_success_and_optional_warning() -> None:
     userscript = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('ok');\n"
     digest = hashlib.sha256(userscript).hexdigest()
@@ -345,6 +357,7 @@ def test_asset_health_workflow_uses_release_state() -> None:
 
 def main() -> None:
     tests = [
+        test_first_party_live_requests_are_cache_busted,
         test_live_success_and_optional_warning,
         test_wrong_release_hash_fails,
         test_missing_stable_raw_path_fails_static,

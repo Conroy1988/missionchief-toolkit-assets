@@ -160,12 +160,12 @@
     "retryBackoffSeconds": 2,
     "signatureBytes": 65536,
     "timeoutSeconds": 30,
-    "userAgent": "MissionChief-Toolkit-Asset-Health/2.0 (+https://github.com/Conroy1988/missionchief-toolkit-assets)"
+    "userAgent": "MissionChief-Toolkit-Asset-Health/1.0"
   },
   "repository": {
     "stableRef": "main"
   },
-  "revision": "2026-08-16-asset-health-v2-cache-cutover",
+  "revision": "2026-08-16-tested-installer-audit-identity",
   "scanFiles": [
     "src/MissionChief_Map_Command_Toolkit.user.js",
     ".github/release-settings.json",

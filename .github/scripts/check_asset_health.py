@@ -361,6 +361,16 @@ def content_type_base(value: str | None) -> str:
     return (value or "").split(";", 1)[0].strip().lower()
 
 
+def cache_bust(url: str) -> str:
+    """Bypass stale intermediary copies of TKB's dynamic first-party routes."""
+    parsed = urllib.parse.urlparse(url)
+    if parsed.hostname != "tkb-gaming.scot":
+        return url
+    query = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+    query.append(("asset_health", str(time.time_ns())))
+    return urllib.parse.urlunparse(parsed._replace(query=urllib.parse.urlencode(query)))
+
+
 def request_once(url: str, method: str, timeout: float, user_agent: str, range_prefix: int | None = None) -> tuple[int, dict[str, str], bytes, str]:
     headers = {
         "User-Agent": user_agent,
@@ -370,7 +380,7 @@ def request_once(url: str, method: str, timeout: float, user_agent: str, range_p
     }
     if range_prefix is not None:
         headers["Range"] = f"bytes=0-{max(0, range_prefix - 1)}"
-    request = urllib.request.Request(url, headers=headers, method=method)
+    request = urllib.request.Request(cache_bust(url), headers=headers, method=method)
     with urllib.request.urlopen(request, timeout=timeout) as response:
         status = int(getattr(response, "status", response.getcode()))
         response_headers = {key.lower(): value for key, value in response.headers.items()}

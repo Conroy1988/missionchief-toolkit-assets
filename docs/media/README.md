@@ -1,45 +1,50 @@
-# Documentation media programme
+# README media system
 
-This directory is reserved for reviewed screenshots and short demonstrations used by GitHub, the TKB Website and the public documentation site.
+This directory contains the public visual assets used across the Toolkit repository and documentation.
 
-## Repository landing visuals
+## Current flagship suite
 
-The root README uses four original, photoreal editorial images:
+The `readme-v3-*` set is the active GitHub README system:
 
-- `readme-v2-command-centre.webp` — rain-lit British command centre and coordinated city response
-- `readme-v2-operational-picture.webp` — elevated UK road and rail multi-agency operation
-- `readme-v2-command-post.webp` — coherent Toolkit workspace across desktop, tablet and mobile
-- `readme-v2-release-integrity.webp` — secure release validation and recovery environment
+| Asset | Purpose |
+|---|---|
+| `readme-v3-command-system.svg` | Flagship command-centre hero joining incident, fleet, map, administration and finance. |
+| `readme-v3-operational-picture.svg` | Multi-agency UK operational picture and end-to-end command flow. |
+| `readme-v3-administration-command.svg` | Recruitment, academy courses and alliance transport administration. |
+| `readme-v3-command-surfaces.svg` | One coherent Toolkit layer across desktop, tablet and phone. |
+| `readme-v3-release-integrity.svg` | Canonical source, validation, publication and recovery chain. |
 
-All four images are 1600 × 900 WebP assets. The photoreal scenes were generated specifically for the Toolkit and do not contain private account data, third-party logos or embedded version information. A deterministic image-composition pass adds the exact MissionChief Map Command Toolkit command plate, signal colours and product copy; this prevents generated lettering errors and keeps branding aligned at every viewport width.
+Each flagship asset is a self-contained 1600 × 700 SVG. The photographic scene is embedded as a compressed JPEG and all visible brand typography is deterministic SVG text, keeping the exact product name crisp and preventing generated lettering from entering the public artwork.
 
-The previous `readme-hero-operations.webp`, `readme-field-command.webp` and `readme-control-room.webp` assets remain available for historical documentation references.
+The scenes were created specifically for this repository. They are conceptual—not screenshots or depictions of a real emergency operation—and contain no people, personal likenesses, player information, private data, official logos, version numbers or readable fictional interface data.
 
-## Required capture set
+## Historical suites
 
-- `map-before-after`
-- `theme-map-command`
-- `theme-cyberpunk`
-- `theme-fallout`
-- `theme-umbrella`
-- `theme-factorio`
-- `mission-age-watch`
-- `coverage-heat-map`
-- `smart-bookmark-labels`
-- `payout-presentations`
-- `tablet-mode`
-- `ios-mobile-mode`
-- `critical-view`
-- `mission-inspector`
+- `readme-v2-*` contains the previous 1600 × 900 command-plate system.
+- `readme-hero-operations.webp`, `readme-field-command.webp` and `readme-control-room.webp` contain the original photographic suite.
+- The SVG command-board assets are retained for historical and downstream-reference compatibility.
 
-## Capture rules
+Do not remove a historical asset until repository search, GitHub Pages and release documentation confirm that nothing still references it.
 
-- Remove player names, alliance chat and other private account information.
-- Use representative missions rather than sensitive real-world information.
-- Capture the same feature at consistent map scale where comparisons matter.
-- Prefer WebP for static captures and MP4/WebM for demonstrations; use GIF only when platform compatibility requires it.
-- Keep each static image below 2 MB and each short demonstration below 8 MB.
-- Do not rename or replace compatibility-critical assets already referenced by installed Toolkit releases.
-- Add new documentation media under `docs/media/` and update `docs/site-data.json` through a reviewed pull request.
+## Asset rules
 
-The first Pages release uses live CSS-rendered feature and theme previews so the site is visually complete before account-safe captures are available.
+- Flagship README scenes must remain free of people and identifiable likenesses.
+- Never include player names, alliance data, addresses, credentials, tokens or live operational data.
+- Do not bake version numbers, publication dates or release-state claims into artwork.
+- All visible words must be composed deterministically after scene generation.
+- Preserve the 1600 × 700 flagship canvas and edge-safe title geometry.
+- Render every SVG at full size and at GitHub's approximate 838 px article width before publication.
+- Keep each self-contained asset below 2 MB and the full active suite proportionate to the page.
+- Provide descriptive alt text at every Markdown usage point.
+
+## Capture set
+
+For product screenshots and release evidence, capture each affected interface in:
+
+- Desktop mode
+- Tablet mode
+- iOS Mobile Mode
+- Both relevant base-game colour states where appearance changes
+- Reduced-motion or Economy Mode where behaviour or geometry differs
+
+Before capture, use fictitious data and inspect the frame for private information. A clean asset is part of the release contract, not a post-release tidy-up.

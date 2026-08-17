@@ -62,7 +62,7 @@ def cache_bust(url: str) -> str:
     if parsed.hostname not in {"tkb-gaming.scot", "raw.githubusercontent.com"}:
         return url
     query = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
-    query.append(("asset_health", str(time.time_ns())))
+    query.append(("audit", str(time.time_ns())))
     return urllib.parse.urlunparse(parsed._replace(query=urllib.parse.urlencode(query)))
 
 
@@ -244,6 +244,14 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
 
 def self_test() -> int:
+    busted = cache_bust(
+        "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/?channel=stable"
+    )
+    busted_query = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(busted).query, keep_blank_values=True))
+    assert busted_query["channel"] == "stable"
+    assert busted_query["audit"].isdigit()
+    assert "asset_health" not in busted_query
+
     base = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('same');\n"
     transformed = b"// ==UserScript==\n// @version 1.2.3\n// served-by first-party gateway\n// ==/UserScript==\nconsole.log('same');\n"
     changed = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('changed');\n"

@@ -141,7 +141,8 @@ def test_first_party_live_requests_are_cache_busted() -> None:
 
     assert parsed.path == "/mission-chief-scripts/map-command-toolkit/install/"
     assert query["channel"] == "stable"
-    assert query["asset_health"].isdigit()
+    assert query["audit"].isdigit()
+    assert "asset_health" not in query
     assert asset_health.cache_bust("https://example.com/script.user.js") == "https://example.com/script.user.js"
 
 

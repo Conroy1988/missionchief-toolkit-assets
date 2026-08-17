@@ -245,7 +245,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
 def self_test() -> int:
     busted = cache_bust(
-        "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/?channel=stable"
+        "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"
+        "MissionChief_Map_Command_Toolkit.user.js?channel=stable"
     )
     busted_query = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(busted).query, keep_blank_values=True))
     assert busted_query["channel"] == "stable"

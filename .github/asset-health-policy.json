@@ -25,7 +25,7 @@
       "minBytes": 1000000,
       "required": true,
       "urlSource": {
-        "jsonPointer": "/distribution/installUrl",
+        "jsonPointer": "/distribution/integrityInstallUrl",
         "path": ".github/release-settings.json"
       }
     },

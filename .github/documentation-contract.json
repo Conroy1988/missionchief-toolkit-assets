@@ -95,7 +95,7 @@
   ],
   "installUrls": [
     "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/",
-    "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"
+    "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js"
   ],
   "requiredFeatureNames": [
     "Mission Age map timers",

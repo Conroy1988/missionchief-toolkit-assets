@@ -20,11 +20,11 @@
 </p>
 
 > [!IMPORTANT]
-> **TKB Scripts is the only supported installation and update channel.** Use the [Toolkit product page](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) or [launch the supported installer](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/). GitHub remains the canonical source, release archive and public engineering record.
+> **TKB Scripts is the only supported installation and update channel.** Use the [Toolkit product page](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/) or [launch the supported installer](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js). GitHub remains the canonical source, release archive and public engineering record.
 
 | Enter command | Explore the system |
 |---|---|
-| **[Install or update the Toolkit](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/)**<br>Open the supported TKB Scripts installer. | **[Open the Field Guide](https://conroy1988.github.io/missionchief-toolkit-assets/)**<br>Learn the system from first signal to final account. |
+| **[Install or update the Toolkit](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js)**<br>Open the supported TKB Scripts installer. | **[Open the Field Guide](https://conroy1988.github.io/missionchief-toolkit-assets/)**<br>Learn the system from first signal to final account. |
 | **[Browse all eight interfaces](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)**<br>Preview every complete command environment. | **[Inspect Release Control](https://github.com/Conroy1988/missionchief-toolkit-assets/blob/release-state/status/README.md)**<br>See publication, verification and recovery state. |
 
 <p align="center">
@@ -199,7 +199,7 @@ Every release should be attributable, inspectable and recoverable. If the suppor
 
 ## Install and enter command
 
-1. Open the **[official TKB Scripts installer](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/)**.
+1. Open the **[official TKB Scripts installer](https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js)**.
 2. Approve the userscript in your supported userscript manager.
 3. Return to MissionChief UK and reload the page.
 4. Open the Toolkit dock or press <kbd>K</kbd> for the Toolkit Command Palette.
@@ -335,5 +335,5 @@ The cinematic artwork on this page is original conceptual presentation created f
 
 <p align="center">
   <strong>The mission is already moving. Your command picture should be ready.</strong><br><br>
-  <a href="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"><strong>INSTALL OR UPDATE THE TOOLKIT →</strong></a>
+  <a href="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js"><strong>INSTALL OR UPDATE THE TOOLKIT →</strong></a>
 </p>

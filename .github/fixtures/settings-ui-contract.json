@@ -130,7 +130,8 @@
     "stuck-threshold",
     "tablet-mode",
     "transport-sweep-delay",
-    "transport-sweep-max"
+    "transport-sweep-max",
+    "transport-sweep-mode"
   ],
   "intentionalNoopSettings": [
     "payout-test-amount"

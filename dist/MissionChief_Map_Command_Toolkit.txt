@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.9.1
+// @version      10.9.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.9.1',
+        version: '10.9.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,13 +526,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.9.1",
-        title: "Personal-first, opt-in pressure monitoring",
+        version: "10.9.2",
+        title: "Background-first Patient Transport Sweep",
         highlights: Object.freeze([
-            "Makes personal missions the default and always-on scope for Live Pressure, Procurement Brain and Operational Timeline.",
-            "Adds a persistent Alliance Missions switch inside the Pressure Board, explicitly off until the user opts in.",
-            "Makes Operational Timeline logging explicitly opt-in and off by default, avoiding mission-history processing until enabled.",
-            "Recalculates scope immediately without deleting retained history or adding polling, observers or requests."
+            "Runs Patient Transport Sweep in the background when MissionChief exposes an exact native Cancel Transport action for the verified vehicle.",
+            "Avoids opening mission and vehicle lightboxes for background-confirmed releases, while keeping the existing visible native workflow as a fallback.",
+            "Rejects wrong-origin, wrong-vehicle, malformed, disabled and ambiguous controls before any background release request.",
+            "Never retries an ambiguous request and continues to exclude every verified personal vehicle without adding observers, pollers or intervals."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1666,7 +1666,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         skipped: 0,
         errors: 0,
         processed: 0,
+        releaseAttempts: 0,
         confirmedReleaseKeys: new Set(),
+        ambiguousReleaseKeys: new Set(),
         skippedPatientKeys: new Set(),
         confirmedDischargeDialogKeys: new Set(),
         pendingDischargeKey: '',
@@ -2081,7 +2083,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionSpawn: { enabled: true },
         resourceGap: { enabled: false, radiusMi: 25 },
         pressureBoard: { pinnedMissionIds: [], includeAllianceMissions: false, timelineLoggingEnabled: false },
-        transportSweep: { delayMs: 2000, maxPerRun: 25 },
+        transportSweep: { delayMs: 2000, maxPerRun: 25, backgroundFirst: true },
         allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
         dispatchRecruitment: { dispatchId: '', hiringPhase: '3', personnelDesired: '', delayMs: 1500 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
@@ -2204,6 +2206,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.pressureBoard.timelineLoggingEnabled = merged.pressureBoard.timelineLoggingEnabled === true;
         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+        merged.transportSweep.backgroundFirst = merged.transportSweep.backgroundFirst !== false;
         merged.allianceCourses.day = ALLIANCE_COURSE_DAY_OPTIONS.includes(String(merged.allianceCourses.day)) ? String(merged.allianceCourses.day) : 'today';
         merged.allianceCourses.shareDuration = ALLIANCE_COURSE_SHARE_DURATION_OPTIONS.includes(Number(merged.allianceCourses.shareDuration)) ? Number(merged.allianceCourses.shareDuration) : 86400;
         merged.allianceCourses.delayMs = ALLIANCE_COURSE_DELAY_OPTIONS.includes(Number(merged.allianceCourses.delayMs)) ? Number(merged.allianceCourses.delayMs) : 1500;
@@ -16664,6 +16667,114 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         return result;
     }
 
+    function transportSweepBackgroundControlDisabled(control) {
+        if (!control) return true;
+        if (control.hasAttribute?.('disabled')) return true;
+        if (control.getAttribute?.('aria-disabled') === 'true') return true;
+        if (control.hidden || control.closest?.('[hidden], [aria-hidden="true"], .hidden, .d-none')) return true;
+        const inlineDisplay = String(control.style?.display || '').toLowerCase();
+        const inlineVisibility = String(control.style?.visibility || '').toLowerCase();
+        if (inlineDisplay === 'none' || ['hidden', 'collapse'].includes(inlineVisibility)) return true;
+        return control.classList?.contains('disabled') === true;
+    }
+
+    function transportSweepBackgroundCancelAction(doc, candidate) {
+        const vehicleId = String(candidate?.vehicleId || '').trim();
+        if (!doc?.querySelectorAll || !/^\d+$/u.test(vehicleId)) return null;
+        const actions = new Map();
+        let controls = [];
+        try { controls = Array.from(doc.querySelectorAll('a[href]')); } catch (err) { return null; }
+        for (const control of controls) {
+            if (transportSweepBackgroundControlDisabled(control)) continue;
+            if (transportSweepNativeReleaseControlText(control) !== 'cancel transport') continue;
+            const rawHref = String(control.getAttribute('href') || '').trim();
+            if (!rawHref) continue;
+            let url;
+            try { url = new URL(rawHref, `${pageWindow.location.origin}/`); } catch (err) { continue; }
+            if (url.origin !== pageWindow.location.origin || url.search || url.hash) continue;
+            const match = url.pathname.match(/^\/vehicles\/(\d+)\/patient\/(-?\d+)\/?$/u);
+            if (!match || match[1] !== vehicleId) continue;
+            actions.set(url.href, {
+                href: url.href,
+                pathname: url.pathname,
+                vehicleId,
+                patientId: match[2]
+            });
+        }
+        return actions.size === 1 ? Array.from(actions.values())[0] : null;
+    }
+
+    async function transportSweepFetchBackgroundCancelAction(candidate) {
+        const vehicleId = String(candidate?.vehicleId || '').trim();
+        if (!/^\d+$/u.test(vehicleId)) return { status: 'unsupported', reason: 'invalid vehicle identity' };
+        if (transportSweepOwnVehicleIdSet().has(vehicleId)) {
+            return { status: 'unsupported', reason: 'vehicle is in the verified personal ownership list' };
+        }
+        try {
+            const response = await runtimeFetch(`/vehicles/${vehicleId}`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { Accept: 'text/html,application/xhtml+xml' },
+                timeoutMs: TRANSPORT_SWEEP_MOBILE_REQUEST_TIMEOUT_MS
+            });
+            if (!response.ok) return { status: 'unsupported', reason: `vehicle page returned HTTP ${response.status}` };
+            const html = await response.text();
+            if (!html || html.length < 40) return { status: 'unsupported', reason: 'vehicle page was empty' };
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const action = transportSweepBackgroundCancelAction(doc, candidate);
+            return action
+                ? { status: 'ready', action, confirmationBaseline: transportSweepReleaseConfirmationSignature(doc.body?.textContent || '') }
+                : { status: 'unsupported', reason: 'no exact native Cancel Transport link was exposed' };
+        } catch (err) {
+            return { status: 'unsupported', reason: err?.name === 'AbortError' ? 'vehicle-page check timed out' : 'vehicle-page check failed' };
+        }
+    }
+
+    function transportSweepBackgroundReleaseConfirmed(doc, baselineSignature = '') {
+        const text = String(doc?.body?.textContent || '');
+        const signature = transportSweepReleaseConfirmationSignature(text);
+        return Boolean(signature && signature !== baselineSignature);
+    }
+
+    async function transportSweepAttemptBackgroundRelease(candidate) {
+        if (transportSweepRuntime.stopRequested) return { status: 'stopped', writeAttempted: false };
+        const prepared = await transportSweepFetchBackgroundCancelAction(candidate);
+        if (prepared.status !== 'ready') return { ...prepared, writeAttempted: false };
+        if (transportSweepRuntime.stopRequested) return { status: 'stopped', writeAttempted: false };
+
+        try {
+            const response = await runtimeFetch(prepared.action.href, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                redirect: 'follow',
+                headers: { Accept: 'text/html,application/xhtml+xml' },
+                timeoutMs: TRANSPORT_SWEEP_MOBILE_REQUEST_TIMEOUT_MS
+            });
+            const html = await response.text();
+            if (response.ok && html) {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                if (transportSweepBackgroundReleaseConfirmed(doc, prepared.confirmationBaseline)) {
+                    return { status: 'confirmed', writeAttempted: true, action: prepared.action };
+                }
+            }
+            return {
+                status: 'ambiguous',
+                writeAttempted: true,
+                action: prepared.action,
+                reason: response.ok ? 'MissionChief returned no fresh release confirmation' : `MissionChief returned HTTP ${response.status}`
+            };
+        } catch (err) {
+            return {
+                status: 'ambiguous',
+                writeAttempted: true,
+                action: prepared.action,
+                reason: err?.name === 'AbortError' ? 'release request timed out after it was sent' : 'release response could not be verified'
+            };
+        }
+    }
+
     async function collectTransportSweepVehicleCandidatesForMission(missionId) {
         const domCandidates = collectTransportSweepVehicleCandidates();
         const domStats = { ...(transportSweepRuntime.lastCandidateStats || {}) };
@@ -16844,7 +16955,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     function recordTransportSweepConfirmedRelease(releaseKey, message) {
         const key = String(releaseKey || '').trim();
-        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key)) return false;
+        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key) || transportSweepRuntime.ambiguousReleaseKeys?.has(key)) return false;
         transportSweepRuntime.confirmedReleaseKeys.add(key);
         transportSweepRuntime.cleared += 1;
         transportSweepRuntime.processed += 1;
@@ -16854,11 +16965,23 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     function recordTransportSweepSkippedPatient(skipKey, message) {
         const key = String(skipKey || '').trim();
-        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key) || transportSweepRuntime.skippedPatientKeys.has(key)) return false;
+        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key) || transportSweepRuntime.ambiguousReleaseKeys?.has(key) || transportSweepRuntime.skippedPatientKeys.has(key)) return false;
         transportSweepRuntime.skippedPatientKeys.add(key);
         transportSweepRuntime.skipped += 1;
         transportSweepRuntime.processed += 1;
         transportSweepLog(message, 'warn');
+        renderTransportSweepPanel();
+        return true;
+    }
+
+    function recordTransportSweepAmbiguousRelease(releaseKey, message) {
+        const key = String(releaseKey || '').trim();
+        transportSweepRuntime.ambiguousReleaseKeys ||= new Set();
+        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key) || transportSweepRuntime.ambiguousReleaseKeys.has(key)) return false;
+        transportSweepRuntime.ambiguousReleaseKeys.add(key);
+        transportSweepRuntime.errors += 1;
+        transportSweepRuntime.processed += 1;
+        transportSweepLog(message, 'error');
         renderTransportSweepPanel();
         return true;
     }
@@ -17130,32 +17253,54 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const missionId = normaliseMissionId(item?.missionId);
         if (missionId === null || remainingAllowance <= 0) return 0;
 
+        const missionLabel = String(item?.caption || `Mission ${missionId}`);
         transportSweepRuntime.currentMissionId = missionId;
-        transportSweepRuntime.currentItem = String(item?.caption || `Mission ${missionId}`);
+        transportSweepRuntime.currentItem = missionLabel;
         renderTransportSweepPanel();
 
         const attemptedVehicleIds = new Set();
         let clearedHere = 0;
+        let releaseAttemptsHere = 0;
         let initialScanLogged = false;
         let missionHadCandidates = false;
+        let nativeMode = state.transportSweep.backgroundFirst === false;
+        let missionOpen = false;
 
-        transportSweepLog(`Opening ${item.caption}`);
-        let missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
-        if (!missionOpen || transportSweepRuntime.stopRequested) {
-            if (!transportSweepRuntime.stopRequested) {
-                transportSweepLog(`Could not inspect ${item.caption} because its mission window did not become available; no patient skip was recorded`, 'warn');
+        const openNativeMission = async reason => {
+            transportSweepLog(`${reason} ${missionLabel}`);
+            missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
+            if (!missionOpen && !transportSweepRuntime.stopRequested) {
+                transportSweepLog(`Could not inspect ${missionLabel} because its mission window did not become available; no patient skip was recorded`, 'warn');
             }
-            return 0;
+            return missionOpen;
+        };
+
+        if (nativeMode) {
+            if (!await openNativeMission('Opening')) return 0;
+        } else {
+            transportSweepLog(`Background-first scan: ${missionLabel}`);
         }
 
-        while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-            const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
+        while (!transportSweepRuntime.stopRequested && releaseAttemptsHere < remainingAllowance && transportSweepRuntime.releaseAttempts < state.transportSweep.maxPerRun) {
+            let candidates = [];
+            if (nativeMode) {
+                candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
+            } else {
+                const fetched = await transportSweepFetchMissionCandidates(missionId);
+                if (fetched) {
+                    transportSweepRuntime.rejectedOwn = fetched.stats.rejectedOwn || 0;
+                    transportSweepRuntime.lastCandidateStats = fetched.stats;
+                    candidates = fetched.candidates || [];
+                } else {
+                    transportSweepRuntime.lastCandidateStats = { source: 'mission HTML', candidates: 0 };
+                }
+            }
             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
             if (!initialScanLogged) {
                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';
                 transportSweepLog(`Vehicle scan: ${candidateStats.totalLinks || 0} vehicle links · ${candidateStats.allianceLinks || 0} alliance FMS 5 · ${candidateStats.candidates || 0} patient candidates${source}`);
                 if (transportSweepRuntime.rejectedOwn > 0) {
-                    transportSweepLog(`Ignored ${transportSweepRuntime.rejectedOwn} of your own FMS 5 vehicle${transportSweepRuntime.rejectedOwn === 1 ? '' : 's'} at ${item.caption}`);
+                    transportSweepLog(`Ignored ${transportSweepRuntime.rejectedOwn} of your own FMS 5 vehicle${transportSweepRuntime.rejectedOwn === 1 ? '' : 's'} at ${missionLabel}`);
                 }
                 initialScanLogged = true;
             }
@@ -17163,16 +17308,59 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             if (candidates.length) missionHadCandidates = true;
             const candidate = candidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
             if (!candidate) {
-                if (!missionHadCandidates) transportSweepLog(`No alliance-owned FMS 5 patient vehicles were found inside ${item.caption}`, 'warn');
-                else transportSweepLog(`Checked every alliance-owned FMS 5 patient vehicle at ${item.caption}; none exposed a release control`, 'warn');
+                if (!nativeMode && !missionHadCandidates) {
+                    nativeMode = true;
+                    transportSweepLog(`Background mission data was unavailable for ${missionLabel}; falling back to the visible native workflow`, 'warn');
+                    if (await openNativeMission('Opening native fallback for')) continue;
+                    break;
+                }
+                if (!missionHadCandidates) transportSweepLog(`No alliance-owned FMS 5 patient vehicles were found inside ${missionLabel}`, 'warn');
+                else if (nativeMode) transportSweepLog(`Checked every alliance-owned FMS 5 patient vehicle at ${missionLabel}; none exposed a release control`, 'warn');
+                else transportSweepLog(`Background pass finished for every discovered patient vehicle at ${missionLabel}`);
                 break;
             }
 
-            attemptedVehicleIds.add(String(candidate.vehicleId));
             transportSweepRuntime.currentVehicleHref = candidate.href;
             transportSweepRuntime.currentItem = String(candidate.label || `Vehicle ${candidate.vehicleId}`);
             renderTransportSweepPanel();
             transportSweepLog(`Vehicle check: FMS 5 ${candidate.label} (${candidate.vehicleId})`);
+
+            if (!nativeMode) {
+                const releaseKey = transportSweepReleaseKey(missionId, candidate.vehicleId);
+                const backgroundResult = await transportSweepAttemptBackgroundRelease(candidate);
+                if (backgroundResult.status === 'stopped' || transportSweepRuntime.stopRequested) break;
+                if (backgroundResult.status === 'unsupported') {
+                    nativeMode = true;
+                    transportSweepLog(`No authoritative background action for ${candidate.label}; using MissionChief's visible native workflow`, 'warn');
+                    if (await openNativeMission('Opening native fallback for')) continue;
+                    break;
+                }
+
+                attemptedVehicleIds.add(String(candidate.vehicleId));
+                if (backgroundResult.writeAttempted) {
+                    releaseAttemptsHere += 1;
+                    transportSweepRuntime.releaseAttempts += 1;
+                }
+                if (backgroundResult.status === 'confirmed') {
+                    const confirmed = recordTransportSweepConfirmedRelease(
+                        releaseKey,
+                        `Cleared ${candidate.label} at ${missionLabel} in the background`
+                    );
+                    if (confirmed) clearedHere += 1;
+                } else {
+                    recordTransportSweepAmbiguousRelease(
+                        releaseKey,
+                        `Background result for ${candidate.label} at ${missionLabel} was ambiguous (${backgroundResult.reason || 'no confirmation'}); it will not be retried`
+                    );
+                }
+
+                if (!transportSweepRuntime.stopRequested && releaseAttemptsHere < remainingAllowance && transportSweepRuntime.releaseAttempts < state.transportSweep.maxPerRun) {
+                    await transportSweepSleep(state.transportSweep.delayMs);
+                }
+                continue;
+            }
+
+            attemptedVehicleIds.add(String(candidate.vehicleId));
 
             const vehicleResult = await openTransportSweepVehicle(candidate);
             if (transportSweepRuntime.stopRequested) break;
@@ -17186,7 +17374,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             if (!button) {
                 recordTransportSweepSkippedPatient(
                     transportSweepReleaseKey(missionId, candidate.vehicleId),
-                    `Skipped ${candidate.label} at ${item.caption}: no usable Cancel Transport or Discharge patient control was available`
+                    `Skipped ${candidate.label} at ${missionLabel}: no usable Cancel Transport or Discharge patient control was available`
                 );
             } else {
                 try {
@@ -17194,6 +17382,8 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                     const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
                     const releaseControlLabel = transportSweepNativeReleaseControlText(button);
                     transportSweepRuntime.pendingDischargeKey = releaseKey;
+                    releaseAttemptsHere += 1;
+                    transportSweepRuntime.releaseAttempts += 1;
                     button.click();
                     clickTransportSweepDischargeConfirmation(releaseKey);
                     let cleared = false;
@@ -17210,7 +17400,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                     if (!cleared) throw new Error('Discharge confirmation timed out');
                     confirmedThisAttempt = recordTransportSweepConfirmedRelease(
                         releaseKey,
-                        `Cleared ${candidate.label} at ${item.caption}`
+                        `Cleared ${candidate.label} at ${missionLabel}`
                     );
                     if (confirmedThisAttempt) clearedHere += 1;
                 } catch (err) {
@@ -17219,15 +17409,15 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 }
             }
 
-            if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+            if (!transportSweepRuntime.stopRequested && releaseAttemptsHere < remainingAllowance && transportSweepRuntime.releaseAttempts < state.transportSweep.maxPerRun) {
                 await transportSweepSleep(state.transportSweep.delayMs);
-                transportSweepLog(`Returning to ${item.caption} for remaining alliance ambulances`);
+                transportSweepLog(`Returning to ${missionLabel} for remaining alliance ambulances`);
                 missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
                 if (!missionOpen) {
-                    if (confirmedThisAttempt) transportSweepLog(`Cleared ${candidate.label}, but could not reopen ${item.caption}; continuing with the confirmed patient result`, 'warn');
+                    if (confirmedThisAttempt) transportSweepLog(`Cleared ${candidate.label}, but could not reopen ${missionLabel}; continuing with the confirmed patient result`, 'warn');
                     else {
                         transportSweepRuntime.errors += 1;
-                        transportSweepLog(`Could not return to ${item.caption} during native processing`, 'error');
+                        transportSweepLog(`Could not return to ${missionLabel} during native processing`, 'error');
                     }
                     break;
                 }
@@ -17257,7 +17447,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const planned = Math.min(totalRequests, state.transportSweep.maxPerRun);
         const confirmed = pageWindow.confirm(`Transport Sweep will attempt up to ${planned} alliance-member patient releases across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.
 
-The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control or Cancel Transport control. Your own verified vehicle IDs are always excluded. Continue?`);
+Background-first mode uses only an exact same-origin native Cancel Transport link fetched from the verified vehicle page. If that safe path is unavailable before a release request, the sweep falls back to MissionChief's visible native workflow. Ambiguous requests are never retried. Your own verified vehicle IDs are always excluded. Continue?`);
         if (!confirmed) return;
         dismissTransportSweepReport({ quiet: true, render: false });
         toolkitAnalyticsRecordFeature('patientTransportSweep');
@@ -17269,7 +17459,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         transportSweepRuntime.skipped = 0;
         transportSweepRuntime.errors = 0;
         transportSweepRuntime.processed = 0;
+        transportSweepRuntime.releaseAttempts = 0;
         transportSweepRuntime.confirmedReleaseKeys = new Set();
+        transportSweepRuntime.ambiguousReleaseKeys = new Set();
         transportSweepRuntime.skippedPatientKeys = new Set();
         transportSweepRuntime.confirmedDischargeDialogKeys = new Set();
         transportSweepRuntime.pendingDischargeKey = '';
@@ -17296,7 +17488,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         try {
             for (let missionOffset = 0; missionOffset < queue.length; missionOffset += 1) {
                 const item = queue[missionOffset];
-                if (transportSweepRuntime.stopRequested || transportSweepRuntime.cleared >= state.transportSweep.maxPerRun) break;
+                if (transportSweepRuntime.stopRequested || transportSweepRuntime.releaseAttempts >= state.transportSweep.maxPerRun) break;
                 const missionNumber = missionOffset + 1;
                 const missionLabel = String(item?.caption || `Mission ${item?.missionId || missionNumber}`);
                 setTransportSweepMissionProgress(missionNumber, queue.length, {
@@ -17304,7 +17496,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     message: `Processing mission ${missionNumber} of ${queue.length}`,
                     forceRender: true
                 });
-                const remaining = state.transportSweep.maxPerRun - transportSweepRuntime.cleared;
+                const remaining = state.transportSweep.maxPerRun - transportSweepRuntime.releaseAttempts;
                 try {
                     await processTransportSweepMission(item, remaining);
                 } catch (err) {
@@ -33496,10 +33688,11 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
                 </div>
+                <div class="mcms-row"><span class="mcms-row-label">Processing mode</span><select class="mcms-select" data-setting="transport-sweep-mode"><option value="background">Background first (faster)</option><option value="native">Visible native only</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
                 <div data-transport-sweep></div>
-                <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+                <div class="mcms-status">Manual start only. <b>Background first</b> uses the exact native <b>Cancel Transport</b> action from each freshly fetched vehicle page, then falls back to the visible MissionChief flow when no safe action exists. A request without fresh confirmation is never retried. Personal vehicle IDs and prisoner transports are excluded.</div>
             </section>
             <section class="mcms-tab-panel" data-panel="dispatch">
                 <div class="mcms-section-label">Dispatch Recruitment</div>
@@ -34147,6 +34340,12 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             showToast(`Transport Sweep delay: ${state.transportSweep.delayMs / 1000}s`);
             return;
         }
+        if (setting === 'transport-sweep-mode') {
+            state.transportSweep.backgroundFirst = target.value !== 'native';
+            saveState(); updateUI();
+            showToast(state.transportSweep.backgroundFirst ? 'Transport Sweep: background first' : 'Transport Sweep: visible native only');
+            return;
+        }
         if (setting === 'transport-sweep-max') {
             state.transportSweep.maxPerRun = Math.round(clamp(target.value, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
             saveState(); updateUI();
@@ -34519,6 +34718,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         if (allianceCreditMinimum) updateUiSetProperty(allianceCreditMinimum, 'value', String(state.allianceCreditMinimum));
         const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
         if (transportSweepDelay) updateUiSetProperty(transportSweepDelay, 'value', String(state.transportSweep.delayMs));
+        const transportSweepMode = panel.querySelector('[data-setting="transport-sweep-mode"]');
+        if (transportSweepMode) updateUiSetProperty(transportSweepMode, 'value', state.transportSweep.backgroundFirst === false ? 'native' : 'background');
         const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
         if (transportSweepMax) updateUiSetProperty(transportSweepMax, 'value', String(state.transportSweep.maxPerRun));
         const allianceCourseDay = panel.querySelector('[data-setting="alliance-course-day"]');

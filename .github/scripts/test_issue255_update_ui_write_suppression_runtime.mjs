@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "10.9.1";
-const EXPECTED_SHA = "bc3a71630ae8433cba4f3377d738de8f5b8377146286df58f01b494d61722560";
+const EXPECTED_VERSION = "10.9.2";
+const EXPECTED_SHA = "f60fde526c934b27956cbba6e35c1a9e602474bf8fb9d9d23c92634040ff81fc";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader", "syncMapMeasureToolbarButton"];
 
@@ -45,7 +45,7 @@ function extractFunctions(source, names) {
 function fixtureHtml() {
   const controlToggles = ["allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment", "stuckDetector"];
   const panelToggles = ["clean", "markerFocus", "missionPulse", "roadPriority", "coverage", "shortcuts", "quickWheel", "autoLoadAllVehicles", "allianceBuildingsMapBlocker", "majorIncidentFeed", "missionLockAudio", "payoutFlash", "payoutSound", "missionValue", "customVehicleBadges", "stuckDetector", "missionSpawn", "resourceGap", "allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
-  const settings = ["density-desktop", "density-tablet", ...Array.from({ length: 6 }, (_, index) => `quick-wheel-slot-${index}`), "major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "alliance-course-day", "alliance-course-duration", "alliance-course-delay", "dispatch-recruitment-hiring-phase", "dispatch-recruitment-personnel", "dispatch-recruitment-delay", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
+  const settings = ["density-desktop", "density-tablet", ...Array.from({ length: 6 }, (_, index) => `quick-wheel-slot-${index}`), "major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-mode", "transport-sweep-max", "alliance-course-day", "alliance-course-duration", "alliance-course-delay", "dispatch-recruitment-hiring-phase", "dispatch-recruitment-personnel", "dispatch-recruitment-delay", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
   return `<!doctype html><html><body>
     <div id="mc-map-command-toolkit-control">
       ${controlToggles.map(key => `<button data-toggle="${key}"><span class="mcms-float-label-desktop">${key}</span><span class="mcms-control-state"></span></button>`).join("")}
@@ -86,7 +86,7 @@ function baseState() {
     autoLoadAllVehicles: true, allianceBuildingsMap: true, missionLockAudio: true,
     payoutFlash: { enabled: true, soundEnabled: true, template: "command", threshold: 10000, durationMs: 5000, soundVolume: 0.35 },
     missionValue: true, customVehicleBadges: true, stuckDetector: { enabled: true, thresholdMin: 10 }, missionSpawn: { enabled: true },
-    resourceGap: { enabled: true, radiusMi: 20 }, allianceCreditMinimum: 10000, transportSweep: { delayMs: 900, maxPerRun: 25 },
+    resourceGap: { enabled: true, radiusMi: 20 }, allianceCreditMinimum: 10000, transportSweep: { delayMs: 900, maxPerRun: 25, backgroundFirst: true },
     allianceCourses: { day: "today", shareDuration: 86400, delayMs: 1500 },
     dispatchRecruitment: { dispatchId: "", hiringPhase: "3", personnelDesired: "5", delayMs: 1500 },
     discordReport: { webhookName: "Toolkit", topCategories: 5, period: "daily", customStart: "", customEnd: "", includeComparison: true, includeChart: true, complexity: "informative", includeRisk: true, includeForecast: true },

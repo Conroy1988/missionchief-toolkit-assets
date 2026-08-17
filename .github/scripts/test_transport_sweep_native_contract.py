@@ -9,7 +9,7 @@ for marker in [
  'function transportSweepNativeReleaseControlText(control)',
  "'button, a, input[type=\"button\"], input[type=\"submit\"]'",
  "button.getAttribute?.('aria-disabled') === 'true'",
- 'const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);',
+ 'candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);',
  'const vehicleResult = await openTransportSweepVehicle(candidate);',
  'const releaseControlLabel = transportSweepNativeReleaseControlText(button);',
  'button.click();',
@@ -17,7 +17,7 @@ for marker in [
  'transportSweepNativeReleaseControlText(button) !== releaseControlLabel',
  'recordTransportSweepConfirmedRelease(',
  r"/patient (?:is not|isn['’]t) transported\.?/gi",
- "MissionChief's native Discharge patient control",
+ "MissionChief's visible native workflow",
 ]: assert marker in s,marker
 m=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',s);assert m
 body=m.group(1)

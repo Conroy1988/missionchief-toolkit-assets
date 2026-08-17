@@ -134,16 +134,37 @@ def assert_has(report: dict, code: str, severity: str = "failure") -> None:
 
 
 def test_first_party_live_requests_are_cache_busted() -> None:
-    original = "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/?channel=stable"
+    original = (
+        "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"
+        "MissionChief_Map_Command_Toolkit.user.js?channel=stable"
+    )
     busted = asset_health.cache_bust(original)
     parsed = asset_health.urllib.parse.urlparse(busted)
     query = dict(asset_health.urllib.parse.parse_qsl(parsed.query, keep_blank_values=True))
 
-    assert parsed.path == "/mission-chief-scripts/map-command-toolkit/install/"
+    assert parsed.path.endswith("/install/MissionChief_Map_Command_Toolkit.user.js")
     assert query["channel"] == "stable"
     assert query["audit"].isdigit()
     assert "asset_health" not in query
     assert asset_health.cache_bust("https://example.com/script.user.js") == "https://example.com/script.user.js"
+
+
+def test_integrity_installer_uses_filename_route() -> None:
+    settings = json.loads(
+        (REPOSITORY_ROOT / ".github/release-settings.json").read_text(encoding="utf-8")
+    )
+    policy = json.loads(
+        (REPOSITORY_ROOT / ".github/asset-health-policy.json").read_text(encoding="utf-8")
+    )
+    integrity_url = settings["distribution"]["integrityInstallUrl"]
+    parsed = asset_health.urllib.parse.urlparse(integrity_url)
+    install_endpoint = next(
+        item for item in policy["explicitEndpoints"] if item["id"] == "tkb-install-userscript"
+    )
+
+    assert parsed.hostname == "tkb-gaming.scot"
+    assert parsed.path.endswith("/install/MissionChief_Map_Command_Toolkit.user.js")
+    assert install_endpoint["urlSource"]["jsonPointer"] == "/distribution/integrityInstallUrl"
 
 
 def test_live_success_and_optional_warning() -> None:
@@ -359,6 +380,7 @@ def test_asset_health_workflow_uses_release_state() -> None:
 def main() -> None:
     tests = [
         test_first_party_live_requests_are_cache_busted,
+        test_integrity_installer_uses_filename_route,
         test_live_success_and_optional_warning,
         test_wrong_release_hash_fails,
         test_missing_stable_raw_path_fails_static,

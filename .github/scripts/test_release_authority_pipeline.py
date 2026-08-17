@@ -45,6 +45,7 @@ def main() -> int:
     expected_urls = {
         "productUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/",
         "installUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
+        "integrityInstallUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js",
         "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
         "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
     }

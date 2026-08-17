@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "channel": "stable",
-  "version": "10.9.0",
-  "releaseNotesUrl": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.9.0",
+  "version": "10.9.1",
+  "releaseNotesUrl": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.9.1",
   "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/",
-  "publishedAt": "2026-08-17T06:59:06Z",
-  "sha256": "85904a2a71b99e8ac6e86c6f7a04d85fcd05c2eb9f97d483b9f736d63b453862"
+  "publishedAt": "2026-08-17T18:51:53Z",
+  "sha256": "bc3a71630ae8433cba4f3377d738de8f5b8377146286df58f01b494d61722560"
 }

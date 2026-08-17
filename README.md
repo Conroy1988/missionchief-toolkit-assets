@@ -62,18 +62,18 @@ It does not invent game actions or replace permissions. It makes MissionChief's 
 |---|---|
 | **01 · Detect** | Incident Command Wire surfaces developing work while Mission Age and Mission Value establish urgency and scale. |
 | **02 · Understand** | MissionChief UK Knowledge Link, Unit Commitment and Operational SITREP turn a marker into actionable context. |
-| **03 · Match** | Operational Pressure Board, Vehicle Code Status, Custom Vehicle Badges and Resource Gap expose readiness, load and shortfall. |
+| **03 · Match** | Operational Pressure Board and Procurement Brain combine live shortages with recent demand history while Vehicle Code Status, Custom Vehicle Badges and Resource Gap expose readiness and load. |
 | **04 · Command** | My Missions, Alliance Missions, fleet and building layers, Quick Places, bookmarks, coverage rings and on-demand Drawing convert intent into map action. |
 | **05 · Act safely** | Contextual Command Menus reach MissionChief's native controls; high-impact administrative work requires a fresh scan, explicit confirmation and sequential execution. |
 | **06 · Verify** | Transport outcomes, recruitment results, course starts and financial checkpoints remain visible instead of disappearing behind a click. |
-| **07 · Account** | Alliance Credits, variance preservation, payout context, Financial Archive and optional reports close the operational loop. |
+| **07 · Account** | Operational Timeline, Alliance Credits, variance preservation, payout context, Financial Archive and optional reports close the operational loop. |
 
 ### Five theatres. One picture.
 
 | Operational theatre | Intelligence and control |
 |---|---|
 | **Incident command** | Incident Command Wire · Mission Age · Mission Value · MissionChief UK Knowledge Link · Unit Commitment · Operational SITREP |
-| **Fleet and transport** | Operational Pressure Board · Vehicle Code Status · Custom Vehicle Badges · Resource Gap · Transport Watcher · Unit Locator & Follow Mode |
+| **Fleet and transport** | Operational Pressure Board · Procurement Brain · Operational Timeline · Vehicle Code Status · Custom Vehicle Badges · Resource Gap · Transport Watcher · Unit Locator & Follow Mode |
 | **Map and places** | Personal and alliance missions · vehicles · buildings · Quick Places · smart bookmarks · coverage rings · kilometre measurement · arrows · shapes · zones · text · markers |
 | **Administration** | Dispatch Recruitment · Alliance Courses · Patient Transport Sweep · Alliance Member Manager · Alliance Buildings performance guard |
 | **Finance and accountability** | Alliance Credits · reconciliation checkpoints · variance · payout feedback · Financial Archive · explicit Discord reporting |
@@ -109,6 +109,7 @@ The Toolkit only moves information forward when it changes a decision.
 | **Mission Value** brings likely scale into the first read. | **Toolkit Command Palette** opens the required system without hunting through panels. |
 | **Resource Gap** states what the incident still lacks. | **Contextual Command Menus** place relevant actions beside the object being considered. |
 | **Operational Pressure Board** turns fleet load into an immediate command signal. | **Hotkey & Gesture Studio** lets keyboard and touch behaviour match the operator. |
+| **Procurement Brain** ranks acquisition, repositioning, recruitment and training reviews from live pressure plus repeated local evidence. | **Operational Timeline** filters, searches, focuses and exports meaningful mission history without replacing MissionChief controls. |
 | **Operational SITREP** condenses demand and commitment into a usable briefing. | **Personalisation Studio** controls density, layout and visual preference from one place. |
 
 ---
@@ -227,6 +228,8 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 <summary><strong>Fleet, transport and resource intelligence</strong></summary>
 
 - Operational Pressure Board
+- Procurement Brain with 24-hour, 7-day and 30-day evidence windows
+- Persistent Operational Timeline with event filters, search, focus, JSON export and explicit clearing
 - Vehicle Code Status
 - Custom Vehicle Badges
 - Resource Gap

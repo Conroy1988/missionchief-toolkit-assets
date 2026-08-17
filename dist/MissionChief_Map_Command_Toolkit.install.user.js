@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.8.0
+// @version      10.9.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.8.0',
+        version: '10.9.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -498,6 +498,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         payoutHistoryState: 'mc_map_command_toolkit_payout_history_v200',
         sessionPerformanceState: 'mc_map_command_toolkit_session_v200',
         missionProgressState: 'mc_map_command_toolkit_mission_progress_v250',
+        operationalTimelineState: 'mc_map_command_toolkit_operational_timeline_v1',
         transportSweepReportState: 'mc_map_command_toolkit_transport_sweep_report_v1',
         discordWebhookState: 'mc_map_command_toolkit_discord_webhook_v300',
         discordLastReportState: 'mc_map_command_toolkit_discord_last_report_v310',
@@ -525,14 +526,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.8.0",
-        title: "Dispatch Recruitment",
+        version: "10.9.0",
+        title: "Procurement Brain & Operational Timeline",
         highlights: Object.freeze([
-            "Adds a dedicated Dispatch administration section for recruitment changes across one selected Dispatch Centre.",
-            "Discovers the player's current Dispatch Centres and every native MissionChief building type dynamically, with type filters and exact per-station selection.",
-            "Applies Hiring Phase and Personnel (Desired) through each station's current native recruitment and Edit controls.",
-            "Rechecks Dispatch Centre and building-type membership before every station, then verifies both resulting values through authoritative building data.",
-            "Requires a scanned preview and explicit confirmation, processes sequentially with pacing and Stop, and never retries an unverified action automatically."
+            "Adds Procurement Brain: evidence-ranked acquisition, repositioning, recruitment and training recommendations from live shortages plus recent mission history.",
+            "Adds a persistent Operational Timeline for newly observed missions, response commitment, arrivals, requirement changes, casualty changes, stalls, recoveries and completions.",
+            "Integrates Live Pressure, Procurement and Timeline as three views inside the existing responsive Operational Pressure Board.",
+            "Keeps a bounded 30-day local record, supports filters, search, mission focus, JSON export and explicit history clearing.",
+            "Adds no new poller or observer and never purchases, selects or dispatches vehicles automatically."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -865,7 +866,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
         'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
         'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
-        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
+        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'procurementBrain', 'operationalTimeline', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
         'mapMeasure'
     ]);
     const toolkitAnalyticsSessionSignals = new Set();
@@ -1299,6 +1300,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const MISSION_CACHE_RETENTION_MS = 10 * 60 * 1000;
     const RESOURCE_GAP_REFRESH_MS = 15 * 1000;
     const RESOURCE_GAP_RADIUS_OPTIONS = [10, 25, 50, 100];
+    const OPERATIONAL_TIMELINE_SCHEMA = 1;
+    const OPERATIONAL_TIMELINE_LIMIT = 1500;
+    const OPERATIONAL_TIMELINE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+    const OPERATIONAL_TIMELINE_SAVE_DELAY_MS = 500;
+    const OPERATIONAL_TIMELINE_RENDER_LIMIT = 120;
+    const PROCUREMENT_WINDOW_OPTIONS = Object.freeze([1, 7, 30]);
+    const OPERATIONAL_TIMELINE_TYPES = new Set(['mission', 'response', 'requirements', 'casualty', 'stalled', 'recovered', 'completed']);
+    const OPERATIONAL_TIMELINE_CATEGORIES = new Set(['mission', 'response', 'resource', 'completion']);
+    const OPERATIONAL_TIMELINE_SEVERITIES = new Set(['info', 'warning', 'critical', 'good']);
     const TRANSPORT_SWEEP_DELAY_OPTIONS = [1500, 2000, 2500, 3000, 4000, 5000];
     const TRANSPORT_SWEEP_MAX_REQUESTS = 50;
     const TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION = 40;
@@ -1620,6 +1630,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [] };
     let operationalPressureCache = { key: '', snapshot: null };
     let operationalPressureRefreshBusy = false;
+    const operationalTimelineEntries = loadOperationalTimelineState();
+    let operationalTimelineSavePending = false;
+    let operationalTimelineSaveDueAt = 0;
+    let operationalTimelineSavePromise = null;
+    let operationalTimelineArmed = false;
+    let operationalTimelineMissionState = new Map();
+    const operationalTimelineAbsentSince = new Map();
+    let operationalTimelineEventCounter = 0;
+    let operationalIntelligenceView = 'live';
+    let operationalTimelineFilter = 'all';
+    let operationalTimelineQuery = '';
+    let procurementWindowDays = 7;
+    runtime.cleanupCallbacks.push(() => {
+        if (operationalTimelineSavePending) saveOperationalTimelineState();
+        operationalTimelineSavePending = false;
+        operationalTimelineSaveDueAt = 0;
+        operationalTimelineSavePromise = null;
+    });
     let operationalSitrepBusy = false;
     let operationalSitrepStatus = 'Operational SITREP ready for manual posting.';
     let operationalSitrepStatusTone = 'neutral';
@@ -7703,7 +7731,230 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             background:transparent !important;
             color:rgba(255,255,255,.42) !important;
             text-align:center !important;
-        }html[data-mcms-ui-theme="mapCommand"] #${SCRIPT.pressureBoardId} {
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-view-tabs {
+            display:grid !important;
+            grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+            gap:5px !important;
+            margin-top:8px !important;
+            padding:4px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:10px !important;
+            background:rgba(0,0,0,.18) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-view-tabs button,
+        #${SCRIPT.pressureBoardId} .mcms-procurement-toolbar button,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-filters button,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-actions button,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-event > button {
+            min-height:32px !important;
+            padding:5px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            background:rgba(255,255,255,.052) !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:950 !important;
+            letter-spacing:.35px !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-view-tabs button.mcms-active,
+        #${SCRIPT.pressureBoardId} .mcms-procurement-toolbar button.mcms-active,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-filters button.mcms-active {
+            border-color:rgba(var(--mcms-pressure-accent-rgb),.60) !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.16) !important;
+            color:var(--mcms-pressure-accent) !important;
+            box-shadow:inset 0 -2px var(--mcms-pressure-accent) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-view-panel[hidden] {
+            display:none !important;
+        }#${SCRIPT.pressureBoardId} .mcms-intelligence-intro {
+            display:grid !important;
+            gap:3px !important;
+            margin-top:8px !important;
+            padding:10px !important;
+            border:1px solid rgba(var(--mcms-pressure-accent-rgb),.30) !important;
+            border-radius:10px !important;
+            background:linear-gradient(135deg,rgba(var(--mcms-pressure-accent-rgb),.10),rgba(255,255,255,.025)) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-intelligence-intro > span {
+            color:var(--mcms-pressure-accent) !important;
+            font-size:7px !important;
+            font-weight:950 !important;
+            letter-spacing:.6px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-intelligence-intro > strong {
+            color:var(--mcms-pressure-text) !important;
+            font-size:10px !important;
+            font-weight:950 !important;
+            line-height:1.3 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-intelligence-intro > p {
+            margin:0 !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7.5px !important;
+            font-weight:800 !important;
+            line-height:1.4 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-toolbar {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-top:8px !important;
+            padding:7px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:rgba(0,0,0,.13) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-toolbar > span {
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:950 !important;
+            letter-spacing:.4px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-toolbar > div {
+            display:flex !important;
+            gap:4px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-list,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-list {
+            display:grid !important;
+            gap:7px !important;
+            margin-top:8px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card {
+            min-width:0 !important;
+            padding:9px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:var(--mcms-pressure-panel) !important;
+            box-shadow:inset 3px 0 rgba(var(--mcms-pressure-accent-rgb),.55) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card[data-priority="critical"] {
+            border-color:rgba(255,83,83,.48) !important;
+            background:rgba(101,13,13,.20) !important;
+            box-shadow:inset 3px 0 #ff6b6b !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card[data-priority="high"] {
+            border-color:rgba(255,191,64,.44) !important;
+            box-shadow:inset 3px 0 #ffc35d !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > header {
+            display:flex !important;
+            align-items:flex-start !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > header span { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-procurement-card > header b {
+            display:inline-block !important;
+            margin-right:6px !important;
+            padding:3px 5px !important;
+            border-radius:5px !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.14) !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:6px !important;
+            font-weight:950 !important;
+            text-transform:uppercase !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card[data-priority="critical"] > header b { background:rgba(255,83,83,.18) !important; color:#ffaaaa !important; }#${SCRIPT.pressureBoardId} .mcms-procurement-card[data-priority="high"] > header b { background:rgba(255,191,64,.16) !important; color:#ffd17a !important; }#${SCRIPT.pressureBoardId} .mcms-procurement-card > header strong {
+            color:var(--mcms-pressure-text) !important;
+            font-size:9px !important;
+            font-weight:950 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > header em {
+            flex:0 0 auto !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:16px !important;
+            font-style:normal !important;
+            font-weight:950 !important;
+            font-variant-numeric:tabular-nums !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > p {
+            margin:7px 0 3px !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:8px !important;
+            font-weight:900 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > small {
+            display:block !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:800 !important;
+            line-height:1.35 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > footer {
+            display:flex !important;
+            align-items:flex-end !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-top:6px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-procurement-card > footer > span {
+            color:rgba(255,255,255,.48) !important;
+            font-size:6.5px !important;
+            font-weight:900 !important;
+            text-transform:uppercase !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-toolbar {
+            display:grid !important;
+            grid-template-columns:minmax(0,1.25fr) minmax(150px,.9fr) auto !important;
+            align-items:end !important;
+            gap:6px !important;
+            margin-top:8px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-filters {
+            display:grid !important;
+            grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+            gap:4px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-search {
+            display:grid !important;
+            gap:3px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-search > span {
+            color:var(--mcms-pressure-muted) !important;
+            font-size:6px !important;
+            font-weight:950 !important;
+            letter-spacing:.4px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-search input {
+            width:100% !important;
+            min-height:32px !important;
+            padding:5px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            outline:0 !important;
+            background:rgba(0,0,0,.25) !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:8px !important;
+            font-weight:800 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-search input:focus {
+            border-color:var(--mcms-pressure-accent) !important;
+            box-shadow:0 0 0 2px rgba(var(--mcms-pressure-accent-rgb),.26) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-actions {
+            display:flex !important;
+            gap:4px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-actions button:last-child { color:#ffaaaa !important; }#${SCRIPT.pressureBoardId} .mcms-timeline-event {
+            display:grid !important;
+            grid-template-columns:28px minmax(0,1fr) auto !important;
+            align-items:center !important;
+            gap:8px !important;
+            min-width:0 !important;
+            padding:8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:var(--mcms-pressure-panel) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-event[data-tone="critical"] { border-color:rgba(255,83,83,.48) !important; }#${SCRIPT.pressureBoardId} .mcms-timeline-event[data-tone="warning"] { border-color:rgba(255,191,64,.42) !important; }#${SCRIPT.pressureBoardId} .mcms-timeline-event[data-tone="good"] { border-color:rgba(71,220,136,.38) !important; }#${SCRIPT.pressureBoardId} .mcms-timeline-rail {
+            align-self:stretch !important;
+            display:grid !important;
+            place-items:center !important;
+            border-right:1px solid var(--mcms-pressure-line) !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:13px !important;
+            font-weight:950 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-copy { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-timeline-copy > header {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-bottom:3px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-copy > header span,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-copy > header time {
+            color:var(--mcms-pressure-accent) !important;
+            font-size:6.5px !important;
+            font-weight:950 !important;
+            letter-spacing:.35px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-copy > header time { color:var(--mcms-pressure-muted) !important; }#${SCRIPT.pressureBoardId} .mcms-timeline-copy > strong {
+            display:block !important;
+            overflow:hidden !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:9px !important;
+            font-weight:950 !important;
+            text-overflow:ellipsis !important;
+            white-space:nowrap !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-copy > p,
+        #${SCRIPT.pressureBoardId} .mcms-timeline-copy > small {
+            display:block !important;
+            margin:3px 0 0 !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:800 !important;
+            line-height:1.35 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-timeline-copy > small { color:rgba(255,217,148,.78) !important; }html[data-mcms-ui-theme="mapCommand"] #${SCRIPT.pressureBoardId} {
             --mcms-pressure-accent:#55c8ff;--mcms-pressure-accent-rgb:85,200,255;
         }html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.pressureBoardId} {
             --mcms-pressure-accent:#ffe600;--mcms-pressure-accent-rgb:255,230,0;--mcms-pressure-bg:linear-gradient(150deg,rgba(6,9,12,.995),rgba(11,15,18,.995));
@@ -7779,7 +8030,21 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
             min-width:44px !important;
             min-height:44px !important;
-        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-sitrep { min-width:68px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-title { font-size:10px !important; white-space:normal !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-action-meta,.mcms-pressure-action-reason,.mcms-pressure-capacity-row small,.mcms-pressure-transport p,.mcms-pressure-status,.mcms-pressure-foot) { font-size:8px !important; }html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) #${SCRIPT.pressureBoardId} :is(button,[role="button"]) {
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-sitrep { min-width:68px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-title { font-size:10px !important; white-space:normal !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-action-meta,.mcms-pressure-action-reason,.mcms-pressure-capacity-row small,.mcms-pressure-transport p,.mcms-pressure-status,.mcms-pressure-foot) { font-size:8px !important; }html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) #${SCRIPT.pressureBoardId} button {
+            min-width:44px !important;
+            min-height:44px !important;
+        }html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) #${SCRIPT.pressureBoardId} .mcms-timeline-search input {
+            min-height:44px !important;
+            font-size:11px !important;
+        }html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) #${SCRIPT.pressureBoardId} :is(.mcms-pressure-view-tabs button,.mcms-procurement-toolbar button,.mcms-timeline-filters button,.mcms-timeline-actions button,.mcms-timeline-event > button) {
+            font-size:9px !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-view-tabs { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-intelligence-intro > strong { font-size:11px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-intelligence-intro > p,
+        html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-procurement-card > p,.mcms-procurement-card > small,.mcms-timeline-copy > p,.mcms-timeline-copy > small) { font-size:9px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-procurement-toolbar {
+            align-items:stretch !important;
+            flex-direction:column !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-procurement-toolbar > div { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-timeline-toolbar { grid-template-columns:1fr !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-timeline-filters { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-timeline-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-timeline-event {
+            grid-template-columns:28px minmax(0,1fr) !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-timeline-event > button { grid-column:2 !important; width:100% !important; }html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) #${SCRIPT.pressureBoardId} :is(button,[role="button"]) {
             touch-action:manipulation !important;
             -webkit-touch-callout:none !important;
         }
@@ -18648,6 +18913,348 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         return `${minutes}m`;
     }
 
+    function operationalTimelineText(value, maximum = 240) {
+        return String(value ?? '').replace(/\s+/gu, ' ').trim().slice(0, maximum);
+    }
+
+    function normaliseOperationalTimelineRequirement(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+        const kind = ['vehicle', 'personnel'].includes(String(value.kind)) ? String(value.kind) : 'vehicle';
+        const name = operationalTimelineText(value.name, 180);
+        if (!name) return null;
+        const key = operationalTimelineText(value.key || operationalPressureRequirementKey(name), 140) || 'unknown-resource';
+        return {
+        kind,
+        key,
+        name,
+        count: Math.max(1, Math.min(100, Math.round(Number(value.count) || 1)))
+        };
+    }
+
+    function normaliseOperationalTimelineEntry(value, now = Date.now()) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+        const timestamp = Number(value.timestamp);
+        if (!Number.isFinite(timestamp) || timestamp <= 0 || timestamp > now + 300000 || now - timestamp > OPERATIONAL_TIMELINE_RETENTION_MS) return null;
+        const type = OPERATIONAL_TIMELINE_TYPES.has(String(value.type)) ? String(value.type) : '';
+        if (!type) return null;
+        const missionId = operationalTimelineText(value.missionId, 64);
+        if (missionId && !/^[a-z0-9_-]+$/iu.test(missionId)) return null;
+        const requirements = (Array.isArray(value.details?.requirements) ? value.details.requirements : [])
+        .slice(0, 40)
+        .map(normaliseOperationalTimelineRequirement)
+        .filter(Boolean);
+        const unitsSource = value.details?.units && typeof value.details.units === 'object' ? value.details.units : {};
+        const details = {
+        requirements,
+        units: {
+            total: Math.max(0, Math.min(10000, Math.round(Number(unitsSource.total) || 0))),
+            onScene: Math.max(0, Math.min(10000, Math.round(Number(unitsSource.onScene) || 0))),
+            travelling: Math.max(0, Math.min(10000, Math.round(Number(unitsSource.travelling) || 0)))
+        },
+        patients: Math.max(0, Math.min(10000, Math.round(Number(value.details?.patients) || 0))),
+        prisoners: Math.max(0, Math.min(10000, Math.round(Number(value.details?.prisoners) || 0)))
+        };
+        const summary = operationalTimelineText(value.summary, 260);
+        if (!summary) return null;
+        return {
+        id: operationalTimelineText(value.id, 96) || `${timestamp}-${missionId || 'event'}`,
+        timestamp,
+        type,
+        category: OPERATIONAL_TIMELINE_CATEGORIES.has(String(value.category)) ? String(value.category) : type === 'completed' ? 'completion' : type === 'requirements' || type === 'stalled' ? 'resource' : type === 'response' ? 'response' : 'mission',
+        severity: OPERATIONAL_TIMELINE_SEVERITIES.has(String(value.severity)) ? String(value.severity) : 'info',
+        missionId,
+        caption: operationalTimelineText(value.caption, 180),
+        source: ['personal', 'alliance', 'unknown'].includes(String(value.source)) ? String(value.source) : 'unknown',
+        summary,
+        signature: operationalTimelineText(value.signature, 300),
+        details
+        };
+    }
+
+    function validateOperationalTimelineState(raw, now = Date.now()) {
+        let parsed = raw;
+        if (typeof raw === 'string') {
+        if (raw.length > 2_000_000) return [];
+        try { parsed = JSON.parse(raw); } catch (err) { return []; }
+        }
+        if (!parsed || Number(parsed.schema) !== OPERATIONAL_TIMELINE_SCHEMA || !Array.isArray(parsed.entries) || parsed.entries.length > OPERATIONAL_TIMELINE_LIMIT * 2) return [];
+        return parsed.entries
+        .map(entry => normaliseOperationalTimelineEntry(entry, now))
+        .filter(Boolean)
+        .sort((left, right) => right.timestamp - left.timestamp)
+        .slice(0, OPERATIONAL_TIMELINE_LIMIT);
+    }
+
+    function loadOperationalTimelineState() {
+        const candidates = [
+        gmGetValueSafe(SCRIPT.operationalTimelineState, null),
+        settingsLocalStorageGet(SCRIPT.operationalTimelineState)
+        ];
+        for (const candidate of candidates) {
+        let parsed = candidate;
+        if (typeof candidate === 'string') {
+            if (candidate.length > 2_000_000) continue;
+            try { parsed = JSON.parse(candidate); } catch (err) { continue; }
+        }
+        if (!parsed || Number(parsed.schema) !== OPERATIONAL_TIMELINE_SCHEMA || !Array.isArray(parsed.entries) || parsed.entries.length > OPERATIONAL_TIMELINE_LIMIT * 2) continue;
+        return validateOperationalTimelineState(parsed);
+        }
+        return [];
+    }
+
+    function saveOperationalTimelineState() {
+        operationalTimelineSavePending = false;
+        operationalTimelineSaveDueAt = 0;
+        const now = Date.now();
+        const entries = operationalTimelineEntries
+        .map(entry => normaliseOperationalTimelineEntry(entry, now))
+        .filter(Boolean)
+        .sort((left, right) => right.timestamp - left.timestamp)
+        .slice(0, OPERATIONAL_TIMELINE_LIMIT);
+        operationalTimelineEntries.splice(0, operationalTimelineEntries.length, ...entries);
+        const payload = JSON.stringify({ schema: OPERATIONAL_TIMELINE_SCHEMA, savedAt: now, version: SCRIPT.version, entries });
+        const durable = gmSetValueSafe(SCRIPT.operationalTimelineState, payload);
+        const local = settingsLocalStorageSet(SCRIPT.operationalTimelineState, payload);
+        return durable || local;
+    }
+
+    function scheduleOperationalTimelineSave(delay = OPERATIONAL_TIMELINE_SAVE_DELAY_MS) {
+        operationalTimelineSaveDueAt = Date.now() + Math.max(0, Number(delay) || 0);
+        operationalTimelineSavePending = true;
+        if (operationalTimelineSavePromise) return operationalTimelineSavePromise;
+        operationalTimelineSavePromise = (async () => {
+        await Promise.resolve();
+        while (operationalTimelineSavePending && !runtime.destroyed) {
+            const remaining = Math.max(0, operationalTimelineSaveDueAt - Date.now());
+            if (remaining > 0 && !await runtimeDelay(remaining)) break;
+            if (Date.now() < operationalTimelineSaveDueAt) continue;
+            saveOperationalTimelineState();
+        }
+        })().finally(() => { operationalTimelineSavePromise = null; });
+        return operationalTimelineSavePromise;
+    }
+
+    function recordOperationalTimelineEvent(value) {
+        const now = Date.now();
+        const entry = normaliseOperationalTimelineEntry({
+        ...value,
+        id: value?.id || `${now}-${++operationalTimelineEventCounter}`,
+        timestamp: Number(value?.timestamp) || now
+        }, now);
+        if (!entry) return null;
+        const duplicate = operationalTimelineEntries.find(item =>
+        item.signature && entry.signature && item.signature === entry.signature &&
+        Math.abs(item.timestamp - entry.timestamp) <= 30000
+        );
+        if (duplicate) return null;
+        operationalTimelineEntries.unshift(entry);
+        if (operationalTimelineEntries.length > OPERATIONAL_TIMELINE_LIMIT) operationalTimelineEntries.length = OPERATIONAL_TIMELINE_LIMIT;
+        scheduleOperationalTimelineSave();
+        return entry;
+    }
+
+    function operationalTimelineRequirements(snapshot) {
+        const requirements = resourceRequirementsFromSnapshot(snapshot);
+        return [
+        ...requirements.vehicles.map(item => ({ ...item, kind: 'vehicle', key: operationalPressureRequirementKey(item.name) })),
+        ...requirements.personnel.map(item => ({ ...item, kind: 'personnel', key: normaliseUkKnowledgeKey(item.name) || normaliseSearchText(item.name) || 'personnel' }))
+        ].map(normaliseOperationalTimelineRequirement).filter(Boolean);
+    }
+
+    function operationalTimelineSnapshotState(snapshot, now = Date.now()) {
+        const units = snapshot?.units || {};
+        const requirements = operationalTimelineRequirements(snapshot);
+        const stuck = missionStuckRecord(snapshot?.missionId, now);
+        return {
+        missionId: String(snapshot?.missionId || ''),
+        caption: operationalTimelineText(snapshot?.caption || `Mission ${snapshot?.missionId || ''}`, 180),
+        source: ['personal', 'alliance'].includes(snapshot?.source) ? snapshot.source : 'unknown',
+        requirements,
+        requirementSignature: requirements.map(item => `${item.kind}:${item.key}:${item.count}`).sort().join('|'),
+        units: {
+            total: Math.max(0, Number(units.total) || 0),
+            onScene: Math.max(0, Number(units.onScene) || 0),
+            travelling: Math.max(0, Number(units.travelling) || 0)
+        },
+        patients: Math.max(0, Number(snapshot?.patientsCount) || 0),
+        prisoners: Math.max(0, Number(snapshot?.prisonersCount) || 0),
+        stuck: Boolean(stuck?.isStuck),
+        lastSeen: now
+        };
+    }
+
+    function operationalTimelineRequirementSummary(requirements) {
+        const rows = (Array.isArray(requirements) ? requirements : []).slice(0, 4).map(item => `${item.count} ${item.name}`);
+        const extra = Math.max(0, (requirements?.length || 0) - rows.length);
+        return `${rows.join(', ')}${extra ? ` and ${extra} more` : ''}`;
+    }
+
+    function updateOperationalTimelineFromSnapshots(snapshots, now = Date.now()) {
+        const current = new Map();
+        for (const snapshot of snapshots.values()) {
+        if (!snapshot?.missionId) continue;
+        const next = operationalTimelineSnapshotState(snapshot, now);
+        current.set(next.missionId, next);
+        }
+        if (!operationalTimelineArmed) {
+        if (!current.size) return 0;
+        operationalTimelineMissionState = current;
+        operationalTimelineArmed = true;
+        return 0;
+        }
+
+        let recorded = 0;
+        for (const [missionId, next] of current) {
+        operationalTimelineAbsentSince.delete(missionId);
+        const previous = operationalTimelineMissionState.get(missionId);
+        const base = { missionId, caption: next.caption, source: next.source };
+        if (!previous) {
+            if (recordOperationalTimelineEvent({ ...base, type: 'mission', category: 'mission', severity: 'info', summary: 'Mission entered the live operational picture.', signature: `mission:${missionId}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+            if (next.requirements.length && recordOperationalTimelineEvent({ ...base, type: 'requirements', category: 'resource', severity: 'warning', summary: `Initial missing requirements: ${operationalTimelineRequirementSummary(next.requirements)}.`, signature: `requirements:${missionId}:${next.requirementSignature}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+            continue;
+        }
+        if (previous.requirementSignature !== next.requirementSignature) {
+            const summary = next.requirements.length
+            ? `Missing requirements updated: ${operationalTimelineRequirementSummary(next.requirements)}.`
+            : 'Exposed missing requirements cleared.';
+            if (recordOperationalTimelineEvent({ ...base, type: 'requirements', category: 'resource', severity: next.requirements.length ? 'warning' : 'good', summary, signature: `requirements:${missionId}:${next.requirementSignature || 'clear'}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+        }
+        if (previous.units.total !== next.units.total || previous.units.onScene !== next.units.onScene || previous.units.travelling !== next.units.travelling) {
+            let summary = `${next.units.total} personal unit${next.units.total === 1 ? '' : 's'} committed; ${next.units.onScene} on scene and ${next.units.travelling} responding.`;
+            if (previous.units.total === 0 && next.units.total > 0) summary = `Response committed: ${next.units.total} personal unit${next.units.total === 1 ? '' : 's'} assigned.`;
+            else if (next.units.onScene > previous.units.onScene) summary = `${next.units.onScene - previous.units.onScene} unit${next.units.onScene - previous.units.onScene === 1 ? '' : 's'} arrived; ${next.units.onScene}/${next.units.total} now on scene.`;
+            else if (next.units.total < previous.units.total) summary = `${previous.units.total - next.units.total} unit${previous.units.total - next.units.total === 1 ? '' : 's'} released; ${next.units.total} remain committed.`;
+            if (recordOperationalTimelineEvent({ ...base, type: 'response', category: 'response', severity: 'info', summary, signature: `response:${missionId}:${next.units.total}:${next.units.onScene}:${next.units.travelling}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+        }
+        if (previous.patients !== next.patients || previous.prisoners !== next.prisoners) {
+            const parts = [];
+            if (previous.patients !== next.patients) parts.push(`${next.patients} patient${next.patients === 1 ? '' : 's'}`);
+            if (previous.prisoners !== next.prisoners) parts.push(`${next.prisoners} prisoner${next.prisoners === 1 ? '' : 's'}`);
+            if (recordOperationalTimelineEvent({ ...base, type: 'casualty', category: 'mission', severity: next.patients || next.prisoners ? 'warning' : 'good', summary: `Mission demand updated: ${parts.join(' and ')}.`, signature: `casualty:${missionId}:${next.patients}:${next.prisoners}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+        }
+        if (!previous.stuck && next.stuck) {
+            if (recordOperationalTimelineEvent({ ...base, type: 'stalled', category: 'resource', severity: 'critical', summary: 'Mission crossed the configured no-progress threshold.', signature: `stalled:${missionId}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+        } else if (previous.stuck && !next.stuck) {
+            if (recordOperationalTimelineEvent({ ...base, type: 'recovered', category: 'mission', severity: 'good', summary: 'Mission progress resumed after a stalled period.', signature: `recovered:${missionId}:${Math.floor(now / 60000)}`, details: { requirements: next.requirements, units: next.units, patients: next.patients, prisoners: next.prisoners } })) recorded += 1;
+        }
+        }
+        for (const [missionId, previous] of operationalTimelineMissionState) {
+        if (current.has(missionId)) continue;
+        const absentSince = operationalTimelineAbsentSince.get(missionId);
+        if (!absentSince) {
+            operationalTimelineAbsentSince.set(missionId, now);
+            current.set(missionId, previous);
+            continue;
+        }
+        if (now - absentSince < 1000) {
+            current.set(missionId, previous);
+            continue;
+        }
+        operationalTimelineAbsentSince.delete(missionId);
+        if (recordOperationalTimelineEvent({ missionId, caption: previous.caption, source: previous.source, type: 'completed', category: 'completion', severity: 'good', summary: 'Mission left the live operational picture and is recorded as completed.', signature: `completed:${missionId}`, details: { requirements: previous.requirements, units: previous.units, patients: previous.patients, prisoners: previous.prisoners } })) recorded += 1;
+        }
+        operationalTimelineMissionState = current;
+        if (recorded && operationalPressureBoardOpen() && ['procurement', 'timeline'].includes(operationalIntelligenceView)) renderOperationalPressureBoard(true);
+        return recorded;
+    }
+
+    function calculateProcurementBrainModel(entries, pressureSnapshot, options = {}) {
+        const now = Number(options.now) || Date.now();
+        const windowDays = PROCUREMENT_WINDOW_OPTIONS.includes(Number(options.windowDays)) ? Number(options.windowDays) : 7;
+        const windowMs = windowDays * 24 * 60 * 60 * 1000;
+        const signals = new Map();
+        const ensureSignal = (kind, key, name) => {
+        const id = `${kind}:${key}`;
+        let signal = signals.get(id);
+        if (!signal) {
+            signal = { id, kind, key, name, historicalDemand: 0, weightedHistory: 0, events: 0, missionIds: new Set(), lastSeen: 0, currentDemand: 0, currentShortfall: 0, currentUnverified: 0, reserve: null, conflict: false };
+            signals.set(id, signal);
+        }
+        return signal;
+        };
+
+        for (const entry of Array.isArray(entries) ? entries : []) {
+        if (entry?.type !== 'requirements' && entry?.type !== 'stalled') continue;
+        const age = Math.max(0, now - Number(entry.timestamp || 0));
+        if (age > windowMs) continue;
+        const recency = Math.max(0.2, 1 - (age / windowMs) * 0.8);
+        for (const requirement of entry.details?.requirements || []) {
+            const clean = normaliseOperationalTimelineRequirement(requirement);
+            if (!clean) continue;
+            const signal = ensureSignal(clean.kind, clean.key, clean.name);
+            signal.name = clean.name;
+            signal.historicalDemand += clean.count;
+            signal.weightedHistory += clean.count * recency * (entry.type === 'stalled' ? 1.5 : 1);
+            signal.events += 1;
+            if (entry.missionId) signal.missionIds.add(String(entry.missionId));
+            signal.lastSeen = Math.max(signal.lastSeen, Number(entry.timestamp) || 0);
+        }
+        }
+
+        for (const group of pressureSnapshot?.resourcePressure?.groups || []) {
+        const signal = ensureSignal('vehicle', String(group.key || operationalPressureRequirementKey(group.name)), String(group.name || 'Required vehicle'));
+        signal.name = String(group.name || signal.name);
+        signal.currentDemand = Math.max(0, Number(group.demand) || 0);
+        signal.currentShortfall = Math.max(0, Number(group.shortfall) || 0);
+        signal.currentUnverified = Math.max(0, Number(group.unverified) || 0);
+        signal.reserve = Number.isFinite(Number(group.reserve)) ? Number(group.reserve) : null;
+        signal.conflict = Boolean(group.conflict);
+        for (const missionId of group.missionIds || []) signal.missionIds.add(String(missionId));
+        }
+
+        const recommendations = Array.from(signals.values()).map(signal => {
+        const repeatEvidence = signal.events >= 2 || signal.missionIds.size >= 2;
+        const currentRisk = signal.currentShortfall > 0 || signal.currentUnverified > 0 || signal.conflict || (signal.reserve !== null && signal.currentDemand > 0 && signal.reserve <= 1);
+        if (!repeatEvidence && !currentRisk && signal.weightedHistory < 2) return null;
+        const score = Math.round(
+            signal.weightedHistory * 8 +
+            signal.events * 3 +
+            signal.missionIds.size * 5 +
+            signal.currentShortfall * 35 +
+            signal.currentUnverified * 10 +
+            (signal.conflict ? 18 : 0) +
+            (signal.reserve !== null && signal.currentDemand > 0 && signal.reserve <= 0 ? 12 : 0)
+        );
+        const confidence = signal.currentShortfall > 0 && repeatEvidence ? 'high'
+            : signal.currentShortfall > 0 || signal.conflict || signal.events >= 3 ? 'medium'
+                : 'emerging';
+        const priority = signal.currentShortfall > 0 ? 'critical' : score >= 55 ? 'high' : 'watch';
+        const action = signal.kind === 'personnel'
+            ? 'Review recruitment levels and training coverage'
+            : signal.currentShortfall > 0
+                ? `Acquire or reposition at least ${signal.currentShortfall} matching unit${signal.currentShortfall === 1 ? '' : 's'}`
+                : signal.conflict
+                    ? 'Add or relocate reserve capacity for simultaneous demand'
+                    : confidence === 'emerging'
+                        ? 'Monitor repeated demand before purchasing'
+                        : 'Review fleet depth and station placement';
+        const evidence = [
+            signal.events ? `${signal.events} historical signal${signal.events === 1 ? '' : 's'}` : '',
+            signal.missionIds.size ? `${signal.missionIds.size} mission${signal.missionIds.size === 1 ? '' : 's'}` : '',
+            signal.currentShortfall ? `${signal.currentShortfall} live shortfall` : '',
+            signal.currentUnverified ? `${signal.currentUnverified} location-unverified` : '',
+            signal.conflict ? 'live fleet conflict' : '',
+            signal.reserve !== null && signal.currentDemand > 0 ? `${signal.reserve} current reserve` : ''
+        ].filter(Boolean).join(' · ');
+        return { ...signal, missionIds: Array.from(signal.missionIds), score, confidence, priority, action, evidence };
+        }).filter(Boolean).sort((left, right) =>
+        right.score - left.score ||
+        right.currentShortfall - left.currentShortfall ||
+        right.lastSeen - left.lastSeen ||
+        left.name.localeCompare(right.name)
+        );
+
+        return {
+        generatedAt: now,
+        windowDays,
+        recommendations,
+        critical: recommendations.filter(item => item.priority === 'critical').length,
+        high: recommendations.filter(item => item.priority === 'high').length,
+        evidenceEvents: (Array.isArray(entries) ? entries : []).filter(entry => now - Number(entry?.timestamp || 0) <= windowMs && ['requirements', 'stalled'].includes(entry?.type)).length,
+        learningSince: recommendations.reduce((minimum, item) => item.lastSeen ? Math.min(minimum, item.lastSeen) : minimum, now)
+        };
+    }
+
     function calculateOperationalPressureModel(missions, context, options = {}) {
         const now = Number(options.now) || Date.now();
         const radiusMi = Math.max(1, Number(options.radiusMi) || 25);
@@ -18814,6 +19421,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             reserve: group.recognisedIds.size - group.demand,
             confirmedReserve: group.candidateIds.size - group.demand,
             missionCount: group.missionIds.size,
+            missionIds: Array.from(group.missionIds),
             conflict: group.missionIds.size > 1 && group.demand > group.recognisedIds.size
         })).sort((left, right) =>
             right.shortfall - left.shortfall ||
@@ -22082,6 +22690,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         for (const key of notificationActiveEvents) if ((key.startsWith('patient:') || key.startsWith('stuck:')) && !nextNotificationEvents.has(key)) notificationActiveEvents.delete(key);
         nextNotificationEvents.forEach(key => notificationActiveEvents.add(key));
 
+        updateOperationalTimelineFromSnapshots(current, now);
+
         if (missionSnapshotReady) {
         for (const [missionId, previous] of previousSnapshots.entries()) {
             if (current.has(missionId)) continue;
@@ -22819,6 +23429,175 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             </section>`;
     }
 
+    function formatOperationalTimelineTimestamp(timestamp) {
+        try {
+        return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(timestamp));
+        } catch (err) {
+        return new Date(timestamp).toISOString().slice(5, 16).replace('T', ' ');
+        }
+    }
+
+    function operationalTimelineTypeMeta(type) {
+        return ({
+        mission: { label: 'NEW MISSION', icon: '◆' },
+        response: { label: 'RESPONSE', icon: '→' },
+        requirements: { label: 'REQUIREMENTS', icon: '▲' },
+        casualty: { label: 'CASUALTY', icon: '✚' },
+        stalled: { label: 'STALLED', icon: '!' },
+        recovered: { label: 'RECOVERED', icon: '↻' },
+        completed: { label: 'COMPLETED', icon: '✓' }
+        })[type] || { label: 'EVENT', icon: '•' };
+    }
+
+    function operationalTimelineFilteredEntries() {
+        const query = normaliseSearchText(operationalTimelineQuery);
+        return operationalTimelineEntries.filter(entry => {
+        if (operationalTimelineFilter !== 'all' && entry.category !== operationalTimelineFilter) return false;
+        if (!query) return true;
+        const requirements = (entry.details?.requirements || []).map(item => `${item.name} ${item.key}`).join(' ');
+        return normaliseSearchText(`${entry.missionId} ${entry.caption} ${entry.summary} ${requirements}`).includes(query);
+        });
+    }
+
+    function operationalTimelineEntryHtml(entry) {
+        const meta = operationalTimelineTypeMeta(entry.type);
+        const active = entry.missionId && liveMissionSnapshots.has(String(entry.missionId));
+        const requirements = entry.details?.requirements?.length
+        ? `<small>${escapeHtml(operationalTimelineRequirementSummary(entry.details.requirements))}</small>`
+        : '';
+        return `<article class="mcms-timeline-event" data-tone="${escapeHtml(entry.severity)}">
+            <div class="mcms-timeline-rail"><span>${escapeHtml(meta.icon)}</span></div>
+            <div class="mcms-timeline-copy">
+                <header><span>${escapeHtml(meta.label)}</span><time datetime="${new Date(entry.timestamp).toISOString()}">${escapeHtml(formatOperationalTimelineTimestamp(entry.timestamp))}</time></header>
+                <strong>${escapeHtml(entry.caption || (entry.missionId ? `Mission ${entry.missionId}` : 'Operational event'))}</strong>
+                <p>${escapeHtml(entry.summary)}</p>
+                ${requirements}
+            </div>
+            ${active ? `<button type="button" data-pressure-action="focus" data-mission-id="${escapeHtml(entry.missionId)}" title="Focus this active mission">FOCUS</button>` : ''}
+        </article>`;
+    }
+
+    function procurementRecommendationHtml(item) {
+        const known = item.kind === 'vehicle' && Boolean(ukKnowledgeLocalCapability(item.name, item.key));
+        const intel = item.kind === 'vehicle'
+        ? `<button class="mcms-knowledge-trigger" type="button" data-pressure-command="knowledge" data-requirement-name="${escapeHtml(item.name)}" data-requirement-key="${escapeHtml(item.key)}">${known ? 'UK INTEL' : 'CHECK CATALOGUE'}</button>`
+        : '';
+        const lastSeen = item.lastSeen ? ` · last signal ${formatOperationalTimelineTimestamp(item.lastSeen)}` : '';
+        return `<article class="mcms-procurement-card" data-priority="${escapeHtml(item.priority)}">
+            <header><span><b>${escapeHtml(item.priority)}</b><strong>${escapeHtml(item.name)}</strong></span><em>${item.score}</em></header>
+            <p>${escapeHtml(item.action)}</p>
+            <small>${escapeHtml(item.evidence || 'Current live evidence')}${escapeHtml(lastSeen)}</small>
+            <footer><span>${escapeHtml(item.confidence)} confidence · ${escapeHtml(item.kind)}</span>${intel}</footer>
+        </article>`;
+    }
+
+    function renderProcurementBrainView(snapshot = buildOperationalPressureSnapshot(false)) {
+        const board = operationalPressureBoardElement();
+        const panel = board?.querySelector('[data-pressure-view-panel="procurement"]');
+        if (!panel) return null;
+        const model = calculateProcurementBrainModel(operationalTimelineEntries, snapshot, { windowDays: procurementWindowDays });
+        updateUiSetText(panel.querySelector('[data-procurement-total]'), model.recommendations.length);
+        updateUiSetText(panel.querySelector('[data-procurement-critical]'), model.critical);
+        updateUiSetText(panel.querySelector('[data-procurement-high]'), model.high);
+        updateUiSetText(panel.querySelector('[data-procurement-evidence]'), model.evidenceEvents);
+        panel.querySelectorAll('[data-pressure-command="procurement-window"]').forEach(button => {
+        updateUiToggleClass(button, 'mcms-active', Number(button.dataset.windowDays) === model.windowDays);
+        updateUiSetAttribute(button, 'aria-pressed', Number(button.dataset.windowDays) === model.windowDays ? 'true' : 'false');
+        });
+        const list = panel.querySelector('[data-procurement-list]');
+        const html = model.recommendations.length
+        ? model.recommendations.slice(0, 20).map(procurementRecommendationHtml).join('')
+        : '<div class="mcms-pressure-empty">No purchase recommendation has enough evidence yet. Live confirmed shortages appear immediately; historical confidence grows as MissionChief exposes requirement changes during play.</div>';
+        setInnerHtmlIfChanged(list, html, `procurement:${model.windowDays}:${model.generatedAt}:${model.recommendations.map(item => `${item.id}:${item.score}`).join('|')}`);
+        updateUiSetText(panel.querySelector('[data-procurement-status]'), `${model.evidenceEvents} learning event${model.evidenceEvents === 1 ? '' : 's'} in ${model.windowDays} day${model.windowDays === 1 ? '' : 's'} · ${snapshot.resourcePressure.shortfall} live confirmed shortfall · local evidence only`);
+        return model;
+    }
+
+    function renderOperationalTimelineView() {
+        const board = operationalPressureBoardElement();
+        const panel = board?.querySelector('[data-pressure-view-panel="timeline"]');
+        if (!panel) return null;
+        const filtered = operationalTimelineFilteredEntries();
+        const missionCount = new Set(operationalTimelineEntries.map(entry => entry.missionId).filter(Boolean)).size;
+        const completed = operationalTimelineEntries.filter(entry => entry.type === 'completed').length;
+        const resourceSignals = operationalTimelineEntries.filter(entry => ['requirements', 'stalled'].includes(entry.type)).length;
+        updateUiSetText(panel.querySelector('[data-timeline-events]'), operationalTimelineEntries.length);
+        updateUiSetText(panel.querySelector('[data-timeline-missions]'), missionCount);
+        updateUiSetText(panel.querySelector('[data-timeline-completed]'), completed);
+        updateUiSetText(panel.querySelector('[data-timeline-signals]'), resourceSignals);
+        panel.querySelectorAll('[data-pressure-command="timeline-filter"]').forEach(button => {
+        const active = button.dataset.timelineFilter === operationalTimelineFilter;
+        updateUiToggleClass(button, 'mcms-active', active);
+        updateUiSetAttribute(button, 'aria-pressed', active ? 'true' : 'false');
+        });
+        const input = panel.querySelector('[data-operational-timeline-search]');
+        if (input && document.activeElement !== input) updateUiSetProperty(input, 'value', operationalTimelineQuery);
+        const list = panel.querySelector('[data-timeline-list]');
+        const visible = filtered.slice(0, OPERATIONAL_TIMELINE_RENDER_LIMIT);
+        const html = visible.length
+        ? visible.map(operationalTimelineEntryHtml).join('')
+        : `<div class="mcms-pressure-empty">${operationalTimelineEntries.length ? 'No timeline events match this filter.' : 'Timeline learning begins with the next meaningful mission change. The first scan establishes a quiet baseline and does not flood the history.'}</div>`;
+        setInnerHtmlIfChanged(list, html, `timeline:${operationalTimelineFilter}:${operationalTimelineQuery}:${visible.map(entry => entry.id).join('|')}`);
+        updateUiSetText(panel.querySelector('[data-timeline-status]'), `${filtered.length} matching · showing ${visible.length} · ${operationalTimelineEntries.length}/${OPERATIONAL_TIMELINE_LIMIT} retained · automatic 30-day expiry`);
+        return { filtered: filtered.length, visible: visible.length, total: operationalTimelineEntries.length };
+    }
+
+    function syncOperationalIntelligenceView(board = operationalPressureBoardElement()) {
+        if (!board) return;
+        for (const button of board.querySelectorAll('[data-pressure-command="view"]')) {
+        const active = button.dataset.pressureView === operationalIntelligenceView;
+        updateUiToggleClass(button, 'mcms-active', active);
+        updateUiSetAttribute(button, 'aria-selected', active ? 'true' : 'false');
+        updateUiSetProperty(button, 'tabIndex', active ? 0 : -1);
+        }
+        for (const panel of board.querySelectorAll('[data-pressure-view-panel]')) {
+        const active = panel.dataset.pressureViewPanel === operationalIntelligenceView;
+        updateUiSetProperty(panel, 'hidden', !active);
+        updateUiSetAttribute(panel, 'aria-hidden', active ? 'false' : 'true');
+        }
+        const subtitles = {
+        live: 'Shared live command picture',
+        procurement: 'Evidence-ranked fleet and personnel planning',
+        timeline: 'Persistent local mission event history'
+        };
+        updateUiSetText(board.querySelector('.mcms-pressure-heading span'), subtitles[operationalIntelligenceView]);
+    }
+
+    function setOperationalIntelligenceView(view, { refresh = true } = {}) {
+        const next = ['live', 'procurement', 'timeline'].includes(String(view)) ? String(view) : 'live';
+        operationalIntelligenceView = next;
+        const board = createOperationalPressureBoard();
+        syncOperationalIntelligenceView(board);
+        if (next === 'procurement') toolkitAnalyticsRecordFeature('procurementBrain');
+        else if (next === 'timeline') toolkitAnalyticsRecordFeature('operationalTimeline');
+        if (refresh) renderOperationalPressureBoard(true);
+        return next;
+    }
+
+    function exportOperationalTimeline() {
+        const exportedAt = new Date();
+        const payload = {
+        format: 'MissionChief Map Command Toolkit Operational Timeline',
+        schema: OPERATIONAL_TIMELINE_SCHEMA,
+        version: SCRIPT.version,
+        exportedAt: exportedAt.toISOString(),
+        retentionDays: 30,
+        entries: operationalTimelineEntries.map(entry => clonePlainData(entry))
+        };
+        downloadToolkitSettingsBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `missionchief-operational-timeline-${localIsoDate(exportedAt)}.json`);
+        showToast(`${operationalTimelineEntries.length} timeline event${operationalTimelineEntries.length === 1 ? '' : 's'} exported`);
+    }
+
+    function clearOperationalTimeline() {
+        if (!operationalTimelineEntries.length) { showToast('Operational Timeline is already empty'); return false; }
+        if (!pageWindow.confirm('Clear the entire local Operational Timeline? Procurement Brain will immediately lose its historical learning evidence.')) return false;
+        operationalTimelineEntries.splice(0, operationalTimelineEntries.length);
+        saveOperationalTimelineState();
+        renderOperationalPressureBoard(true);
+        showToast('Operational Timeline and Procurement learning history cleared');
+        return true;
+    }
+
     function createOperationalPressureBoard() {
         let board = operationalPressureBoardElement();
         if (board) return board;
@@ -22834,24 +23613,72 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                     <button class="mcms-pressure-close" type="button" data-pressure-command="close" title="Close Operational Pressure Board" aria-label="Close Operational Pressure Board">×</button>
                 </div>
             </div>
-            <div class="mcms-pressure-meta"><span data-pressure-scope>Loading mission scope…</span><span data-pressure-updated>Updated —</span></div>
-            <div class="mcms-pressure-hero" data-pressure-severity="clear">
-                <span class="mcms-pressure-signal" data-pressure-signal>No active pressure</span>
-                <strong data-pressure-summary>Building operational picture…</strong>
-            </div>
-            <div class="mcms-pressure-kpis">
-                <span><b data-pressure-missions>0</b>Active missions</span>
-                <span><b data-pressure-act-now>0</b>Act now</span>
-                <span><b data-pressure-shortfall>0</b>Resource shortfall</span>
-                <span><b data-pressure-transports>0</b>Transports</span>
-            </div>
-            <div class="mcms-pressure-body" data-pressure-body></div>
+            <nav class="mcms-pressure-view-tabs" role="tablist" aria-label="Operational intelligence views">
+                <button id="mcms-pressure-tab-live" type="button" role="tab" data-pressure-command="view" data-pressure-view="live" aria-controls="mcms-pressure-panel-live" aria-selected="true">LIVE PRESSURE</button>
+                <button id="mcms-pressure-tab-procurement" type="button" role="tab" data-pressure-command="view" data-pressure-view="procurement" aria-controls="mcms-pressure-panel-procurement" aria-selected="false">PROCUREMENT</button>
+                <button id="mcms-pressure-tab-timeline" type="button" role="tab" data-pressure-command="view" data-pressure-view="timeline" aria-controls="mcms-pressure-panel-timeline" aria-selected="false">TIMELINE</button>
+            </nav>
+            <section id="mcms-pressure-panel-live" class="mcms-pressure-view-panel" role="tabpanel" aria-labelledby="mcms-pressure-tab-live" data-pressure-view-panel="live">
+                <div class="mcms-pressure-meta"><span data-pressure-scope>Loading mission scope…</span><span data-pressure-updated>Updated —</span></div>
+                <div class="mcms-pressure-hero" data-pressure-severity="clear">
+                    <span class="mcms-pressure-signal" data-pressure-signal>No active pressure</span>
+                    <strong data-pressure-summary>Building operational picture…</strong>
+                </div>
+                <div class="mcms-pressure-kpis">
+                    <span><b data-pressure-missions>0</b>Active missions</span>
+                    <span><b data-pressure-act-now>0</b>Act now</span>
+                    <span><b data-pressure-shortfall>0</b>Resource shortfall</span>
+                    <span><b data-pressure-transports>0</b>Transports</span>
+                </div>
+                <div class="mcms-pressure-body" data-pressure-body></div>
+                <div class="mcms-pressure-status" data-operational-sitrep-status data-tone="neutral">Operational SITREP ready for manual posting.</div>
+            </section>
+            <section id="mcms-pressure-panel-procurement" class="mcms-pressure-view-panel" role="tabpanel" aria-labelledby="mcms-pressure-tab-procurement" data-pressure-view-panel="procurement" aria-hidden="true" hidden>
+                <div class="mcms-intelligence-intro"><span>PROCUREMENT BRAIN</span><strong>Turn repeated operational pressure into an evidence-ranked capacity plan.</strong><p>Live shortages lead. Historical requirement and stall signals build confidence locally without buying, moving or dispatching anything.</p></div>
+                <div class="mcms-pressure-kpis">
+                    <span><b data-procurement-total>0</b>Recommendations</span>
+                    <span><b data-procurement-critical>0</b>Critical</span>
+                    <span><b data-procurement-high>0</b>High</span>
+                    <span><b data-procurement-evidence>0</b>Evidence events</span>
+                </div>
+                <div class="mcms-procurement-toolbar" aria-label="Procurement evidence window">
+                    <span>LEARNING WINDOW</span>
+                    <div>
+                        <button type="button" data-pressure-command="procurement-window" data-window-days="1" aria-pressed="false">24H</button>
+                        <button type="button" data-pressure-command="procurement-window" data-window-days="7" aria-pressed="true">7D</button>
+                        <button type="button" data-pressure-command="procurement-window" data-window-days="30" aria-pressed="false">30D</button>
+                    </div>
+                </div>
+                <div class="mcms-procurement-list" data-procurement-list aria-live="polite"></div>
+                <div class="mcms-pressure-status" data-procurement-status data-tone="neutral">Building local procurement evidence…</div>
+            </section>
+            <section id="mcms-pressure-panel-timeline" class="mcms-pressure-view-panel" role="tabpanel" aria-labelledby="mcms-pressure-tab-timeline" data-pressure-view-panel="timeline" aria-hidden="true" hidden>
+                <div class="mcms-intelligence-intro"><span>OPERATIONAL TIMELINE</span><strong>A durable, searchable account of meaningful mission change.</strong><p>The first scan is a quiet baseline. New missions, responses, demand changes, stalls, recoveries and completions are retained locally for up to 30 days.</p></div>
+                <div class="mcms-pressure-kpis">
+                    <span><b data-timeline-events>0</b>Events</span>
+                    <span><b data-timeline-missions>0</b>Missions</span>
+                    <span><b data-timeline-completed>0</b>Completed</span>
+                    <span><b data-timeline-signals>0</b>Resource signals</span>
+                </div>
+                <div class="mcms-timeline-toolbar">
+                    <div class="mcms-timeline-filters" aria-label="Timeline event filter">
+                        <button type="button" data-pressure-command="timeline-filter" data-timeline-filter="all" aria-pressed="true">ALL</button>
+                        <button type="button" data-pressure-command="timeline-filter" data-timeline-filter="mission" aria-pressed="false">MISSION</button>
+                        <button type="button" data-pressure-command="timeline-filter" data-timeline-filter="response" aria-pressed="false">RESPONSE</button>
+                        <button type="button" data-pressure-command="timeline-filter" data-timeline-filter="resource" aria-pressed="false">RESOURCE</button>
+                        <button type="button" data-pressure-command="timeline-filter" data-timeline-filter="completion" aria-pressed="false">COMPLETE</button>
+                    </div>
+                    <label class="mcms-timeline-search"><span>SEARCH</span><input type="search" maxlength="120" autocomplete="off" data-operational-timeline-search placeholder="Mission, event or requirement"></label>
+                    <div class="mcms-timeline-actions"><button type="button" data-pressure-command="timeline-export">EXPORT JSON</button><button type="button" data-pressure-command="timeline-clear">CLEAR HISTORY</button></div>
+                </div>
+                <div class="mcms-timeline-list" data-timeline-list aria-live="polite"></div>
+                <div class="mcms-pressure-status" data-timeline-status data-tone="neutral">Timeline ready.</div>
+            </section>
             <section class="mcms-knowledge-panel" data-uk-knowledge-panel role="dialog" aria-modal="true" aria-label="MissionChief UK requirement intelligence" aria-hidden="true" hidden>
                 <header><div><strong>MISSIONCHIEF UK INTELLIGENCE</strong><span>Verified units, crew and training</span></div><button type="button" data-pressure-command="knowledge-close" aria-label="Close UK requirement intelligence">×</button></header>
                 <div class="mcms-knowledge-body" data-uk-knowledge-body aria-live="polite"></div>
             </section>
-            <div class="mcms-pressure-status" data-operational-sitrep-status data-tone="neutral">Operational SITREP ready for manual posting.</div>
-            <div class="mcms-pressure-foot">Read-only intelligence. Focus, Open, Pin and UK Intel never select or dispatch vehicles.</div>`, 'pressure-board-shell-v2');
+            <div class="mcms-pressure-foot">Read-only intelligence. Focus, Open, Pin and UK Intel never select or dispatch vehicles; Procurement Brain never purchases or moves them.</div>`, 'pressure-board-shell-v3');
         board.addEventListener('click', event => {
             event.stopPropagation();
             const command = closestEventTarget(event, '[data-pressure-command]');
@@ -22860,6 +23687,19 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                 if (command.dataset.pressureCommand === 'close') closeOperationalPressureBoard();
                 else if (command.dataset.pressureCommand === 'refresh') refreshOperationalPressureBoard(true);
                 else if (command.dataset.pressureCommand === 'sitrep') postOperationalSitrep();
+                else if (command.dataset.pressureCommand === 'view') setOperationalIntelligenceView(command.dataset.pressureView);
+                else if (command.dataset.pressureCommand === 'procurement-window') {
+                    const days = Number(command.dataset.windowDays);
+                    if (PROCUREMENT_WINDOW_OPTIONS.includes(days)) procurementWindowDays = days;
+                    renderProcurementBrainView();
+                }
+                else if (command.dataset.pressureCommand === 'timeline-filter') {
+                    const filter = String(command.dataset.timelineFilter || 'all');
+                    operationalTimelineFilter = filter === 'all' || OPERATIONAL_TIMELINE_CATEGORIES.has(filter) ? filter : 'all';
+                    renderOperationalTimelineView();
+                }
+                else if (command.dataset.pressureCommand === 'timeline-export') exportOperationalTimeline();
+                else if (command.dataset.pressureCommand === 'timeline-clear') clearOperationalTimeline();
                 else if (command.dataset.pressureCommand === 'knowledge') openUkKnowledgeDossier(command.dataset.requirementName, command.dataset.requirementKey, command);
                 else if (command.dataset.pressureCommand === 'knowledge-close') closeUkKnowledgeDossier();
                 else if (command.dataset.pressureCommand === 'knowledge-refresh' && ukKnowledgeActiveRequirement) openUkKnowledgeDossier(ukKnowledgeActiveRequirement.name, ukKnowledgeActiveRequirement.key, null, true);
@@ -22873,6 +23713,22 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             if (action.dataset.pressureAction === 'focus') focusMissionById(missionId, false);
             else if (action.dataset.pressureAction === 'open') focusMissionById(missionId, true);
             else if (action.dataset.pressureAction === 'pin') toggleOperationalPressurePin(missionId);
+        });
+        board.addEventListener('input', event => {
+            const input = closestEventTarget(event, '[data-operational-timeline-search]');
+            if (!input) return;
+            operationalTimelineQuery = String(input.value || '').slice(0, 120);
+            renderOperationalTimelineView();
+        });
+        board.addEventListener('keydown', event => {
+            const tab = closestEventTarget(event, '[data-pressure-command="view"]');
+            if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            const tabs = Array.from(board.querySelectorAll('[data-pressure-command="view"]'));
+            const current = Math.max(0, tabs.indexOf(tab));
+            const index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+            event.preventDefault();
+            setOperationalIntelligenceView(tabs[index]?.dataset.pressureView);
+            tabs[index]?.focus?.({ preventScroll: true });
         });
         ['dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
             board.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
@@ -22893,6 +23749,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
             return;
         }
+        syncOperationalIntelligenceView(board);
         updateUiSetDataset(board, 'severity', snapshot.severity);
         const hero = board.querySelector('.mcms-pressure-hero');
         updateUiSetDataset(hero, 'pressureSeverity', snapshot.severity);
@@ -22910,6 +23767,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         updateUiSetProperty(refresh, 'disabled', operationalPressureRefreshBusy);
         updateUiSetProperty(sitrep, 'disabled', operationalSitrepBusy);
         updateUiToggleClass(board, 'mcms-pressure-loading', operationalPressureRefreshBusy);
+        if (operationalIntelligenceView === 'procurement') renderProcurementBrainView(snapshot);
+        else if (operationalIntelligenceView === 'timeline') renderOperationalTimelineView();
         setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
     }
 
@@ -22951,7 +23810,17 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             closeOperationalPressureBoard();
             return;
         }
-        toolkitAnalyticsRecordFeature('pressureBoard');
+        openOperationalIntelligenceView('live');
+    }
+
+    function openOperationalIntelligenceView(view = 'live') {
+        const board = createOperationalPressureBoard();
+        const next = ['live', 'procurement', 'timeline'].includes(String(view)) ? String(view) : 'live';
+        const opening = !board.classList.contains('mcms-open');
+        operationalIntelligenceView = next;
+        if (opening) toolkitAnalyticsRecordFeature('pressureBoard');
+        if (next === 'procurement') toolkitAnalyticsRecordFeature('procurementBrain');
+        else if (next === 'timeline') toolkitAnalyticsRecordFeature('operationalTimeline');
         const vehicleStatus = document.querySelector(`[id="${SCRIPT.vehicleStatusId}"]`);
         if (vehicleStatus?.classList.contains('mcms-open')) {
             vehicleStatus.classList.remove('mcms-open');
@@ -22959,11 +23828,18 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         }
         board.classList.add('mcms-open');
         board.setAttribute('aria-hidden', 'false');
+        syncOperationalIntelligenceView(board);
         positionOperationalPressureBoard(board);
         updateUI();
         renderOperationalPressureBoard(true);
-        refreshOperationalPressureBoard(false);
+        if (next === 'timeline') {
+            refreshMissionSnapshots();
+            renderOperationalTimelineView();
+        } else {
+            refreshOperationalPressureBoard(false);
+        }
         board.querySelector('.mcms-pressure-close')?.focus?.({ preventScroll: true });
+        return board;
     }
 
     function toggleOperationalPressurePin(missionId) {
@@ -31059,6 +31935,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         add('session-cleanup', 'Open Session Cleanup', 'Preview and clear only temporary Toolkit session state', 'maintenance temporary stale notifications effects cache preserve settings', () => openSessionCleanup(), true);
         add('safe-mode', `${state.safeMode.enabled ? 'Exit' : 'Enter'} Toolkit Safe Mode`, 'Temporarily suspend optional modules without changing their settings', 'diagnose troubleshoot restore recovery', () => setToolkitSafeMode(!state.safeMode.enabled), true);
         add('pressure-board', `${operationalPressureBoardOpen() ? 'Close' : 'Open'} Operational Pressure Board`, 'Live demand and response pressure across active missions', 'mission board dashboard demand radar', () => toggleOperationalPressureBoard(), true);
+        add('procurement-brain', 'Open Procurement Brain', 'Evidence-ranked fleet and personnel capacity recommendations', 'purchase buying fleet stations shortage history demand planning', () => openOperationalIntelligenceView('procurement'), true);
+        add('operational-timeline', 'Open Operational Timeline', 'Search, filter and export meaningful local mission history', 'mission events response arrival requirements stalled recovery completed history export', () => openOperationalIntelligenceView('timeline'), true);
         add('vehicle-codes', `${commandExperienceElement(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ? 'Close' : 'Open'} Vehicle Code Status`, 'Inspect current personal-unit availability by FMS code', 'vehicles units availability status fms codes', () => toggleVehicleCodeStatus(), true);
         add('fullscreen', `${state.fullscreenMap ? 'Exit' : 'Enter'} Full-Screen Map`, `Map full-screen mode · currently ${state.fullscreenMap ? 'on' : 'off'}`, 'fullscreen maximise maximize restore', () => setMapFullscreen(!state.fullscreenMap), true);
         add('map-measure', `${mapMeasureRuntime.active ? 'Return to' : 'Open'} Drawing`, 'Measure in kilometres and add temporary lines, arrows, freehand sketches, shapes, zones, text and markers', 'drawing draw measure ruler range kilometres km area line arrow circle rectangle polygon zone label marker freehand', () => startMapMeasure(), true);
@@ -32545,6 +33423,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                 <div class="mcms-operational-pressure-summary" data-operational-pressure-summary><strong>Building command picture…</strong><span>Open the board to reconcile mission demand against the available fleet.</span></div>
                 <div class="mcms-grid-2">
                     <button class="mcms-small-btn" type="button" data-action="open-pressure-board">Open Pressure Board</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-procurement-brain">Procurement Brain</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-operational-timeline">Operational Timeline</button>
                     <button class="mcms-small-btn" type="button" data-action="refresh-pressure-board">Refresh Intelligence</button>
                 </div>
                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="post-operational-sitrep">Generate &amp; Post Operational SITREP</button>
@@ -32929,6 +33809,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
         if (action === 'open-pressure-board') { toggleOperationalPressureBoard(); return; }
+        if (action === 'open-procurement-brain') { openOperationalIntelligenceView('procurement'); return; }
+        if (action === 'open-operational-timeline') { openOperationalIntelligenceView('timeline'); return; }
         if (action === 'open-unit-locator') { openUnitLocator(); return; }
         if (action === 'open-session-cleanup') { openSessionCleanup(); return; }
         if (action === 'refresh-pressure-board') { refreshOperationalPressureBoard(true); return; }

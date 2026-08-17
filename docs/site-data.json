@@ -108,6 +108,44 @@
             "discord",
             "shortcut"
           ]
+        },
+        {
+          "name": "Procurement Brain",
+          "summary": "Ranks capacity decisions from current fleet pressure and repeated local mission evidence without making purchases or moving units.",
+          "details": [
+            "Live confirmed shortages lead the ranking",
+            "24-hour, 7-day and 30-day evidence windows",
+            "Vehicle acquisition and repositioning guidance",
+            "Personnel recruitment and training review signals",
+            "Confidence, priority and supporting evidence",
+            "Read-only recommendations with UK unit intelligence"
+          ],
+          "visual": "procurement-brain",
+          "tags": [
+            "missions",
+            "vehicles",
+            "personnel",
+            "planning"
+          ]
+        },
+        {
+          "name": "Operational Timeline",
+          "summary": "Keeps a bounded local record of meaningful mission changes for search, review and export.",
+          "details": [
+            "Quiet first-scan baseline",
+            "New mission, response, demand, stall, recovery and completion events",
+            "Mission, response, resource and completion filters",
+            "Search and active-mission focus",
+            "JSON export and explicit clearing",
+            "1,500-event and 30-day retention bounds"
+          ],
+          "visual": "operational-timeline",
+          "tags": [
+            "missions",
+            "history",
+            "search",
+            "export"
+          ]
         }
       ]
     },

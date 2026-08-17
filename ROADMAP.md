@@ -28,9 +28,11 @@ This roadmap separates verified infrastructure, active Toolkit development and r
 
 ### Operational intelligence
 
+- Refine Procurement Brain confidence and station-placement evidence as more bounded local history becomes available.
+- Extend Operational Timeline event coverage only where MissionChief already exposes authoritative state changes.
 - Continue Mission Age Watch, Critical View, Mission Inspector and transport-state refinement.
 - Expand live selector resilience when MissionChief changes markup.
-- Preserve deferred startup and on-demand interface construction.
+- Preserve deferred startup, bounded 30-day retention and on-demand interface construction without new polling.
 
 ### Performance
 

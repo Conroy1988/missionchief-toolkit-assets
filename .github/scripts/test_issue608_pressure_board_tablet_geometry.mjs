@@ -64,9 +64,14 @@ assert.match(
   "Pressure Board is not repositioned when the touch viewport changes",
 );
 assert.match(
-  extractFunction("toggleOperationalPressureBoard"),
+  extractFunction("openOperationalIntelligenceView"),
   /board\.classList\.add\('mcms-open'\);[\s\S]*?positionOperationalPressureBoard\(board\);/u,
   "Pressure Board is not positioned when it opens",
+);
+assert.match(
+  extractFunction("toggleOperationalPressureBoard"),
+  /openOperationalIntelligenceView\('live'\)/u,
+  "The B shortcut no longer delegates to the positioned Live Pressure view",
 );
 
 const properties = new Map();

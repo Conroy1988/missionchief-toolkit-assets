@@ -66,6 +66,8 @@ def main() -> int:
         assert guard in timeline, f"Missing bounded Timeline guard: {guard}"
     assert "setInterval" not in timeline
     assert "MutationObserver" not in timeline
+    assert "runtimeSetTimeout(" not in timeline
+    assert "runtimeDelay(" in timeline
     assert "runtimeFetch(" not in timeline and "fetch(" not in timeline
 
     model = section(source, "    function calculateProcurementBrainModel(", "    function calculateOperationalPressureModel(")

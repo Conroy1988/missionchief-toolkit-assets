@@ -1631,7 +1631,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let operationalPressureCache = { key: '', snapshot: null };
     let operationalPressureRefreshBusy = false;
     const operationalTimelineEntries = loadOperationalTimelineState();
-    let operationalTimelineSaveTimer = null;
+    let operationalTimelineSavePending = false;
+    let operationalTimelineSaveDueAt = 0;
+    let operationalTimelineSavePromise = null;
     let operationalTimelineArmed = false;
     let operationalTimelineMissionState = new Map();
     const operationalTimelineAbsentSince = new Map();
@@ -1641,10 +1643,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let operationalTimelineQuery = '';
     let procurementWindowDays = 7;
     runtime.cleanupCallbacks.push(() => {
-        const pending = operationalTimelineSaveTimer !== null;
-        runtimeClearTimeout(operationalTimelineSaveTimer);
-        operationalTimelineSaveTimer = null;
-        if (pending) saveOperationalTimelineState();
+        if (operationalTimelineSavePending) saveOperationalTimelineState();
+        operationalTimelineSavePending = false;
+        operationalTimelineSaveDueAt = 0;
+        operationalTimelineSavePromise = null;
     });
     let operationalSitrepBusy = false;
     let operationalSitrepStatus = 'Operational SITREP ready for manual posting.';
@@ -19001,8 +19003,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
     }
 
     function saveOperationalTimelineState() {
-        runtimeClearTimeout(operationalTimelineSaveTimer);
-        operationalTimelineSaveTimer = null;
+        operationalTimelineSavePending = false;
+        operationalTimelineSaveDueAt = 0;
         const now = Date.now();
         const entries = operationalTimelineEntries
         .map(entry => normaliseOperationalTimelineEntry(entry, now))
@@ -19017,8 +19019,19 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
     }
 
     function scheduleOperationalTimelineSave(delay = OPERATIONAL_TIMELINE_SAVE_DELAY_MS) {
-        runtimeClearTimeout(operationalTimelineSaveTimer);
-        operationalTimelineSaveTimer = runtimeSetTimeout(saveOperationalTimelineState, Math.max(0, Number(delay) || 0));
+        operationalTimelineSaveDueAt = Date.now() + Math.max(0, Number(delay) || 0);
+        operationalTimelineSavePending = true;
+        if (operationalTimelineSavePromise) return operationalTimelineSavePromise;
+        operationalTimelineSavePromise = (async () => {
+        await Promise.resolve();
+        while (operationalTimelineSavePending && !runtime.destroyed) {
+            const remaining = Math.max(0, operationalTimelineSaveDueAt - Date.now());
+            if (remaining > 0 && !await runtimeDelay(remaining)) break;
+            if (Date.now() < operationalTimelineSaveDueAt) continue;
+            saveOperationalTimelineState();
+        }
+        })().finally(() => { operationalTimelineSavePromise = null; });
+        return operationalTimelineSavePromise;
     }
 
     function recordOperationalTimelineEvent(value) {

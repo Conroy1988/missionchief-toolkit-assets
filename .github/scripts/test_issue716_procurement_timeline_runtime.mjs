@@ -75,6 +75,41 @@ this.__probe = {
     model: calculateProcurementBrainModel,
 };`, context, { filename: 'issue716-procurement-timeline-runtime.js' });
 
+let persistenceClock = now;
+let persistenceSaves = 0;
+const persistenceDelays = [];
+let persistenceContext;
+persistenceContext = vm.createContext({
+    Math,
+    Number,
+    Promise,
+    Date: { now: () => persistenceClock },
+    OPERATIONAL_TIMELINE_SAVE_DELAY_MS: 500,
+    operationalTimelineSavePending: false,
+    operationalTimelineSaveDueAt: 0,
+    operationalTimelineSavePromise: null,
+    runtime: { destroyed: false },
+    runtimeDelay: async delay => {
+        persistenceDelays.push(delay);
+        persistenceClock += delay;
+        return true;
+    },
+    saveOperationalTimelineState: () => {
+        persistenceSaves += 1;
+        persistenceContext.operationalTimelineSavePending = false;
+        persistenceContext.operationalTimelineSaveDueAt = 0;
+    },
+});
+vm.runInContext(`${extractFunction('scheduleOperationalTimelineSave')}
+this.__schedule = scheduleOperationalTimelineSave;`, persistenceContext, { filename: 'issue716-timeline-persistence-runtime.js' });
+const firstPersistence = persistenceContext.__schedule(500);
+const rescheduledPersistence = persistenceContext.__schedule(900);
+assert.strictEqual(rescheduledPersistence, firstPersistence, 'Timeline persistence created more than one pending save');
+await firstPersistence;
+assert.deepEqual(persistenceDelays, [900], 'Timeline persistence did not debounce to the latest deadline');
+assert.equal(persistenceSaves, 1, 'Timeline persistence did not flush exactly once');
+assert.equal(persistenceContext.operationalTimelineSavePromise, null, 'Timeline persistence did not release its completed promise');
+
 const event = (overrides = {}) => ({
     id: `event-${Math.random()}`,
     timestamp: now,

@@ -4998,6 +4998,56 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             border:1px solid var(--mcms-pressure-line) !important;
             border-radius:10px !important;
             background:rgba(0,0,0,.18) !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-bar {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-top:6px !important;
+            padding:6px 7px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:rgba(0,0,0,.13) !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-bar > span {
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:900 !important;
+            letter-spacing:.3px !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-bar > span b {
+            color:var(--mcms-pressure-text) !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-controls {
+            display:flex !important;
+            align-items:center !important;
+            gap:5px !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-toggle {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            gap:6px !important;
+            min-height:32px !important;
+            padding:5px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            background:rgba(255,255,255,.052) !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:950 !important;
+            letter-spacing:.35px !important;
+            cursor:pointer !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-toggle b {
+            min-width:28px !important;
+            padding:3px 5px !important;
+            border-radius:999px !important;
+            background:rgba(255,255,255,.08) !important;
+            color:var(--mcms-pressure-muted) !important;
+            text-align:center !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-toggle.mcms-active {
+            border-color:rgba(var(--mcms-pressure-accent-rgb),.60) !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.16) !important;
+            color:var(--mcms-pressure-accent) !important;
+        }#mc-map-command-toolkit-pressure-board .mcms-pressure-scope-toggle.mcms-active b {
+            background:var(--mcms-pressure-accent) !important;
+            color:#071016 !important;
         }#mc-map-command-toolkit-pressure-board .mcms-pressure-view-tabs button,
         #mc-map-command-toolkit-pressure-board .mcms-procurement-toolbar button,
         #mc-map-command-toolkit-pressure-board .mcms-timeline-filters button,
@@ -5275,6 +5325,12 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             flex-direction:column !important;
             gap:2px !important;
             font-size:8px !important;
+        }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-pressure-board .mcms-pressure-scope-bar {
+            align-items:stretch !important;
+            flex-direction:column !important;
+        }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-pressure-board .mcms-pressure-scope-controls {
+            display:grid !important;
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
         }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-pressure-board .mcms-pressure-hero {
             grid-template-columns:1fr !important;
             gap:6px !important;

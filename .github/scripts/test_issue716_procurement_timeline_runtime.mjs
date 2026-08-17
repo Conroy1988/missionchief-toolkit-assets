@@ -50,6 +50,10 @@ const context = vm.createContext({
     operationalTimelineMissionState: new Map(),
     operationalTimelineAbsentSince: new Map(),
     operationalIntelligenceView: 'timeline',
+    operationalTimelineLoggingEnabled: () => true,
+    operationalPressureIncludesAllianceMissions: () => false,
+    operationalPressureMissionInScope: (snapshot, includeAllianceMissions) => snapshot?.source === 'personal' || Boolean(includeAllianceMissions && snapshot?.source === 'alliance' && snapshot?.qualified),
+    resetOperationalTimelineMonitoring: () => {},
     operationalPressureRequirementKey: value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, ''),
     operationalTimelineSnapshotState: snapshot => snapshot,
     scheduleOperationalTimelineSave: () => { scheduledSaves += 1; },
@@ -147,12 +151,18 @@ const snapshot = (missionId, overrides = {}) => ({
     ...overrides,
 });
 
+context.operationalTimelineLoggingEnabled = () => false;
+assert.equal(context.__probe.update({ values: () => { throw new Error('logging-off path scanned missions'); } }, now), 0, 'Disabled logging did not return before mission processing');
+context.operationalTimelineLoggingEnabled = () => true;
+
 const baseline = new Map([
     ['101', snapshot('101')],
     ['102', snapshot('102')],
+    ['alliance-hidden', snapshot('alliance-hidden', { source: 'alliance', qualified: true })],
 ]);
 assert.equal(context.__probe.update(baseline, now), 0, 'First successful scan must be a quiet baseline');
 assert.equal(timelineEntries.length, 0);
+assert.equal(context.operationalTimelineMissionState.has('alliance-hidden'), false, 'Default logging scope retained an Alliance mission');
 
 const arv = [{ kind: 'vehicle', key: 'armed-response', name: 'Armed Response Vehicle', count: 2 }];
 const changed = new Map([

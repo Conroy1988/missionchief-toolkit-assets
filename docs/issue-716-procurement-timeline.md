@@ -1,6 +1,12 @@
 # Issue #716 — Procurement Brain and Operational Timeline
 
-Toolkit v10.9.0 adds two read-only planning views to the existing Operational Pressure Board. Open **Toolkit → Missions → Procurement Brain** or **Operational Timeline**, use the Command Palette, or open the board with <kbd>B</kbd> and change tabs.
+Toolkit v10.9.1 provides two read-only planning views in the existing Operational Pressure Board. Open **Toolkit → Missions → Procurement Brain** or **Operational Timeline**, use the Command Palette, or open the board with <kbd>B</kbd> and change tabs.
+
+## Mission scope and logging
+
+The board always monitors personal missions. **Alliance Missions** is a persistent opt-in switch and is off by default; turning it on adds joined Alliance missions to Live Pressure, Procurement Brain and the visible/exported Timeline scope.
+
+**Timeline Logging** is also persistent and off by default. While it is off, the Toolkit returns before scanning mission snapshots for history, so no Timeline event processing is added to normal gameplay. Turning it on establishes a quiet baseline and records only later meaningful changes. Turning it off stops new logging without deleting retained history.
 
 ## Procurement Brain
 
@@ -12,7 +18,7 @@ Recommendations are advisory. The view never purchases a vehicle, changes a stat
 
 ## Operational Timeline
 
-The first successful mission scan establishes a quiet baseline. Later meaningful changes create events for:
+After Timeline Logging is enabled, the first successful mission scan establishes a quiet baseline. Later meaningful changes create events for:
 
 - a newly observed mission;
 - response commitment, arrival or release;

@@ -165,6 +165,18 @@ const duplicateVehicleModel = sandbox.__probe.model([
 assert.equal(duplicateVehicleModel.resourcePressure.assigned, 1, "one vehicle was allocated to multiple missions");
 assert.equal(duplicateVehicleModel.resourcePressure.shortfall, 1);
 
+const scopeSandbox = {};
+vm.createContext(scopeSandbox);
+vm.runInContext(`${extractFunctions(["operationalPressureMissionInScope"]).join("\n")}
+this.__probe = operationalPressureMissionInScope;`, scopeSandbox, {
+  filename: "issue601-operational-pressure-scope-runtime.js",
+});
+assert.equal(scopeSandbox.__probe({ source: "personal" }, false), true, "personal missions must always remain in scope");
+assert.equal(scopeSandbox.__probe({ source: "alliance", qualified: true }, false), false, "Alliance missions leaked into the default scope");
+assert.equal(scopeSandbox.__probe({ source: "alliance", qualified: true }, true), true, "opted-in qualified Alliance mission was excluded");
+assert.equal(scopeSandbox.__probe({ source: "alliance", qualified: false }, true), false, "unqualified Alliance mission entered pressure intelligence");
+assert.equal(scopeSandbox.__probe({ source: "unknown" }, true), false, "unknown ownership entered pressure intelligence");
+
 const dom = new JSDOM("<!doctype html><html><body></body></html>", {
   url: "https://www.missionchief.co.uk/",
   pretendToBeVisual: true,
@@ -190,6 +202,12 @@ const boardSandbox = {
   postOperationalSitrep() {
     interactionCalls.push(["sitrep"]);
   },
+  toggleOperationalPressureAllianceScope() {
+    interactionCalls.push(["alliance-scope"]);
+  },
+  toggleOperationalTimelineLogging() {
+    interactionCalls.push(["timeline-logging"]);
+  },
   focusMissionById(missionId, open) {
     interactionCalls.push(["mission", String(missionId), Boolean(open)]);
   },
@@ -214,6 +232,8 @@ assert.equal(dom.window.document.querySelectorAll("#mc-map-command-toolkit-press
 assert.ok(board.querySelector('[data-pressure-command="sitrep"]'));
 assert.ok(board.querySelector('[data-pressure-command="refresh"]'));
 assert.ok(board.querySelector('[data-pressure-command="close"]'));
+assert.equal(board.querySelector('[data-pressure-command="alliance-scope"]').getAttribute("aria-pressed"), "false");
+assert.equal(board.querySelector('[data-pressure-command="timeline-logging"]').getAttribute("aria-pressed"), "false");
 assert.match(board.querySelector(".mcms-pressure-foot").textContent, /never select or dispatch vehicles/u);
 
 board.querySelector("[data-pressure-body]").innerHTML = `
@@ -227,6 +247,8 @@ for (const selector of [
   '[data-pressure-command="sitrep"]',
   '[data-pressure-command="refresh"]',
   '[data-pressure-command="close"]',
+  '[data-pressure-command="alliance-scope"]',
+  '[data-pressure-command="timeline-logging"]',
   '[data-pressure-action="focus"]',
   '[data-pressure-action="open"]',
   '[data-pressure-action="pin"]',
@@ -237,6 +259,8 @@ assert.deepEqual(interactionCalls, [
   ["sitrep"],
   ["refresh", true],
   ["close"],
+  ["alliance-scope"],
+  ["timeline-logging"],
   ["mission", "2001", false],
   ["mission", "2002", true],
   ["pin", "2003"],

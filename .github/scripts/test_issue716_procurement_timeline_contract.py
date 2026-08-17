@@ -21,8 +21,8 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.0"
-    assert 'title: "Procurement Brain & Operational Timeline"' in source
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.1"
+    assert 'title: "Personal-first, opt-in pressure monitoring"' in source
 
     for token in (
         "operationalTimelineState: 'mc_map_command_toolkit_operational_timeline_v1'",
@@ -62,6 +62,9 @@ def main() -> int:
         "Math.abs(item.timestamp - entry.timestamp) <= 30000",
         ".slice(0, OPERATIONAL_TIMELINE_LIMIT)",
         "raw.length > 2_000_000",
+        "if (!operationalTimelineLoggingEnabled())",
+        "operationalPressureMissionInScope(snapshot, includeAllianceMissions)",
+        "resetOperationalTimelineMonitoring()",
     ):
         assert guard in timeline, f"Missing bounded Timeline guard: {guard}"
     assert "setInterval" not in timeline

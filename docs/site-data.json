@@ -94,6 +94,8 @@
           "name": "Operational Pressure Board",
           "summary": "Opens from the map with shortcut B and reconciles current mission demand against the available personal fleet as one operation.",
           "details": [
+            "Personal missions are always included",
+            "Joined Alliance missions are opt-in and off by default",
             "Evidence-ordered Top Actions",
             "Global specialist-vehicle allocation",
             "Fleet Conflict and reserve-risk warnings",
@@ -132,7 +134,9 @@
           "name": "Operational Timeline",
           "summary": "Keeps a bounded local record of meaningful mission changes for search, review and export.",
           "details": [
-            "Quiet first-scan baseline",
+            "Logging is opt-in and off by default",
+            "Disabled logging skips mission-history processing",
+            "Quiet first-scan baseline after logging is enabled",
             "New mission, response, demand, stall, recovery and completion events",
             "Mission, response, resource and completion filters",
             "Search and active-mission focus",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.9.0
+// @version      10.9.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.9.0',
+        version: '10.9.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,14 +526,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.9.0",
-        title: "Procurement Brain & Operational Timeline",
+        version: "10.9.1",
+        title: "Personal-first, opt-in pressure monitoring",
         highlights: Object.freeze([
-            "Adds Procurement Brain: evidence-ranked acquisition, repositioning, recruitment and training recommendations from live shortages plus recent mission history.",
-            "Adds a persistent Operational Timeline for newly observed missions, response commitment, arrivals, requirement changes, casualty changes, stalls, recoveries and completions.",
-            "Integrates Live Pressure, Procurement and Timeline as three views inside the existing responsive Operational Pressure Board.",
-            "Keeps a bounded 30-day local record, supports filters, search, mission focus, JSON export and explicit history clearing.",
-            "Adds no new poller or observer and never purchases, selects or dispatches vehicles automatically."
+            "Makes personal missions the default and always-on scope for Live Pressure, Procurement Brain and Operational Timeline.",
+            "Adds a persistent Alliance Missions switch inside the Pressure Board, explicitly off until the user opts in.",
+            "Makes Operational Timeline logging explicitly opt-in and off by default, avoiding mission-history processing until enabled.",
+            "Recalculates scope immediately without deleting retained history or adding polling, observers or requests."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -2081,7 +2080,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         stuckDetector: { enabled: true, thresholdMin: 20 },
         missionSpawn: { enabled: true },
         resourceGap: { enabled: false, radiusMi: 25 },
-        pressureBoard: { pinnedMissionIds: [] },
+        pressureBoard: { pinnedMissionIds: [], includeAllianceMissions: false, timelineLoggingEnabled: false },
         transportSweep: { delayMs: 2000, maxPerRun: 25 },
         allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
         dispatchRecruitment: { dispatchId: '', hiringPhase: '3', personnelDesired: '', delayMs: 1500 },
@@ -2201,6 +2200,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             .filter(value => value !== null)
             .map(String)
         )).slice(-12);
+        merged.pressureBoard.includeAllianceMissions = merged.pressureBoard.includeAllianceMissions === true;
+        merged.pressureBoard.timelineLoggingEnabled = merged.pressureBoard.timelineLoggingEnabled === true;
         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
         merged.allianceCourses.day = ALLIANCE_COURSE_DAY_OPTIONS.includes(String(merged.allianceCourses.day)) ? String(merged.allianceCourses.day) : 'today';
@@ -7740,6 +7741,56 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             border:1px solid var(--mcms-pressure-line) !important;
             border-radius:10px !important;
             background:rgba(0,0,0,.18) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-bar {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-top:6px !important;
+            padding:6px 7px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:rgba(0,0,0,.13) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-bar > span {
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:900 !important;
+            letter-spacing:.3px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-bar > span b {
+            color:var(--mcms-pressure-text) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-controls {
+            display:flex !important;
+            align-items:center !important;
+            gap:5px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-toggle {
+            display:flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            gap:6px !important;
+            min-height:32px !important;
+            padding:5px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            background:rgba(255,255,255,.052) !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:950 !important;
+            letter-spacing:.35px !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-toggle b {
+            min-width:28px !important;
+            padding:3px 5px !important;
+            border-radius:999px !important;
+            background:rgba(255,255,255,.08) !important;
+            color:var(--mcms-pressure-muted) !important;
+            text-align:center !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-toggle.mcms-active {
+            border-color:rgba(var(--mcms-pressure-accent-rgb),.60) !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.16) !important;
+            color:var(--mcms-pressure-accent) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-scope-toggle.mcms-active b {
+            background:var(--mcms-pressure-accent) !important;
+            color:#071016 !important;
         }#${SCRIPT.pressureBoardId} .mcms-pressure-view-tabs button,
         #${SCRIPT.pressureBoardId} .mcms-procurement-toolbar button,
         #${SCRIPT.pressureBoardId} .mcms-timeline-filters button,
@@ -8017,6 +8068,12 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             flex-direction:column !important;
             gap:2px !important;
             font-size:8px !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-scope-bar {
+            align-items:stretch !important;
+            flex-direction:column !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-scope-controls {
+            display:grid !important;
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
         }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-hero {
             grid-template-columns:1fr !important;
             gap:6px !important;
@@ -19090,9 +19147,15 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
     }
 
     function updateOperationalTimelineFromSnapshots(snapshots, now = Date.now()) {
+        if (!operationalTimelineLoggingEnabled()) {
+        if (operationalTimelineArmed || operationalTimelineMissionState.size || operationalTimelineAbsentSince.size) resetOperationalTimelineMonitoring();
+        return 0;
+        }
+        const includeAllianceMissions = operationalPressureIncludesAllianceMissions();
         const current = new Map();
         for (const snapshot of snapshots.values()) {
         if (!snapshot?.missionId) continue;
+        if (!operationalPressureMissionInScope(snapshot, includeAllianceMissions)) continue;
         const next = operationalTimelineSnapshotState(snapshot, now);
         current.set(next.missionId, next);
         }
@@ -19548,13 +19611,60 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         operationalPressureCache = { key: '', snapshot: null };
     }
 
+    function operationalPressureIncludesAllianceMissions() {
+        return state.pressureBoard.includeAllianceMissions === true;
+    }
+
+    function operationalTimelineLoggingEnabled() {
+        return state.pressureBoard.timelineLoggingEnabled === true;
+    }
+
+    function operationalPressureMissionInScope(snapshot, includeAllianceMissions = operationalPressureIncludesAllianceMissions()) {
+        if (snapshot?.source === 'personal') return true;
+        return Boolean(includeAllianceMissions && snapshot?.source === 'alliance' && snapshot?.qualified);
+    }
+
+    function operationalPressureScopedTimelineEntries(includeAllianceMissions = operationalPressureIncludesAllianceMissions()) {
+        return includeAllianceMissions
+            ? operationalTimelineEntries
+            : operationalTimelineEntries.filter(entry => entry?.source !== 'alliance');
+    }
+
+    function resetOperationalTimelineMonitoring() {
+        operationalTimelineArmed = false;
+        operationalTimelineMissionState = new Map();
+        operationalTimelineAbsentSince.clear();
+    }
+
+    function toggleOperationalPressureAllianceScope() {
+        state.pressureBoard.includeAllianceMissions = !operationalPressureIncludesAllianceMissions();
+        resetOperationalTimelineMonitoring();
+        saveState();
+        if (operationalTimelineLoggingEnabled()) refreshMissionSnapshots();
+        invalidateOperationalPressureSnapshot();
+        renderOperationalPressureBoard(true);
+        showToast(state.pressureBoard.includeAllianceMissions ? 'Pressure Board now includes Alliance missions' : 'Pressure Board returned to personal missions only');
+        return state.pressureBoard.includeAllianceMissions;
+    }
+
+    function toggleOperationalTimelineLogging() {
+        state.pressureBoard.timelineLoggingEnabled = !operationalTimelineLoggingEnabled();
+        resetOperationalTimelineMonitoring();
+        saveState();
+        if (state.pressureBoard.timelineLoggingEnabled) refreshMissionSnapshots();
+        renderOperationalPressureBoard(true);
+        showToast(state.pressureBoard.timelineLoggingEnabled ? 'Operational Timeline logging on · quiet baseline established' : 'Operational Timeline logging off · retained history preserved');
+        return state.pressureBoard.timelineLoggingEnabled;
+    }
+
     function buildOperationalPressureSnapshot(force = false) {
         if (force) invalidateOperationalPressureSnapshot();
         const now = Date.now();
         const context = buildResourceGapVehicleContext();
         const pinnedMissionIds = state.pressureBoard.pinnedMissionIds || [];
+        const includeAllianceMissions = operationalPressureIncludesAllianceMissions();
         const missions = Array.from(liveMissionSnapshots.values())
-            .filter(snapshot => snapshot?.source === 'personal' || (snapshot?.source === 'alliance' && snapshot?.qualified))
+            .filter(snapshot => operationalPressureMissionInScope(snapshot, includeAllianceMissions))
             .map(snapshot => {
                 const stuck = missionStuckRecord(snapshot.missionId, now);
                 return {
@@ -19578,6 +19688,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             vehicleApiReady,
             missionSnapshotReady,
             Number(state.resourceGap.radiusMi) || 25,
+            includeAllianceMissions,
             pinnedMissionIds.join(','),
             ...missions.map(mission => [
                 mission.missionId,
@@ -19597,7 +19708,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             pinnedMissionIds,
             missionReady: missionSnapshotReady,
             vehicleReady: vehicleApiReady,
-            scope: 'Personal missions and joined alliance incidents'
+            scope: includeAllianceMissions ? 'Personal and joined Alliance missions' : 'Personal missions only'
         });
         operationalPressureCache = { key, snapshot };
         return snapshot;
@@ -23451,7 +23562,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
 
     function operationalTimelineFilteredEntries() {
         const query = normaliseSearchText(operationalTimelineQuery);
-        return operationalTimelineEntries.filter(entry => {
+        return operationalPressureScopedTimelineEntries().filter(entry => {
         if (operationalTimelineFilter !== 'all' && entry.category !== operationalTimelineFilter) return false;
         if (!query) return true;
         const requirements = (entry.details?.requirements || []).map(item => `${item.name} ${item.key}`).join(' ');
@@ -23495,7 +23606,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         const board = operationalPressureBoardElement();
         const panel = board?.querySelector('[data-pressure-view-panel="procurement"]');
         if (!panel) return null;
-        const model = calculateProcurementBrainModel(operationalTimelineEntries, snapshot, { windowDays: procurementWindowDays });
+        const model = calculateProcurementBrainModel(operationalPressureScopedTimelineEntries(), snapshot, { windowDays: procurementWindowDays });
         updateUiSetText(panel.querySelector('[data-procurement-total]'), model.recommendations.length);
         updateUiSetText(panel.querySelector('[data-procurement-critical]'), model.critical);
         updateUiSetText(panel.querySelector('[data-procurement-high]'), model.high);
@@ -23517,11 +23628,12 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         const board = operationalPressureBoardElement();
         const panel = board?.querySelector('[data-pressure-view-panel="timeline"]');
         if (!panel) return null;
+        const scopedEntries = operationalPressureScopedTimelineEntries();
         const filtered = operationalTimelineFilteredEntries();
-        const missionCount = new Set(operationalTimelineEntries.map(entry => entry.missionId).filter(Boolean)).size;
-        const completed = operationalTimelineEntries.filter(entry => entry.type === 'completed').length;
-        const resourceSignals = operationalTimelineEntries.filter(entry => ['requirements', 'stalled'].includes(entry.type)).length;
-        updateUiSetText(panel.querySelector('[data-timeline-events]'), operationalTimelineEntries.length);
+        const missionCount = new Set(scopedEntries.map(entry => entry.missionId).filter(Boolean)).size;
+        const completed = scopedEntries.filter(entry => entry.type === 'completed').length;
+        const resourceSignals = scopedEntries.filter(entry => ['requirements', 'stalled'].includes(entry.type)).length;
+        updateUiSetText(panel.querySelector('[data-timeline-events]'), scopedEntries.length);
         updateUiSetText(panel.querySelector('[data-timeline-missions]'), missionCount);
         updateUiSetText(panel.querySelector('[data-timeline-completed]'), completed);
         updateUiSetText(panel.querySelector('[data-timeline-signals]'), resourceSignals);
@@ -23536,10 +23648,11 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         const visible = filtered.slice(0, OPERATIONAL_TIMELINE_RENDER_LIMIT);
         const html = visible.length
         ? visible.map(operationalTimelineEntryHtml).join('')
-        : `<div class="mcms-pressure-empty">${operationalTimelineEntries.length ? 'No timeline events match this filter.' : 'Timeline learning begins with the next meaningful mission change. The first scan establishes a quiet baseline and does not flood the history.'}</div>`;
+        : `<div class="mcms-pressure-empty">${scopedEntries.length ? 'No timeline events match this filter.' : 'No timeline events match the current mission scope. Logging is off by default and establishes a quiet baseline when enabled.'}</div>`;
         setInnerHtmlIfChanged(list, html, `timeline:${operationalTimelineFilter}:${operationalTimelineQuery}:${visible.map(entry => entry.id).join('|')}`);
-        updateUiSetText(panel.querySelector('[data-timeline-status]'), `${filtered.length} matching · showing ${visible.length} · ${operationalTimelineEntries.length}/${OPERATIONAL_TIMELINE_LIMIT} retained · automatic 30-day expiry`);
-        return { filtered: filtered.length, visible: visible.length, total: operationalTimelineEntries.length };
+        const logging = operationalTimelineLoggingEnabled() ? 'logging on' : 'logging off · retained history only';
+        updateUiSetText(panel.querySelector('[data-timeline-status]'), `${logging} · ${filtered.length} matching · showing ${visible.length} · ${scopedEntries.length} in scope · ${operationalTimelineEntries.length}/${OPERATIONAL_TIMELINE_LIMIT} retained`);
+        return { filtered: filtered.length, visible: visible.length, total: scopedEntries.length };
     }
 
     function syncOperationalIntelligenceView(board = operationalPressureBoardElement()) {
@@ -23555,8 +23668,9 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
         updateUiSetProperty(panel, 'hidden', !active);
         updateUiSetAttribute(panel, 'aria-hidden', active ? 'false' : 'true');
         }
+        const scopeLabel = operationalPressureIncludesAllianceMissions() ? 'Personal + Alliance' : 'Personal missions only';
         const subtitles = {
-        live: 'Shared live command picture',
+        live: `${scopeLabel} command picture`,
         procurement: 'Evidence-ranked fleet and personnel planning',
         timeline: 'Persistent local mission event history'
         };
@@ -23576,16 +23690,19 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
 
     function exportOperationalTimeline() {
         const exportedAt = new Date();
+        const entries = operationalPressureScopedTimelineEntries();
         const payload = {
         format: 'MissionChief Map Command Toolkit Operational Timeline',
         schema: OPERATIONAL_TIMELINE_SCHEMA,
         version: SCRIPT.version,
         exportedAt: exportedAt.toISOString(),
         retentionDays: 30,
-        entries: operationalTimelineEntries.map(entry => clonePlainData(entry))
+        scope: operationalPressureIncludesAllianceMissions() ? 'personal-and-alliance' : 'personal',
+        loggingEnabled: operationalTimelineLoggingEnabled(),
+        entries: entries.map(entry => clonePlainData(entry))
         };
         downloadToolkitSettingsBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `missionchief-operational-timeline-${localIsoDate(exportedAt)}.json`);
-        showToast(`${operationalTimelineEntries.length} timeline event${operationalTimelineEntries.length === 1 ? '' : 's'} exported`);
+        showToast(`${entries.length} in-scope timeline event${entries.length === 1 ? '' : 's'} exported`);
     }
 
     function clearOperationalTimeline() {
@@ -23618,6 +23735,13 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                 <button id="mcms-pressure-tab-procurement" type="button" role="tab" data-pressure-command="view" data-pressure-view="procurement" aria-controls="mcms-pressure-panel-procurement" aria-selected="false">PROCUREMENT</button>
                 <button id="mcms-pressure-tab-timeline" type="button" role="tab" data-pressure-command="view" data-pressure-view="timeline" aria-controls="mcms-pressure-panel-timeline" aria-selected="false">TIMELINE</button>
             </nav>
+            <div class="mcms-pressure-scope-bar" aria-label="Pressure Board monitoring controls">
+                <span>PERSONAL MISSIONS · <b>ALWAYS ON</b></span>
+                <div class="mcms-pressure-scope-controls">
+                    <button class="mcms-pressure-scope-toggle" type="button" data-pressure-command="alliance-scope" aria-pressed="false" title="Include joined Alliance missions in Pressure Board intelligence"><span>ALLIANCE</span><b data-pressure-alliance-state>OFF</b></button>
+                    <button class="mcms-pressure-scope-toggle" type="button" data-pressure-command="timeline-logging" aria-pressed="false" title="Record meaningful mission changes in the local Operational Timeline"><span>LOGGING</span><b data-pressure-logging-state>OFF</b></button>
+                </div>
+            </div>
             <section id="mcms-pressure-panel-live" class="mcms-pressure-view-panel" role="tabpanel" aria-labelledby="mcms-pressure-tab-live" data-pressure-view-panel="live">
                 <div class="mcms-pressure-meta"><span data-pressure-scope>Loading mission scope…</span><span data-pressure-updated>Updated —</span></div>
                 <div class="mcms-pressure-hero" data-pressure-severity="clear">
@@ -23653,7 +23777,7 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                 <div class="mcms-pressure-status" data-procurement-status data-tone="neutral">Building local procurement evidence…</div>
             </section>
             <section id="mcms-pressure-panel-timeline" class="mcms-pressure-view-panel" role="tabpanel" aria-labelledby="mcms-pressure-tab-timeline" data-pressure-view-panel="timeline" aria-hidden="true" hidden>
-                <div class="mcms-intelligence-intro"><span>OPERATIONAL TIMELINE</span><strong>A durable, searchable account of meaningful mission change.</strong><p>The first scan is a quiet baseline. New missions, responses, demand changes, stalls, recoveries and completions are retained locally for up to 30 days.</p></div>
+                <div class="mcms-intelligence-intro"><span>OPERATIONAL TIMELINE</span><strong>An optional, searchable account of meaningful mission change.</strong><p>Logging is off by default. When enabled, the first scan is a quiet baseline and later mission changes are retained locally for up to 30 days.</p></div>
                 <div class="mcms-pressure-kpis">
                     <span><b data-timeline-events>0</b>Events</span>
                     <span><b data-timeline-missions>0</b>Missions</span>
@@ -23688,6 +23812,8 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
                 else if (command.dataset.pressureCommand === 'refresh') refreshOperationalPressureBoard(true);
                 else if (command.dataset.pressureCommand === 'sitrep') postOperationalSitrep();
                 else if (command.dataset.pressureCommand === 'view') setOperationalIntelligenceView(command.dataset.pressureView);
+                else if (command.dataset.pressureCommand === 'alliance-scope') toggleOperationalPressureAllianceScope();
+                else if (command.dataset.pressureCommand === 'timeline-logging') toggleOperationalTimelineLogging();
                 else if (command.dataset.pressureCommand === 'procurement-window') {
                     const days = Number(command.dataset.windowDays);
                     if (PROCUREMENT_WINDOW_OPTIONS.includes(days)) procurementWindowDays = days;
@@ -23750,6 +23876,16 @@ Each station will be rechecked against this Dispatch Centre, submitted through M
             return;
         }
         syncOperationalIntelligenceView(board);
+        const includeAllianceMissions = operationalPressureIncludesAllianceMissions();
+        const loggingEnabled = operationalTimelineLoggingEnabled();
+        const allianceToggle = board.querySelector('[data-pressure-command="alliance-scope"]');
+        const loggingToggle = board.querySelector('[data-pressure-command="timeline-logging"]');
+        updateUiToggleClass(allianceToggle, 'mcms-active', includeAllianceMissions);
+        updateUiSetAttribute(allianceToggle, 'aria-pressed', includeAllianceMissions ? 'true' : 'false');
+        updateUiSetText(allianceToggle?.querySelector('[data-pressure-alliance-state]'), includeAllianceMissions ? 'ON' : 'OFF');
+        updateUiToggleClass(loggingToggle, 'mcms-active', loggingEnabled);
+        updateUiSetAttribute(loggingToggle, 'aria-pressed', loggingEnabled ? 'true' : 'false');
+        updateUiSetText(loggingToggle?.querySelector('[data-pressure-logging-state]'), loggingEnabled ? 'ON' : 'OFF');
         updateUiSetDataset(board, 'severity', snapshot.severity);
         const hero = board.querySelector('.mcms-pressure-hero');
         updateUiSetDataset(hero, 'pressureSeverity', snapshot.severity);

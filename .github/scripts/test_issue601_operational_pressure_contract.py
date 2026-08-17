@@ -42,8 +42,21 @@ def main() -> int:
     for action in ["focus", "open", "pin"]:
         assert f"data-pressure-action=\"{action}\"" in source
     assert "data-pressure-command=\"sitrep\"" in board
+    assert "data-pressure-command=\"alliance-scope\"" in board
+    assert "data-pressure-command=\"timeline-logging\"" in board
+    assert "PERSONAL MISSIONS" in board and "ALWAYS ON" in board
     assert "Read-only intelligence" in board
     assert "dispatch vehicles" in board
+
+    state_defaults = section(source, "    function defaultState()", "    function normaliseLoadedState(")
+    assert "pressureBoard: { pinnedMissionIds: [], includeAllianceMissions: false, timelineLoggingEnabled: false }" in state_defaults
+    state_normalisation = section(source, "    function normaliseLoadedState(", "    function loadState()")
+    assert "merged.pressureBoard.includeAllianceMissions = merged.pressureBoard.includeAllianceMissions === true" in state_normalisation
+    assert "merged.pressureBoard.timelineLoggingEnabled = merged.pressureBoard.timelineLoggingEnabled === true" in state_normalisation
+
+    snapshot = section(source, "    function buildOperationalPressureSnapshot(", "    function makeResourceGapIcon(")
+    assert ".filter(snapshot => operationalPressureMissionInScope(snapshot, includeAllianceMissions))" in snapshot
+    assert "includeAllianceMissions ? 'Personal and joined Alliance missions' : 'Personal missions only'" in snapshot
 
     shortcuts = section(source, "    function handleKeyboard(event)", "    function buildThemeOptions(")
     assert "state.inputStudio.hotkeys[key] === binding" in shortcuts

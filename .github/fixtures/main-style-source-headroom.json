@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 716,
-    "version": "10.9.0",
-    "sourceBytes": 2422247,
-    "sourceLines": 36308,
-    "sourceSha256": "85904a2a71b99e8ac6e86c6f7a04d85fcd05c2eb9f97d483b9f736d63b453862",
-    "templateBytes": 830474,
-    "templateLines": 9771,
-    "templateSha256": "8a57a8e715a5675c1dc81803bce16c132edd4d3f23bd5d49ee7662183194cba2",
-    "canonicalCssSha256": "3a54608187313169a32f41e6901b34d5eea1476ada0023be4d94e9718d8e965c",
-    "maxSourceBytes": 2430000,
-    "maxSourceLines": 36450,
+    "issue": 718,
+    "version": "10.9.1",
+    "sourceBytes": 2430575,
+    "sourceLines": 36444,
+    "sourceSha256": "bc3a71630ae8433cba4f3377d738de8f5b8377146286df58f01b494d61722560",
+    "templateBytes": 833412,
+    "templateLines": 9827,
+    "templateSha256": "519a3b4da20005f7c29e5f5b756d8b89462c815577f93a068c50af37ec2a4f5f",
+    "canonicalCssSha256": "ea1bfdd8ecea945c569a9fa4ec779a0cbf3d3ea819abac0b54f4bc8e1add2653",
+    "maxSourceBytes": 2440000,
+    "maxSourceLines": 36600,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 59786,
-      "sourceLines": 882,
-      "templateBytes": 14937,
-      "templateLines": 237
+      "sourceBytes": 68114,
+      "sourceLines": 1018,
+      "templateBytes": 17875,
+      "templateLines": 293
     },
-    "scope": "Issue #716 Procurement Brain scoring, bounded Operational Timeline persistence, integrated responsive board views, search, filters, focus, export, clearing and operator guidance"
+    "scope": "Issue #718 personal-mission-first Operational Pressure scope, explicit opt-in Alliance missions and disabled-by-default Timeline logging with zero disabled-history scans"
   }
 }

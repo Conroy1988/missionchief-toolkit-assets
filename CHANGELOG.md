@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.9.1] - 2026-08-17
+
+### Personal-first, opt-in pressure monitoring
+
+- Makes personal missions the default and always-on scope for Live Pressure, Procurement Brain and Operational Timeline.
+- Adds a persistent Alliance Missions switch inside the Pressure Board, explicitly off until the user opts in.
+- Makes Operational Timeline logging explicitly opt-in and off by default, avoiding mission-history processing until enabled.
+- Recalculates scope immediately without deleting retained history or adding polling, observers or requests.
+
 ## [10.9.0] - 2026-08-17
 
 ### Procurement Brain & Operational Timeline

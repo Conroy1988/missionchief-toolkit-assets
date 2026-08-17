@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.9.0] - 2026-08-17
+
+### Procurement Brain & Operational Timeline
+
+- Adds Procurement Brain: evidence-ranked acquisition, repositioning, recruitment and training recommendations from live shortages plus recent mission history.
+- Adds a persistent Operational Timeline for newly observed missions, response commitment, arrivals, requirement changes, casualty changes, stalls, recoveries and completions.
+- Integrates Live Pressure, Procurement and Timeline as three views inside the existing responsive Operational Pressure Board.
+- Keeps a bounded 30-day local record, supports filters, search, mission focus, JSON export and explicit history clearing.
+- Adds no new poller or observer and never purchases, selects or dispatches vehicles automatically.
+
 ## [10.8.0] - 2026-08-15
 
 ### Dispatch Recruitment

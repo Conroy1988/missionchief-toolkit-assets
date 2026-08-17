@@ -11,6 +11,7 @@ import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
 SCRIPT_PATH = Path(__file__).with_name("check_asset_health.py")
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -165,6 +166,46 @@ def test_integrity_installer_uses_filename_route() -> None:
     assert parsed.hostname == "tkb-gaming.scot"
     assert parsed.path.endswith("/install/MissionChief_Map_Command_Toolkit.user.js")
     assert install_endpoint["urlSource"]["jsonPointer"] == "/distribution/integrityInstallUrl"
+
+
+def test_tkb_requests_match_production_curl_client() -> None:
+    observed: dict[str, list[str]] = {}
+
+    def fake_run(command: list[str], **_kwargs: object) -> object:
+        observed["command"] = command
+        headers_path = Path(command[command.index("--dump-header") + 1])
+        body_path = Path(command[command.index("--output") + 1])
+        headers_path.write_bytes(
+            b"HTTP/1.1 200 Connection established\r\n\r\n"
+            b"HTTP/2 200\r\nContent-Type: text/javascript\r\nContent-Length: 3\r\n\r\n"
+        )
+        body_path.write_bytes(b"abc")
+        return asset_health.subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=f"200\t{command[-1]}".encode(),
+            stderr=b"",
+        )
+
+    with mock.patch.object(asset_health.subprocess, "run", side_effect=fake_run):
+        status, headers, body, final_url = asset_health.request_once(
+            "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/"
+            "MissionChief_Map_Command_Toolkit.user.js",
+            "GET",
+            5,
+            "MissionChief-Toolkit-Asset-Health/1.0",
+        )
+
+    command = observed["command"]
+    assert command[0] == "curl"
+    assert not any("Accept-Encoding" in argument for argument in command)
+    final_query = dict(
+        asset_health.urllib.parse.parse_qsl(asset_health.urllib.parse.urlparse(final_url).query)
+    )
+    assert final_query["audit"].isdigit()
+    assert status == 200
+    assert headers["content-type"] == "text/javascript"
+    assert body == b"abc"
 
 
 def test_live_success_and_optional_warning() -> None:
@@ -381,6 +422,7 @@ def main() -> None:
     tests = [
         test_first_party_live_requests_are_cache_busted,
         test_integrity_installer_uses_filename_route,
+        test_tkb_requests_match_production_curl_client,
         test_live_success_and_optional_warning,
         test_wrong_release_hash_fails,
         test_missing_stable_raw_path_fails_static,

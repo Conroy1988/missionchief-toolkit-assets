@@ -19,7 +19,7 @@ def main() -> int:
     retained = ["missionAge: false", "function missionAgeRefreshPlan(", "function updateMissionAgeLabels(", "makeToggleButton('missionAge'", "function missionWindowValueDetails(", "function customVehicleBadgeVehicleId(", "function collectTransportSweepVehicleCandidatesForMission(", "async function openTransportSweepVehicle(", "function transportSweepVisibleDischargeButtons(", "function recordTransportSweepConfirmedRelease(", "function renderTransportSweepHud(", "Vehicle Code Status", "Transport Watcher", "Resource Gap", "Major Incident Feed"]
     missing = [item for item in retained if item not in source]; assert not missing, missing
     assert "missionRequirementsVehicleId(checkbox || row)" not in source
-    assert "MissionChief's native Discharge patient control" in source
+    assert "MissionChief's visible native workflow" in source
     tracked=[]
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue

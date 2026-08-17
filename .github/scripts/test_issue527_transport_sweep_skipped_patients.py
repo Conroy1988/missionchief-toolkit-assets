@@ -18,7 +18,7 @@ def main():
  processor=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',source);assert processor
  body=processor.group(1)
  assert source.count('transportSweepRuntime.skipped += 1')==1
- assert source.count('transportSweepRuntime.processed += 1')==2
+ assert source.count('transportSweepRuntime.processed += 1')==3
  assert 'confirmedReleaseKeys.has(key)' in helper and 'skippedPatientKeys.has(key)' in helper
  assert 'renderTransportSweepPanel();' in helper and "transportSweepLog(message, 'warn');" in helper
  assert 'recordTransportSweepSkippedPatient(' in body

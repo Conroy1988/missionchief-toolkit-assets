@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.2"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.9.1"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.9.2"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Makes personal missions the default and always-on scope for Live Pressure, Procurement Brain and Operational Timeline.",
+            "Runs Patient Transport Sweep in the background when MissionChief exposes an exact native Cancel Transport action for the verified vehicle.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

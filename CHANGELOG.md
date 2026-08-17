@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.9.2] - 2026-08-17
+
+### Background-first Patient Transport Sweep
+
+- Runs Patient Transport Sweep in the background when MissionChief exposes an exact native Cancel Transport action for the verified vehicle.
+- Avoids opening mission and vehicle lightboxes for background-confirmed releases, while keeping the existing visible native workflow as a fallback.
+- Rejects wrong-origin, wrong-vehicle, malformed, disabled and ambiguous controls before any background release request.
+- Never retries an ambiguous request and continues to exclude every verified personal vehicle without adding observers, pollers or intervals.
+
 ## [10.9.1] - 2026-08-17
 
 ### Personal-first, opt-in pressure monitoring

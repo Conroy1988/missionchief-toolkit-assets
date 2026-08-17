@@ -362,12 +362,12 @@ def content_type_base(value: str | None) -> str:
 
 
 def cache_bust(url: str) -> str:
-    """Bypass stale intermediary copies of TKB's dynamic first-party routes."""
+    """Use the production-proven audit nonce to bypass cached TKB routes."""
     parsed = urllib.parse.urlparse(url)
     if parsed.hostname != "tkb-gaming.scot":
         return url
     query = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
-    query.append(("asset_health", str(time.time_ns())))
+    query.append(("audit", str(time.time_ns())))
     return urllib.parse.urlunparse(parsed._replace(query=urllib.parse.urlencode(query)))
 
 

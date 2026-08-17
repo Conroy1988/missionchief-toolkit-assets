@@ -11,7 +11,9 @@ import html
 import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -371,7 +373,94 @@ def cache_bust(url: str) -> str:
     return urllib.parse.urlunparse(parsed._replace(query=urllib.parse.urlencode(query)))
 
 
+def parse_curl_headers(payload: bytes) -> dict[str, str]:
+    headers: dict[str, str] = {}
+    for line in payload.decode("iso-8859-1", errors="replace").splitlines():
+        if line.startswith("HTTP/"):
+            headers = {}
+            continue
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        headers[key.strip().lower()] = value.strip()
+    return headers
+
+
+def curl_request_once(
+    url: str,
+    method: str,
+    timeout: float,
+    user_agent: str,
+    range_prefix: int | None = None,
+) -> tuple[int, dict[str, str], bytes, str]:
+    target = cache_bust(url)
+    with tempfile.TemporaryDirectory(prefix="toolkit-asset-health-curl-") as directory:
+        temporary = Path(directory)
+        headers_path = temporary / "headers.txt"
+        body_path = temporary / "body.bin"
+        command = [
+            "curl",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--max-redirs",
+            "5",
+            "--proto",
+            "=https",
+            "--proto-redir",
+            "=https",
+            "--connect-timeout",
+            str(min(timeout, 10)),
+            "--max-time",
+            str(timeout),
+            "--user-agent",
+            user_agent,
+            "--header",
+            "Accept: */*",
+            "--header",
+            "Cache-Control: no-cache",
+            "--dump-header",
+            str(headers_path),
+            "--output",
+            str(body_path),
+            "--write-out",
+            "%{http_code}\t%{url_effective}",
+        ]
+        if method == "HEAD":
+            command.append("--head")
+        if range_prefix is not None:
+            command.extend(["--range", f"0-{max(0, range_prefix - 1)}"])
+        command.append(target)
+
+        try:
+            result = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                timeout=timeout + 5,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise urllib.error.URLError(f"curl request failed: {exc}") from exc
+        if result.returncode != 0:
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            raise urllib.error.URLError(f"curl exited {result.returncode}: {detail or 'request failed'}")
+
+        status_text, separator, final_url = result.stdout.decode("utf-8", errors="replace").partition("\t")
+        if not separator or not status_text.isdigit() or not final_url:
+            raise AssetHealthError("curl did not return a valid HTTP status and effective URL")
+        status = int(status_text)
+        headers = parse_curl_headers(headers_path.read_bytes())
+        body = b"" if method == "HEAD" else body_path.read_bytes()
+        if range_prefix is not None:
+            body = body[:range_prefix]
+        if status >= 400:
+            raise urllib.error.HTTPError(final_url, status, f"HTTP {status}", headers, None)
+        return status, headers, body, final_url
+
+
 def request_once(url: str, method: str, timeout: float, user_agent: str, range_prefix: int | None = None) -> tuple[int, dict[str, str], bytes, str]:
+    if urllib.parse.urlparse(url).hostname == "tkb-gaming.scot":
+        return curl_request_once(url, method, timeout, user_agent, range_prefix)
     headers = {
         "User-Agent": user_agent,
         "Accept": "*/*",

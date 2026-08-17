@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import tempfile
 import threading
@@ -66,9 +67,65 @@ def cache_bust(url: str) -> str:
     return urllib.parse.urlunparse(parsed._replace(query=urllib.parse.urlencode(query)))
 
 
+def build_curl_command(url: str, timeout: float, user_agent: str, output: Path) -> list[str]:
+    return [
+        "curl",
+        "--fail",
+        "--silent",
+        "--show-error",
+        "--location",
+        "--max-redirs",
+        "5",
+        "--proto",
+        "=https",
+        "--proto-redir",
+        "=https",
+        "--connect-timeout",
+        str(min(timeout, 10)),
+        "--max-time",
+        str(timeout),
+        "--user-agent",
+        user_agent,
+        "--header",
+        "Accept: */*",
+        "--header",
+        "Cache-Control: no-cache",
+        "--output",
+        str(output),
+        url,
+    ]
+
+
+def curl_fetch_once(url: str, timeout: float, user_agent: str) -> bytes:
+    with tempfile.TemporaryDirectory(prefix="toolkit-parity-curl-") as directory:
+        output = Path(directory) / "body.bin"
+        command = build_curl_command(cache_bust(url), timeout, user_agent, output)
+        try:
+            result = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                timeout=timeout + 5,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError(f"curl request failed: {exc}") from exc
+        if result.returncode != 0:
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(f"curl exited {result.returncode}: {detail or 'request failed'}")
+        return output.read_bytes()
+
+
 def fetch(url: str, timeout: float, retries: int, user_agent: str) -> bytes:
     last_error: Exception | None = None
     for attempt in range(1, retries + 1):
+        if urllib.parse.urlparse(url).hostname == "tkb-gaming.scot":
+            try:
+                return curl_fetch_once(url, timeout, user_agent)
+            except RuntimeError as exc:
+                last_error = exc
+                if attempt < retries:
+                    time.sleep(attempt)
+                continue
         request = urllib.request.Request(
             cache_bust(url),
             headers={
@@ -252,6 +309,9 @@ def self_test() -> int:
     assert busted_query["channel"] == "stable"
     assert busted_query["audit"].isdigit()
     assert "asset_health" not in busted_query
+    curl_command = build_curl_command(busted, 5, "parity-self-test", Path("body.bin"))
+    assert curl_command[0] == "curl"
+    assert not any("Accept-Encoding" in argument for argument in curl_command)
 
     base = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('same');\n"
     transformed = b"// ==UserScript==\n// @version 1.2.3\n// served-by first-party gateway\n// ==/UserScript==\nconsole.log('same');\n"

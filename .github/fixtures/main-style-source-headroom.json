@@ -124,9 +124,9 @@
   "v10Candidate": {
     "issue": 706,
     "version": "10.9.4",
-    "sourceBytes": 2457802,
+    "sourceBytes": 2457790,
     "sourceLines": 36831,
-    "sourceSha256": "c56d4e16d1489229d558c9d86cd34b1d0e127783cb7afc6f1d99738603c60f45",
+    "sourceSha256": "bb73700fd647cc790a04b2b233df2663f5f14302d145d6325c481cec4c3f9224",
     "templateBytes": 833539,
     "templateLines": 9828,
     "templateSha256": "755e6da31584a3f66ac69afaeeaa8366afad499b9cc91cb29c8f860e5cd91c77",

@@ -18426,7 +18426,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const token = form.querySelector('input[name="authenticity_token"]')?.value;
         const methodOverride = form.querySelector('input[name="_method"]')?.value;
         const submit = form.querySelector('input[type="submit"][name], button[type="submit"][name]');
-        const unexpectedBuildingFields = Array.from(form.querySelectorAll('[name]'))
+        const unexpectedBuildingFields = Array.from(form.elements || [])
             .filter(control => !control.disabled && /^building\[/u.test(String(control.name || '')) && control.name !== 'building[personal_count_target]')
             .map(control => String(control.name));
         if (unexpectedBuildingFields.length) throw dispatchRecruitmentSafetyStop('the native Personnel (Desired) form exposed additional building fields. No request was sent.');

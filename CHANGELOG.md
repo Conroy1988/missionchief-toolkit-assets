@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.9.5] - 2026-08-19
+
+### Complete ALL DISPATCH CENTRES recruitment scans
+
+- Loads every native centre-specific Buildings matrix for **ALL DISPATCH CENTRES** instead of assuming the first centre contains the complete station fleet.
+- Shows centre-by-centre progress, merges exact native assignments and deduplicates stations globally under the existing 2,000-station safety limit.
+- Rejects contradictory assignment or building-type evidence for the same station instead of choosing an arbitrary matrix row.
+- Discards the complete result and leaves **Apply to Selected** disabled when any centre request fails, times out, redirects unexpectedly or returns an unverifiable page.
+- Preserves single-centre scanning, exact per-station assignment rechecks, sequential writes and every existing assignment-mutation guard.
+
 ## [10.9.4] - 2026-08-19
 
 ### Dispatch Recruitment assignment immutability guard

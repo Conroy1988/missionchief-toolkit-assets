@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.9.3] - 2026-08-19
+
+### Dispatch Recruitment assignment repair
+
+- Fixes Dispatch Recruitment treating every row in MissionChief's station assignment matrix as belonging to the selected Dispatch Centre.
+- Reads the exact active native assignment on each row and admits only stations assigned to the chosen centre.
+- Separates Assigned here, Other centres and Unavailable totals so excluded rows are explained before Apply.
+- Retains the authoritative per-station API membership recheck, exact native forms, sequential pacing and post-update verification.
+
 ## [10.9.2] - 2026-08-17
 
 ### Background-first Patient Transport Sweep

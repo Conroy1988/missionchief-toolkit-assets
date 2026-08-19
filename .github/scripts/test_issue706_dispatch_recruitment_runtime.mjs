@@ -111,24 +111,50 @@ const table = parsed(`
         <tr class="alliance_buildings_table_searchable">
             <td></td><td><a building_type="2" href="/buildings/101">Alpha Fire</a></td><td>5</td><td>2 days</td><td>17</td>
             <td><div id="building_personal_count_target_101">4</div><a class="personal_count_target_edit_button" building_id="101" href="/buildings/101/personalCountTarget">Edit</a></td>
+            <td><a class="building_leitstelle_set_101 btn-success" href="/buildings/101/leitstelle-set/77">North Dispatch</a><a class="building_leitstelle_set_101" href="/buildings/101/leitstelle-set/88">South Dispatch</a></td>
         </tr>
         <tr class="alliance_buildings_table_searchable">
             <td></td><td><a building_type="6" href="/buildings/102">Bravo Police</a></td><td>4</td><td>Automatically</td><td>23</td>
             <td><div id="building_personal_count_target_102">7</div><a class="personal_count_target_edit_button" building_id="102" href="/buildings/102/personalCountTarget">Edit</a></td>
+            <td><a class="building_leitstelle_set_102 btn-success" href="/buildings/102/leitstelle-set/77">North Dispatch</a></td>
         </tr>
         <tr class="alliance_buildings_table_searchable">
             <td></td><td><a building_type="22" href="/buildings/103">Unavailable Ambulance</a></td><td>2</td><td></td><td>8</td><td>3</td>
+            <td><a class="building_leitstelle_set_103 btn-success" href="/buildings/103/leitstelle-set/77">North Dispatch</a></td>
+        </tr>
+        <tr class="alliance_buildings_table_searchable">
+            <td></td><td><a building_type="2" href="/buildings/104">Other Centre Fire</a></td><td>5</td><td>Off</td><td>12</td>
+            <td><div id="building_personal_count_target_104">3</div><a class="personal_count_target_edit_button" building_id="104" href="/buildings/104/personalCountTarget">Edit</a></td>
+            <td><a class="building_leitstelle_set_104" href="/buildings/104/leitstelle-set/77">North Dispatch</a><a class="building_leitstelle_set_104 btn-success" href="/buildings/104/leitstelle-set/88">South Dispatch</a></td>
+        </tr>
+        <tr class="alliance_buildings_table_searchable">
+            <td></td><td><a building_type="6" href="/buildings/105">Ambiguous Police</a></td><td>4</td><td>1 day</td><td>9</td>
+            <td><div id="building_personal_count_target_105">2</div><a class="personal_count_target_edit_button" building_id="105" href="/buildings/105/personalCountTarget">Edit</a></td>
+            <td><a class="building_leitstelle_set_105" href="/buildings/105/leitstelle-set/77">North Dispatch</a></td>
         </tr>
     </tbody></table>
 `);
-const scan = context.buildDispatchRecruitmentQueue(table, catalog.typeLabels);
+const scan = context.buildDispatchRecruitmentQueue(table, catalog.typeLabels, '77');
 assert.deepEqual(Array.from(scan.queue, item => item.buildingId), ['101', '102']);
 assert.deepEqual(Array.from(scan.queue, item => item.typeLabel), ['Fire Station', 'Police Station']);
 assert.deepEqual(Array.from(scan.queue, item => item.currentPhase), ['2', 'automatic']);
 assert.deepEqual(Array.from(scan.queue, item => item.currentDesired), [4, 7]);
 assert.equal(scan.summary.eligible, 2);
-assert.equal(scan.summary.unavailable, 1);
+assert.equal(scan.summary.outsideDispatch, 1);
+assert.equal(scan.summary.unavailable, 2);
+assert.deepEqual(Array.from(scan.summary.outsideDispatchNames), ['Other Centre Fire']);
+assert.deepEqual(Array.from(scan.summary.unavailableNames), ['Unavailable Ambulance', 'Ambiguous Police']);
 assert.deepEqual({ ...scan.summary.typeCounts }, { 2: 1, 6: 1 });
+
+const foreignRows = Array.from({ length: 39 }, (_, index) => {
+    const id = String(200 + index);
+    return `<tr class="alliance_buildings_table_searchable"><td></td><td><a building_type="2" href="/buildings/${id}">Foreign ${index + 1}</a></td><td>1</td><td>Off</td><td>1</td><td><div id="building_personal_count_target_${id}">1</div><a class="personal_count_target_edit_button" building_id="${id}" href="/buildings/${id}/personalCountTarget">Edit</a></td><td><a class="building_leitstelle_set_${id} btn-success" href="/buildings/${id}/leitstelle-set/88">South Dispatch</a></td></tr>`;
+}).join('');
+const foreignScan = context.buildDispatchRecruitmentQueue(parsed(`<table id="building_table"><tbody>${foreignRows}</tbody></table>`), catalog.typeLabels, '77');
+assert.equal(foreignScan.queue.length, 0, 'Rows assigned to another Dispatch Centre must never enter the mutable queue');
+assert.equal(foreignScan.summary.eligible, 0);
+assert.equal(foreignScan.summary.outsideDispatch, 39);
+assert.equal(foreignScan.summary.unavailable, 0);
 
 dispatchRecruitmentRuntime.dispatches = catalog.dispatches;
 dispatchRecruitmentRuntime.typeLabels = catalog.typeLabels;
@@ -157,6 +183,8 @@ context.renderDispatchRecruitmentPanel();
 assert.equal(shell.window.document.querySelectorAll('[data-setting="dispatch-recruitment-type"]').length, 2);
 assert.equal(shell.window.document.querySelectorAll('[data-setting="dispatch-recruitment-station"]').length, 2);
 assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /2 selected \/ 2 visible/u);
+assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Other centres/u);
+assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Other Centre Fire/u);
 assert.equal(shell.window.document.querySelector('[data-action="apply-dispatch-recruitment"]').disabled, false);
 dispatchRecruitmentRuntime.selectedTypeIds.delete('6');
 context.renderDispatchRecruitmentPanel();

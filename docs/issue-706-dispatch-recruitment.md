@@ -13,7 +13,7 @@ The Toolkit discovers the player's current Dispatch Centres and MissionChief's c
 
 1. Open **Toolkit → Dispatch → Dispatch Recruitment**.
 2. Choose **Load Dispatch Centres**.
-3. Select a Dispatch Centre and choose **Scan Stations**.
+3. Select a Dispatch Centre and choose **Scan Stations**. MissionChief's page is an assignment matrix that can contain rows from other centres; the Toolkit includes only rows whose active native assignment matches the centre you selected.
 4. Review the editable, unavailable and station-type totals.
 5. Leave every native station-type filter selected, or narrow the preview to Fire Stations, Police Stations, Ambulance Stations or any other types returned by MissionChief.
 6. Use **Select All Filtered**, **Clear Filtered** and the station checkboxes to create the exact target set.
@@ -23,16 +23,19 @@ The Toolkit discovers the player's current Dispatch Centres and MissionChief's c
 
 All editable stations are selected after a scan. A disabled type filter removes that type from the current target plan without discarding its station checkboxes; re-enabling the type restores the prior per-station selection. Select/Clear affects only stations visible under the active type filters.
 
+The scan summary separates **Assigned here**, **Other centres** and **Unavailable**. Stations assigned elsewhere are informational only and never enter the mutable queue. A missing or ambiguous native assignment marker is treated as unavailable rather than guessed.
+
 ## Native action contract
 
 For every selected station, the Toolkit:
 
-1. Loads `/api/buildings/<id>` and requires the station still to belong to the confirmed Dispatch Centre and retain the scanned native building type.
-2. If Personnel (Desired) differs, loads the station's native **Edit** endpoint and requires the exact same-origin `personal_count_target_only=1` PATCH form, authenticity token, number input and Save control.
-3. If Hiring Phase differs, loads the station's native recruitment page and requires the exact same-origin native action for Off, 1 day, 2 days, 3 days or Automatic.
-4. When an active phase must change, uses the exposed Cancel action first, then reloads the page and requires the requested native action. If that action is unavailable, it restores the original phase when MissionChief exposes the restoration action and reports a safe skip.
-5. Submits one station at a time with the configured delay.
-6. Reloads authoritative building data and requires both `hiring_phase`/`hiring_automatic` and `personal_count_target` to match the confirmed plan.
+1. Reads the active native Dispatch Centre assignment on every matrix row and admits only exact matches to the selected centre.
+2. Loads `/api/buildings/<id>` before mutation and requires the station still to belong to the confirmed Dispatch Centre and retain the scanned native building type.
+3. If Personnel (Desired) differs, loads the station's native **Edit** endpoint and requires the exact same-origin `personal_count_target_only=1` PATCH form, authenticity token, number input and Save control.
+4. If Hiring Phase differs, loads the station's native recruitment page and requires the exact same-origin native action for Off, 1 day, 2 days, 3 days or Automatic.
+5. When an active phase must change, uses the exposed Cancel action first, then reloads the page and requires the requested native action. If that action is unavailable, it restores the original phase when MissionChief exposes the restoration action and reports a safe skip.
+6. Submits one station at a time with the configured delay.
+7. Reloads authoritative building data and requires both `hiring_phase`/`hiring_automatic` and `personal_count_target` to match the confirmed plan.
 
 An already matching station is reported as **No change**. A moved station, changed building type, missing edit form, unavailable Automatic action or changed native control is skipped without guessing. A failed or unverified mutation is reported as an error and is never retried automatically.
 

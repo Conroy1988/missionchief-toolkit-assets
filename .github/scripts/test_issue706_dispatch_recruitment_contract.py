@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.3"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -55,6 +55,8 @@ def main() -> int:
         '#building_leitstelle_building_id[name="building[leitstelle_building_id]"]',
         '#building_building_type[name="building[building_type]"]',
         '#building_table tr.alliance_buildings_table_searchable',
+        '.building_leitstelle_set_',
+        'leitstelle-set',
         '.personal_count_target_edit_button',
         '/personalCountTarget',
         'input[name="building[personal_count_target]"]',
@@ -68,6 +70,9 @@ def main() -> int:
         assert native_contract in implementation, f"Missing native Dispatch Recruitment contract: {native_contract}"
 
     assert "catalog.typeLabels" in implementation
+    assert "buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId)" in implementation
+    assert "assignedDispatchId !== dispatchId" in implementation
+    assert "outsideDispatch" in implementation
     assert "typeLabels[typeId] || `Building type ${typeId}`" in implementation
     assert "DISPATCH_RECRUITMENT_SCAN_LIMIT = 2000" in source
     assert "DISPATCH_RECRUITMENT_APPLY_LIMIT = 2000" in source

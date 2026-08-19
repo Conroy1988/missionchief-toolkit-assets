@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.9.2
+// @version      10.9.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.9.2',
+        version: '10.9.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,13 +526,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.9.2",
-        title: "Background-first Patient Transport Sweep",
+        version: "10.9.3",
+        title: "Dispatch Recruitment assignment repair",
         highlights: Object.freeze([
-            "Runs Patient Transport Sweep in the background when MissionChief exposes an exact native Cancel Transport action for the verified vehicle.",
-            "Avoids opening mission and vehicle lightboxes for background-confirmed releases, while keeping the existing visible native workflow as a fallback.",
-            "Rejects wrong-origin, wrong-vehicle, malformed, disabled and ambiguous controls before any background release request.",
-            "Never retries an ambiguous request and continues to exclude every verified personal vehicle without adding observers, pollers or intervals."
+            "Fixes Dispatch Recruitment treating every row in MissionChief's station assignment matrix as belonging to the selected Dispatch Centre.",
+            "Reads the exact active native assignment on each row and admits only stations assigned to the chosen centre.",
+            "Separates Assigned here, Other centres and Unavailable totals so excluded rows are explained before Apply.",
+            "Retains the authoritative per-station API membership recheck, exact native forms, sequential pacing and post-update verification."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -18057,7 +18057,23 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         };
     }
 
-    function buildDispatchRecruitmentQueue(doc, typeLabels = {}) {
+    function dispatchRecruitmentAssignedDispatchId(row, buildingId) {
+        const id = String(buildingId || '');
+        if (!/^\d+$/u.test(id)) return '';
+        const assigned = new Set();
+        for (const control of Array.from(row?.querySelectorAll?.(`.building_leitstelle_set_${id}.btn-success[href]`) || [])) {
+            try {
+                const url = new URL(control.getAttribute('href'), document.baseURI || pageWindow.location.href);
+                const match = url.pathname.match(/^\/buildings\/(\d+)\/leitstelle-set\/(\d+)\/?$/u);
+                if (url.origin === pageWindow.location.origin && match?.[1] === id && !url.search && !url.hash) assigned.add(match[2]);
+            } catch (err) {}
+        }
+        return assigned.size === 1 ? Array.from(assigned)[0] : '';
+    }
+
+    function buildDispatchRecruitmentQueue(doc, typeLabels = {}, selectedDispatchId = '') {
+        const dispatchId = String(selectedDispatchId || '');
+        if (!/^\d+$/u.test(dispatchId)) throw new Error('Invalid Dispatch Centre identifier.');
         const allRows = Array.from(doc?.querySelectorAll?.('#building_table tr.alliance_buildings_table_searchable, tr.alliance_buildings_table_searchable') || []);
         const rows = allRows.slice(0, DISPATCH_RECRUITMENT_SCAN_LIMIT);
         const queue = [];
@@ -18065,10 +18081,12 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const summary = {
             totalRows: allRows.length,
             eligible: 0,
+            outsideDispatch: 0,
             unavailable: 0,
             duplicates: 0,
             truncated: Math.max(0, allRows.length - rows.length),
             typeCounts: {},
+            outsideDispatchNames: [],
             unavailableNames: []
         };
         for (const row of rows) {
@@ -18089,6 +18107,17 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 continue;
             }
             seen.add(id);
+            const assignedDispatchId = dispatchRecruitmentAssignedDispatchId(row, id);
+            if (!assignedDispatchId) {
+                summary.unavailable += 1;
+                if (summary.unavailableNames.length < 20) summary.unavailableNames.push(name);
+                continue;
+            }
+            if (assignedDispatchId !== dispatchId) {
+                summary.outsideDispatch += 1;
+                if (summary.outsideDispatchNames.length < 20) summary.outsideDispatchNames.push(name);
+                continue;
+            }
             const editButton = cells[5]?.querySelector?.('.personal_count_target_edit_button') || row.querySelector?.('.personal_count_target_edit_button');
             const target = dispatchRecruitmentTargetReference(editButton, id);
             const targetNode = cells[5]?.querySelector?.(`#building_personal_count_target_${id}`) || row.querySelector?.(`#building_personal_count_target_${id}`);
@@ -18244,7 +18273,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const scanPromise = (async () => {
             try {
                 const { doc } = await fetchDispatchRecruitmentDocument(`/buildings/${dispatchId}/leitstelle-buildings`);
-                const result = buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels);
+                const result = buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId);
                 dispatchRecruitmentRuntime.queue = result.queue;
                 dispatchRecruitmentRuntime.summary = result.summary;
                 dispatchRecruitmentRuntime.scannedAt = Date.now();
@@ -18254,7 +18283,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 dispatchRecruitmentRuntime.currentItem = '';
                 dispatchRecruitmentRuntime.log = [];
                 resetDispatchRecruitmentResults();
-                dispatchRecruitmentLog(`${dispatch.name} scan: ${result.summary.eligible} editable stations across ${Object.keys(result.summary.typeCounts).length} types; ${result.summary.unavailable} unavailable`);
+                dispatchRecruitmentLog(`${dispatch.name} scan: ${result.summary.eligible} editable assigned stations across ${Object.keys(result.summary.typeCounts).length} types; ${result.summary.outsideDispatch} assigned elsewhere; ${result.summary.unavailable} unavailable`);
                 if (result.summary.truncated) dispatchRecruitmentLog(`${result.summary.truncated} rows exceed the ${DISPATCH_RECRUITMENT_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
                 return result.queue;
             } catch (err) {
@@ -18492,7 +18521,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             if (control === dispatchSelect || ['dispatch-recruitment-type', 'dispatch-recruitment-station'].includes(control.dataset.setting)) return;
             updateUiSetProperty(control, 'disabled', locked);
         });
-        const summary = runtimeState.summary || { totalRows: 0, eligible: 0, unavailable: 0, typeCounts: {}, unavailableNames: [] };
+        const summary = runtimeState.summary || { totalRows: 0, eligible: 0, outsideDispatch: 0, unavailable: 0, typeCounts: {}, outsideDispatchNames: [], unavailableNames: [] };
         const visibleQueue = dispatchRecruitmentVisibleQueue();
         const plannedQueue = dispatchRecruitmentPlannedQueue();
         const status = runtimeState.running ? (runtimeState.stopRequested ? 'STOPPING' : 'RUNNING') : runtimeState.scanPromise ? 'SCANNING' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scannedAt ? (runtimeState.processed ? 'COMPLETE' : 'READY') : 'IDLE';
@@ -18505,22 +18534,26 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             const label = runtimeState.typeLabels[typeId] || `Building type ${typeId}`;
             return `<label class="mcms-recruitment-type"><input type="checkbox" data-setting="dispatch-recruitment-type" value="${escapeHtml(typeId)}" ${runtimeState.selectedTypeIds.has(typeId) ? 'checked' : ''} ${locked ? 'disabled' : ''}><span>${escapeHtml(label)}</span><b>${count}</b></label>`;
         }).join('')}</div>` : '<div class="mcms-empty-state">Scan a Dispatch Centre to load its current native station types.</div>';
+        const emptyStationMessage = runtimeState.scannedAt && !summary.eligible && summary.outsideDispatch
+            ? `No editable stations are assigned to this Dispatch Centre. ${summary.outsideDispatch} station${summary.outsideDispatch === 1 ? '' : 's'} ${summary.outsideDispatch === 1 ? 'is' : 'are'} assigned elsewhere.`
+            : runtimeState.scannedAt ? 'No stations match the active type filters.' : 'Load and scan a Dispatch Centre to preview editable stations.';
         const stationRows = visibleQueue.length ? visibleQueue.map(item => {
             const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
             const current = runtimeState.currentBuildingId === item.buildingId;
             const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
             const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
             return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="dispatch-recruitment-station" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.typeLabel)} · Hiring ${escapeHtml(dispatchRecruitmentPhaseLabel(item.currentPhase))} · Desired ${item.currentDesired} · Staff ${escapeHtml(item.currentStaff)}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
-        }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? 'No stations match the active type filters.' : 'Load and scan a Dispatch Centre to preview editable stations.'}</div>`;
+        }).join('') : `<div class="mcms-empty-state">${escapeHtml(emptyStationMessage)}</div>`;
         const runStats = runtimeState.running || runtimeState.processed
             ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(plannedQueue.length || runtimeState.processed, DISPATCH_RECRUITMENT_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
-            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>Editable</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${typeEntries.length}</b><span>Types</span></div><div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span>Unavailable</span></div>`;
+            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>Assigned here</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${summary.outsideDispatch}</b><span>Other centres</span></div><div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span>Unavailable</span></div>`;
+        const outsideDispatch = summary.outsideDispatchNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.outsideDispatch} row${summary.outsideDispatch === 1 ? '' : 's'} assigned to other Dispatch Centres</summary>${summary.outsideDispatchNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.outsideDispatch > summary.outsideDispatchNames.length ? `<div>+ ${summary.outsideDispatch - summary.outsideDispatchNames.length} more</div>` : ''}</details>` : '';
         const unavailable = summary.unavailableNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unavailable} unavailable row${summary.unavailable === 1 ? '' : 's'}</summary>${summary.unavailableNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unavailable > summary.unavailableNames.length ? `<div>+ ${summary.unavailable - summary.unavailableNames.length} more</div>` : ''}</details>` : '';
         const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             return `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No recruitment activity yet.</div>';
-        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
+        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${outsideDispatch}${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
         const load = panel.querySelector('[data-action="load-dispatch-recruitment"]');
         const scan = panel.querySelector('[data-action="scan-dispatch-recruitment"]');

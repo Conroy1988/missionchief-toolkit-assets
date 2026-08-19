@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 720,
-    "version": "10.9.2",
-    "sourceBytes": 2442254,
-    "sourceLines": 36645,
-    "sourceSha256": "f60fde526c934b27956cbba6e35c1a9e602474bf8fb9d9d23c92634040ff81fc",
+    "issue": 706,
+    "version": "10.9.3",
+    "sourceBytes": 2444822,
+    "sourceLines": 36678,
+    "sourceSha256": "5a0d326e238ccbbbf3afe883450b562d1e6e40a640ed1538064acc3d2287be87",
     "templateBytes": 833412,
     "templateLines": 9827,
     "templateSha256": "519a3b4da20005f7c29e5f5b756d8b89462c815577f93a068c50af37ec2a4f5f",
@@ -136,11 +136,11 @@
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 79793,
-      "sourceLines": 1219,
+      "sourceBytes": 82361,
+      "sourceLines": 1252,
       "templateBytes": 17875,
       "templateLines": 293
     },
-    "scope": "Issue #720 background-first Patient Transport Sweep with exact same-origin native action validation, fresh confirmation, bounded request attempts and visible fail-safe fallback"
+    "scope": "Issue #706 Dispatch Recruitment repair with exact active native assignment filtering, explicit cross-centre reporting and retained authoritative pre-write verification"
   }
 }

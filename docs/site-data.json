@@ -361,15 +361,13 @@
         },
         {
           "name": "Station Icon Copier",
-          "summary": "Audits exact-type icon consistency across any selected Dispatch Centres and repairs only the operator-approved subset.",
+          "summary": "Copies one owned station's existing custom icon to an exact, reviewed same-type subset while protecting existing custom icons by default.",
           "details": [
-            "Any explicit combination of native Dispatch Centres",
+            "One Dispatch Centre or ALL DISPATCH CENTRES scope",
             "Owned custom-icon source with thumbnail preview",
             "Automatic exact native building type and small/full matching",
-            "Decoded-pixel consistency audit with global and per-centre scores",
-            "Default-only, pixel-verified inconsistency and explicit replace-all policies",
-            "Unverified and post-scan changed custom icons remain protected",
-            "Exact target checkboxes with live score improvement after repair",
+            "Source exclusion and protected existing custom icons by default",
+            "Explicit replacement mode and exact target checkboxes",
             "Current native building-edit form preservation",
             "PNG/JPEG and 200×200 source validation",
             "Post-upload identity, assignment and rendered-pixel verification",
@@ -978,23 +976,23 @@
       ]
     },
     {
-      "title": "Station Icon Consistency Manager",
+      "title": "Station Icon Copier",
       "sections": [
         {
           "heading": "Selection workflow",
-          "body": "Open Toolkit → Dispatch, load stations, tick any combination of Dispatch Centres, then choose an owned source station that already has the correct custom icon. The source defines the exact native building type and small/full classification. Scan audits the complete matching scope, shows overall and per-centre consistency, and builds the eligible target list. Changing centres, source or policy destroys the stale queue."
+          "body": "Open Toolkit → Dispatch, load stations, choose one Dispatch Centre or ALL DISPATCH CENTRES, then choose an owned source station that already has the correct custom icon. The source defines the exact native building type and small/full classification. Scan, review the source thumbnail and exact target list, clear any unwanted stations, then confirm Apply to Selected. Changing scope, source or protection policy destroys the stale queue."
         },
         {
-          "heading": "Consistency and repair policies",
-          "body": "Fill default icons only is the safest policy. Fix inconsistencies only includes defaults and custom icons whose decoded pixels are proven to differ from the source; unreadable custom icons remain unverified and protected. Replace all selected custom icons is the explicit broad mode. A target already rendering the source pixels is reported as No change."
+          "heading": "Protected and replacement modes",
+          "body": "Protect them is the default and excludes existing custom icons; a target that gains one after the scan is skipped. Replace selected custom icons is explicit overwrite mode. Existing-icon targets remain individually selectable and are named in the final plan. A target already rendering the same source pixels is reported as No change without another upload."
         },
         {
           "heading": "Native verification",
-          "body": "The source PNG or JPEG is validated against MissionChief's 200×200 limit and must still match its scanned pixel signature before Apply. In inconsistency-only mode, a current custom target must still match its audited pre-write signature. Every target is then freshly rechecked, submitted sequentially through its exact native edit form, and verified for unchanged identity, assignment, type, size, name, coordinates and saved pixels. An unverified submitted request stops the run and is never retried automatically."
+          "body": "The source PNG or JPEG is downloaded once into memory and validated against MissionChief's 200×200 limit. Every target is freshly rechecked, submitted sequentially through its exact current native building-edit form, and verified for unchanged identity, assignment, type, size, name and coordinates. The saved image is decoded and pixel-compared with the source before the next target starts. An unverified submitted request stops the run and is never retried automatically."
         },
         {
           "heading": "Operator guide",
-          "body": "The complete multi-centre selection, audit, scoring, repair and freshness contract is documented in docs/issue-732-station-icon-consistency-manager.md."
+          "body": "The complete selection, overwrite, native form, image verification and failure contract is documented in docs/issue-728-station-icon-copier.md."
         }
       ]
     }

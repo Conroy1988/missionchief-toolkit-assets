@@ -1,28 +1,28 @@
 # Station Icon Copier operator and safety contract
 
-Toolkit v10.12.0 retains the original **Dispatch → Station Icon Copier** native-write contract while adding the multi-centre audit and scoring workflow documented in [Issue #732](issue-732-station-icon-consistency-manager.md).
+Toolkit v10.12.1 provides **Dispatch → Station Icon Copier** for copying one already-uploaded station icon to an exact, operator-reviewed subset of owned stations.
 
 MissionChief's native image workflow remains authoritative. The Toolkit reads owned buildings from MissionChief, downloads the selected source station's existing custom icon into browser memory, and uses each target station's current native building-edit form. It does not add an external image host, ask for a local upload, or retain image data in Toolkit storage.
 
 ## Operator workflow
 
 1. Select **Load Stations**.
-2. Tick one or more Dispatch Centres, or use **Select All Centres**.
+2. Choose one Dispatch Centre or **ALL DISPATCH CENTRES**.
 3. Choose an owned **Source Station** that already shows the required custom icon.
-4. Choose **Fill default icons only**, **Fix inconsistencies only**, or the explicit **Replace all selected custom icons** policy.
+4. Leave **Protect them (recommended)** selected unless existing custom icons must deliberately be replaced.
 5. Select **Scan Matching**. The source station defines the exact native building type and its small/full classification automatically.
-6. Review the source thumbnail, overall and per-centre consistency, exclusions, repair policy, and complete eligible target list. Clear any target that should not change.
+6. Review the source thumbnail, exclusion totals, existing-icon policy, and complete target list. Clear any target that should not change.
 7. Select **Apply to Selected**, read the exact count and scope, then confirm.
 8. Watch the per-station outcomes. **Stop** finishes the active request and its verification, then prevents another station from starting.
 
-Changing the Dispatch Centre selection, source station, or repair policy destroys the old queue. Apply remains disabled until a fresh scan binds a new queue to all three choices.
+Changing the Dispatch Centre, source station, or existing-icon policy destroys the old queue. Apply remains disabled until a fresh scan binds a new queue to all three choices.
 
 ## Exact target rules
 
 A station can enter the queue only when all of these are true:
 
 - it is an owned station returned by MissionChief's building API;
-- it is assigned to one of the explicitly selected Dispatch Centres;
+- it is assigned to the selected Dispatch Centre, or to one of the currently loaded centres in **ALL DISPATCH CENTRES** mode;
 - its native `building_type` is identical to the source station;
 - its native `small_building` classification is identical to the source station;
 - it is not the source station itself; and
@@ -32,9 +32,9 @@ Unassigned stations, stations outside the selected scope, other building types, 
 
 ## Existing custom icons
 
-**Fill default icons only (safest)** is the default and excludes every station that already has a custom icon. Each target is checked again immediately before mutation; a station that gains an icon after the preview is skipped.
+**Protect them (recommended)** is the default and excludes every station that already has a custom icon. Each target is checked again immediately before mutation; a station that gains an icon after the preview is skipped.
 
-**Fix inconsistencies only (pixel verified)** admits defaults and custom icons whose audited pixels differ from the source. An unreadable custom icon or one that changes after the audit is protected. **Replace all selected custom icons** is the explicit broad overwrite mode. If a target's current rendered pixels already match the source, it is reported as **No change** without another upload.
+**Replace selected custom icons** is explicit overwrite mode. Existing custom-icon stations can enter the preview, remain individually selectable, and are named in the final confirmation. If a target's current rendered pixels already match the source, it is reported as **No change** without another upload.
 
 ## Native mutation safeguards
 

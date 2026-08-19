@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.3"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -45,6 +45,7 @@ def main() -> int:
         'Personnel (Desired)',
         'Apply to Selected',
         'station-type filters',
+        'ALL DISPATCH CENTRES',
     ):
         assert token in dispatch_panel, f"Dispatch Recruitment panel is missing {token}"
     for phase in ('value="0">Off', 'value="1">1 day', 'value="2">2 days', 'value="3">3 days', 'value="automatic">Automatic'):
@@ -55,6 +56,8 @@ def main() -> int:
         '#building_leitstelle_building_id[name="building[leitstelle_building_id]"]',
         '#building_building_type[name="building[building_type]"]',
         '#building_table tr.alliance_buildings_table_searchable',
+        '.building_leitstelle_set_',
+        'leitstelle-set',
         '.personal_count_target_edit_button',
         '/personalCountTarget',
         'input[name="building[personal_count_target]"]',
@@ -68,6 +71,13 @@ def main() -> int:
         assert native_contract in implementation, f"Missing native Dispatch Recruitment contract: {native_contract}"
 
     assert "catalog.typeLabels" in implementation
+    assert "buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches)" in implementation
+    assert "dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES" in implementation
+    assert "allCentres ? !dispatchById.has(assignedDispatchId) : assignedDispatchId !== dispatchId" in implementation
+    assert "outsideDispatch" in implementation
+    assert "dispatchCounts" in implementation
+    assert "dispatchId: assignedDispatchId" in implementation
+    assert "dispatchName: dispatchById.get(assignedDispatchId)?.name" in implementation
     assert "typeLabels[typeId] || `Building type ${typeId}`" in implementation
     assert "DISPATCH_RECRUITMENT_SCAN_LIMIT = 2000" in source
     assert "DISPATCH_RECRUITMENT_APPLY_LIMIT = 2000" in source
@@ -80,7 +90,7 @@ def main() -> int:
 
     for guard in (
         "url.origin !== pageWindow.location.origin",
-        "String(baseline.leitstelle_building_id ?? '') !== plan.dispatchId",
+        "String(baseline.leitstelle_building_id ?? '') !== expectedDispatchId",
         "String(baseline.building_type ?? '') !== item.typeId",
         "dispatchRecruitmentRecordMatches(verified, plan)",
         "no automatic retry was made",
@@ -96,6 +106,7 @@ def main() -> int:
     assert "toolkitAnalyticsRecordFeature('dispatchRecruitment')" in run
 
     assert "dispatchRecruitment: { dispatchId: '', hiringPhase: '3', personnelDesired: '', delayMs: 1500 }" in source
+    assert "dispatchRecruitmentDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES" in source
     assert "DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes" in source
     assert "DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes" in source
     assert "setting.startsWith('dispatch-recruitment-')" in source

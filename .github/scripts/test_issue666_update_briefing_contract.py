@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.3"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.9.2"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.9.3"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Runs Patient Transport Sweep in the background when MissionChief exposes an exact native Cancel Transport action for the verified vehicle.",
+            "Fixes Dispatch Recruitment treating every row in MissionChief's station assignment matrix as belonging to the selected Dispatch Centre.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

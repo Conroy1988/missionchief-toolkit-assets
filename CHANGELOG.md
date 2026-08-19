@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.9.3] - 2026-08-19
+
+### Dispatch Recruitment assignment repair & all-centres control
+
+- Fixes Dispatch Recruitment treating every row in MissionChief's station assignment matrix as belonging to the selected Dispatch Centre.
+- Adds **ALL DISPATCH CENTRES** for a single deduplicated bulk plan spanning every loaded centre while retaining native station-type filters and exact station selection.
+- Reads and displays the exact active native assignment on every station row, admitting only the selected centre or every centre in the all-centres scope.
+- Separates Assigned, Selected, Centres and Unavailable totals in all-centres mode while preserving Assigned here and Other centres for a single-centre scan.
+- Retains the authoritative per-station API membership recheck, exact native forms, sequential pacing and post-update verification.
+
 ## [10.9.2] - 2026-08-17
 
 ### Background-first Patient Transport Sweep

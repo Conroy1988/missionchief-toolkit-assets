@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.10.0
+// @version      10.11.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.10.0',
+        version: '10.11.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,14 +526,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.10.0",
-        title: "Building-type scoped Dispatch Recruitment",
+        version: "10.11.0",
+        title: "Verified Station Icon Copier",
         highlights: Object.freeze([
-            "Adds a dedicated Building Type selector immediately after Dispatch Centre scope, with ALL BUILDING TYPES plus every current native type returned by MissionChief.",
-            "Allows one exact type such as Fire Station, Police Station or Ambulance Station to define the scan queue without hard-coding regional building catalogues.",
-            "Binds a successful scan to both its Dispatch Centre and building-type choices; changing either scope destroys the stale queue and keeps Apply to Selected disabled until a fresh scan succeeds.",
-            "Applies the 2,000-station safety limit to the chosen type while ALL BUILDING TYPES retains complete multi-centre scanning and global deduplication.",
-            "Preserves post-scan type filters, exact station selection, assignment/type rechecks, sequential writes and every existing fail-closed mutation safeguard."
+            "Adds Dispatch → Station Icon Copier for selecting one owned source station and previewing every exact same-type target across one Dispatch Centre or ALL DISPATCH CENTRES.",
+            "Derives native building type and small/full classification from the source automatically, excludes the source itself and protects every existing custom icon by default.",
+            "Adds an explicit replacement mode, exact target checkboxes, source and target thumbnails, a 2,000-station cap, confirmation, sequential pacing and Stop.",
+            "Downloads the selected MissionChief PNG or JPEG once into memory, preserves each freshly fetched native building-edit form and changes only its Building Image upload.",
+            "Rechecks station identity, assignment, type, size, name and coordinates, then pixel-verifies every saved image; an unverified submitted upload stops the complete run without retry."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -866,7 +866,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
         'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
         'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
-        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'procurementBrain', 'operationalTimeline', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
+        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'stationIconCopier', 'procurementBrain', 'operationalTimeline', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
         'mapMeasure'
     ]);
     const toolkitAnalyticsSessionSignals = new Set();
@@ -1329,6 +1329,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const DISPATCH_RECRUITMENT_APPLY_LIMIT = 2000;
     const DISPATCH_RECRUITMENT_PERSONNEL_MAX = 10000;
     const DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS = 12000;
+    const STATION_ICON_REPLACE_DEFAULTS = 'defaults';
+    const STATION_ICON_REPLACE_ALL = 'all';
+    const STATION_ICON_REPLACE_OPTIONS = Object.freeze([STATION_ICON_REPLACE_DEFAULTS, STATION_ICON_REPLACE_ALL]);
+    const STATION_ICON_DELAY_OPTIONS = Object.freeze([1000, 1500, 2000, 3000, 5000]);
+    const STATION_ICON_SCAN_LIMIT = 2000;
+    const STATION_ICON_APPLY_LIMIT = 2000;
+    const STATION_ICON_REQUEST_TIMEOUT_MS = 15000;
+    const STATION_ICON_MAX_BYTES = 4 * 1024 * 1024;
+    const STATION_ICON_MAX_DIMENSION = 200;
+    const STATION_ICON_MIME_TYPES = Object.freeze(['image/png', 'image/jpeg']);
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -1738,9 +1748,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         errors: 0,
         log: []
     };
+    const stationIconCopierRuntime = {
+        running: false,
+        preparing: false,
+        stopRequested: false,
+        catalogPromise: null,
+        scanPromise: null,
+        dispatches: [],
+        typeLabels: {},
+        buildings: [],
+        catalogAt: 0,
+        queue: [],
+        summary: null,
+        scannedAt: 0,
+        scannedDispatchId: '',
+        scannedSourceBuildingId: '',
+        scannedReplaceMode: '',
+        selectedBuildingIds: new Set(),
+        currentBuildingId: '',
+        currentItem: '',
+        processed: 0,
+        updated: 0,
+        unchanged: 0,
+        skipped: 0,
+        errors: 0,
+        sourceImage: null,
+        singleBuildingApi: '',
+        log: []
+    };
     runtimeOnCleanup(() => {
         allianceCourseRuntime.stopRequested = true;
         dispatchRecruitmentRuntime.stopRequested = true;
+        stationIconCopierRuntime.stopRequested = true;
     });
     const personalVehicleApiCache = new Map();
     const missionCommitmentIndex = new Map();
@@ -2091,6 +2130,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweep: { delayMs: 2000, maxPerRun: 25, backgroundFirst: true },
         allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
         dispatchRecruitment: { dispatchId: '', buildingTypeId: DISPATCH_RECRUITMENT_ALL_TYPES, hiringPhase: '3', personnelDesired: '', delayMs: 1500 },
+        stationIconCopier: { dispatchId: '', sourceBuildingId: '', replaceMode: STATION_ICON_REPLACE_DEFAULTS, delayMs: 1500 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
@@ -2119,6 +2159,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
         allianceCourses: { ...base.allianceCourses, ...(parsed.allianceCourses || {}) },
         dispatchRecruitment: { ...base.dispatchRecruitment, ...(parsed.dispatchRecruitment || {}) },
+        stationIconCopier: { ...base.stationIconCopier, ...(parsed.stationIconCopier || {}) },
         majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
@@ -2223,6 +2264,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const dispatchPersonnelDesired = String(merged.dispatchRecruitment.personnelDesired ?? '').trim();
         merged.dispatchRecruitment.personnelDesired = /^\d+$/u.test(dispatchPersonnelDesired) && Number(dispatchPersonnelDesired) <= DISPATCH_RECRUITMENT_PERSONNEL_MAX ? String(Number(dispatchPersonnelDesired)) : '';
         merged.dispatchRecruitment.delayMs = DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes(Number(merged.dispatchRecruitment.delayMs)) ? Number(merged.dispatchRecruitment.delayMs) : 1500;
+        const stationIconDispatchId = String(merged.stationIconCopier.dispatchId || '');
+        merged.stationIconCopier.dispatchId = stationIconDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES || /^\d+$/u.test(stationIconDispatchId) ? stationIconDispatchId : '';
+        const stationIconSourceBuildingId = String(merged.stationIconCopier.sourceBuildingId || '');
+        merged.stationIconCopier.sourceBuildingId = /^\d+$/u.test(stationIconSourceBuildingId) ? stationIconSourceBuildingId : '';
+        merged.stationIconCopier.replaceMode = STATION_ICON_REPLACE_OPTIONS.includes(String(merged.stationIconCopier.replaceMode)) ? String(merged.stationIconCopier.replaceMode) : STATION_ICON_REPLACE_DEFAULTS;
+        merged.stationIconCopier.delayMs = STATION_ICON_DELAY_OPTIONS.includes(Number(merged.stationIconCopier.delayMs)) ? Number(merged.stationIconCopier.delayMs) : 1500;
         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
         const loadedPayoutDuration = Number(parsed?.payoutFlash?.durationMs);
@@ -12554,6 +12601,15 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-recruitment-station > b { color:#8af0b6 !important; font-size:6.8px !important; white-space:nowrap !important; }
         #${SCRIPT.panelId} .mcms-recruitment-findings { margin-top:7px !important; padding:6px 7px !important; border:1px solid rgba(255,182,72,.24) !important; border-radius:8px !important; background:rgba(70,40,8,.12) !important; color:rgba(255,255,255,.58) !important; font-size:7px !important; line-height:1.35 !important; }
         #${SCRIPT.panelId} .mcms-recruitment-findings summary { color:#ffd28a !important; cursor:pointer !important; font-weight:950 !important; }
+        #${SCRIPT.panelId} .mcms-icon-copy-card { border-color:rgba(90,195,255,.32) !important; background:rgba(12,49,75,.18) !important; }
+        #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-sweep-head { color:#bfe9ff !important; }
+        #${SCRIPT.panelId} .mcms-icon-source { display:grid !important; grid-template-columns:40px minmax(0,1fr) !important; align-items:center !important; gap:8px !important; margin:7px 0 !important; padding:7px !important; border:1px solid rgba(90,195,255,.25) !important; border-radius:9px !important; background:rgba(90,195,255,.07) !important; }
+        #${SCRIPT.panelId} .mcms-icon-source strong { display:block !important; color:#f7fbff !important; font-size:8.5px !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.panelId} .mcms-icon-source small { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.55) !important; font-size:7px !important; line-height:1.35 !important; }
+        #${SCRIPT.panelId} .mcms-icon-thumb { display:grid !important; place-items:center !important; width:34px !important; height:34px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:7px !important; background:rgba(0,0,0,.22) !important; object-fit:contain !important; image-rendering:auto !important; }
+        #${SCRIPT.panelId} .mcms-icon-default { color:rgba(255,255,255,.38) !important; font-size:8px !important; font-weight:950 !important; }
+        #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-recruitment-station { grid-template-columns:auto 34px minmax(0,1fr) auto !important; }
+        #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-recruitment-station[data-outcome="updated"] { border-color:rgba(90,195,255,.46) !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-type { min-height:44px !important; font-size:9px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-type input,
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-station input { width:22px !important; height:22px !important; }
@@ -18231,6 +18287,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         dispatchRecruitmentRuntime.log.unshift({ time: Date.now(), message: clean, level: String(level || 'info') });
         if (dispatchRecruitmentRuntime.log.length > 24) dispatchRecruitmentRuntime.log.length = 24;
         renderDispatchRecruitmentPanel();
+        renderStationIconCopierPanel();
     }
 
     async function fetchDispatchRecruitmentDocument(pathOrUrl) {
@@ -18270,7 +18327,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
 
     async function loadDispatchRecruitmentCatalog({ force = false } = {}) {
         if (dispatchRecruitmentRuntime.catalogPromise) return dispatchRecruitmentRuntime.catalogPromise;
-        if (dispatchRecruitmentRuntime.running) return dispatchRecruitmentRuntime.dispatches;
+        if (dispatchRecruitmentRuntime.running || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return dispatchRecruitmentRuntime.dispatches;
         if (!force && dispatchRecruitmentRuntime.catalogAt && dispatchRecruitmentRuntime.dispatches.length) return dispatchRecruitmentRuntime.dispatches;
         dispatchRecruitmentRuntime.currentItem = 'Loading native Dispatch Centre and building-type options';
         const catalogPromise = (async () => {
@@ -18327,7 +18384,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
 
     async function scanDispatchRecruitmentStations({ forceCatalog = false } = {}) {
         if (dispatchRecruitmentRuntime.scanPromise) return dispatchRecruitmentRuntime.scanPromise;
-        if (dispatchRecruitmentRuntime.running) return dispatchRecruitmentRuntime.queue;
+        if (dispatchRecruitmentRuntime.running || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return dispatchRecruitmentRuntime.queue;
         const dispatches = await loadDispatchRecruitmentCatalog({ force: forceCatalog });
         if (!dispatches.length || dispatchRecruitmentRuntime.running || runtime.destroyed) return [];
         const dispatchId = String(state.dispatchRecruitment.dispatchId || '');
@@ -18679,7 +18736,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     function dispatchRecruitmentSelectVisible(selected) {
-        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise) return;
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return;
         for (const item of dispatchRecruitmentVisibleQueue()) {
             if (selected) dispatchRecruitmentRuntime.selectedBuildingIds.add(item.buildingId);
             else dispatchRecruitmentRuntime.selectedBuildingIds.delete(item.buildingId);
@@ -18693,7 +18750,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const host = panel?.querySelector?.('[data-dispatch-recruitment]');
         if (!host) return;
         const runtimeState = dispatchRecruitmentRuntime;
-        const locked = runtimeState.running || Boolean(runtimeState.scanPromise) || Boolean(runtimeState.catalogPromise);
+        const locked = runtimeState.running || Boolean(runtimeState.scanPromise) || Boolean(runtimeState.catalogPromise) || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || Boolean(stationIconCopierRuntime.scanPromise) || Boolean(stationIconCopierRuntime.catalogPromise);
         const dispatchSelect = panel.querySelector('[data-setting="dispatch-recruitment-centre"]');
         const dispatchOptions = runtimeState.dispatches.length
             ? `<option value="${DISPATCH_RECRUITMENT_ALL_CENTRES}">ALL DISPATCH CENTRES</option>${runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}`
@@ -18798,7 +18855,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     async function startDispatchRecruitment() {
-        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise) return;
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return;
         let plan;
         try { plan = readDispatchRecruitmentPlan(); }
         catch (err) { showToast(err?.message || 'Check the Dispatch Recruitment values'); return; }
@@ -18913,6 +18970,883 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         dispatchRecruitmentRuntime.stopRequested = true;
         dispatchRecruitmentLog('Stop requested — the active MissionChief request will finish, then no further stations will be changed', 'warn');
         renderDispatchRecruitmentPanel();
+    }
+
+    function stationIconText(value) {
+        return String(value || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function stationIconBoolean(value) {
+        return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+    }
+
+    function stationIconSafeUrl(value) {
+        const text = String(value || '').trim();
+        if (!text) return '';
+        try {
+            const url = new URL(text, document.baseURI || pageWindow.location.href);
+            if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return '';
+            if (pageWindow.location.protocol === 'https:' && url.protocol !== 'https:') return '';
+            return url.href;
+        } catch (err) { return ''; }
+    }
+
+    function normaliseStationIconRecord(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const id = String(raw.id ?? '').trim();
+        const typeId = String(raw.building_type ?? '').trim();
+        if (!/^\d+$/u.test(id) || !/^\d+$/u.test(typeId)) return null;
+        const dispatchValue = raw.leitstelle_building_id ?? raw.control_center_id ?? raw.controlCentreId ?? 0;
+        const dispatchId = /^\d+$/u.test(String(dispatchValue ?? '').trim()) && Number(dispatchValue) > 0 ? String(dispatchValue) : '0';
+        const hasCustomIconField = Object.prototype.hasOwnProperty.call(raw, 'custom_icon_url');
+        const rawCustomIconUrl = hasCustomIconField ? String(raw.custom_icon_url || '').trim() : '';
+        const customIconUrl = stationIconSafeUrl(rawCustomIconUrl);
+        const caption = stationIconText(raw.caption ?? raw.name) || `Station ${id}`;
+        return {
+            id,
+            caption,
+            typeId,
+            small: stationIconBoolean(raw.small_building),
+            dispatchId,
+            hasCustomIcon: Boolean(rawCustomIconUrl),
+            hasCustomIconField,
+            customIconUrl,
+            latitude: Number.isFinite(Number(raw.latitude)) ? Number(raw.latitude) : null,
+            longitude: Number.isFinite(Number(raw.longitude)) ? Number(raw.longitude) : null
+        };
+    }
+
+    function stationIconPayloadRecords(payload) {
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload?.result)) return payload.result;
+        if (payload?.result && typeof payload.result === 'object') return [payload.result];
+        if (payload && typeof payload === 'object' && payload.id !== undefined) return [payload];
+        return [];
+    }
+
+    function stationIconTypeKey(record) {
+        return `${record?.typeId || ''}:${record?.small ? '1' : '0'}`;
+    }
+
+    function stationIconTypeLabel(record, typeLabels = stationIconCopierRuntime.typeLabels) {
+        const base = typeLabels?.[record?.typeId] || `Building type ${record?.typeId || '?'}`;
+        return `${base}${record?.small ? ' · Small' : ''}`;
+    }
+
+    function stationIconDispatchMap(dispatches = stationIconCopierRuntime.dispatches) {
+        return new Map(Array.from(dispatches || [])
+            .filter(item => /^\d+$/u.test(String(item?.id || '')))
+            .map(item => [String(item.id), stationIconText(item.name) || `Dispatch Centre ${item.id}`]));
+    }
+
+    function stationIconRecordInScope(record, dispatchId, dispatchById = stationIconDispatchMap()) {
+        if (!record || record.dispatchId === '0') return false;
+        return dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? dispatchById.has(record.dispatchId) : record.dispatchId === dispatchId;
+    }
+
+    function stationIconSourceChoices(dispatchId = String(state.stationIconCopier.dispatchId || '')) {
+        const dispatchById = stationIconDispatchMap();
+        return stationIconCopierRuntime.buildings
+            .filter(record => record.hasCustomIcon && record.customIconUrl && stationIconRecordInScope(record, dispatchId, dispatchById))
+            .sort((left, right) => left.caption.localeCompare(right.caption, undefined, { sensitivity: 'base', numeric: true }));
+    }
+
+    function resetStationIconResults() {
+        stationIconCopierRuntime.currentBuildingId = '';
+        stationIconCopierRuntime.currentItem = '';
+        stationIconCopierRuntime.processed = 0;
+        stationIconCopierRuntime.updated = 0;
+        stationIconCopierRuntime.unchanged = 0;
+        stationIconCopierRuntime.skipped = 0;
+        stationIconCopierRuntime.errors = 0;
+        stationIconCopierRuntime.sourceImage = null;
+        for (const item of stationIconCopierRuntime.queue) {
+            item.outcome = 'ready';
+            item.outcomeDetail = '';
+        }
+    }
+
+    function clearStationIconScan({ preserveLog = false } = {}) {
+        stationIconCopierRuntime.queue = [];
+        stationIconCopierRuntime.summary = null;
+        stationIconCopierRuntime.scannedAt = 0;
+        stationIconCopierRuntime.scannedDispatchId = '';
+        stationIconCopierRuntime.scannedSourceBuildingId = '';
+        stationIconCopierRuntime.scannedReplaceMode = '';
+        stationIconCopierRuntime.selectedBuildingIds.clear();
+        if (!preserveLog) stationIconCopierRuntime.log = [];
+        resetStationIconResults();
+    }
+
+    function stationIconLog(message, level = 'info') {
+        const clean = stationIconText(message);
+        if (!clean) return;
+        stationIconCopierRuntime.log.unshift({ time: Date.now(), message: clean, level: String(level || 'info') });
+        if (stationIconCopierRuntime.log.length > 24) stationIconCopierRuntime.log.length = 24;
+        renderStationIconCopierPanel();
+        renderDispatchRecruitmentPanel();
+    }
+
+    function buildStationIconCopyQueue(buildings, dispatchId, sourceBuildingId, replaceMode, dispatches = []) {
+        const scopeId = String(dispatchId || '');
+        const sourceId = String(sourceBuildingId || '');
+        const mode = String(replaceMode || '');
+        if (scopeId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !/^\d+$/u.test(scopeId)) throw new Error('Choose a valid Dispatch Centre.');
+        if (!/^\d+$/u.test(sourceId)) throw new Error('Choose a source station with a custom icon.');
+        if (!STATION_ICON_REPLACE_OPTIONS.includes(mode)) throw new Error('Choose a valid existing-icon policy.');
+        const dispatchById = stationIconDispatchMap(dispatches);
+        if (scopeId === DISPATCH_RECRUITMENT_ALL_CENTRES && !dispatchById.size) throw new Error('No loaded Dispatch Centres are available for an all-centres scan.');
+        const records = Array.from(buildings || []).filter(Boolean);
+        const source = records.find(record => record.id === sourceId);
+        if (!source || !source.hasCustomIcon || !source.customIconUrl) throw new Error('The selected source station no longer has a readable custom icon.');
+        if (!stationIconRecordInScope(source, scopeId, dispatchById)) throw new Error('The selected source station is outside the current Dispatch Centre scope.');
+        const sourceTypeKey = stationIconTypeKey(source);
+        const queue = [];
+        const summary = {
+            total: records.length,
+            exactType: 0,
+            eligible: 0,
+            protectedCustom: 0,
+            outsideDispatch: 0,
+            otherType: 0,
+            unassigned: 0,
+            sourceExcluded: 0,
+            truncated: 0,
+            protectedNames: [],
+            dispatchCounts: {},
+            source: { ...source }
+        };
+        const sorted = records.slice().sort((left, right) => left.caption.localeCompare(right.caption, undefined, { sensitivity: 'base', numeric: true }));
+        for (const record of sorted) {
+            if (record.dispatchId === '0') {
+                summary.unassigned += 1;
+                continue;
+            }
+            if (!stationIconRecordInScope(record, scopeId, dispatchById)) {
+                summary.outsideDispatch += 1;
+                continue;
+            }
+            if (stationIconTypeKey(record) !== sourceTypeKey) {
+                summary.otherType += 1;
+                continue;
+            }
+            summary.exactType += 1;
+            if (record.id === sourceId) {
+                summary.sourceExcluded += 1;
+                continue;
+            }
+            if (mode === STATION_ICON_REPLACE_DEFAULTS && record.hasCustomIcon) {
+                summary.protectedCustom += 1;
+                if (summary.protectedNames.length < 20) summary.protectedNames.push(record.caption);
+                continue;
+            }
+            if (queue.length >= STATION_ICON_SCAN_LIMIT) {
+                summary.truncated += 1;
+                continue;
+            }
+            queue.push({
+                buildingId: record.id,
+                name: record.caption,
+                dispatchId: record.dispatchId,
+                dispatchName: dispatchById.get(record.dispatchId) || `Dispatch Centre ${record.dispatchId}`,
+                typeId: record.typeId,
+                small: record.small,
+                typeLabel: stationIconTypeLabel(record),
+                hasCustomIcon: record.hasCustomIcon,
+                customIconUrl: record.customIconUrl,
+                latitude: record.latitude,
+                longitude: record.longitude,
+                outcome: 'ready',
+                outcomeDetail: ''
+            });
+            summary.eligible += 1;
+            summary.dispatchCounts[record.dispatchId] = (summary.dispatchCounts[record.dispatchId] || 0) + 1;
+        }
+        return { queue, summary };
+    }
+
+    async function fetchStationIconDocument(pathOrUrl) {
+        const url = new URL(pathOrUrl, document.baseURI || pageWindow.location.href);
+        if (url.origin !== pageWindow.location.origin) throw new Error('Blocked an unexpected external Station Icon Copier URL.');
+        const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'text/html,application/xhtml+xml' },
+            timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief redirected Station Icon Copier away from the authenticated game page.');
+        const html = await response.text();
+        return { doc: new DOMParser().parseFromString(html, 'text/html'), url: finalUrl.href };
+    }
+
+    async function fetchStationIconBuildings() {
+        const url = new URL('/api/v2/buildings', document.baseURI || pageWindow.location.href);
+        const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+            timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while loading owned stations.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin || finalUrl.pathname.replace(/\/+$/u, '') !== '/api/v2/buildings') throw new Error('MissionChief redirected the owned-station catalogue unexpectedly.');
+        const payload = await response.json();
+        const records = stationIconPayloadRecords(payload).map(normaliseStationIconRecord).filter(Boolean);
+        if (!Array.isArray(payload?.result)) throw new Error('MissionChief did not return the expected owned-station catalogue.');
+        const reportedTotal = Number(payload?.pagination?.total ?? payload?.pagination?.total_entries ?? payload?.total);
+        if (Number.isFinite(reportedTotal) && reportedTotal > records.length) throw new Error(`MissionChief returned an incomplete owned-station catalogue (${records.length} of ${reportedTotal}).`);
+        const unique = new Map();
+        for (const record of records) {
+            if (unique.has(record.id)) throw new Error(`MissionChief returned duplicate station ${record.id} records.`);
+            unique.set(record.id, record);
+        }
+        return Array.from(unique.values());
+    }
+
+    async function fetchStationIconApiRecord(path, buildingId, { allowMissing = false } = {}) {
+        const url = new URL(path, document.baseURI || pageWindow.location.href);
+        const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+            timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
+        });
+        if (allowMissing && [404, 405].includes(Number(response.status))) return null;
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while checking station ${buildingId}.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin || finalUrl.pathname.replace(/\/+$/u, '') !== url.pathname.replace(/\/+$/u, '')) throw new Error(`MissionChief redirected station ${buildingId} data unexpectedly.`);
+        const record = stationIconPayloadRecords(await response.json())
+            .map(normaliseStationIconRecord)
+            .find(item => item.id === String(buildingId));
+        if (!record) throw new Error(`MissionChief did not return authoritative station ${buildingId} data.`);
+        return record;
+    }
+
+    async function fetchStationIconBuilding(buildingId, { requireIcon = true } = {}) {
+        const id = String(buildingId || '');
+        if (!/^\d+$/u.test(id)) throw new Error('Invalid station identifier.');
+        let record = null;
+        if (stationIconCopierRuntime.singleBuildingApi !== 'legacy') {
+            record = await fetchStationIconApiRecord(`/api/v2/buildings/${id}`, id, { allowMissing: stationIconCopierRuntime.singleBuildingApi === '' });
+            if (record) stationIconCopierRuntime.singleBuildingApi = 'v2';
+            else stationIconCopierRuntime.singleBuildingApi = 'legacy';
+        }
+        if (!record) record = await fetchStationIconApiRecord(`/api/buildings/${id}`, id);
+        if (requireIcon && !record.hasCustomIconField) {
+            const refreshed = (await fetchStationIconBuildings()).find(item => item.id === id);
+            if (!refreshed) throw new Error(`Station ${id} disappeared from the owned-station catalogue.`);
+            record = refreshed;
+        }
+        return record;
+    }
+
+    function stationIconDigest(bytes) {
+        let first = 2166136261;
+        let second = 2246822507;
+        for (let index = 0; index < bytes.length; index += 1) {
+            const value = bytes[index];
+            first = Math.imul(first ^ value, 16777619) >>> 0;
+            second = Math.imul(second ^ (value + index), 3266489909) >>> 0;
+        }
+        return `${bytes.length}:${first.toString(16).padStart(8, '0')}:${second.toString(16).padStart(8, '0')}`;
+    }
+
+    async function stationIconLoadBitmap(blob) {
+        if (typeof pageWindow.createImageBitmap === 'function') return pageWindow.createImageBitmap(blob);
+        const ImageConstructor = pageWindow.Image;
+        const UrlConstructor = pageWindow.URL || URL;
+        if (typeof ImageConstructor !== 'function' || typeof UrlConstructor?.createObjectURL !== 'function') throw new Error('This browser cannot decode the station icon safely.');
+        const objectUrl = UrlConstructor.createObjectURL(blob);
+        try {
+            return await new Promise((resolve, reject) => {
+                const image = new ImageConstructor();
+                image.onload = () => resolve(image);
+                image.onerror = () => reject(new Error('The station icon could not be decoded.'));
+                image.src = objectUrl;
+            });
+        } finally { UrlConstructor.revokeObjectURL(objectUrl); }
+    }
+
+    async function stationIconInspectBlob(blob, mimeType = '') {
+        if (!blob || typeof blob.arrayBuffer !== 'function') throw new Error('MissionChief did not return a readable image file.');
+        const size = Number(blob.size) || 0;
+        if (!size || size > STATION_ICON_MAX_BYTES) throw new Error(`The source icon must be between 1 byte and ${Math.round(STATION_ICON_MAX_BYTES / 1048576)} MB.`);
+        const mime = String(mimeType || blob.type || '').split(';')[0].trim().toLowerCase();
+        if (!STATION_ICON_MIME_TYPES.includes(mime)) throw new Error('Only MissionChief PNG or JPEG station icons can be copied.');
+        const bitmap = await stationIconLoadBitmap(blob);
+        const width = Math.round(Number(bitmap.width || bitmap.naturalWidth) || 0);
+        const height = Math.round(Number(bitmap.height || bitmap.naturalHeight) || 0);
+        if (!width || !height || width > STATION_ICON_MAX_DIMENSION || height > STATION_ICON_MAX_DIMENSION) {
+            try { bitmap.close?.(); } catch (err) {}
+            throw new Error(`MissionChief station icons must be no larger than ${STATION_ICON_MAX_DIMENSION}×${STATION_ICON_MAX_DIMENSION}px.`);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) {
+            try { bitmap.close?.(); } catch (err) {}
+            throw new Error('This browser cannot verify station-icon pixels safely.');
+        }
+        context.clearRect(0, 0, width, height);
+        context.drawImage(bitmap, 0, 0, width, height);
+        let pixels;
+        try { pixels = context.getImageData(0, 0, width, height).data; }
+        catch (err) {
+            try { bitmap.close?.(); } catch (closeError) {}
+            throw new Error('The station icon host blocked pixel verification.');
+        }
+        try { bitmap.close?.(); } catch (err) {}
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        return {
+            blob,
+            mime,
+            width,
+            height,
+            pixelDigest: stationIconDigest(pixels),
+            byteDigest: stationIconDigest(bytes),
+            filename: mime === 'image/png' ? 'station-icon.png' : 'station-icon.jpg'
+        };
+    }
+
+    async function fetchStationIconImage(iconUrl, label = 'station icon') {
+        const href = stationIconSafeUrl(iconUrl);
+        if (!href) throw new Error(`The ${label} URL is missing or unsafe.`);
+        const url = new URL(href);
+        let response;
+        try {
+            response = await runtimeFetch(url.href, {
+                method: 'GET',
+                credentials: url.origin === pageWindow.location.origin ? 'same-origin' : 'omit',
+                mode: 'cors',
+                cache: 'no-store',
+                headers: { Accept: 'image/png,image/jpeg' },
+                timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
+            });
+        } catch (err) {
+            throw new Error(`The ${label} could not be downloaded. Its image host may block secure copying.`);
+        }
+        if (!response.ok) throw new Error(`The ${label} host returned HTTP ${response.status}.`);
+        const finalUrl = stationIconSafeUrl(response.url || url.href);
+        if (!finalUrl) throw new Error(`The ${label} redirected to an unsafe URL.`);
+        const blob = await response.blob();
+        const headerMime = String(response.headers?.get?.('content-type') || '').split(';')[0].trim().toLowerCase();
+        return stationIconInspectBlob(blob, headerMime || blob.type);
+    }
+
+    function stationIconImagesMatch(left, right) {
+        return Boolean(left && right
+            && left.width === right.width
+            && left.height === right.height
+            && left.pixelDigest
+            && left.pixelDigest === right.pixelDigest);
+    }
+
+    function stationIconSafeSkip(message) {
+        const error = new Error(message);
+        error.stationIconSafeSkip = true;
+        return error;
+    }
+
+    function stationIconSafetyStop(message) {
+        const error = new Error(`Station Icon Copier safety stop: ${message}`);
+        error.stationIconFatal = true;
+        return error;
+    }
+
+    function stationIconCoordinatesMatch(left, right) {
+        if (left === null || right === null) return true;
+        return Math.abs(Number(left) - Number(right)) <= 0.0000001;
+    }
+
+    function stationIconAssertTargetScope(record, item, afterMutation = false) {
+        const problem = record?.id !== item.buildingId ? 'station identity changed'
+            : record.dispatchId !== item.dispatchId ? 'Dispatch Centre assignment changed'
+            : record.typeId !== item.typeId ? 'building type changed'
+            : record.small !== item.small ? 'small/full station classification changed'
+            : record.caption !== item.name ? 'station name changed'
+            : !stationIconCoordinatesMatch(record.latitude, item.latitude) || !stationIconCoordinatesMatch(record.longitude, item.longitude) ? 'station coordinates changed'
+            : '';
+        if (!problem) return record;
+        if (afterMutation) throw stationIconSafetyStop(`MissionChief reported that ${item.name}'s ${problem} during the image update. No further stations were changed.`);
+        throw stationIconSafeSkip(`${problem} after the scan`);
+    }
+
+    function stationIconAssertUnchangedAfterMutation(after, before, item) {
+        const snapshot = {
+            ...item,
+            name: before.caption,
+            dispatchId: before.dispatchId,
+            typeId: before.typeId,
+            small: before.small,
+            latitude: before.latitude,
+            longitude: before.longitude
+        };
+        return stationIconAssertTargetScope(after, snapshot, true);
+    }
+
+    function stationIconNamedControl(form, name) {
+        const control = form?.elements?.namedItem?.(name);
+        if (!control || control.length && !control.tagName) return control?.[0] || null;
+        return control;
+    }
+
+    function stationIconAssertFormValue(form, name, expected, { numeric = false, boolean = false } = {}) {
+        const named = Array.from(form?.elements || []).filter(control => String(control.name || '') === name);
+        if (!named.length) return;
+        const successful = named.filter(control => !control.disabled && (!['checkbox', 'radio'].includes(String(control.type || '').toLowerCase()) || control.checked));
+        const controls = successful.length ? successful : named;
+        const actual = String(controls[controls.length - 1]?.value ?? '');
+        const matches = numeric ? stationIconCoordinatesMatch(Number(actual), Number(expected))
+            : boolean ? stationIconBoolean(actual) === Boolean(expected)
+            : actual === String(expected ?? '');
+        if (!matches) throw stationIconSafeSkip(`native edit form ${name} no longer matches the verified station`);
+    }
+
+    function prepareStationIconSubmission(doc, item, sourceImage) {
+        const expectedPath = `/buildings/${item.buildingId}`;
+        const forms = Array.from(doc?.getElementsByTagName?.('form') || []).filter(candidate => {
+            try {
+                const action = new URL(candidate.getAttribute('action') || '', document.baseURI || pageWindow.location.href);
+                return action.origin === pageWindow.location.origin && action.pathname === expectedPath && !action.search && !action.hash;
+            } catch (err) { return false; }
+        });
+        if (forms.length !== 1) throw stationIconSafeSkip('the exact native building edit form is unavailable or ambiguous');
+        const form = forms[0];
+        if (String(form.getAttribute('method') || '').toLowerCase() !== 'post') throw stationIconSafeSkip('native building edit form method changed unexpectedly');
+        const token = stationIconNamedControl(form, 'authenticity_token');
+        const methodOverride = stationIconNamedControl(form, '_method');
+        const imageControl = stationIconNamedControl(form, 'building[image]');
+        if (!token?.value || String(methodOverride?.value || '').toLowerCase() !== 'patch') throw stationIconSafeSkip('native building edit authenticity or PATCH guard is unavailable');
+        if (!imageControl || imageControl.disabled || String(imageControl.type || '').toLowerCase() !== 'file') throw stationIconSafeSkip('native Building Image upload control is unavailable');
+        const fileControls = Array.from(form.elements || []).filter(control => !control.disabled && String(control.type || '').toLowerCase() === 'file');
+        if (fileControls.length !== 1 || fileControls[0] !== imageControl) throw stationIconSafetyStop('the native edit form exposed an unexpected additional file upload. No request was sent.');
+        stationIconAssertFormValue(form, 'building[caption]', item.name);
+        stationIconAssertFormValue(form, 'building[building_type]', item.typeId);
+        stationIconAssertFormValue(form, 'building[leitstelle_building_id]', item.dispatchId);
+        stationIconAssertFormValue(form, 'building[small_building]', item.small, { boolean: true });
+        if (item.latitude !== null) stationIconAssertFormValue(form, 'building[latitude]', item.latitude, { numeric: true });
+        if (item.longitude !== null) stationIconAssertFormValue(form, 'building[longitude]', item.longitude, { numeric: true });
+        const action = new URL(form.getAttribute('action'), document.baseURI || pageWindow.location.href);
+        const formData = new FormData(form);
+        formData.delete('building[remove_image]');
+        formData.set('building[image]', sourceImage.blob, sourceImage.filename);
+        if (formData.getAll('building[image]').length !== 1 || !formData.get('authenticity_token') || String(formData.get('_method') || '').toLowerCase() !== 'patch') {
+            throw stationIconSafetyStop('the prepared native upload payload failed its final image, authenticity or PATCH guard. No request was sent.');
+        }
+        return { action: action.href, formData };
+    }
+
+    async function submitStationIconForm(prepared, item) {
+        const action = new URL(prepared.action, document.baseURI || pageWindow.location.href);
+        if (action.origin !== pageWindow.location.origin || action.pathname !== `/buildings/${item.buildingId}` || action.search || action.hash) {
+            throw stationIconSafetyStop('blocked an unexpected building-image mutation URL. No request was sent.');
+        }
+        let response;
+        try {
+            response = await runtimeFetch(action.href, {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                redirect: 'follow',
+                headers: { Accept: 'text/html,application/xhtml+xml' },
+                body: prepared.formData,
+                timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
+            });
+        } catch (err) {
+            throw stationIconSafetyStop('the icon may have been submitted, but MissionChief did not return a verifiable response. No further stations were changed.');
+        }
+        if (!response.ok) throw stationIconSafetyStop(`MissionChief returned HTTP ${response.status} after the icon upload. No further stations were changed.`);
+        let finalUrl;
+        try { finalUrl = new URL(response.url || action.href, action.href); }
+        catch (err) {
+            throw stationIconSafetyStop('MissionChief returned an unreadable destination after the icon upload. No further stations were changed.');
+        }
+        if (finalUrl.origin !== pageWindow.location.origin || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) {
+            throw stationIconSafetyStop('MissionChief redirected the submitted icon outside the authenticated building flow. No further stations were changed.');
+        }
+    }
+
+    async function prepareStationIconSource(plan) {
+        const scanned = stationIconCopierRuntime.buildings.find(record => record.id === plan.sourceBuildingId);
+        if (!scanned) throw new Error('The selected source station is no longer in the loaded owned-station catalogue.');
+        const current = await fetchStationIconBuilding(plan.sourceBuildingId, { requireIcon: true });
+        if (!current.hasCustomIcon || !current.customIconUrl) throw new Error('The selected source station no longer has a readable custom icon.');
+        const dispatchById = stationIconDispatchMap();
+        if (!stationIconRecordInScope(current, plan.dispatchId, dispatchById)) throw new Error('The source station moved outside the selected Dispatch Centre scope.');
+        if (current.caption !== scanned.caption || stationIconTypeKey(current) !== stationIconTypeKey(scanned) || current.dispatchId !== scanned.dispatchId) {
+            throw new Error('The source station changed after the scan. Load and scan the plan again.');
+        }
+        const image = await fetchStationIconImage(current.customIconUrl, `${current.caption} source icon`);
+        return { ...image, record: current };
+    }
+
+    async function applyStationIconToStation(item, plan, sourceImage) {
+        const baseline = await fetchStationIconBuilding(item.buildingId, { requireIcon: true });
+        stationIconAssertTargetScope(baseline, item);
+        if (plan.replaceMode === STATION_ICON_REPLACE_DEFAULTS && baseline.hasCustomIcon) throw stationIconSafeSkip('an existing custom icon is now protected');
+        if (baseline.hasCustomIcon) {
+            if (!baseline.customIconUrl) throw stationIconSafeSkip('the current custom icon URL is not safely readable');
+            const currentImage = await fetchStationIconImage(baseline.customIconUrl, `${item.name} current icon`);
+            if (stationIconImagesMatch(currentImage, sourceImage)) return { changed: false, record: baseline, detail: 'already uses the source icon' };
+        }
+        const { doc } = await fetchStationIconDocument(`/buildings/${item.buildingId}/edit`);
+        const prepared = prepareStationIconSubmission(doc, item, sourceImage);
+        await submitStationIconForm(prepared, item);
+        const settled = await runtimeDelay(250);
+        if (!settled) throw stationIconSafetyStop('the icon was submitted, but the Toolkit stopped before it could be verified.');
+        let verified;
+        try { verified = await fetchStationIconBuilding(item.buildingId, { requireIcon: true }); }
+        catch (err) { throw stationIconSafetyStop('the icon was submitted, but authoritative station verification failed. No further stations were changed.'); }
+        stationIconAssertUnchangedAfterMutation(verified, baseline, item);
+        if (!verified.hasCustomIcon || !verified.customIconUrl) throw stationIconSafetyStop('MissionChief did not expose the saved custom icon after upload. No further stations were changed.');
+        let savedImage;
+        try { savedImage = await fetchStationIconImage(verified.customIconUrl, `${item.name} saved icon`); }
+        catch (err) { throw stationIconSafetyStop(`the saved icon could not be verified: ${err?.message || 'image unavailable'}. No further stations were changed.`); }
+        if (!stationIconImagesMatch(savedImage, sourceImage)) throw stationIconSafetyStop('the saved station icon does not match the selected source image. No further stations were changed.');
+        return { changed: true, record: verified, detail: `${sourceImage.width}×${sourceImage.height}px ${sourceImage.mime === 'image/png' ? 'PNG' : 'JPEG'} verified` };
+    }
+
+    async function loadStationIconCatalog({ force = false } = {}) {
+        if (stationIconCopierRuntime.catalogPromise) return stationIconCopierRuntime.catalogPromise;
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running) return stationIconCopierRuntime.buildings;
+        if (!force && stationIconCopierRuntime.catalogAt && stationIconCopierRuntime.buildings.length) return stationIconCopierRuntime.buildings;
+        if (force) clearStationIconScan({ preserveLog: true });
+        stationIconCopierRuntime.currentItem = 'Loading native Dispatch Centres and owned stations';
+        const catalogPromise = (async () => {
+            try {
+                const { doc } = await fetchStationIconDocument('/buildings/new');
+                const nativeCatalog = parseDispatchRecruitmentCatalog(doc);
+                if (!nativeCatalog.dispatches.length) throw new Error('MissionChief did not expose any Dispatch Centre options.');
+                const buildings = await fetchStationIconBuildings();
+                stationIconCopierRuntime.dispatches = nativeCatalog.dispatches;
+                stationIconCopierRuntime.typeLabels = nativeCatalog.typeLabels;
+                stationIconCopierRuntime.buildings = buildings;
+                stationIconCopierRuntime.catalogAt = Date.now();
+                stationIconCopierRuntime.singleBuildingApi = '';
+                const savedDispatchId = String(state.stationIconCopier.dispatchId || '');
+                const selectedDispatch = savedDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES
+                    ? DISPATCH_RECRUITMENT_ALL_CENTRES
+                    : nativeCatalog.dispatches.some(item => item.id === savedDispatchId) ? savedDispatchId : nativeCatalog.dispatches[0].id;
+                state.stationIconCopier.dispatchId = selectedDispatch;
+                const sourceIds = new Set(stationIconSourceChoices(selectedDispatch).map(record => record.id));
+                if (!sourceIds.has(String(state.stationIconCopier.sourceBuildingId || ''))) state.stationIconCopier.sourceBuildingId = '';
+                saveState();
+                stationIconCopierRuntime.currentItem = '';
+                const customCount = buildings.filter(record => record.hasCustomIcon && record.customIconUrl).length;
+                stationIconLog(`Loaded ${buildings.length} owned station${buildings.length === 1 ? '' : 's'} across ${nativeCatalog.dispatches.length} Dispatch Centre${nativeCatalog.dispatches.length === 1 ? '' : 's'} · ${customCount} usable custom-icon source${customCount === 1 ? '' : 's'}`);
+                return buildings;
+            } catch (err) {
+                stationIconCopierRuntime.dispatches = [];
+                stationIconCopierRuntime.typeLabels = {};
+                stationIconCopierRuntime.buildings = [];
+                stationIconCopierRuntime.catalogAt = 0;
+                stationIconCopierRuntime.currentItem = '';
+                clearStationIconScan({ preserveLog: true });
+                stationIconLog(`Station and icon load failed: ${err?.message || 'unknown error'}`, 'error');
+                return [];
+            }
+        })();
+        stationIconCopierRuntime.catalogPromise = catalogPromise;
+        renderStationIconCopierPanel();
+        try { return await catalogPromise; }
+        finally {
+            if (stationIconCopierRuntime.catalogPromise === catalogPromise) stationIconCopierRuntime.catalogPromise = null;
+            renderStationIconCopierPanel();
+        }
+    }
+
+    async function scanStationIconTargets() {
+        if (stationIconCopierRuntime.scanPromise) return stationIconCopierRuntime.scanPromise;
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running) return stationIconCopierRuntime.queue;
+        const scanPromise = (async () => {
+            const buildings = await loadStationIconCatalog({ force: true });
+            if (!buildings.length || runtime.destroyed) return [];
+            const dispatchId = String(state.stationIconCopier.dispatchId || '');
+            const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
+            const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
+            stationIconCopierRuntime.currentItem = 'Building the exact matching station preview';
+            renderStationIconCopierPanel();
+            try {
+                const result = buildStationIconCopyQueue(buildings, dispatchId, sourceBuildingId, replaceMode, stationIconCopierRuntime.dispatches);
+                stationIconCopierRuntime.queue = result.queue;
+                stationIconCopierRuntime.summary = result.summary;
+                stationIconCopierRuntime.scannedAt = Date.now();
+                stationIconCopierRuntime.scannedDispatchId = dispatchId;
+                stationIconCopierRuntime.scannedSourceBuildingId = sourceBuildingId;
+                stationIconCopierRuntime.scannedReplaceMode = replaceMode;
+                stationIconCopierRuntime.selectedBuildingIds = new Set(result.queue.map(item => item.buildingId));
+                stationIconCopierRuntime.currentItem = '';
+                stationIconCopierRuntime.log = [];
+                resetStationIconResults();
+                const centreCount = Object.keys(result.summary.dispatchCounts).length;
+                stationIconLog(`${result.summary.source.caption} · ${stationIconTypeLabel(result.summary.source)}: ${result.summary.eligible} eligible target${result.summary.eligible === 1 ? '' : 's'} across ${centreCount} Dispatch Centre${centreCount === 1 ? '' : 's'} · ${result.summary.protectedCustom} existing custom icon${result.summary.protectedCustom === 1 ? '' : 's'} protected · source excluded`);
+                if (result.summary.truncated) stationIconLog(`${result.summary.truncated} matching stations exceed the ${STATION_ICON_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
+                return result.queue;
+            } catch (err) {
+                clearStationIconScan({ preserveLog: true });
+                stationIconCopierRuntime.currentItem = '';
+                stationIconLog(`Target scan failed: ${err?.message || 'unknown error'}`, 'error');
+                return [];
+            }
+        })();
+        stationIconCopierRuntime.scanPromise = scanPromise;
+        renderStationIconCopierPanel();
+        try { return await scanPromise; }
+        finally {
+            if (stationIconCopierRuntime.scanPromise === scanPromise) stationIconCopierRuntime.scanPromise = null;
+            renderStationIconCopierPanel();
+        }
+    }
+
+    function stationIconPlannedQueue() {
+        return stationIconCopierRuntime.queue.filter(item => stationIconCopierRuntime.selectedBuildingIds.has(item.buildingId));
+    }
+
+    function stationIconSelectTargets(selected) {
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return;
+        for (const item of stationIconCopierRuntime.queue) {
+            if (selected) stationIconCopierRuntime.selectedBuildingIds.add(item.buildingId);
+            else stationIconCopierRuntime.selectedBuildingIds.delete(item.buildingId);
+        }
+        resetStationIconResults();
+        renderStationIconCopierPanel();
+    }
+
+    function stationIconPanelControlIndex(panel) {
+        const settings = new Map();
+        const actions = new Map();
+        let host = null;
+        for (const select of Array.from(panel?.getElementsByTagName?.('select') || [])) {
+            if (select.dataset.setting) settings.set(select.dataset.setting, select);
+        }
+        for (const button of Array.from(panel?.getElementsByTagName?.('button') || [])) {
+            if (button.dataset.action) actions.set(button.dataset.action, button);
+        }
+        for (const container of Array.from(panel?.getElementsByTagName?.('div') || [])) {
+            if (container.hasAttribute('data-station-icon-copier')) { host = container; break; }
+        }
+        return { settings, actions, host };
+    }
+
+    function renderStationIconCopierPanel() {
+        const panel = commandExperienceElement(SCRIPT.panelId);
+        const controls = stationIconPanelControlIndex(panel);
+        const host = controls.host;
+        if (!host) return;
+        const runtimeState = stationIconCopierRuntime;
+        const locked = runtimeState.running || runtimeState.preparing || runtimeState.catalogPromise || runtimeState.scanPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.catalogPromise || dispatchRecruitmentRuntime.scanPromise;
+        const dispatchId = String(state.stationIconCopier.dispatchId || '');
+        const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
+        const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
+        const allCentres = dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES;
+        const dispatchSelect = controls.settings.get('station-icon-centre');
+        if (dispatchSelect) {
+            const options = runtimeState.dispatches.length
+                ? `<option value="${DISPATCH_RECRUITMENT_ALL_CENTRES}">ALL DISPATCH CENTRES</option>${runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}`
+                : '<option value="">Load stations first</option>';
+            setInnerHtmlIfChanged(dispatchSelect, options);
+            updateUiSetProperty(dispatchSelect, 'value', dispatchId);
+            dispatchSelect.disabled = locked || !runtimeState.dispatches.length;
+        }
+        const sourceSelect = controls.settings.get('station-icon-source');
+        const sources = stationIconSourceChoices(dispatchId);
+        if (sourceSelect) {
+            const options = sources.length
+                ? `<option value="">Choose a source station</option>${sources.map(record => `<option value="${escapeHtml(record.id)}">${escapeHtml(record.caption)} · ${escapeHtml(stationIconTypeLabel(record))}${allCentres ? ` · ${escapeHtml(stationIconDispatchMap().get(record.dispatchId) || `Dispatch Centre ${record.dispatchId}`)}` : ''}</option>`).join('')}`
+                : `<option value="">${runtimeState.buildings.length ? 'No custom-icon source in this scope' : 'Load stations first'}</option>`;
+            setInnerHtmlIfChanged(sourceSelect, options);
+            updateUiSetProperty(sourceSelect, 'value', sourceBuildingId);
+            sourceSelect.disabled = locked || !sources.length;
+        }
+        const policySelect = controls.settings.get('station-icon-replace-mode');
+        if (policySelect) { updateUiSetProperty(policySelect, 'value', replaceMode); policySelect.disabled = locked; }
+        const delaySelect = controls.settings.get('station-icon-delay');
+        if (delaySelect) { updateUiSetProperty(delaySelect, 'value', String(state.stationIconCopier.delayMs)); delaySelect.disabled = locked; }
+        const summary = runtimeState.summary || { eligible: 0, protectedCustom: 0, outsideDispatch: 0, otherType: 0, unassigned: 0, dispatchCounts: {}, protectedNames: [] };
+        const planned = stationIconPlannedQueue();
+        const source = runtimeState.buildings.find(record => record.id === sourceBuildingId) || summary.source;
+        const sourcePreview = source?.customIconUrl
+            ? `<div class="mcms-icon-source"><img class="mcms-icon-thumb" src="${escapeHtml(source.customIconUrl)}" alt=""><span><strong>${escapeHtml(source.caption)}</strong><small>Source · ${escapeHtml(stationIconTypeLabel(source))}${allCentres ? ` · ${escapeHtml(stationIconDispatchMap().get(source.dispatchId) || `Dispatch Centre ${source.dispatchId}`)}` : ''}</small></span></div>`
+            : '<div class="mcms-empty-state">Load stations and choose one owned station that already has the custom icon to copy.</div>';
+        const stationRows = runtimeState.queue.length ? runtimeState.queue.map(item => {
+            const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
+            const current = runtimeState.currentBuildingId === item.buildingId;
+            const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
+            const thumb = item.customIconUrl ? `<img class="mcms-icon-thumb" src="${escapeHtml(item.customIconUrl)}" alt="">` : '<span class="mcms-icon-thumb mcms-icon-default">DEFAULT</span>';
+            const centre = allCentres ? `${item.dispatchName} · ` : '';
+            const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
+            return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="station-icon-target" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}>${thumb}<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · ${item.hasCustomIcon ? 'Custom icon' : 'Default icon'}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
+        }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? 'No target stations match this exact source type and protection policy.' : 'Scan after choosing a source station to preview the exact target list.'}</div>`;
+        const runStats = runtimeState.running || runtimeState.processed
+            ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(planned.length || runtimeState.processed, STATION_ICON_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
+            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>Eligible</span></div><div class="mcms-sweep-stat"><b>${planned.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${summary.protectedCustom}</b><span>Protected</span></div><div class="mcms-sweep-stat"><b>${Object.keys(summary.dispatchCounts || {}).length}</b><span>Centres</span></div>`;
+        const status = runtimeState.running ? 'RUNNING' : runtimeState.preparing ? 'VERIFYING SOURCE' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scanPromise ? 'SCANNING' : runtimeState.scannedAt ? 'READY' : runtimeState.buildings.length ? 'CHOOSE + SCAN' : 'NOT LOADED';
+        const activity = runtimeState.currentItem ? `<div class="mcms-status"><strong>Current:</strong> ${escapeHtml(runtimeState.currentItem)}</div>` : '';
+        const protectedDetails = summary.protectedNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.protectedCustom} existing custom icon${summary.protectedCustom === 1 ? '' : 's'} protected by the default policy</summary>${summary.protectedNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.protectedCustom > summary.protectedNames.length ? `<div>+ ${summary.protectedCustom - summary.protectedNames.length} more</div>` : ''}</details>` : '';
+        const findings = runtimeState.scannedAt ? `<div class="mcms-recruitment-findings">Exact-type exclusions: ${summary.otherType} other type / size · ${summary.outsideDispatch} outside scope · ${summary.unassigned} unassigned · source station excluded.</div>` : '';
+        const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
+            const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            return `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
+        }).join('') : '<div>No icon-copy activity yet.</div>';
+        setInnerHtmlIfChanged(host, `<div class="mcms-sweep-card mcms-icon-copy-card"><div class="mcms-sweep-head"><span>Station Icon Copier</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div>${sourcePreview}<div class="mcms-sweep-stats">${runStats}</div>${activity}<div class="mcms-recruitment-filter-head"><span>Exact matching targets</span><b>${planned.length} selected / ${runtimeState.queue.length} visible</b></div><div class="mcms-recruitment-stations">${stationRows}</div>${protectedDetails}${findings}<div class="mcms-sweep-log">${logs}</div></div>`);
+        const fresh = runtimeState.scannedAt
+            && runtimeState.scannedDispatchId === dispatchId
+            && runtimeState.scannedSourceBuildingId === sourceBuildingId
+            && runtimeState.scannedReplaceMode === replaceMode;
+        const load = controls.actions.get('load-station-icons');
+        const scan = controls.actions.get('scan-station-icons');
+        const apply = controls.actions.get('apply-station-icons');
+        const stop = controls.actions.get('stop-station-icons');
+        const selectAll = controls.actions.get('select-all-station-icons');
+        const clear = controls.actions.get('clear-station-icons');
+        if (load) load.disabled = locked;
+        if (scan) scan.disabled = locked || !sourceBuildingId || !sources.some(record => record.id === sourceBuildingId);
+        if (apply) apply.disabled = locked || !fresh || !planned.length;
+        if (stop) stop.disabled = !runtimeState.running;
+        if (selectAll) selectAll.disabled = locked || !runtimeState.queue.length;
+        if (clear) clear.disabled = locked || !runtimeState.queue.length;
+    }
+
+    function readStationIconPlan() {
+        const dispatchId = String(state.stationIconCopier.dispatchId || '');
+        const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
+        const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
+        const delayMs = Number(state.stationIconCopier.delayMs);
+        if (dispatchId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !stationIconCopierRuntime.dispatches.some(item => item.id === dispatchId)) throw new Error('Choose a Dispatch Centre loaded from MissionChief.');
+        if (!stationIconSourceChoices(dispatchId).some(record => record.id === sourceBuildingId)) throw new Error('Choose a source station with a readable custom icon.');
+        if (!STATION_ICON_REPLACE_OPTIONS.includes(replaceMode)) throw new Error('Choose a valid existing-icon policy.');
+        return { dispatchId, sourceBuildingId, replaceMode, delayMs: STATION_ICON_DELAY_OPTIONS.includes(delayMs) ? delayMs : 1500 };
+    }
+
+    async function startStationIconCopier() {
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise) return;
+        let plan;
+        try { plan = readStationIconPlan(); }
+        catch (err) { showToast(err?.message || 'Check the Station Icon Copier values'); return; }
+        if (!stationIconCopierRuntime.scannedAt
+            || stationIconCopierRuntime.scannedDispatchId !== plan.dispatchId
+            || stationIconCopierRuntime.scannedSourceBuildingId !== plan.sourceBuildingId
+            || stationIconCopierRuntime.scannedReplaceMode !== plan.replaceMode) {
+            showToast('Scan this exact Dispatch Centre, source and protection policy before applying icons');
+            return;
+        }
+        const planned = stationIconPlannedQueue().map(item => ({ ...item }));
+        if (!planned.length) { showToast('Select at least one target station'); return; }
+        if (planned.length > STATION_ICON_APPLY_LIMIT) { showToast(`Select no more than ${STATION_ICON_APPLY_LIMIT} stations per run`); return; }
+        stationIconCopierRuntime.preparing = true;
+        stationIconCopierRuntime.currentItem = 'Downloading and verifying the selected source icon';
+        renderStationIconCopierPanel();
+        renderDispatchRecruitmentPanel();
+        let sourceImage;
+        try { sourceImage = await prepareStationIconSource(plan); }
+        catch (err) {
+            stationIconCopierRuntime.preparing = false;
+            stationIconCopierRuntime.currentItem = '';
+            stationIconLog(`Source preparation failed: ${err?.message || 'unknown error'}`, 'error');
+            showToast(err?.message || 'The selected source icon could not be prepared');
+            return;
+        }
+        stationIconCopierRuntime.currentItem = '';
+        const centreCount = new Set(planned.map(item => item.dispatchId)).size;
+        const scope = plan.dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? `${centreCount} Dispatch Centre${centreCount === 1 ? '' : 's'}` : planned[0].dispatchName;
+        const replaceWarning = plan.replaceMode === STATION_ICON_REPLACE_ALL
+            ? 'REPLACE MODE: existing custom icons in the selected target list will be overwritten.'
+            : 'PROTECTED MODE: any station that gains a custom icon before its turn will be skipped.';
+        const confirmed = pageWindow.confirm(`Station Icon Copier will copy the icon from ${sourceImage.record.caption} to ${planned.length} selected ${sourceImage.record.small ? 'small ' : ''}${stationIconTypeLabel(sourceImage.record).replace(/ · Small$/u, '')} station${planned.length === 1 ? '' : 's'} across ${scope}.
+
+Source image: ${sourceImage.width}×${sourceImage.height}px ${sourceImage.mime === 'image/png' ? 'PNG' : 'JPEG'}
+${replaceWarning}
+
+Each target will be rechecked, submitted through its current native building-edit form one at a time, and pixel-verified before the next station starts. Unverified uploads are never retried automatically. Continue?`);
+        if (!confirmed) {
+            stationIconCopierRuntime.preparing = false;
+            renderStationIconCopierPanel();
+            renderDispatchRecruitmentPanel();
+            return;
+        }
+        toolkitAnalyticsRecordFeature('stationIconCopier');
+        stationIconCopierRuntime.running = true;
+        stationIconCopierRuntime.preparing = false;
+        stationIconCopierRuntime.stopRequested = false;
+        stationIconCopierRuntime.log = [];
+        resetStationIconResults();
+        stationIconCopierRuntime.sourceImage = sourceImage;
+        stationIconLog(`Run started: ${planned.length} exact ${stationIconTypeLabel(sourceImage.record)} target${planned.length === 1 ? '' : 's'} · ${replaceWarning}`);
+        try {
+            for (let index = 0; index < planned.length; index += 1) {
+                if (runtime.destroyed || stationIconCopierRuntime.stopRequested) break;
+                const snapshot = planned[index];
+                const item = stationIconCopierRuntime.queue.find(candidate => candidate.buildingId === snapshot.buildingId) || snapshot;
+                stationIconCopierRuntime.currentBuildingId = item.buildingId;
+                stationIconCopierRuntime.currentItem = item.name;
+                renderStationIconCopierPanel();
+                stationIconLog(`Checking ${item.name}`);
+                try {
+                    const result = await applyStationIconToStation(item, plan, sourceImage);
+                    if (result.changed) {
+                        item.outcome = 'updated';
+                        item.outcomeDetail = result.detail;
+                        item.hasCustomIcon = true;
+                        item.customIconUrl = result.record.customIconUrl;
+                        stationIconCopierRuntime.updated += 1;
+                        stationIconLog(`Updated ${item.name}: ${result.detail}`);
+                    } else {
+                        item.outcome = 'unchanged';
+                        item.outcomeDetail = result.detail;
+                        item.hasCustomIcon = true;
+                        item.customIconUrl = result.record.customIconUrl;
+                        stationIconCopierRuntime.unchanged += 1;
+                        stationIconLog(`No change at ${item.name}: ${result.detail}`);
+                    }
+                } catch (err) {
+                    item.outcomeDetail = String(err?.message || 'unknown error');
+                    if (err?.stationIconFatal) {
+                        item.outcome = 'error';
+                        stationIconCopierRuntime.errors += 1;
+                        stationIconCopierRuntime.stopRequested = true;
+                        stationIconLog(`SAFETY STOP at ${item.name}: ${item.outcomeDetail}`, 'error');
+                    } else if (err?.stationIconSafeSkip) {
+                        item.outcome = 'skipped';
+                        stationIconCopierRuntime.skipped += 1;
+                        stationIconLog(`Skipped ${item.name}: ${item.outcomeDetail}`, 'warn');
+                    } else {
+                        item.outcome = 'error';
+                        stationIconCopierRuntime.errors += 1;
+                        stationIconLog(`Error at ${item.name}: ${item.outcomeDetail}`, 'error');
+                    }
+                } finally {
+                    stationIconCopierRuntime.processed += 1;
+                    renderStationIconCopierPanel();
+                }
+                if (stationIconCopierRuntime.stopRequested) break;
+                if (index < planned.length - 1) {
+                    const completedDelay = await runtimeDelay(plan.delayMs);
+                    if (!completedDelay) break;
+                }
+            }
+        } finally {
+            const wasStopped = stationIconCopierRuntime.stopRequested || runtime.destroyed;
+            stationIconCopierRuntime.running = false;
+            stationIconCopierRuntime.stopRequested = false;
+            stationIconCopierRuntime.currentBuildingId = '';
+            stationIconCopierRuntime.currentItem = '';
+            stationIconLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${stationIconCopierRuntime.updated} updated, ${stationIconCopierRuntime.unchanged} unchanged, ${stationIconCopierRuntime.skipped} skipped, ${stationIconCopierRuntime.errors} errors`, stationIconCopierRuntime.errors ? 'error' : 'info');
+            showToast(`${wasStopped ? 'Station Icon Copier stopped' : 'Station Icon Copier complete'} · ${stationIconCopierRuntime.updated} updated · ${stationIconCopierRuntime.unchanged} unchanged · ${stationIconCopierRuntime.skipped + stationIconCopierRuntime.errors} issues`);
+            renderStationIconCopierPanel();
+        }
+    }
+
+    function stopStationIconCopier() {
+        if (!stationIconCopierRuntime.running) return;
+        stationIconCopierRuntime.stopRequested = true;
+        stationIconLog('Stop requested — the active MissionChief request and verification will finish, then no further stations will be changed', 'warn');
+        renderStationIconCopierPanel();
     }
 
     function vehicleTargetInfo(vehicle) {
@@ -32518,6 +33452,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
 
         add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
         add('dispatch-recruitment', 'Open Dispatch Recruitment', 'Choose one or all Dispatch Centres, filter station types and prepare a recruitment plan', 'dispatch centre all centres station hiring phase personnel desired recruitment bulk', () => commandPaletteOpenSetting('dispatch', 'dispatch-recruitment'), true);
+        add('station-icon-copier', 'Open Station Icon Copier', 'Copy one owned station icon to exact same-type stations with a verified preview', 'dispatch station building image icon graphic copy bulk protect custom', () => commandPaletteOpenSetting('dispatch', 'station-icon-copier'), true);
         add('personalisation', 'Open Personalisation Studio', 'Layouts, themes, game styling, input, Quick Wheel, backups, setup and alerts', 'customize customise appearance sound notification backup wizard hotkeys gestures reskin', () => openPersonalisationStudio(), true);
         add('input-studio', 'Open Hotkey & Gesture Studio', 'Remap Toolkit keys, assign touch gestures and learn contextual commands', 'input shortcuts right click long press context menu swipe', () => openPersonalisationStudio('input'), true);
         add('shell-studio', 'Open Toolkit & Game Style', 'MissionChief reskin, smart auto-hiding dock and Safe Mode', 'theme reskin dock collapse safe recovery', () => openPersonalisationStudio('shell'), true);
@@ -33685,7 +34620,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 const headingId = `mcms-card-${section.dataset.panel}-${slug}`;
                 node.id = headingId;
                 card.setAttribute('aria-labelledby', headingId);
-                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
+                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'station-icon-copier', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
                     card.classList.add('mcms-command-card-wide');
                 }
                 fragment.appendChild(card);
@@ -33978,6 +34913,27 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 <details class="mcms-alliance-course-guide">
                     <summary>Native controls &amp; safeguards</summary>
                     <p>The Toolkit uses each station's current Personnel (Desired) Edit form and Hiring Phase controls from MissionChief. Apply requires an explicit confirmation, rechecks every station against its exact scanned Dispatch Centre and type, processes one station at a time, verifies both resulting values, and never retries an unverified action automatically.</p>
+                </details>
+                <div class="mcms-section-label">Station Icon Copier</div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="load-station-icons">Load Stations</button>
+                    <button class="mcms-small-btn" type="button" data-action="scan-station-icons">Scan Matching</button>
+                    <button class="mcms-small-btn" type="button" data-action="apply-station-icons">Apply to Selected</button>
+                    <button class="mcms-small-btn" type="button" data-action="stop-station-icons">Stop</button>
+                </div>
+                <div class="mcms-row"><span class="mcms-row-label">Dispatch Centre</span><select class="mcms-select" data-setting="station-icon-centre"><option value="">Load stations first</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Source Station</span><select class="mcms-select" data-setting="station-icon-source"><option value="">Load stations first</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Existing custom icons</span><select class="mcms-select" data-setting="station-icon-replace-mode"><option value="${STATION_ICON_REPLACE_DEFAULTS}">Protect them (recommended)</option><option value="${STATION_ICON_REPLACE_ALL}">Replace selected custom icons</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Delay between stations</span><select class="mcms-select" data-setting="station-icon-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="select-all-station-icons">Select All</button>
+                    <button class="mcms-small-btn" type="button" data-action="clear-station-icons">Clear All</button>
+                </div>
+                <div class="mcms-status"><strong>Copy, do not upload:</strong> choose an owned source station that already has the required custom icon. Its exact native building type and small/full classification define the targets automatically. The default policy protects every existing custom icon; replacement requires an explicit mode change and final confirmation.</div>
+                <div data-station-icon-copier></div>
+                <details class="mcms-alliance-course-guide">
+                    <summary>Native image-copy safeguards</summary>
+                    <p>The source image is downloaded once into memory and checked as PNG or JPEG up to MissionChief's 200×200 limit. Each selected target is freshly rechecked, submitted through its exact current native building-edit form, and pixel-compared with the source before the next station starts. Dispatch assignment, building type, size, name and coordinates are verified unchanged. A submitted but unverified upload stops the complete run and is never retried automatically.</p>
                 </details>
             </section>
             <section class="mcms-tab-panel" data-panel="resources">
@@ -34416,6 +35372,12 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         if (action === 'clear-dispatch-recruitment') { dispatchRecruitmentSelectVisible(false); return; }
         if (action === 'apply-dispatch-recruitment') { void startDispatchRecruitment(); return; }
         if (action === 'stop-dispatch-recruitment') { stopDispatchRecruitment(); return; }
+        if (action === 'load-station-icons') { void loadStationIconCatalog({ force: true }); return; }
+        if (action === 'scan-station-icons') { void scanStationIconTargets().then(queue => showToast(queue.length ? `${queue.length} exact matching station${queue.length === 1 ? '' : 's'} ready` : 'No eligible exact matching stations found')); return; }
+        if (action === 'select-all-station-icons') { stationIconSelectTargets(true); return; }
+        if (action === 'clear-station-icons') { stationIconSelectTargets(false); return; }
+        if (action === 'apply-station-icons') { void startStationIconCopier(); return; }
+        if (action === 'stop-station-icons') { stopStationIconCopier(); return; }
         if (action === 'scan-transport-sweep') { void scanTransportSweepQueue().then(queue => showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found')); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
@@ -34559,9 +35521,14 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
             return;
         }
-        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise)) {
+        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise)) {
             updateUI();
             showToast('Wait for Dispatch Recruitment to finish loading or scanning, or stop the active run before changing its plan');
+            return;
+        }
+        if (setting.startsWith('station-icon-') && (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise)) {
+            updateUI();
+            showToast('Wait for the active Dispatch operation to finish loading or scanning, or stop its current run before changing this icon plan');
             return;
         }
         if (handleDeviceLayoutSettingChange(target, setting)) return;
@@ -34705,6 +35672,55 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             else dispatchRecruitmentRuntime.selectedBuildingIds.delete(buildingId);
             resetDispatchRecruitmentResults();
             renderDispatchRecruitmentPanel();
+            return;
+        }
+        if (setting === 'station-icon-centre') {
+            const dispatchId = String(target.value || '');
+            if (dispatchId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !stationIconCopierRuntime.dispatches.some(item => item.id === dispatchId)) {
+                updateUI();
+                showToast('Choose a Dispatch Centre loaded from MissionChief');
+                return;
+            }
+            state.stationIconCopier.dispatchId = dispatchId;
+            if (!stationIconSourceChoices(dispatchId).some(record => record.id === state.stationIconCopier.sourceBuildingId)) state.stationIconCopier.sourceBuildingId = '';
+            clearStationIconScan();
+            saveState(); updateUI();
+            showToast(`Station Icon Copier: ${dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? 'ALL DISPATCH CENTRES' : stationIconCopierRuntime.dispatches.find(item => item.id === dispatchId)?.name || 'centre selected'}`);
+            return;
+        }
+        if (setting === 'station-icon-source') {
+            const sourceBuildingId = String(target.value || '');
+            if (sourceBuildingId && !stationIconSourceChoices().some(record => record.id === sourceBuildingId)) {
+                updateUI();
+                showToast('Choose an owned source station with a readable custom icon');
+                return;
+            }
+            state.stationIconCopier.sourceBuildingId = sourceBuildingId;
+            clearStationIconScan();
+            saveState(); updateUI();
+            const source = stationIconCopierRuntime.buildings.find(record => record.id === sourceBuildingId);
+            showToast(source ? `Source: ${source.caption} · ${stationIconTypeLabel(source)}` : 'Choose a source station');
+            return;
+        }
+        if (setting === 'station-icon-replace-mode') {
+            state.stationIconCopier.replaceMode = STATION_ICON_REPLACE_OPTIONS.includes(String(target.value)) ? String(target.value) : STATION_ICON_REPLACE_DEFAULTS;
+            clearStationIconScan();
+            saveState(); updateUI();
+            showToast(state.stationIconCopier.replaceMode === STATION_ICON_REPLACE_ALL ? 'Station Icon Copier: selected custom icons may be replaced after confirmation' : 'Station Icon Copier: existing custom icons protected');
+            return;
+        }
+        if (setting === 'station-icon-delay') {
+            state.stationIconCopier.delayMs = STATION_ICON_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 1500;
+            saveState(); updateUI();
+            showToast(`Station Icon Copier delay: ${state.stationIconCopier.delayMs / 1000}s`);
+            return;
+        }
+        if (setting === 'station-icon-target') {
+            const buildingId = String(target.value || '');
+            if (target.checked) stationIconCopierRuntime.selectedBuildingIds.add(buildingId);
+            else stationIconCopierRuntime.selectedBuildingIds.delete(buildingId);
+            resetStationIconResults();
+            renderStationIconCopierPanel();
             return;
         }
         if (setting === 'resource-gap-radius') {
@@ -35012,7 +36028,10 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         if (dispatchRecruitmentPersonnel && document.activeElement !== dispatchRecruitmentPersonnel) updateUiSetProperty(dispatchRecruitmentPersonnel, 'value', state.dispatchRecruitment.personnelDesired);
         const dispatchRecruitmentDelay = panel.querySelector('[data-setting="dispatch-recruitment-delay"]');
         if (dispatchRecruitmentDelay) updateUiSetProperty(dispatchRecruitmentDelay, 'value', String(state.dispatchRecruitment.delayMs));
-        if (panel.classList.contains('mcms-open') && state.activeTab === 'dispatch') renderDispatchRecruitmentPanel();
+        if (panel.classList.contains('mcms-open') && state.activeTab === 'dispatch') {
+            renderDispatchRecruitmentPanel();
+            renderStationIconCopierPanel();
+        }
         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
         if (payoutTemplate) updateUiSetProperty(payoutTemplate, 'value', state.payoutFlash.template);
         const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) updateUiSetProperty(resourceGapRadius, 'value', String(state.resourceGap.radiusMi));

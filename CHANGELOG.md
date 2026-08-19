@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.11.0] - 2026-08-19
+
+### Verified Station Icon Copier
+
+- Adds **Dispatch → Station Icon Copier** for selecting one owned source station and previewing every exact same-type target across one Dispatch Centre or **ALL DISPATCH CENTRES**.
+- Derives native building type and small/full classification from the source automatically, excludes the source itself and protects every existing custom icon by default.
+- Adds an explicit replacement mode, exact target checkboxes, source and target thumbnails, a 2,000-station cap, confirmation, sequential pacing and Stop.
+- Downloads the selected MissionChief PNG or JPEG once into memory, preserves each freshly fetched native building-edit form and changes only its **Building Image** upload.
+- Rechecks station identity, assignment, type, size, name and coordinates, then pixel-verifies every saved image; an unverified submitted upload stops the complete run without retry.
+
 ## [10.10.0] - 2026-08-19
 
 ### Building-type scoped Dispatch Recruitment

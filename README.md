@@ -75,7 +75,7 @@ It does not invent game actions or replace permissions. It makes MissionChief's 
 | **Incident command** | Incident Command Wire · Mission Age · Mission Value · MissionChief UK Knowledge Link · Unit Commitment · Operational SITREP |
 | **Fleet and transport** | Operational Pressure Board · Procurement Brain · Operational Timeline · Vehicle Code Status · Custom Vehicle Badges · Resource Gap · Transport Watcher · Unit Locator & Follow Mode |
 | **Map and places** | Personal and alliance missions · vehicles · buildings · Quick Places · smart bookmarks · coverage rings · kilometre measurement · arrows · shapes · zones · text · markers |
-| **Administration** | Dispatch Recruitment · Alliance Courses · Patient Transport Sweep · Alliance Member Manager · Alliance Buildings performance guard |
+| **Administration** | Dispatch Recruitment · Station Icon Copier · Alliance Courses · Patient Transport Sweep · Alliance Member Manager · Alliance Buildings performance guard |
 | **Finance and accountability** | Alliance Credits · reconciliation checkpoints · variance · payout feedback · Financial Archive · explicit Discord reporting |
 
 ---
@@ -91,6 +91,7 @@ Administration is treated as an operation—not a collection of shortcuts. The T
 | System | Operational contract |
 |---|---|
 | **Dispatch Recruitment** | Choose one or all Dispatch Centres, select ALL or one exact native building type before scanning, exclude native unassigned rows, refine exact stations, set Hiring Phase and Personnel Desired independently, and verify assignment immutability after every change. |
+| **Station Icon Copier** | Choose an owned station whose custom icon is already correct, derive its exact native type and small/full class, preview an exact subset across one or all Dispatch Centres, protect existing custom icons by default, and pixel-verify each sequential native upload. |
 | **Alliance Courses** | Match academy and building requirements, select the relevant stations, fill available classrooms and schedule the chosen duration—1 hour, 12 hours, 1 day or 2 days—through native course controls. |
 | **Patient Transport Sweep** | Re-scan live patient state, require confirmation, use exact native Cancel Transport actions in the background when safe, fall back visibly when needed, and never retry an ambiguous release. |
 | **Alliance Member Manager** | Bring member administration into a more legible, deliberate workspace while preserving the permissions supplied by MissionChief. |
@@ -255,6 +256,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 
 - Dispatch Recruitment with Dispatch Centre scope, an explicit ALL-or-one native Building Type selector and exact station selection
 - Hiring Phase and Personnel Desired controls
+- Station Icon Copier with an owned source station, exact native type/size matching, protected custom icons, exact targets and post-upload pixel verification
 - Alliance Courses with academy matching, classroom use and scheduled durations
 - Patient Transport Sweep with background-first native cancellation and visible fail-safe fallback
 - Alliance Member Manager

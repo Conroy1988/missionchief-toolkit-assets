@@ -90,7 +90,7 @@ Administration is treated as an operation—not a collection of shortcuts. The T
 
 | System | Operational contract |
 |---|---|
-| **Dispatch Recruitment** | Choose Dispatch Centre scope, filter by building type, select exact stations, set Hiring Phase and Personnel Desired, recheck each station immediately before change, then report the verified outcome. |
+| **Dispatch Recruitment** | Choose one or all Dispatch Centres, exclude native unassigned rows, filter exact stations by type, set Hiring Phase and Personnel Desired independently, and verify assignment immutability after every change. |
 | **Alliance Courses** | Match academy and building requirements, select the relevant stations, fill available classrooms and schedule the chosen duration—1 hour, 12 hours, 1 day or 2 days—through native course controls. |
 | **Patient Transport Sweep** | Re-scan live patient state, require confirmation, use exact native Cancel Transport actions in the background when safe, fall back visibly when needed, and never retry an ambiguous release. |
 | **Alliance Member Manager** | Bring member administration into a more legible, deliberate workspace while preserving the permissions supplied by MissionChief. |

@@ -336,15 +336,16 @@
       "features": [
         {
           "name": "Dispatch Recruitment",
-          "summary": "Applies Hiring Phase and Personnel (Desired) across one selected Dispatch Centre or a deduplicated ALL DISPATCH CENTRES plan.",
+          "summary": "Applies Hiring Phase and Personnel (Desired) independently across one selected Dispatch Centre or a deduplicated ALL DISPATCH CENTRES plan without changing station ownership.",
           "details": [
             "Dynamic native Dispatch Centre and station-type discovery",
             "ALL DISPATCH CENTRES bulk scope with each station labelled by centre",
             "Exact active-assignment filtering with per-scope Assigned, Centres, Other centres and Unavailable totals",
+            "Explicit Unassigned exclusion for native No control center rows",
             "All matching filtered stations or exact per-station selection",
             "Off, 1 day, 2 days, 3 days and native Automatic Hiring Phase",
             "Native Personnel (Desired) Edit form",
-            "Dispatch/type membership recheck and result verification",
+            "Strict payload allow-list and post-mutation Dispatch/type immutability verification",
             "Explicit confirmation, sequential pacing and Stop"
           ],
           "visual": "dispatch-recruitment",
@@ -939,7 +940,7 @@
         },
         {
           "heading": "Native safeguards",
-          "body": "Every station is rechecked against its exact scanned Dispatch Centre and building type. The Toolkit requires the current Personnel (Desired) Edit form and native recruitment action, submits sequentially, verifies both resulting values and never retries an unverified result automatically. Coin recruitment actions are excluded."
+          "body": "Unassigned rows never enter the mutation queue. Every station is rechecked against its exact scanned Dispatch Centre and building type before mutation and after each field change. Personnel (Desired) is applied independently through a strict payload allow-list, unavailable Hiring actions produce an explicit partial result, and any assignment change or unverifiable mutation stops the run. Assignment and coin recruitment actions are excluded."
         },
         {
           "heading": "Operator guide",

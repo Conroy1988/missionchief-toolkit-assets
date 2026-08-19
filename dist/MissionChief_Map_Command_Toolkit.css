@@ -9792,6 +9792,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #mc-map-command-toolkit-panel .mcms-recruitment-station { display:grid !important; grid-template-columns:auto minmax(0,1fr) auto !important; align-items:center !important; gap:7px !important; min-width:0 !important; padding:7px !important; border:1px solid rgba(255,255,255,.08) !important; border-radius:8px !important; background:rgba(255,255,255,.04) !important; cursor:pointer !important; }
         #mc-map-command-toolkit-panel .mcms-recruitment-station.mcms-current { border-color:rgba(70,229,139,.62) !important; background:rgba(70,229,139,.10) !important; }
         #mc-map-command-toolkit-panel .mcms-recruitment-station[data-outcome="updated"] { border-color:rgba(70,229,139,.34) !important; }
+        #mc-map-command-toolkit-panel .mcms-recruitment-station[data-outcome="partial"] { border-color:rgba(255,182,72,.45) !important; }
         #mc-map-command-toolkit-panel .mcms-recruitment-station[data-outcome="error"] { border-color:rgba(255,100,108,.45) !important; }
         #mc-map-command-toolkit-panel .mcms-recruitment-station > span { min-width:0 !important; }
         #mc-map-command-toolkit-panel .mcms-recruitment-station strong { display:block !important; color:#f7fbff !important; font-size:8.5px !important; font-weight:950 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.9.3
+// @version      10.9.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.9.3',
+        version: '10.9.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,14 +526,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.9.3",
-        title: "Dispatch Recruitment assignment repair & all-centres control",
+        version: "10.9.4",
+        title: "Dispatch Recruitment assignment immutability guard",
         highlights: Object.freeze([
-            "Fixes Dispatch Recruitment treating every row in MissionChief's station assignment matrix as belonging to the selected Dispatch Centre.",
-            "Adds ALL DISPATCH CENTRES for a single deduplicated bulk plan spanning every loaded centre while retaining native station-type filters and exact station selection.",
-            "Reads and displays the exact active native assignment on every station row, admitting only the selected centre or every centre in the all-centres scope.",
-            "Separates Assigned, Selected, Centres and Unavailable totals in all-centres mode while preserving Assigned here and Other centres for a single-centre scan.",
-            "Retains the authoritative per-station API membership recheck, exact native forms, sequential pacing and post-update verification."
+            "Separates native No control center rows from stations assigned elsewhere and categorically excludes those unassigned buildings from both single-centre and ALL DISPATCH CENTRES mutation queues.",
+            "Applies and verifies Personnel (Desired) independently before Hiring Phase, so an unavailable native Hiring Phase action can no longer prevent a requested personnel target such as 400 from being saved.",
+            "Builds Personnel (Desired) submissions from a strict native field allow-list and blocks every recruitment mutation URL or payload that references Dispatch Centre assignment controls.",
+            "Rechecks the exact Dispatch Centre and building type after each successful native mutation, not only before the station and after the complete pair.",
+            "Stops the entire bulk run immediately if assignment/type state changes or a submitted mutation cannot be authoritatively verified, while reporting safe partial updates explicitly."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1730,6 +1730,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         currentItem: '',
         processed: 0,
         updated: 0,
+        partial: 0,
         unchanged: 0,
         skipped: 0,
         errors: 0,
@@ -12541,6 +12542,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-recruitment-station { display:grid !important; grid-template-columns:auto minmax(0,1fr) auto !important; align-items:center !important; gap:7px !important; min-width:0 !important; padding:7px !important; border:1px solid rgba(255,255,255,.08) !important; border-radius:8px !important; background:rgba(255,255,255,.04) !important; cursor:pointer !important; }
         #${SCRIPT.panelId} .mcms-recruitment-station.mcms-current { border-color:rgba(70,229,139,.62) !important; background:rgba(70,229,139,.10) !important; }
         #${SCRIPT.panelId} .mcms-recruitment-station[data-outcome="updated"] { border-color:rgba(70,229,139,.34) !important; }
+        #${SCRIPT.panelId} .mcms-recruitment-station[data-outcome="partial"] { border-color:rgba(255,182,72,.45) !important; }
         #${SCRIPT.panelId} .mcms-recruitment-station[data-outcome="error"] { border-color:rgba(255,100,108,.45) !important; }
         #${SCRIPT.panelId} .mcms-recruitment-station > span { min-width:0 !important; }
         #${SCRIPT.panelId} .mcms-recruitment-station strong { display:block !important; color:#f7fbff !important; font-size:8.5px !important; font-weight:950 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
@@ -18089,12 +18091,14 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const summary = {
             totalRows: allRows.length,
             eligible: 0,
+            unassigned: 0,
             outsideDispatch: 0,
             unavailable: 0,
             duplicates: 0,
             truncated: Math.max(0, allRows.length - rows.length),
             typeCounts: {},
             dispatchCounts: {},
+            unassignedNames: [],
             outsideDispatchNames: [],
             unavailableNames: []
         };
@@ -18117,6 +18121,11 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             }
             seen.add(id);
             const assignedDispatchId = dispatchRecruitmentAssignedDispatchId(row, id);
+            if (assignedDispatchId === '0') {
+                summary.unassigned += 1;
+                if (summary.unassignedNames.length < 20) summary.unassignedNames.push(name);
+                continue;
+            }
             if (!assignedDispatchId) {
                 summary.unavailable += 1;
                 if (summary.unavailableNames.length < 20) summary.unavailableNames.push(name);
@@ -18165,6 +18174,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         dispatchRecruitmentRuntime.currentItem = '';
         dispatchRecruitmentRuntime.processed = 0;
         dispatchRecruitmentRuntime.updated = 0;
+        dispatchRecruitmentRuntime.partial = 0;
         dispatchRecruitmentRuntime.unchanged = 0;
         dispatchRecruitmentRuntime.skipped = 0;
         dispatchRecruitmentRuntime.errors = 0;
@@ -18305,7 +18315,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 const assignmentDetail = allCentres
                     ? `${centreCount} Dispatch Centre${centreCount === 1 ? '' : 's'}; ${result.summary.outsideDispatch} outside the loaded catalogue`
                     : `${result.summary.outsideDispatch} assigned elsewhere`;
-                dispatchRecruitmentLog(`${scanName} scan: ${result.summary.eligible} editable assigned stations across ${Object.keys(result.summary.typeCounts).length} types and ${assignmentDetail}; ${result.summary.unavailable} unavailable`);
+                dispatchRecruitmentLog(`${scanName} scan: ${result.summary.eligible} editable assigned stations across ${Object.keys(result.summary.typeCounts).length} types and ${assignmentDetail}; ${result.summary.unassigned} unassigned; ${result.summary.unavailable} unavailable`);
                 if (result.summary.truncated) dispatchRecruitmentLog(`${result.summary.truncated} rows exceed the ${DISPATCH_RECRUITMENT_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
                 return result.queue;
             } catch (err) {
@@ -18328,6 +18338,49 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const error = new Error(message);
         error.dispatchRecruitmentSafeSkip = true;
         return error;
+    }
+
+    function dispatchRecruitmentSafetyStop(message) {
+        const error = new Error(`Dispatch Recruitment safety stop: ${message}`);
+        error.dispatchRecruitmentFatal = true;
+        return error;
+    }
+
+    function dispatchRecruitmentGuardMutation(href, body = '') {
+        let url;
+        try { url = new URL(href, document.baseURI || pageWindow.location.href); }
+        catch (err) { throw dispatchRecruitmentSafeSkip('blocked a malformed native recruitment action'); }
+        if (url.origin !== pageWindow.location.origin) throw dispatchRecruitmentSafeSkip('blocked an external native recruitment action');
+        const parameterNames = [
+            ...Array.from(url.searchParams.keys()),
+            ...Array.from(new URLSearchParams(String(body || '')).keys())
+        ];
+        if (/\/leitstelle-set\//u.test(url.pathname) || parameterNames.some(name => /leitstelle|control[_ -]?cent(?:re|er)/iu.test(String(name)))) {
+            throw dispatchRecruitmentSafetyStop('blocked a request that could modify a Dispatch Centre assignment. No request was sent.');
+        }
+        return url;
+    }
+
+    function dispatchRecruitmentAssertStationScope(record, item, expectedDispatchId, afterMutation = false) {
+        const actualDispatchId = String(record?.leitstelle_building_id ?? '');
+        if (actualDispatchId !== expectedDispatchId) {
+            if (afterMutation) throw dispatchRecruitmentSafetyStop(`MissionChief reported that ${item.name}'s Dispatch Centre changed during a recruitment update. The bulk run was stopped immediately.`);
+            throw dispatchRecruitmentSafeSkip('station is no longer assigned to its scanned Dispatch Centre');
+        }
+        if (String(record?.building_type ?? '') !== item.typeId) {
+            if (afterMutation) throw dispatchRecruitmentSafetyStop(`MissionChief reported that ${item.name}'s building type changed during a recruitment update. The bulk run was stopped immediately.`);
+            throw dispatchRecruitmentSafeSkip('station type changed after the scan');
+        }
+        return record;
+    }
+
+    async function verifyDispatchRecruitmentMutation(item, expectedDispatchId, label) {
+        const settled = await runtimeDelay(250);
+        if (!settled) throw dispatchRecruitmentSafetyStop(`${label} was submitted, but the Toolkit stopped before its assignment could be verified.`);
+        let record;
+        try { record = await fetchDispatchRecruitmentBuilding(item.buildingId); }
+        catch (err) { throw dispatchRecruitmentSafetyStop(`${label} was submitted, but authoritative Dispatch Centre verification failed. No further stations were changed.`); }
+        return dispatchRecruitmentAssertStationScope(record, item, expectedDispatchId, true);
     }
 
     function dispatchRecruitmentBoolean(value) {
@@ -18373,18 +18426,22 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const token = form.querySelector('input[name="authenticity_token"]')?.value;
         const methodOverride = form.querySelector('input[name="_method"]')?.value;
         const submit = form.querySelector('input[type="submit"][name], button[type="submit"][name]');
+        const unexpectedBuildingFields = Array.from(form.elements || [])
+            .filter(control => !control.disabled && /^building\[/u.test(String(control.name || '')) && control.name !== 'building[personal_count_target]')
+            .map(control => String(control.name));
+        if (unexpectedBuildingFields.length) throw dispatchRecruitmentSafetyStop('the native Personnel (Desired) form exposed additional building fields. No request was sent.');
         if (!input || input.disabled || input.type !== 'number') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) number input is unavailable');
         if (!token || String(methodOverride || '').toLowerCase() !== 'patch') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) authenticity or PATCH guard is unavailable');
-        if (!submit?.name) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) Save action is unavailable');
+        if (submit?.name !== 'commit') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) Save action is unavailable');
         const action = new URL(form.getAttribute('action'), document.baseURI || pageWindow.location.href);
         const params = new URLSearchParams();
-        for (const hidden of form.querySelectorAll('input[type="hidden"][name]')) {
-            if (!hidden.disabled) params.append(hidden.name, hidden.value || '');
-        }
+        const utf8 = form.querySelector('input[type="hidden"][name="utf8"]');
+        if (utf8 && !utf8.disabled) params.set('utf8', utf8.value || '✓');
         params.set('authenticity_token', token);
         params.set('_method', 'patch');
         params.set('building[personal_count_target]', String(personnelDesired));
-        params.set(submit.name, submit.value || dispatchRecruitmentText(submit.textContent));
+        params.set('commit', submit.value || dispatchRecruitmentText(submit.textContent));
+        dispatchRecruitmentGuardMutation(action.href, params.toString());
         return { action: action.href, body: params.toString() };
     }
 
@@ -18402,8 +18459,8 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     async function runDispatchRecruitmentNativeAction(href, label) {
-        const url = new URL(href, document.baseURI || pageWindow.location.href);
-        if (url.origin !== pageWindow.location.origin || !/^\/buildings\/\d+\/hire_do\/(?:0|1|2|3|automatic)$/u.test(url.pathname) || url.search || url.hash) {
+        const url = dispatchRecruitmentGuardMutation(href);
+        if (!/^\/buildings\/\d+\/hire_do\/(?:0|1|2|3|automatic)$/u.test(url.pathname) || url.search || url.hash) {
             throw dispatchRecruitmentSafeSkip(`blocked an unexpected ${label} action`);
         }
         let response;
@@ -18417,9 +18474,9 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
             });
         } catch (err) {
-            throw new Error(`${label} did not return a verifiable response; no automatic retry was made.`);
+            throw dispatchRecruitmentSafetyStop(`${label} may have been submitted, but MissionChief did not return a verifiable response. No further stations were changed.`);
         }
-        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${label}.`);
+        if (!response.ok) throw dispatchRecruitmentSafetyStop(`MissionChief returned HTTP ${response.status} after ${label}. No further stations were changed.`);
     }
 
     async function applyDispatchRecruitmentHiring(item, prepared) {
@@ -18434,13 +18491,17 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             throw err;
         }
         if (prepared.desiredPhase === '0') return true;
-        const { doc } = await fetchDispatchRecruitmentDocument(`/buildings/${item.buildingId}/hire`);
+        let doc;
+        try { ({ doc } = await fetchDispatchRecruitmentDocument(`/buildings/${item.buildingId}/hire`)); }
+        catch (err) { throw dispatchRecruitmentSafetyStop('the current Hiring Phase was cancelled, but MissionChief did not return the next native actions. No further stations were changed.'); }
         const desiredAction = dispatchRecruitmentNativeHireAction(doc, item.buildingId, DISPATCH_RECRUITMENT_PHASE_META[prepared.desiredPhase].token);
         if (!desiredAction) {
             const restoreAction = dispatchRecruitmentNativeHireAction(doc, item.buildingId, DISPATCH_RECRUITMENT_PHASE_META[prepared.originalPhase].token);
-            if (!restoreAction) throw new Error(`Recruitment was cancelled, but neither ${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} nor the original ${dispatchRecruitmentPhaseLabel(prepared.originalPhase)} action was available; this station needs manual review.`);
+            if (!restoreAction) throw dispatchRecruitmentSafetyStop(`Recruitment was cancelled, but neither ${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} nor the original ${dispatchRecruitmentPhaseLabel(prepared.originalPhase)} action was available. No further stations were changed.`);
             await runDispatchRecruitmentNativeAction(restoreAction, `restore ${dispatchRecruitmentPhaseLabel(prepared.originalPhase)} Hiring Phase`);
-            throw dispatchRecruitmentSafeSkip(`native ${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} action was unavailable after cancellation; the original phase was restored`);
+            const error = dispatchRecruitmentSafeSkip(`native ${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} action was unavailable after cancellation; the original phase was restored`);
+            error.dispatchRecruitmentMutationSubmitted = true;
+            throw error;
         }
         try { await runDispatchRecruitmentNativeAction(desiredAction, `${dispatchRecruitmentPhaseLabel(prepared.desiredPhase)} Hiring Phase`); }
         catch (err) {
@@ -18451,9 +18512,27 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     async function submitDispatchRecruitmentPersonnel(prepared) {
+        const guardedAction = dispatchRecruitmentGuardMutation(prepared.action, prepared.body);
+        const actionNames = Array.from(guardedAction.searchParams.keys());
+        const bodyParams = new URLSearchParams(prepared.body);
+        const parameterNames = Array.from(bodyParams.keys());
+        const allowedNames = new Set(['utf8', '_method', 'authenticity_token', 'building[personal_count_target]', 'commit']);
+        if (!/^\/buildings\/\d+$/u.test(guardedAction.pathname)
+            || guardedAction.hash
+            || actionNames.length !== 1
+            || actionNames[0] !== 'personal_count_target_only'
+            || guardedAction.searchParams.get('personal_count_target_only') !== '1'
+            || parameterNames.some(name => !allowedNames.has(name))
+            || new Set(parameterNames).size !== parameterNames.length
+            || String(bodyParams.get('_method') || '').toLowerCase() !== 'patch'
+            || !bodyParams.get('authenticity_token')
+            || !/^\d+$/u.test(String(bodyParams.get('building[personal_count_target]') || ''))
+            || !bodyParams.get('commit')) {
+            throw dispatchRecruitmentSafetyStop('blocked an unexpected Personnel (Desired) mutation shape. No request was sent.');
+        }
         let response;
         try {
-            response = await runtimeFetch(prepared.action, {
+            response = await runtimeFetch(guardedAction.href, {
                 method: 'POST',
                 credentials: 'same-origin',
                 cache: 'no-store',
@@ -18466,9 +18545,9 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
             });
         } catch (err) {
-            throw new Error('Personnel (Desired) did not return a verifiable response; no automatic retry was made.');
+            throw dispatchRecruitmentSafetyStop('Personnel (Desired) may have been submitted, but MissionChief did not return a verifiable response. No further stations were changed.');
         }
-        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while saving Personnel (Desired).`);
+        if (!response.ok) throw dispatchRecruitmentSafetyStop(`MissionChief returned HTTP ${response.status} after Personnel (Desired). No further stations were changed.`);
         return true;
     }
 
@@ -18476,36 +18555,58 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const baseline = await fetchDispatchRecruitmentBuilding(item.buildingId);
         const expectedDispatchId = String(item.dispatchId || (plan.dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? '' : plan.dispatchId));
         if (!/^\d+$/u.test(expectedDispatchId)) throw dispatchRecruitmentSafeSkip('scanned Dispatch Centre assignment is unavailable');
-        if (String(baseline.leitstelle_building_id ?? '') !== expectedDispatchId) throw dispatchRecruitmentSafeSkip('station is no longer assigned to its scanned Dispatch Centre');
-        if (String(baseline.building_type ?? '') !== item.typeId) throw dispatchRecruitmentSafeSkip('station type changed after the scan');
+        dispatchRecruitmentAssertStationScope(baseline, item, expectedDispatchId);
         const currentPhase = dispatchRecruitmentRecordPhase(baseline);
         const personnelNeedsUpdate = Number(baseline.personal_count_target) !== plan.personnelDesired;
         const hiringNeedsUpdate = currentPhase !== plan.hiringPhase;
         if (!personnelNeedsUpdate && !hiringNeedsUpdate) return { changed: false, record: baseline, detail: 'already matches' };
-        let personnelSubmission = null;
-        let hiringSubmission = null;
-        if (personnelNeedsUpdate) {
-            const { doc } = await fetchDispatchRecruitmentDocument(item.targetEditPath);
-            personnelSubmission = prepareDispatchRecruitmentPersonnelSubmission(doc, item, plan.personnelDesired);
-        }
-        if (hiringNeedsUpdate) hiringSubmission = await prepareDispatchRecruitmentHiring(item, currentPhase, plan.hiringPhase);
         let hiringChanged = false;
         let personnelChanged = false;
-        try {
-            if (hiringSubmission) hiringChanged = await applyDispatchRecruitmentHiring(item, hiringSubmission);
-            if (personnelSubmission) personnelChanged = await submitDispatchRecruitmentPersonnel(personnelSubmission);
-        } catch (err) {
-            if (hiringChanged || personnelChanged) err.message = `${err.message} Partial native update may have occurred; no automatic retry was made.`;
-            throw err;
+        let verified = baseline;
+        const safeIssues = [];
+        if (personnelNeedsUpdate) {
+            let personnelSubmission = null;
+            try {
+                const { doc } = await fetchDispatchRecruitmentDocument(item.targetEditPath);
+                personnelSubmission = prepareDispatchRecruitmentPersonnelSubmission(doc, item, plan.personnelDesired);
+            } catch (err) {
+                if (err?.dispatchRecruitmentFatal) throw err;
+                safeIssues.push(`Personnel (Desired): ${err?.message || 'native edit form could not be prepared'}`);
+            }
+            if (personnelSubmission) {
+                personnelChanged = await submitDispatchRecruitmentPersonnel(personnelSubmission);
+                verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Personnel (Desired)');
+                if (Number(verified.personal_count_target) !== plan.personnelDesired) throw dispatchRecruitmentSafetyStop('MissionChief did not verify the requested Personnel (Desired). No further stations were changed.');
+            }
         }
-        const settled = await runtimeDelay(250);
-        if (!settled) throw new Error('Toolkit stopped before the station result could be verified. No automatic retry was made.');
-        let verified;
-        try { verified = await fetchDispatchRecruitmentBuilding(item.buildingId); }
-        catch (err) { throw new Error(`${err?.message || 'Station verification failed'} Native updates were submitted; no automatic retry was made.`); }
-        if (!dispatchRecruitmentRecordMatches(verified, plan)) throw new Error('MissionChief did not verify both requested recruitment values; no automatic retry was made.');
+        if (hiringNeedsUpdate) {
+            let hiringSubmission = null;
+            try {
+                hiringSubmission = await prepareDispatchRecruitmentHiring(item, currentPhase, plan.hiringPhase);
+            } catch (err) {
+                if (err?.dispatchRecruitmentFatal) throw err;
+                safeIssues.push(`Hiring Phase: ${err?.message || 'native recruitment action could not be prepared'}`);
+            }
+            if (hiringSubmission) {
+                try {
+                    hiringChanged = await applyDispatchRecruitmentHiring(item, hiringSubmission);
+                    verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Hiring Phase');
+                    if (dispatchRecruitmentRecordPhase(verified) !== plan.hiringPhase) throw dispatchRecruitmentSafetyStop('MissionChief did not verify the requested Hiring Phase. No further stations were changed.');
+                } catch (err) {
+                    if (!err?.dispatchRecruitmentSafeSkip) throw err;
+                    if (err.dispatchRecruitmentMutationSubmitted) {
+                        verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Hiring Phase restoration');
+                        if (dispatchRecruitmentRecordPhase(verified) !== currentPhase) throw dispatchRecruitmentSafetyStop('MissionChief did not verify the restored Hiring Phase. No further stations were changed.');
+                    }
+                    safeIssues.push(`Hiring Phase: ${err.message}`);
+                }
+            }
+        }
         const changedFields = [hiringChanged ? 'Hiring Phase' : '', personnelChanged ? 'Personnel (Desired)' : ''].filter(Boolean);
-        return { changed: true, record: verified, detail: changedFields.join(' + ') };
+        if (!changedFields.length && safeIssues.length) throw dispatchRecruitmentSafeSkip(safeIssues.join(' · '));
+        if (!safeIssues.length && !dispatchRecruitmentRecordMatches(verified, plan)) throw dispatchRecruitmentSafetyStop('MissionChief did not verify both requested recruitment values. No further stations were changed.');
+        const detail = safeIssues.length ? `${changedFields.join(' + ')} updated · ${safeIssues.join(' · ')}` : changedFields.join(' + ');
+        return { changed: true, partial: safeIssues.length > 0, record: verified, detail };
     }
 
     function dispatchRecruitmentVisibleQueue() {
@@ -18546,7 +18647,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             updateUiSetProperty(control, 'disabled', locked);
         });
         const allCentres = state.dispatchRecruitment.dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES;
-        const summary = runtimeState.summary || { totalRows: 0, eligible: 0, outsideDispatch: 0, unavailable: 0, typeCounts: {}, dispatchCounts: {}, outsideDispatchNames: [], unavailableNames: [] };
+        const summary = runtimeState.summary || { totalRows: 0, eligible: 0, unassigned: 0, outsideDispatch: 0, unavailable: 0, typeCounts: {}, dispatchCounts: {}, unassignedNames: [], outsideDispatchNames: [], unavailableNames: [] };
         const visibleQueue = dispatchRecruitmentVisibleQueue();
         const plannedQueue = dispatchRecruitmentPlannedQueue();
         const status = runtimeState.running ? (runtimeState.stopRequested ? 'STOPPING' : 'RUNNING') : runtimeState.scanPromise ? 'SCANNING' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scannedAt ? (runtimeState.processed ? 'COMPLETE' : 'READY') : 'IDLE';
@@ -18559,15 +18660,13 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             const label = runtimeState.typeLabels[typeId] || `Building type ${typeId}`;
             return `<label class="mcms-recruitment-type"><input type="checkbox" data-setting="dispatch-recruitment-type" value="${escapeHtml(typeId)}" ${runtimeState.selectedTypeIds.has(typeId) ? 'checked' : ''} ${locked ? 'disabled' : ''}><span>${escapeHtml(label)}</span><b>${count}</b></label>`;
         }).join('')}</div>` : `<div class="mcms-empty-state">Scan ${allCentres ? 'ALL DISPATCH CENTRES' : 'a Dispatch Centre'} to load current native station types.</div>`;
-        const emptyStationMessage = runtimeState.scannedAt && !summary.eligible && summary.outsideDispatch
-            ? allCentres
-                ? `No editable stations are assigned to the loaded Dispatch Centres. ${summary.outsideDispatch} row${summary.outsideDispatch === 1 ? '' : 's'} referenced an assignment outside the loaded catalogue.`
-                : `No editable stations are assigned to this Dispatch Centre. ${summary.outsideDispatch} station${summary.outsideDispatch === 1 ? '' : 's'} ${summary.outsideDispatch === 1 ? 'is' : 'are'} assigned elsewhere.`
+        const emptyStationMessage = runtimeState.scannedAt && !summary.eligible
+            ? `No editable stations are assigned within this scope. ${summary.unassigned} unassigned, ${summary.outsideDispatch} assigned outside the scope and ${summary.unavailable} unavailable row${summary.unavailable === 1 ? '' : 's'} were excluded.`
             : runtimeState.scannedAt ? 'No stations match the active type filters.' : `Load and scan ${allCentres ? 'ALL DISPATCH CENTRES' : 'a Dispatch Centre'} to preview editable stations.`;
         const stationRows = visibleQueue.length ? visibleQueue.map(item => {
             const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
             const current = runtimeState.currentBuildingId === item.buildingId;
-            const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
+            const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'partial' ? 'PARTIAL' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
             const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
             const centre = allCentres ? `${item.dispatchName || `Dispatch Centre ${item.dispatchId}`} · ` : '';
             return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="dispatch-recruitment-station" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · Hiring ${escapeHtml(dispatchRecruitmentPhaseLabel(item.currentPhase))} · Desired ${item.currentDesired} · Staff ${escapeHtml(item.currentStaff)}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
@@ -18577,16 +18676,17 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             ? `<div class="mcms-sweep-stat"><b>${Object.keys(summary.dispatchCounts || {}).length}</b><span>Centres</span></div>`
             : `<div class="mcms-sweep-stat"><b>${summary.outsideDispatch}</b><span>Other centres</span></div>`;
         const runStats = runtimeState.running || runtimeState.processed
-            ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(plannedQueue.length || runtimeState.processed, DISPATCH_RECRUITMENT_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
+            ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(plannedQueue.length || runtimeState.processed, DISPATCH_RECRUITMENT_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.partial}</b><span>Partial</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
             : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>${assignedLabel}</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div>${scopeStat}<div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span>Unavailable</span></div>`;
         const outsideDispatchLabel = allCentres ? 'with assignments outside the loaded Dispatch Centre catalogue' : 'assigned to other Dispatch Centres';
+        const unassigned = summary.unassignedNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unassigned} unassigned row${summary.unassigned === 1 ? '' : 's'} — excluded from all recruitment changes</summary>${summary.unassignedNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unassigned > summary.unassignedNames.length ? `<div>+ ${summary.unassigned - summary.unassignedNames.length} more</div>` : ''}</details>` : '';
         const outsideDispatch = summary.outsideDispatchNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.outsideDispatch} row${summary.outsideDispatch === 1 ? '' : 's'} ${outsideDispatchLabel}</summary>${summary.outsideDispatchNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.outsideDispatch > summary.outsideDispatchNames.length ? `<div>+ ${summary.outsideDispatch - summary.outsideDispatchNames.length} more</div>` : ''}</details>` : '';
         const unavailable = summary.unavailableNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unavailable} unavailable row${summary.unavailable === 1 ? '' : 's'}</summary>${summary.unavailableNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unavailable > summary.unavailableNames.length ? `<div>+ ${summary.unavailable - summary.unavailableNames.length} more</div>` : ''}</details>` : '';
         const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             return `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No recruitment activity yet.</div>';
-        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${outsideDispatch}${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
+        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${unassigned}${outsideDispatch}${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
         const load = panel.querySelector('[data-action="load-dispatch-recruitment"]');
         const scan = panel.querySelector('[data-action="scan-dispatch-recruitment"]');
@@ -18675,12 +18775,17 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 try {
                     const result = await applyDispatchRecruitmentStation(item, plan);
                     if (result.changed) {
-                        item.outcome = 'updated';
+                        item.outcome = result.partial ? 'partial' : 'updated';
                         item.outcomeDetail = result.detail;
                         item.currentPhase = dispatchRecruitmentRecordPhase(result.record);
                         item.currentDesired = Number(result.record.personal_count_target);
-                        dispatchRecruitmentRuntime.updated += 1;
-                        dispatchRecruitmentLog(`Updated ${item.name}: ${result.detail}`);
+                        if (result.partial) {
+                            dispatchRecruitmentRuntime.partial += 1;
+                            dispatchRecruitmentLog(`Partially updated ${item.name}: ${result.detail}`, 'warn');
+                        } else {
+                            dispatchRecruitmentRuntime.updated += 1;
+                            dispatchRecruitmentLog(`Updated ${item.name}: ${result.detail}`);
+                        }
                     } else {
                         item.outcome = 'unchanged';
                         item.outcomeDetail = result.detail;
@@ -18691,7 +18796,12 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                     }
                 } catch (err) {
                     item.outcomeDetail = String(err?.message || 'unknown error');
-                    if (err?.dispatchRecruitmentSafeSkip) {
+                    if (err?.dispatchRecruitmentFatal) {
+                        item.outcome = 'error';
+                        dispatchRecruitmentRuntime.errors += 1;
+                        dispatchRecruitmentRuntime.stopRequested = true;
+                        dispatchRecruitmentLog(`SAFETY STOP at ${item.name}: ${item.outcomeDetail}`, 'error');
+                    } else if (err?.dispatchRecruitmentSafeSkip) {
                         item.outcome = 'skipped';
                         dispatchRecruitmentRuntime.skipped += 1;
                         dispatchRecruitmentLog(`Skipped ${item.name}: ${item.outcomeDetail}`, 'warn');
@@ -18704,6 +18814,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                     dispatchRecruitmentRuntime.processed += 1;
                     renderDispatchRecruitmentPanel();
                 }
+                if (dispatchRecruitmentRuntime.stopRequested) break;
                 if (index < planned.length - 1 && !dispatchRecruitmentRuntime.stopRequested) {
                     const completedDelay = await runtimeDelay(plan.delayMs);
                     if (!completedDelay) break;
@@ -18715,8 +18826,8 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             dispatchRecruitmentRuntime.stopRequested = false;
             dispatchRecruitmentRuntime.currentBuildingId = '';
             dispatchRecruitmentRuntime.currentItem = '';
-            dispatchRecruitmentLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${dispatchRecruitmentRuntime.updated} updated, ${dispatchRecruitmentRuntime.unchanged} unchanged, ${dispatchRecruitmentRuntime.skipped} skipped, ${dispatchRecruitmentRuntime.errors} errors`, dispatchRecruitmentRuntime.errors ? 'error' : 'info');
-            showToast(`${wasStopped ? 'Dispatch Recruitment stopped' : 'Dispatch Recruitment complete'} · ${dispatchRecruitmentRuntime.updated} updated · ${dispatchRecruitmentRuntime.unchanged} unchanged · ${dispatchRecruitmentRuntime.skipped + dispatchRecruitmentRuntime.errors} issues`);
+            dispatchRecruitmentLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${dispatchRecruitmentRuntime.updated} updated, ${dispatchRecruitmentRuntime.partial} partial, ${dispatchRecruitmentRuntime.unchanged} unchanged, ${dispatchRecruitmentRuntime.skipped} skipped, ${dispatchRecruitmentRuntime.errors} errors`, dispatchRecruitmentRuntime.errors ? 'error' : dispatchRecruitmentRuntime.partial ? 'warn' : 'info');
+            showToast(`${wasStopped ? 'Dispatch Recruitment stopped' : 'Dispatch Recruitment complete'} · ${dispatchRecruitmentRuntime.updated} updated · ${dispatchRecruitmentRuntime.partial} partial · ${dispatchRecruitmentRuntime.unchanged} unchanged · ${dispatchRecruitmentRuntime.skipped + dispatchRecruitmentRuntime.errors} issues`);
             renderDispatchRecruitmentPanel();
         }
     }

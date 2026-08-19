@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.9.4] - 2026-08-19
+
+### Dispatch Recruitment assignment immutability guard
+
+- Separates native **No control center** rows from stations assigned elsewhere and categorically excludes those unassigned buildings from both single-centre and **ALL DISPATCH CENTRES** mutation queues.
+- Applies and verifies Personnel (Desired) independently before Hiring Phase, so an unavailable native Hiring Phase action can no longer prevent a requested personnel target such as 400 from being saved.
+- Builds Personnel (Desired) submissions from a strict native field allow-list and blocks every recruitment mutation URL or payload that references Dispatch Centre assignment controls.
+- Rechecks the exact Dispatch Centre and building type after each successful native mutation, not only before the station and after the complete pair.
+- Stops the entire bulk run immediately if assignment/type state changes or a submitted mutation cannot be authoritatively verified, while reporting safe partial updates explicitly.
+
 ## [10.9.3] - 2026-08-19
 
 ### Dispatch Recruitment assignment repair & all-centres control

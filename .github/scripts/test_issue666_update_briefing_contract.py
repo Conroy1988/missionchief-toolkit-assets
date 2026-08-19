@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.11.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.12.0"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.11.1"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.12.0"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Fixes Station Icon Copier source preparation when MissionChief serves uploaded station images from its CORS-restricted S3 host.",
+            "Allows any explicit combination of loaded Dispatch Centres, with select-all and clear controls plus safe migration from the previous single-centre preference.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

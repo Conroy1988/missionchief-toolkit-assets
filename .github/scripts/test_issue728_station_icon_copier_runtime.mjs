@@ -15,12 +15,13 @@ assert.ok(start >= 0 && end > start, 'Issue #728 Station Icon Copier helpers are
 
 const shell = new JSDOM(`<!doctype html><html><body>
 <section id="panel" class="mcms-open">
-  <select data-setting="station-icon-centre"></select>
+  <div data-station-icon-centres></div>
   <select data-setting="station-icon-source"></select>
-  <select data-setting="station-icon-replace-mode"><option value="defaults">Protect</option><option value="all">Replace</option></select>
+  <select data-setting="station-icon-replace-mode"><option value="defaults">Protect</option><option value="inconsistent">Repair</option><option value="all">Replace</option></select>
   <select data-setting="station-icon-delay"><option value="1500">1.5 seconds</option></select>
   <button data-action="load-station-icons"></button><button data-action="scan-station-icons"></button>
   <button data-action="apply-station-icons"></button><button data-action="stop-station-icons"></button>
+  <button data-action="select-all-station-icon-centres"></button><button data-action="clear-station-icon-centres"></button>
   <button data-action="select-all-station-icons"></button><button data-action="clear-station-icons"></button>
   <div data-station-icon-copier></div>
 </section>
@@ -45,9 +46,10 @@ const stationIconCopierRuntime = {
     queue: [],
     summary: null,
     scannedAt: 0,
-    scannedDispatchId: '',
+    scannedScopeKey: '',
     scannedSourceBuildingId: '',
     scannedReplaceMode: '',
+    scannedSourceSignature: null,
     selectedBuildingIds: new Set(),
     currentBuildingId: '',
     currentItem: '',
@@ -81,13 +83,14 @@ const context = vm.createContext({
     pageWindow,
     runtime: { destroyed: false },
     SCRIPT: { panelId: 'panel' },
-    state: { stationIconCopier: { dispatchId: '10', sourceBuildingId: '1', replaceMode: 'defaults', delayMs: 1500 } },
+    state: { stationIconCopier: { dispatchIds: ['10'], sourceBuildingId: '1', replaceMode: 'defaults', delayMs: 1500 } },
     stationIconCopierRuntime,
     dispatchRecruitmentRuntime: { running: false, catalogPromise: null, scanPromise: null },
     DISPATCH_RECRUITMENT_ALL_CENTRES: 'all',
     STATION_ICON_REPLACE_DEFAULTS: 'defaults',
+    STATION_ICON_REPLACE_INCONSISTENT: 'inconsistent',
     STATION_ICON_REPLACE_ALL: 'all',
-    STATION_ICON_REPLACE_OPTIONS: Object.freeze(['defaults', 'all']),
+    STATION_ICON_REPLACE_OPTIONS: Object.freeze(['defaults', 'inconsistent', 'all']),
     STATION_ICON_DELAY_OPTIONS: Object.freeze([1000, 1500, 2000, 3000, 5000]),
     STATION_ICON_SCAN_LIMIT: 2000,
     STATION_ICON_APPLY_LIMIT: 2000,
@@ -111,6 +114,7 @@ const context = vm.createContext({
     },
     showToast: () => {},
     saveState: () => {},
+    updateUI: () => {},
     toolkitAnalyticsRecordFeature: () => {},
     runtimeDelay: async () => true,
     runtimeFetch: async () => { throw new Error('runtimeFetch mock was not installed'); },
@@ -151,7 +155,7 @@ assert.equal(Object.keys(allCentresScan.summary.dispatchCounts).length, 2);
 stationIconCopierRuntime.queue = protectedScan.queue;
 stationIconCopierRuntime.summary = protectedScan.summary;
 stationIconCopierRuntime.scannedAt = Date.now();
-stationIconCopierRuntime.scannedDispatchId = '10';
+stationIconCopierRuntime.scannedScopeKey = '10';
 stationIconCopierRuntime.scannedSourceBuildingId = '1';
 stationIconCopierRuntime.scannedReplaceMode = 'defaults';
 stationIconCopierRuntime.selectedBuildingIds = new Set(['2']);
@@ -246,14 +250,14 @@ await assert.rejects(
     'A post-submit assignment change must stop the complete run',
 );
 
-context.state.stationIconCopier = { dispatchId: '10', sourceBuildingId: '1', replaceMode: 'defaults', delayMs: 1500 };
+context.state.stationIconCopier = { dispatchIds: ['10'], sourceBuildingId: '1', replaceMode: 'defaults', delayMs: 1500 };
 stationIconCopierRuntime.queue = [
     { ...target, outcome: 'ready', outcomeDetail: '' },
     { ...target, buildingId: '8', name: 'Second Fire', outcome: 'ready', outcomeDetail: '' },
 ];
 stationIconCopierRuntime.summary = protectedScan.summary;
 stationIconCopierRuntime.scannedAt = Date.now();
-stationIconCopierRuntime.scannedDispatchId = '10';
+stationIconCopierRuntime.scannedScopeKey = '10';
 stationIconCopierRuntime.scannedSourceBuildingId = '1';
 stationIconCopierRuntime.scannedReplaceMode = 'defaults';
 stationIconCopierRuntime.selectedBuildingIds = new Set(['2', '8']);

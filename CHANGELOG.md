@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.12.0] - 2026-08-20
+
+### Station Icon consistency manager
+
+- Allows any explicit combination of loaded Dispatch Centres, with select-all and clear controls plus safe migration from the previous single-centre preference.
+- Audits decoded pixels for every exact same-type and small/full-size station, then shows an overall consistency score and a detailed per-centre breakdown.
+- Adds Fix inconsistencies only, selecting default icons and verified pixel differences while leaving unreadable custom icons unverified and protected.
+- Rechecks the scanned source signature and each audited custom target before writing, so a post-scan image change is skipped or invalidates the complete plan.
+- Updates consistency scores after verified repairs while preserving native-form field protection, sequential pacing, post-save pixel checks, Stop and fatal safety stops.
+
 ## [10.11.1] - 2026-08-19
 
 ### Station Icon Copier upload-host hotfix

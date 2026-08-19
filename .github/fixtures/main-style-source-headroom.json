@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 730,
-    "version": "10.11.1",
-    "sourceBytes": 2541054,
-    "sourceLines": 38019,
-    "sourceSha256": "26f5d288b49310a97d589688ffa11858eb1d54812d14feb45146f913eb80f3f4",
-    "templateBytes": 835267,
-    "templateLines": 9837,
-    "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
-    "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2548000,
-    "maxSourceLines": 38150,
+    "issue": 732,
+    "version": "10.12.0",
+    "sourceBytes": 2564043,
+    "sourceLines": 38289,
+    "sourceSha256": "a4def7b9badd43bbc57a6ec4e33b80cc336ab13ff802b50237701603efc98b41",
+    "templateBytes": 840014,
+    "templateLines": 9862,
+    "templateSha256": "2aafac0e3323c0ae41ab762a3b418903614a633226c0b3f229fb2f958bd459eb",
+    "canonicalCssSha256": "ae715541a7bf9f56ec29a000bb47277a40b2665ab57835afffa087a32a63920f",
+    "maxSourceBytes": 2571000,
+    "maxSourceLines": 38420,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 178605,
-      "sourceLines": 2593,
-      "templateBytes": 19730,
-      "templateLines": 303
+      "sourceBytes": 201594,
+      "sourceLines": 2863,
+      "templateBytes": 24477,
+      "templateLines": 328
     },
-    "scope": "Issue #730 exact-host MissionChief upload retrieval for Station Icon Copier with anonymous fallback, redirect/size guards and retained request-site budget"
+    "scope": "Issue #732 multi-centre Station Icon consistency auditing, pixel-verified repair, freshness guards and live score reporting"
   }
 }

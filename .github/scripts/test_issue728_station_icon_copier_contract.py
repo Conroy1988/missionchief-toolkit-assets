@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.11.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.12.0"
     assert "'stationIconCopier'" in source, "Station Icon Copier analytics allow-list entry is missing"
     assert "@connect      *" not in source, "Station Icon Copier must not request wildcard userscript network access"
 
@@ -35,16 +35,19 @@ def main() -> int:
         'data-action="scan-station-icons"',
         'data-action="apply-station-icons"',
         'data-action="stop-station-icons"',
+        'data-action="select-all-station-icon-centres"',
+        'data-action="clear-station-icon-centres"',
         'data-action="select-all-station-icons"',
         'data-action="clear-station-icons"',
-        'data-setting="station-icon-centre"',
+        'data-station-icon-centres',
         'data-setting="station-icon-source"',
         'data-setting="station-icon-replace-mode"',
         'data-setting="station-icon-delay"',
         'data-station-icon-copier',
-        "Protect them (recommended)",
-        "Replace selected custom icons",
-        "Copy, do not upload",
+        "Fill default icons only (safest)",
+        "Fix inconsistencies only (pixel verified)",
+        "Replace all selected custom icons",
+        "Audit, then copy",
         "200×200",
     ):
         assert token in dispatch_panel, f"Station Icon Copier panel is missing {token}"
@@ -70,6 +73,7 @@ def main() -> int:
 
     for constant in (
         "STATION_ICON_REPLACE_DEFAULTS = 'defaults'",
+        "STATION_ICON_REPLACE_INCONSISTENT = 'inconsistent'",
         "STATION_ICON_REPLACE_ALL = 'all'",
         "STATION_ICON_SCAN_LIMIT = 2000",
         "STATION_ICON_APPLY_LIMIT = 2000",
@@ -82,11 +86,12 @@ def main() -> int:
     assert "stationIconTypeKey(record)" in implementation
     assert "record?.small ? '1' : '0'" in implementation, "Small/full station classification must be part of the exact type key"
     assert "record.id === sourceId" in implementation, "Source station must be excluded from its own target queue"
-    assert "mode === STATION_ICON_REPLACE_DEFAULTS && record.hasCustomIcon" in implementation
-    assert "stationIconRecordInScope(record, scopeId, dispatchById)" in implementation
-    assert "scopeId === DISPATCH_RECRUITMENT_ALL_CENTRES" in implementation
+    assert "mode === STATION_ICON_REPLACE_DEFAULTS" in implementation
+    assert "const scope = new Set(scopeIds)" in implementation, "Multi-centre membership must remain constant-time during catalogue scans"
+    assert "stationIconRecordInScope(record, scope, dispatchById)" in implementation
+    assert "requested.includes(DISPATCH_RECRUITMENT_ALL_CENTRES)" in implementation
     assert "stationIconCopierRuntime.selectedBuildingIds" in implementation
-    assert "stationIconCopierRuntime.scannedDispatchId" in implementation
+    assert "stationIconCopierRuntime.scannedScopeKey" in implementation
     assert "stationIconCopierRuntime.scannedSourceBuildingId" in implementation
     assert "stationIconCopierRuntime.scannedReplaceMode" in implementation
     assert "stationIconCopierRuntime.preparing = true" in implementation, "Source preparation must lock the plan against double-start and setting races"
@@ -119,7 +124,7 @@ def main() -> int:
     assert "stationIconCopierRuntime.stopRequested = true" in run
     assert "toolkitAnalyticsRecordFeature('stationIconCopier')" in run
 
-    assert "stationIconCopier: { dispatchId: '', sourceBuildingId: '', replaceMode: STATION_ICON_REPLACE_DEFAULTS, delayMs: 1500 }" in source
+    assert "stationIconCopier: { dispatchIds: [], sourceBuildingId: '', replaceMode: STATION_ICON_REPLACE_DEFAULTS, delayMs: 1500 }" in source
     assert "setting.startsWith('station-icon-')" in source
     assert "renderStationIconCopierPanel();" in source
     assert "station-icon-copier" in source_section(source, "    function commandPaletteActionEntries(", "    function commandPaletteMissionEntries(")

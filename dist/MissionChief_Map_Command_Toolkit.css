@@ -9802,18 +9802,43 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #mc-map-command-toolkit-panel .mcms-recruitment-findings summary { color:#ffd28a !important; cursor:pointer !important; font-weight:950 !important; }
         #mc-map-command-toolkit-panel .mcms-icon-copy-card { border-color:rgba(90,195,255,.32) !important; background:rgba(12,49,75,.18) !important; }
         #mc-map-command-toolkit-panel .mcms-icon-copy-card .mcms-sweep-head { color:#bfe9ff !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-picker { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; max-height:150px !important; overflow-y:auto !important; padding:2px !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-option { display:grid !important; grid-template-columns:auto minmax(0,1fr) !important; align-items:center !important; gap:6px !important; min-width:0 !important; min-height:34px !important; padding:6px 7px !important; border:1px solid rgba(90,195,255,.20) !important; border-radius:8px !important; background:rgba(90,195,255,.06) !important; color:rgba(255,255,255,.76) !important; cursor:pointer !important; font-size:7.5px !important; font-weight:850 !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-option input { width:14px !important; height:14px !important; margin:0 !important; accent-color:#5ac3ff !important; cursor:pointer !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-option span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
         #mc-map-command-toolkit-panel .mcms-icon-source { display:grid !important; grid-template-columns:40px minmax(0,1fr) !important; align-items:center !important; gap:8px !important; margin:7px 0 !important; padding:7px !important; border:1px solid rgba(90,195,255,.25) !important; border-radius:9px !important; background:rgba(90,195,255,.07) !important; }
         #mc-map-command-toolkit-panel .mcms-icon-source strong { display:block !important; color:#f7fbff !important; font-size:8.5px !important; overflow-wrap:anywhere !important; }
         #mc-map-command-toolkit-panel .mcms-icon-source small { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.55) !important; font-size:7px !important; line-height:1.35 !important; }
         #mc-map-command-toolkit-panel .mcms-icon-thumb { display:grid !important; place-items:center !important; width:34px !important; height:34px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:7px !important; background:rgba(0,0,0,.22) !important; object-fit:contain !important; image-rendering:auto !important; }
         #mc-map-command-toolkit-panel .mcms-icon-default { color:rgba(255,255,255,.38) !important; font-size:8px !important; font-weight:950 !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency { margin:7px 0 !important; padding:8px !important; border:1px solid rgba(90,195,255,.24) !important; border-radius:9px !important; background:rgba(90,195,255,.055) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency > div:first-child { display:flex !important; align-items:baseline !important; gap:8px !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency strong { flex:0 0 auto !important; color:#8bd8ff !important; font-size:18px !important; font-weight:950 !important; line-height:1 !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency span { color:rgba(255,255,255,.75) !important; font-size:7.5px !important; font-weight:900 !important; line-height:1.3 !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency small { display:block !important; margin-top:5px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; line-height:1.35 !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency-bar { height:5px !important; margin-top:7px !important; overflow:hidden !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency-bar i { display:block !important; height:100% !important; border-radius:inherit !important; background:#5ac3ff !important; transition:width .18s ease !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency[data-tone="good"] { border-color:rgba(70,229,139,.38) !important; background:rgba(70,229,139,.075) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency[data-tone="good"] strong { color:#78efac !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency[data-tone="good"] .mcms-icon-consistency-bar i { background:#46e58b !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-consistency[data-tone="warn"] { border-color:rgba(255,182,72,.38) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-score { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; align-items:center !important; gap:7px !important; margin-top:5px !important; padding-top:5px !important; border-top:1px solid rgba(255,255,255,.07) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-score span { min-width:0 !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-score strong { display:block !important; color:#e9f8ff !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-score small { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.50) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-centre-score > b { color:#8bd8ff !important; font-size:8px !important; }
         #mc-map-command-toolkit-panel .mcms-icon-copy-card .mcms-recruitment-station { grid-template-columns:auto 34px minmax(0,1fr) auto !important; }
         #mc-map-command-toolkit-panel .mcms-icon-copy-card .mcms-recruitment-station[data-outcome="updated"] { border-color:rgba(90,195,255,.46) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-copy-card .mcms-recruitment-station[data-consistency="inconsistent"] { box-shadow:inset 2px 0 rgba(255,182,72,.56) !important; }
+        #mc-map-command-toolkit-panel .mcms-icon-copy-card .mcms-recruitment-station[data-consistency="consistent"] { box-shadow:inset 2px 0 rgba(70,229,139,.48) !important; }
         html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-recruitment-type { min-height:44px !important; font-size:9px !important; }
         html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-recruitment-type input,
         html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-recruitment-station input { width:22px !important; height:22px !important; }
         html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-recruitment-station { min-height:52px !important; }
         html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-recruitment-stations { max-height:42vh !important; }
+        html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-icon-centre-picker { grid-template-columns:minmax(0,1fr) !important; max-height:32vh !important; }
+        html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-icon-centre-option { min-height:44px !important; font-size:9px !important; }
+        html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-icon-centre-option input { width:22px !important; height:22px !important; }
         #mc-map-command-toolkit-panel .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #mc-map-command-toolkit-panel :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #mc-map-command-toolkit-panel .mcms-tab-panel { gap:11px !important; padding:13px !important; }

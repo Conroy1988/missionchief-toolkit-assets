@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.9.4
+// @version      10.9.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -467,7 +467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.9.4',
+        version: '10.9.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,14 +526,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.9.4",
-        title: "Dispatch Recruitment assignment immutability guard",
+        version: "10.9.5",
+        title: "Complete ALL DISPATCH CENTRES recruitment scans",
         highlights: Object.freeze([
-            "Separates native No control center rows from stations assigned elsewhere and categorically excludes those unassigned buildings from both single-centre and ALL DISPATCH CENTRES mutation queues.",
-            "Applies and verifies Personnel (Desired) independently before Hiring Phase, so an unavailable native Hiring Phase action can no longer prevent a requested personnel target such as 400 from being saved.",
-            "Builds Personnel (Desired) submissions from a strict native field allow-list and blocks every recruitment mutation URL or payload that references Dispatch Centre assignment controls.",
-            "Rechecks the exact Dispatch Centre and building type after each successful native mutation, not only before the station and after the complete pair.",
-            "Stops the entire bulk run immediately if assignment/type state changes or a submitted mutation cannot be authoritatively verified, while reporting safe partial updates explicitly."
+            "Loads every native centre-specific Buildings matrix for ALL DISPATCH CENTRES instead of assuming the first centre contains the complete station fleet.",
+            "Shows centre-by-centre progress, merges exact native assignments and deduplicates stations globally under the existing 2,000-station safety limit.",
+            "Rejects contradictory assignment or building-type evidence for the same station instead of choosing an arbitrary matrix row.",
+            "Discards the complete result and leaves Apply to Selected disabled when any centre request fails, times out, redirects unexpectedly or returns an unverifiable page.",
+            "Preserves single-centre scanning, exact per-station assignment rechecks, sequential writes and every existing assignment-mutation guard."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -18084,10 +18084,10 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             .filter(item => /^\d+$/u.test(String(item?.id || '')))
             .map(item => [String(item.id), { id: String(item.id), name: dispatchRecruitmentText(item.name) || `Dispatch Centre ${item.id}` }]));
         if (allCentres && !dispatchById.size) throw new Error('No loaded Dispatch Centres are available for an all-centres scan.');
-        const allRows = Array.from(doc?.querySelectorAll?.('#building_table tr.alliance_buildings_table_searchable, tr.alliance_buildings_table_searchable') || []);
-        const rows = allRows.slice(0, DISPATCH_RECRUITMENT_SCAN_LIMIT);
+        const matrices = Array.isArray(doc) ? doc : [doc];
+        const allRows = matrices.flatMap(matrix => Array.from(matrix?.querySelectorAll?.('#building_table tr.alliance_buildings_table_searchable, tr.alliance_buildings_table_searchable') || []));
         const queue = [];
-        const seen = new Set();
+        const seen = new Map();
         const summary = {
             totalRows: allRows.length,
             eligible: 0,
@@ -18095,14 +18095,14 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             outsideDispatch: 0,
             unavailable: 0,
             duplicates: 0,
-            truncated: Math.max(0, allRows.length - rows.length),
+            truncated: 0,
             typeCounts: {},
             dispatchCounts: {},
             unassignedNames: [],
             outsideDispatchNames: [],
             unavailableNames: []
         };
-        for (const row of rows) {
+        for (const row of allRows) {
             const cells = Array.from(row.cells || row.querySelectorAll?.('td') || []);
             const buildingAnchor = Array.from(cells[1]?.querySelectorAll?.('a[href]') || row.querySelectorAll?.('a[href*="/buildings/"]') || [])
                 .map(anchor => ({ anchor, reference: dispatchRecruitmentBuildingReference(anchor) }))
@@ -18115,12 +18115,14 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             }
             const { id, typeId, path } = buildingAnchor.reference;
             const name = dispatchRecruitmentText(buildingAnchor.anchor.textContent) || fallbackName;
-            if (seen.has(id)) {
+            const assignedDispatchId = dispatchRecruitmentAssignedDispatchId(row, id);
+            const prior = seen.get(id);
+            if (prior) {
+                if (prior.dispatchId !== assignedDispatchId || prior.typeId !== typeId) throw new Error(`Conflicting native Dispatch Centre or building-type evidence for station ${id}.`);
                 summary.duplicates += 1;
                 continue;
             }
-            seen.add(id);
-            const assignedDispatchId = dispatchRecruitmentAssignedDispatchId(row, id);
+            seen.set(id, { dispatchId: assignedDispatchId, typeId });
             if (assignedDispatchId === '0') {
                 summary.unassigned += 1;
                 if (summary.unassignedNames.length < 20) summary.unassignedNames.push(name);
@@ -18143,6 +18145,10 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             if (!target || !desiredMatch || Number(desiredMatch[0]) < 0) {
                 summary.unavailable += 1;
                 if (summary.unavailableNames.length < 20) summary.unavailableNames.push(name);
+                continue;
+            }
+            if (queue.length >= DISPATCH_RECRUITMENT_SCAN_LIMIT) {
+                summary.truncated += 1;
                 continue;
             }
             const typeLabel = typeLabels[typeId] || `Building type ${typeId}`;
@@ -18291,8 +18297,8 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const dispatchId = String(state.dispatchRecruitment.dispatchId || '');
         const allCentres = dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES;
         const dispatch = allCentres ? null : dispatches.find(item => item.id === dispatchId);
-        const matrixDispatch = dispatch || dispatches[0];
-        if (!matrixDispatch) {
+        const scanDispatches = allCentres ? dispatches : dispatch ? [dispatch] : [];
+        if (!scanDispatches.length) {
             showToast('Choose a valid Dispatch Centre before scanning');
             return [];
         }
@@ -18300,8 +18306,18 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         dispatchRecruitmentRuntime.currentItem = `Scanning ${scanName}`;
         const scanPromise = (async () => {
             try {
-                const { doc } = await fetchDispatchRecruitmentDocument(`/buildings/${matrixDispatch.id}/leitstelle-buildings`);
-                const result = buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches);
+                const matrices = [];
+                for (let index = 0; index < scanDispatches.length; index += 1) {
+                    const matrixDispatch = scanDispatches[index];
+                    const matrixPath = `/buildings/${matrixDispatch.id}/leitstelle-buildings`;
+                    dispatchRecruitmentRuntime.currentItem = allCentres ? `Scanning ${index + 1} of ${scanDispatches.length} · ${matrixDispatch.name}` : `Scanning ${matrixDispatch.name}`;
+                    renderDispatchRecruitmentPanel();
+                    const { doc, url } = await fetchDispatchRecruitmentDocument(matrixPath);
+                    const finalUrl = new URL(url);
+                    if (finalUrl.pathname.replace(/\/+$/u, '') !== matrixPath || finalUrl.search || finalUrl.hash || doc.getElementsByTagName('table').namedItem('building_table')?.id !== 'building_table') throw new Error(`MissionChief did not return the native Buildings matrix for ${matrixDispatch.name}.`);
+                    matrices.push(doc);
+                }
+                const result = buildDispatchRecruitmentQueue(allCentres ? matrices : matrices[0], dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches);
                 dispatchRecruitmentRuntime.queue = result.queue;
                 dispatchRecruitmentRuntime.summary = result.summary;
                 dispatchRecruitmentRuntime.scannedAt = Date.now();
@@ -18678,6 +18694,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const runStats = runtimeState.running || runtimeState.processed
             ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(plannedQueue.length || runtimeState.processed, DISPATCH_RECRUITMENT_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.partial}</b><span>Partial</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
             : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>${assignedLabel}</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div>${scopeStat}<div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span>Unavailable</span></div>`;
+        const activity = runtimeState.currentItem ? `<div class="mcms-status"><strong>Current:</strong> ${escapeHtml(runtimeState.currentItem)}</div>` : '';
         const outsideDispatchLabel = allCentres ? 'with assignments outside the loaded Dispatch Centre catalogue' : 'assigned to other Dispatch Centres';
         const unassigned = summary.unassignedNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unassigned} unassigned row${summary.unassigned === 1 ? '' : 's'} — excluded from all recruitment changes</summary>${summary.unassignedNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unassigned > summary.unassignedNames.length ? `<div>+ ${summary.unassigned - summary.unassignedNames.length} more</div>` : ''}</details>` : '';
         const outsideDispatch = summary.outsideDispatchNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.outsideDispatch} row${summary.outsideDispatch === 1 ? '' : 's'} ${outsideDispatchLabel}</summary>${summary.outsideDispatchNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.outsideDispatch > summary.outsideDispatchNames.length ? `<div>+ ${summary.outsideDispatch - summary.outsideDispatchNames.length} more</div>` : ''}</details>` : '';
@@ -18686,7 +18703,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             return `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No recruitment activity yet.</div>';
-        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div><div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${unassigned}${outsideDispatch}${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
+        const html = `<div class="mcms-sweep-card mcms-recruitment-card"><div class="mcms-sweep-head"><span>Dispatch Recruitment</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${runStats}</div>${activity}<div class="mcms-recruitment-filter-head"><span>Station types</span><b>${plannedQueue.length} selected / ${visibleQueue.length} visible</b></div>${filters}<div class="mcms-recruitment-stations">${stationRows}</div>${unassigned}${outsideDispatch}${unavailable}<div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
         const load = panel.querySelector('[data-action="load-dispatch-recruitment"]');
         const scan = panel.querySelector('[data-action="scan-dispatch-recruitment"]');
@@ -33896,7 +33913,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                     <button class="mcms-small-btn" type="button" data-action="select-all-dispatch-recruitment">Select All Filtered</button>
                     <button class="mcms-small-btn" type="button" data-action="clear-dispatch-recruitment">Clear Filtered</button>
                 </div>
-                <div class="mcms-status"><strong>Preview first:</strong> scan one Dispatch Centre or choose <b>ALL DISPATCH CENTRES</b> for a single deduplicated bulk plan, choose any native station-type filters, then include all matching stations or tick an exact subset. Automatic recruitment is available only when MissionChief exposes that native action for the station.</div>
+                <div class="mcms-status"><strong>Preview first:</strong> scan one Dispatch Centre or choose <b>ALL DISPATCH CENTRES</b> to verify every native centre matrix before a globally deduplicated plan becomes selectable. Any incomplete matrix scan is discarded with Apply disabled. Choose native station-type filters, then include all matches or an exact subset. Automatic recruitment is available only when MissionChief exposes that native action for the station.</div>
                 <div data-dispatch-recruitment></div>
                 <details class="mcms-alliance-course-guide">
                     <summary>Native controls &amp; safeguards</summary>

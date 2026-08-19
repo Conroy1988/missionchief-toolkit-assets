@@ -141,6 +141,16 @@ const tableHtml = `
         </tr>
     </tbody></table>
 `;
+const matrixDocumentFor = buildingIds => {
+    const ids = new Set(buildingIds.map(String));
+    const matrix = parsed(tableHtml);
+    for (const row of matrix.querySelectorAll('#building_table tr.alliance_buildings_table_searchable')) {
+        const match = row.querySelector('a[href*="/buildings/"]')?.getAttribute('href')?.match(/^\/buildings\/(\d+)$/u);
+        if (!match || !ids.has(match[1])) row.remove();
+    }
+    return matrix;
+};
+const matrixHtmlFor = buildingIds => matrixDocumentFor(buildingIds).documentElement.outerHTML;
 const table = parsed(tableHtml);
 const scan = context.buildDispatchRecruitmentQueue(table, catalog.typeLabels, '77', catalog.dispatches);
 assert.deepEqual(Array.from(scan.queue, item => item.buildingId), ['101', '102']);
@@ -168,6 +178,26 @@ assert.equal(allScan.summary.unassigned, 1);
 assert.equal(allScan.summary.outsideDispatch, 0);
 assert.equal(allScan.summary.unavailable, 2);
 assert.deepEqual({ ...allScan.summary.dispatchCounts }, { 77: 2, 88: 1 });
+
+const northMatrix = matrixDocumentFor(['101', '102', '103', '105', '106']);
+const southMatrix = matrixDocumentFor(['104', '101']);
+const mergedAllScan = context.buildDispatchRecruitmentQueue([northMatrix, southMatrix], catalog.typeLabels, 'all', catalog.dispatches);
+assert.deepEqual(Array.from(mergedAllScan.queue, item => item.buildingId), ['101', '102', '104']);
+assert.deepEqual(Array.from(mergedAllScan.queue, item => item.dispatchId), ['77', '77', '88']);
+assert.equal(mergedAllScan.summary.duplicates, 1, 'Cross-matrix station rows must be deduplicated globally');
+const conflictingMatrix = matrixDocumentFor(['101']);
+conflictingMatrix.querySelector('.building_leitstelle_set_101[href$="/77"]')?.classList.remove('btn-success');
+conflictingMatrix.querySelector('.building_leitstelle_set_101[href$="/88"]')?.classList.add('btn-success');
+assert.throws(
+    () => context.buildDispatchRecruitmentQueue([northMatrix, conflictingMatrix], catalog.typeLabels, 'all', catalog.dispatches),
+    /Conflicting native Dispatch Centre or building-type evidence/u,
+    'Contradictory centre evidence across matrices must abort rather than choose a row'
+);
+context.DISPATCH_RECRUITMENT_SCAN_LIMIT = 2;
+const limitedAllScan = context.buildDispatchRecruitmentQueue([northMatrix, southMatrix], catalog.typeLabels, 'all', catalog.dispatches);
+assert.deepEqual(Array.from(limitedAllScan.queue, item => item.buildingId), ['101', '102']);
+assert.equal(limitedAllScan.summary.truncated, 1, 'The station safety limit must apply once to the globally deduplicated queue');
+context.DISPATCH_RECRUITMENT_SCAN_LIMIT = 2000;
 
 const foreignRows = Array.from({ length: 39 }, (_, index) => {
     const id = String(200 + index);
@@ -254,19 +284,58 @@ dispatchRecruitmentRuntime.scannedDispatchId = '77';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 
+const singleScanRequests = [];
+context.state.dispatchRecruitment.dispatchId = '77';
+dispatchRecruitmentRuntime.catalogAt = Date.now();
+context.runtimeFetch = async input => {
+    const url = new URL(String(input));
+    singleScanRequests.push(`${url.pathname}${url.search}`);
+    if (url.pathname === '/buildings/77/leitstelle-buildings') return { ok: true, status: 200, url: url.href, text: async () => matrixHtmlFor(['101', '102', '103', '105', '106']) };
+    throw new Error(`Unexpected single-centre scan request: ${url.href}`);
+};
+const scannedSingleCentre = await context.scanDispatchRecruitmentStations();
+assert.deepEqual(singleScanRequests, ['/buildings/77/leitstelle-buildings']);
+assert.deepEqual(Array.from(scannedSingleCentre, item => item.buildingId), ['101', '102']);
+assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '77');
+
 const allScanRequests = [];
+const allScanProgress = [];
 context.state.dispatchRecruitment.dispatchId = 'all';
 dispatchRecruitmentRuntime.catalogAt = Date.now();
 context.runtimeFetch = async input => {
     const url = new URL(String(input));
     allScanRequests.push(`${url.pathname}${url.search}`);
-    if (url.pathname === '/buildings/77/leitstelle-buildings') return { ok: true, status: 200, url: url.href, text: async () => tableHtml };
+    allScanProgress.push(dispatchRecruitmentRuntime.currentItem);
+    assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Current:\s*Scanning/u);
+    if (url.pathname === '/buildings/77/leitstelle-buildings') return { ok: true, status: 200, url: url.href, text: async () => matrixHtmlFor(['101', '102', '103', '105', '106']) };
+    if (url.pathname === '/buildings/88/leitstelle-buildings') return { ok: true, status: 200, url: url.href, text: async () => matrixHtmlFor(['104', '101']) };
     throw new Error(`Unexpected all-centres scan request: ${url.href}`);
 };
 const scannedAllCentres = await context.scanDispatchRecruitmentStations();
-assert.deepEqual(allScanRequests, ['/buildings/77/leitstelle-buildings'], 'ALL DISPATCH CENTRES must reuse the native assignment matrix once rather than refetching it per centre');
+assert.deepEqual(allScanRequests, ['/buildings/77/leitstelle-buildings', '/buildings/88/leitstelle-buildings'], 'ALL DISPATCH CENTRES must fetch every loaded native centre matrix exactly once');
+assert.deepEqual(allScanProgress, ['Scanning 1 of 2 · North Dispatch', 'Scanning 2 of 2 · South Dispatch']);
 assert.deepEqual(Array.from(scannedAllCentres, item => item.buildingId), ['101', '102', '104']);
 assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, 'all');
+
+const failedScanRequests = [];
+dispatchRecruitmentRuntime.queue = scannedAllCentres;
+dispatchRecruitmentRuntime.scannedAt = Date.now();
+dispatchRecruitmentRuntime.scannedDispatchId = 'all';
+context.runtimeFetch = async input => {
+    const url = new URL(String(input));
+    failedScanRequests.push(`${url.pathname}${url.search}`);
+    if (url.pathname === '/buildings/77/leitstelle-buildings') return { ok: true, status: 200, url: url.href, text: async () => matrixHtmlFor(['101', '102']) };
+    if (url.pathname === '/buildings/88/leitstelle-buildings') return { ok: false, status: 503, url: url.href, text: async () => '' };
+    throw new Error(`Unexpected failed scan request: ${url.href}`);
+};
+const failedAllCentres = await context.scanDispatchRecruitmentStations();
+assert.deepEqual(failedScanRequests, ['/buildings/77/leitstelle-buildings', '/buildings/88/leitstelle-buildings']);
+assert.deepEqual(Array.from(failedAllCentres), []);
+assert.equal(dispatchRecruitmentRuntime.queue.length, 0, 'A failed centre must discard the entire scan queue');
+assert.equal(dispatchRecruitmentRuntime.scannedAt, 0);
+assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '');
+assert.equal(shell.window.document.querySelector('[data-action="apply-dispatch-recruitment"]').disabled, true, 'Apply must remain disabled after an incomplete all-centres scan');
+assert.match(dispatchRecruitmentRuntime.log[0]?.message || '', /HTTP 503/u);
 context.state.dispatchRecruitment.dispatchId = '77';
 dispatchRecruitmentRuntime.queue = scan.queue;
 dispatchRecruitmentRuntime.summary = scan.summary;

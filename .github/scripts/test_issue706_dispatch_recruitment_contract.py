@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.4"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.5"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -71,7 +71,7 @@ def main() -> int:
         assert native_contract in implementation, f"Missing native Dispatch Recruitment contract: {native_contract}"
 
     assert "catalog.typeLabels" in implementation
-    assert "buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches)" in implementation
+    assert "buildDispatchRecruitmentQueue(allCentres ? matrices : matrices[0], dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches)" in implementation
     assert "dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES" in implementation
     assert "allCentres ? !dispatchById.has(assignedDispatchId) : assignedDispatchId !== dispatchId" in implementation
     assert "outsideDispatch" in implementation
@@ -87,6 +87,19 @@ def main() -> int:
     assert "selectedTypeIds: new Set()" in source
     assert 'data-setting="dispatch-recruitment-type"' in implementation
     assert 'data-setting="dispatch-recruitment-station"' in implementation
+    assert "const matrices = Array.isArray(doc) ? doc : [doc]" in implementation
+    assert "const seen = new Map()" in implementation
+    assert "Conflicting native Dispatch Centre or building-type evidence" in implementation
+    assert "queue.length >= DISPATCH_RECRUITMENT_SCAN_LIMIT" in implementation
+    assert "runtimeState.currentItem" in implementation
+
+    scan = source_section(implementation, "    async function scanDispatchRecruitmentStations(", "    function dispatchRecruitmentSafeSkip(")
+    assert "const scanDispatches = allCentres ? dispatches : dispatch ? [dispatch] : []" in scan
+    assert "for (let index = 0; index < scanDispatches.length; index += 1)" in scan
+    assert "Scanning ${index + 1} of ${scanDispatches.length}" in scan
+    assert "finalUrl.pathname.replace(/\\/+$/u, '') !== matrixPath" in scan
+    assert "doc.getElementsByTagName('table').namedItem('building_table')?.id !== 'building_table'" in scan
+    assert "Promise.all" not in scan, "Native centre matrices must be fetched sequentially"
 
     for guard in (
         "url.origin !== pageWindow.location.origin",
@@ -133,7 +146,7 @@ def main() -> int:
     assert "test_issue706_dispatch_recruitment_contract.py" in preflight
     assert "test_issue706_dispatch_recruitment_runtime.mjs" in preflight
 
-    print("Issue #706 Dispatch Recruitment source contract passed: unassigned exclusion, independent field writes and post-mutation assignment immutability are fail-closed.")
+    print("Issues #706/#724 Dispatch Recruitment source contract passed: complete sequential matrices, global deduplication and mutation immutability are fail-closed.")
     return 0
 
 

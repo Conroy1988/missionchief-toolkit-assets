@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.11.1] - 2026-08-19
+
+### Station Icon Copier upload-host hotfix
+
+- Fixes Station Icon Copier source preparation when MissionChief serves uploaded station images from its CORS-restricted S3 host.
+- Keeps the normal browser download first, then uses an anonymous userscript request limited to the exact MissionChief upload host without wildcard permission.
+- Validates the HTTPS initial and final host, HTTP status, 4 MB bound, PNG or JPEG MIME, dimensions and pixel digest before confirmation or mutation.
+- Uses the same retrieval path for current-icon comparisons and saved-icon verification while preserving protected defaults, exact scope, native forms, pacing, Stop and every safety stop.
+- Reuses the lifecycle-owned request primitive so the established six-site network budget, teardown cancellation and financial-intelligence behaviour remain unchanged.
+
 ## [10.11.0] - 2026-08-19
 
 ### Verified Station Icon Copier

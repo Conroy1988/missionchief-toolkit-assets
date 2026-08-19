@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.11.0
+// @version      10.11.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -26,6 +26,7 @@
 // @grant        unsafeWindow
 // @connect      discord.com
 // @connect      discordapp.com
+// @connect      leitstellenspiel.s3.amazonaws.com
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
 // @run-at       document-start
@@ -467,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.11.0',
+        version: '10.11.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -526,14 +527,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.11.0",
-        title: "Verified Station Icon Copier",
+        version: "10.11.1",
+        title: "Station Icon Copier upload-host hotfix",
         highlights: Object.freeze([
-            "Adds Dispatch → Station Icon Copier for selecting one owned source station and previewing every exact same-type target across one Dispatch Centre or ALL DISPATCH CENTRES.",
-            "Derives native building type and small/full classification from the source automatically, excludes the source itself and protects every existing custom icon by default.",
-            "Adds an explicit replacement mode, exact target checkboxes, source and target thumbnails, a 2,000-station cap, confirmation, sequential pacing and Stop.",
-            "Downloads the selected MissionChief PNG or JPEG once into memory, preserves each freshly fetched native building-edit form and changes only its Building Image upload.",
-            "Rechecks station identity, assignment, type, size, name and coordinates, then pixel-verifies every saved image; an unverified submitted upload stops the complete run without retry."
+            "Fixes Station Icon Copier source preparation when MissionChief serves uploaded station images from its CORS-restricted S3 host.",
+            "Keeps the normal browser download first, then uses an anonymous userscript request limited to the exact MissionChief upload host without wildcard permission.",
+            "Validates the HTTPS initial and final host, HTTP status, 4 MB bound, PNG or JPEG MIME, dimensions and pixel digest before confirmation or mutation.",
+            "Uses the same retrieval path for current-icon comparisons and saved-icon verification while preserving protected defaults, exact scope, native forms, pacing, Stop and every safety stop.",
+            "Reuses the lifecycle-owned request primitive so the established six-site network budget, teardown cancellation and financial-intelligence behaviour remain unchanged."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1015,6 +1016,48 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
     }
 
+    function runtimeGmRequest({
+        method = 'GET', url, data = null, headers = {}, timeoutMs = 15000,
+        responseType = 'text', anonymous = false, messages = {}
+    } = {}) {
+        return new Promise((resolve, reject) => {
+        if (runtime.destroyed) {
+            reject(new Error('Toolkit runtime stopped.'));
+            return;
+        }
+        if (typeof GM_xmlhttpRequest !== 'function') {
+            reject(new Error(messages.unavailable || 'Tampermonkey cross-origin requests are unavailable.'));
+            return;
+        }
+        let request = null;
+        let settled = false;
+        const finish = (error, response = null) => {
+            if (settled) return;
+            settled = true;
+            if (request) runtime.requests.delete(request);
+            if (error) reject(error); else resolve(response);
+        };
+        try {
+            request = GM_xmlhttpRequest({
+            method,
+            url,
+            data,
+            headers,
+            timeout: Math.max(1, Number(timeoutMs) || 15000),
+            responseType,
+            anonymous: Boolean(anonymous),
+            onload: response => finish(null, response),
+            onerror: () => finish(new Error(messages.network || 'The cross-origin request could not be completed.')),
+            ontimeout: () => finish(new Error(messages.timeout || 'The cross-origin request timed out.')),
+            onabort: () => finish(new Error(messages.abort || 'The cross-origin request was cancelled.'))
+            });
+            if (!settled && request?.abort) runtime.requests.add(request);
+        } catch (err) {
+            finish(err instanceof Error ? err : new Error(messages.create || 'The cross-origin request could not be created.'));
+        }
+        });
+    }
+
     runtimeOnCleanup(() => {
         runtimeTasks.clear();
         runtimeClearTimeout(runtimeTaskTimer);
@@ -1339,6 +1382,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const STATION_ICON_MAX_BYTES = 4 * 1024 * 1024;
     const STATION_ICON_MAX_DIMENSION = 200;
     const STATION_ICON_MIME_TYPES = Object.freeze(['image/png', 'image/jpeg']);
+    const STATION_ICON_PRIVILEGED_IMAGE_HOSTS = Object.freeze(['leitstellenspiel.s3.amazonaws.com']);
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -19314,6 +19358,64 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         };
     }
 
+    function stationIconPrivilegedImageUrl(value) {
+        const href = stationIconSafeUrl(value);
+        if (!href) return '';
+        try {
+            const url = new URL(href);
+            if (url.protocol !== 'https:' || (url.port && url.port !== '443')) return '';
+            return STATION_ICON_PRIVILEGED_IMAGE_HOSTS.includes(url.hostname.toLowerCase()) ? url.href : '';
+        } catch (err) { return ''; }
+    }
+
+    function stationIconResponseHeader(rawHeaders, name) {
+        const expected = String(name || '').trim().toLowerCase();
+        if (!expected) return '';
+        for (const line of String(rawHeaders || '').split(/\r?\n/u)) {
+            const separator = line.indexOf(':');
+            if (separator < 1 || line.slice(0, separator).trim().toLowerCase() !== expected) continue;
+            return line.slice(separator + 1).trim();
+        }
+        return '';
+    }
+
+    async function fetchStationIconImagePrivileged(iconUrl, label) {
+        const href = stationIconPrivilegedImageUrl(iconUrl);
+        let requested;
+        try { requested = new URL(stationIconSafeUrl(iconUrl)); } catch (err) { requested = null; }
+        if (!href) {
+            const host = requested?.hostname ? ` (${requested.hostname})` : '';
+            throw new Error(`The ${label} image host${host} is not an approved MissionChief upload host.`);
+        }
+        const response = await runtimeGmRequest({
+            method: 'GET',
+            url: href,
+            headers: { Accept: 'image/png,image/jpeg' },
+            timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS,
+            responseType: 'arraybuffer',
+            anonymous: true,
+            messages: {
+            network: `The ${label} upload host could not be reached.`,
+            timeout: `The ${label} upload-host request timed out.`,
+            abort: `The ${label} upload-host request was cancelled.`,
+            create: `The ${label} upload-host request could not be created.`
+            }
+        });
+        const status = Number(response?.status) || 0;
+        if (status < 200 || status >= 300) throw new Error(`The ${label} host returned HTTP ${status || 'error'}.`);
+        const finalHref = String(response?.finalUrl || '').trim();
+        if (!finalHref) throw new Error(`The ${label} upload host did not expose its final response URL.`);
+        const finalUrl = stationIconPrivilegedImageUrl(finalHref);
+        if (!finalUrl) throw new Error(`The ${label} redirected outside the approved MissionChief upload host.`);
+        const bytes = response?.response;
+        const size = Number(bytes?.byteLength);
+        if (!Number.isFinite(size) || size <= 0) throw new Error(`The ${label} host did not return a readable image file.`);
+        if (size > STATION_ICON_MAX_BYTES) throw new Error(`The ${label} exceeds the ${Math.round(STATION_ICON_MAX_BYTES / 1048576)} MB safety limit.`);
+        const headerMime = stationIconResponseHeader(response?.responseHeaders, 'content-type').split(';')[0].trim().toLowerCase();
+        const blob = new Blob([bytes], { type: headerMime });
+        return stationIconInspectBlob(blob, headerMime || blob.type);
+    }
+
     async function fetchStationIconImage(iconUrl, label = 'station icon') {
         const href = stationIconSafeUrl(iconUrl);
         if (!href) throw new Error(`The ${label} URL is missing or unsafe.`);
@@ -19329,7 +19431,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
             });
         } catch (err) {
-            throw new Error(`The ${label} could not be downloaded. Its image host may block secure copying.`);
+            return fetchStationIconImagePrivileged(url.href, label);
         }
         if (!response.ok) throw new Error(`The ${label} host returned HTTP ${response.status}.`);
         const finalUrl = stationIconSafeUrl(response.url || url.href);
@@ -29742,39 +29844,18 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function financeExternalRequest({ method = 'GET', url, body = null, headers = {}, timeoutMs = FINANCE_FEED_TIMEOUT_MS }) {
-        return new Promise((resolve, reject) => {
-            if (runtime.destroyed) {
-                reject(new Error('Toolkit runtime stopped.'));
-                return;
-            }
-            if (typeof GM_xmlhttpRequest !== 'function') {
-                reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
-                return;
-            }
-            let request = null;
-            let settled = false;
-            const finish = (error, response = null) => {
-                if (settled) return;
-                settled = true;
-                if (request) runtime.requests.delete(request);
-                if (error) reject(error); else resolve(response);
-            };
-            try {
-                request = GM_xmlhttpRequest({
-                    method,
-                    url,
-                    data: body,
-                    headers,
-                    timeout: timeoutMs,
-                    responseType: 'text',
-                    onload: response => finish(null, response),
-                    onerror: () => finish(new Error('The GitHub financial-intelligence feed could not be reached.')),
-                    ontimeout: () => finish(new Error('The GitHub financial-intelligence request timed out.')),
-                    onabort: () => finish(new Error('The GitHub financial-intelligence request was cancelled.'))
-                });
-                if (!settled && request?.abort) runtime.requests.add(request);
-            } catch (err) {
-                finish(err instanceof Error ? err : new Error('The GitHub financial-intelligence request could not be created.'));
+        return runtimeGmRequest({
+            method,
+            url,
+            data: body,
+            headers,
+            timeoutMs,
+            responseType: 'text',
+            messages: {
+            network: 'The GitHub financial-intelligence feed could not be reached.',
+            timeout: 'The GitHub financial-intelligence request timed out.',
+            abort: 'The GitHub financial-intelligence request was cancelled.',
+            create: 'The GitHub financial-intelligence request could not be created.'
             }
         });
     }

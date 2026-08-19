@@ -18314,7 +18314,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                     renderDispatchRecruitmentPanel();
                     const { doc, url } = await fetchDispatchRecruitmentDocument(matrixPath);
                     const finalUrl = new URL(url);
-                    if (finalUrl.pathname.replace(/\/+$/u, '') !== matrixPath || finalUrl.search || finalUrl.hash || !doc.querySelector('table#building_table')) throw new Error(`MissionChief did not return the native Buildings matrix for ${matrixDispatch.name}.`);
+                    if (finalUrl.pathname.replace(/\/+$/u, '') !== matrixPath || finalUrl.search || finalUrl.hash || doc.getElementsByTagName('table').namedItem('building_table')?.id !== 'building_table') throw new Error(`MissionChief did not return the native Buildings matrix for ${matrixDispatch.name}.`);
                     matrices.push(doc);
                 }
                 const result = buildDispatchRecruitmentQueue(allCentres ? matrices : matrices[0], dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches);

@@ -98,7 +98,7 @@ def main() -> int:
     assert "for (let index = 0; index < scanDispatches.length; index += 1)" in scan
     assert "Scanning ${index + 1} of ${scanDispatches.length}" in scan
     assert "finalUrl.pathname.replace(/\\/+$/u, '') !== matrixPath" in scan
-    assert "!doc.querySelector('table#building_table')" in scan
+    assert "doc.getElementsByTagName('table').namedItem('building_table')?.id !== 'building_table'" in scan
     assert "Promise.all" not in scan, "Native centre matrices must be fetched sequentially"
 
     for guard in (

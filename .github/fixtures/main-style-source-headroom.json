@@ -124,9 +124,9 @@
   "v10Candidate": {
     "issue": 724,
     "version": "10.9.5",
-    "sourceBytes": 2459191,
+    "sourceBytes": 2459235,
     "sourceLines": 36848,
-    "sourceSha256": "f9273f8918d4880a04ab7ef34750e1f23f56bb569068e4bdb2d062e7b8f6bfd6",
+    "sourceSha256": "33eb8ce8ecd34307c07e95924cd2eef725385c480226cb8352b7b275562df363",
     "templateBytes": 833539,
     "templateLines": 9828,
     "templateSha256": "755e6da31584a3f66ac69afaeeaa8366afad499b9cc91cb29c8f860e5cd91c77",
@@ -136,7 +136,7 @@
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 96742,
+      "sourceBytes": 96786,
       "sourceLines": 1422,
       "templateBytes": 18002,
       "templateLines": 294

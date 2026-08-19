@@ -20,8 +20,8 @@
     "dist/SHA256SUMS.txt",
     "dist/release-manifest.json"
   ],
-  "sha256": "f9273f8918d4880a04ab7ef34750e1f23f56bb569068e4bdb2d062e7b8f6bfd6",
-  "bytes": 2459191,
+  "sha256": "33eb8ce8ecd34307c07e95924cd2eef725385c480226cb8352b7b275562df363",
+  "bytes": 2459235,
   "lines": 36849,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",

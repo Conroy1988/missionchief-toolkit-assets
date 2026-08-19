@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "10.11.0";
-const EXPECTED_SHA = "9627591a5e6450cea38c50ff3c0e0c556c159cbf7a601bd89d8322e268611a80";
+const EXPECTED_VERSION = "10.11.1";
+const EXPECTED_SHA = "26f5d288b49310a97d589688ffa11858eb1d54812d14feb45146f913eb80f3f4";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader", "syncMapMeasureToolbarButton"];
 

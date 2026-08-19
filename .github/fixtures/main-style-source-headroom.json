@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 728,
-    "version": "10.11.0",
-    "sourceBytes": 2537169,
-    "sourceLines": 37938,
-    "sourceSha256": "9627591a5e6450cea38c50ff3c0e0c556c159cbf7a601bd89d8322e268611a80",
+    "issue": 730,
+    "version": "10.11.1",
+    "sourceBytes": 2541054,
+    "sourceLines": 38019,
+    "sourceSha256": "26f5d288b49310a97d589688ffa11858eb1d54812d14feb45146f913eb80f3f4",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
@@ -136,11 +136,11 @@
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 174720,
-      "sourceLines": 2512,
+      "sourceBytes": 178605,
+      "sourceLines": 2593,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #728 verified same-type Station Icon Copier with protected defaults, exact native form preservation, sequential mutation and pixel verification"
+    "scope": "Issue #730 exact-host MissionChief upload retrieval for Station Icon Copier with anonymous fallback, redirect/size guards and retained request-site budget"
   }
 }

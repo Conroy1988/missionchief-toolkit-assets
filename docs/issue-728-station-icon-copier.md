@@ -1,6 +1,6 @@
 # Station Icon Copier operator and safety contract
 
-Toolkit v10.11.0 provides **Dispatch → Station Icon Copier** for copying one already-uploaded station icon to an exact, operator-reviewed subset of owned stations.
+Toolkit v10.11.1 provides **Dispatch → Station Icon Copier** for copying one already-uploaded station icon to an exact, operator-reviewed subset of owned stations.
 
 MissionChief's native image workflow remains authoritative. The Toolkit reads owned buildings from MissionChief, downloads the selected source station's existing custom icon into browser memory, and uses each target station's current native building-edit form. It does not add an external image host, ask for a local upload, or retain image data in Toolkit storage.
 
@@ -51,7 +51,9 @@ The upload is sent sequentially with the selected 1–5 second delay. The browse
 
 ## Source and result verification
 
-The source must be a readable MissionChief PNG or JPEG no larger than 200×200 pixels. It is downloaded once per confirmed run and retained only in memory.
+The source must be a readable MissionChief PNG or JPEG no larger than 200×200 pixels. It is downloaded once per confirmed run and retained only in memory. A normal browser download is attempted first. When MissionChief returns the image from its CORS-restricted MissionChief upload host, the Toolkit uses an anonymous userscript request limited to the exact HTTPS host `leitstellenspiel.s3.amazonaws.com`; it sends no MissionChief cookies or account credentials and requests no wildcard host access.
+
+Both the initial and final response URL must remain on that approved upload host. HTTP status, the 4 MB byte limit, PNG/JPEG response type, decode dimensions and rendered pixels are validated before the confirmation can lead to any station mutation. The same guarded path is used when comparing an existing target icon and verifying the saved result.
 
 After each submitted upload, the Toolkit fetches fresh authoritative target data, proves the non-image identity and assignment fields are unchanged, downloads the saved custom icon, decodes it, and compares its dimensions and rendered pixel digest with the source. Only then is the target counted as **Updated**.
 
@@ -61,7 +63,7 @@ If a request was submitted but its response, authoritative record, or saved pixe
 
 - A target that changed before submission is skipped safely.
 - An unavailable, malformed, external, or ambiguous native form is skipped before any write.
-- A source image host that blocks secure browser access prevents the run from starting.
+- An unapproved image host, an unsafe upload-host redirect or an invalid image response prevents the run from starting.
 - A post-submit mismatch or unverifiable result triggers **SAFETY STOP**.
 - Reload and rescan after fixing the reported condition; manually inspect the station named by an ambiguous submitted request before starting another run.
 

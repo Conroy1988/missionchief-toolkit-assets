@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.3"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.9.4"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -90,19 +90,36 @@ def main() -> int:
 
     for guard in (
         "url.origin !== pageWindow.location.origin",
-        "String(baseline.leitstelle_building_id ?? '') !== expectedDispatchId",
-        "String(baseline.building_type ?? '') !== item.typeId",
+        "actualDispatchId !== expectedDispatchId",
+        "String(record?.building_type ?? '') !== item.typeId",
         "dispatchRecruitmentRecordMatches(verified, plan)",
-        "no automatic retry was made",
+        "No further stations were changed",
         "pageWindow.confirm(`Dispatch Recruitment will update",
         "await runtimeDelay(plan.delayMs)",
         "stopRequested = true",
     ):
         assert guard in implementation, f"Missing fail-closed recruitment guard: {guard}"
+    for immutability_guard in (
+        "assignedDispatchId === '0'",
+        "summary.unassigned += 1",
+        "dispatchRecruitmentGuardMutation(action.href, params.toString())",
+        "dispatchRecruitmentAssertStationScope(record, item, expectedDispatchId, true)",
+        "unexpectedBuildingFields",
+        "dispatchRecruitmentFatal = true",
+        "No further stations were changed",
+        "result.partial ? 'partial' : 'updated'",
+    ):
+        assert immutability_guard in implementation, f"Missing Dispatch Centre immutability guard: {immutability_guard}"
+    personnel = source_section(implementation, "    function prepareDispatchRecruitmentPersonnelSubmission(", "    async function prepareDispatchRecruitmentHiring(")
+    assert "for (const hidden of form.querySelectorAll" not in personnel, "Personnel submission must not forward arbitrary hidden form fields"
+    assert "params.set('building[leitstelle_building_id]'" not in implementation
     assert "/hire_do/coins" not in implementation and "hire_do/credits" not in implementation
     run = source_section(source, "    async function startDispatchRecruitment(", "    function stopDispatchRecruitment(")
     assert "for (let index = 0; index < planned.length; index += 1)" in run
     assert "Promise.all" not in run, "Station writes must remain sequential"
+    assert "err?.dispatchRecruitmentFatal" in run
+    assert "dispatchRecruitmentRuntime.stopRequested = true" in run
+    assert "if (dispatchRecruitmentRuntime.stopRequested) break" in run
     assert "toolkitAnalyticsRecordFeature('dispatchRecruitment')" in run
 
     assert "dispatchRecruitment: { dispatchId: '', hiringPhase: '3', personnelDesired: '', delayMs: 1500 }" in source
@@ -116,7 +133,7 @@ def main() -> int:
     assert "test_issue706_dispatch_recruitment_contract.py" in preflight
     assert "test_issue706_dispatch_recruitment_runtime.mjs" in preflight
 
-    print("Issue #706 Dispatch Recruitment source contract passed: dynamic native types, exact selection, sequential writes and response verification are guarded.")
+    print("Issue #706 Dispatch Recruitment source contract passed: unassigned exclusion, independent field writes and post-mutation assignment immutability are fail-closed.")
     return 0
 
 

@@ -123,24 +123,24 @@
   },
   "v10Candidate": {
     "issue": 706,
-    "version": "10.9.3",
-    "sourceBytes": 2449395,
-    "sourceLines": 36720,
-    "sourceSha256": "34f20cbc447be09f0d0bc0302f2204a63809df2d1debce116f9ef8804e089298",
-    "templateBytes": 833412,
-    "templateLines": 9827,
-    "templateSha256": "519a3b4da20005f7c29e5f5b756d8b89462c815577f93a068c50af37ec2a4f5f",
-    "canonicalCssSha256": "ea1bfdd8ecea945c569a9fa4ec779a0cbf3d3ea819abac0b54f4bc8e1add2653",
-    "maxSourceBytes": 2457000,
-    "maxSourceLines": 36900,
+    "version": "10.9.4",
+    "sourceBytes": 2457802,
+    "sourceLines": 36831,
+    "sourceSha256": "c56d4e16d1489229d558c9d86cd34b1d0e127783cb7afc6f1d99738603c60f45",
+    "templateBytes": 833539,
+    "templateLines": 9828,
+    "templateSha256": "755e6da31584a3f66ac69afaeeaa8366afad499b9cc91cb29c8f860e5cd91c77",
+    "canonicalCssSha256": "3df206dd0c138e2a6b9f31f39e691a5f20f5f589c3c5384bb62a32b3d118c874",
+    "maxSourceBytes": 2466000,
+    "maxSourceLines": 37000,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 86934,
-      "sourceLines": 1294,
-      "templateBytes": 17875,
-      "templateLines": 293
+      "sourceBytes": 95341,
+      "sourceLines": 1405,
+      "templateBytes": 18002,
+      "templateLines": 294
     },
-    "scope": "Issue #706 Dispatch Recruitment repair and ALL DISPATCH CENTRES bulk scope with exact per-station assignment binding, deduplication and retained authoritative pre-write verification"
+    "scope": "Issue #706 Dispatch Recruitment unassigned-row exclusion, independent Personnel Desired updates, strict payload allow-list and post-mutation assignment immutability circuit breaker"
   }
 }

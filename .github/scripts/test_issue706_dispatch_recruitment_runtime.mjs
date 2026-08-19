@@ -36,6 +36,7 @@ const dispatchRecruitmentRuntime = {
     currentItem: '',
     processed: 0,
     updated: 0,
+    partial: 0,
     unchanged: 0,
     skipped: 0,
     errors: 0,
@@ -133,6 +134,11 @@ const tableHtml = `
             <td><div id="building_personal_count_target_105">2</div><a class="personal_count_target_edit_button" building_id="105" href="/buildings/105/personalCountTarget">Edit</a></td>
             <td><a class="building_leitstelle_set_105" href="/buildings/105/leitstelle-set/77">North Dispatch</a></td>
         </tr>
+        <tr class="alliance_buildings_table_searchable">
+            <td></td><td><a building_type="2" href="/buildings/106">Retired Response Post</a></td><td>1</td><td>Off</td><td>0</td>
+            <td><div id="building_personal_count_target_106">0</div><a class="personal_count_target_edit_button" building_id="106" href="/buildings/106/personalCountTarget">Edit</a></td>
+            <td><a class="building_leitstelle_set_106 btn-success" href="/buildings/106/leitstelle-set/0">- None -</a><a class="building_leitstelle_set_106" href="/buildings/106/leitstelle-set/77">North Dispatch</a></td>
+        </tr>
     </tbody></table>
 `;
 const table = parsed(tableHtml);
@@ -144,8 +150,10 @@ assert.deepEqual(Array.from(scan.queue, item => item.typeLabel), ['Fire Station'
 assert.deepEqual(Array.from(scan.queue, item => item.currentPhase), ['2', 'automatic']);
 assert.deepEqual(Array.from(scan.queue, item => item.currentDesired), [4, 7]);
 assert.equal(scan.summary.eligible, 2);
+assert.equal(scan.summary.unassigned, 1);
 assert.equal(scan.summary.outsideDispatch, 1);
 assert.equal(scan.summary.unavailable, 2);
+assert.deepEqual(Array.from(scan.summary.unassignedNames), ['Retired Response Post']);
 assert.deepEqual(Array.from(scan.summary.outsideDispatchNames), ['Other Centre Fire']);
 assert.deepEqual(Array.from(scan.summary.unavailableNames), ['Unavailable Ambulance', 'Ambiguous Police']);
 assert.deepEqual({ ...scan.summary.typeCounts }, { 2: 1, 6: 1 });
@@ -156,6 +164,7 @@ assert.deepEqual(Array.from(allScan.queue, item => item.buildingId), ['101', '10
 assert.deepEqual(Array.from(allScan.queue, item => item.dispatchId), ['77', '77', '88']);
 assert.deepEqual(Array.from(allScan.queue, item => item.dispatchName), ['North Dispatch', 'North Dispatch', 'South Dispatch']);
 assert.equal(allScan.summary.eligible, 3);
+assert.equal(allScan.summary.unassigned, 1);
 assert.equal(allScan.summary.outsideDispatch, 0);
 assert.equal(allScan.summary.unavailable, 2);
 assert.deepEqual({ ...allScan.summary.dispatchCounts }, { 77: 2, 88: 1 });
@@ -175,6 +184,19 @@ assert.equal(allForeignScan.queue.length, 39, 'ALL DISPATCH CENTRES must admit e
 assert.equal(allForeignScan.summary.eligible, 39);
 assert.equal(allForeignScan.summary.outsideDispatch, 0);
 assert.deepEqual({ ...allForeignScan.summary.dispatchCounts }, { 88: 39 });
+
+const unassignedRows = Array.from({ length: 39 }, (_, index) => {
+    const id = String(300 + index);
+    return `<tr class="alliance_buildings_table_searchable"><td></td><td><a building_type="2" href="/buildings/${id}">Retired ${index + 1}</a></td><td>1</td><td>Off</td><td>0</td><td><div id="building_personal_count_target_${id}">0</div><a class="personal_count_target_edit_button" building_id="${id}" href="/buildings/${id}/personalCountTarget">Edit</a></td><td><a class="building_leitstelle_set_${id} btn-success" href="/buildings/${id}/leitstelle-set/0">- None -</a><a class="building_leitstelle_set_${id}" href="/buildings/${id}/leitstelle-set/77">North Dispatch</a></td></tr>`;
+}).join('');
+const unassignedTable = parsed(`<table id="building_table"><tbody>${unassignedRows}</tbody></table>`);
+for (const scope of ['77', 'all']) {
+    const unassignedScan = context.buildDispatchRecruitmentQueue(unassignedTable, catalog.typeLabels, scope, catalog.dispatches);
+    assert.equal(unassignedScan.queue.length, 0, `${scope} scope must never place unassigned rows in the mutable queue`);
+    assert.equal(unassignedScan.summary.unassigned, 39);
+    assert.equal(unassignedScan.summary.outsideDispatch, 0);
+    assert.equal(unassignedScan.summary.unavailable, 0);
+}
 
 dispatchRecruitmentRuntime.dispatches = catalog.dispatches;
 dispatchRecruitmentRuntime.typeLabels = catalog.typeLabels;
@@ -261,18 +283,36 @@ const personnelFormHtml = `
         <input type="submit" name="commit" value="Save">
     </form>
 `;
-const prepared = context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml), scan.queue[0], 5);
+const prepared = context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml), scan.queue[0], 400);
 const preparedBody = new URLSearchParams(prepared.body);
 assert.equal(prepared.action, 'https://www.missionchief.co.uk/buildings/101?personal_count_target_only=1');
 assert.equal(preparedBody.get('_method'), 'patch');
 assert.equal(preparedBody.get('authenticity_token'), 'csrf-token');
-assert.equal(preparedBody.get('building[personal_count_target]'), '5');
+assert.equal(preparedBody.get('building[personal_count_target]'), '400');
 assert.equal(preparedBody.get('commit'), 'Save');
+assert.deepEqual(Array.from(preparedBody.keys()).sort(), ['_method', 'authenticity_token', 'building[personal_count_target]', 'commit', 'utf8'].sort());
+assert.equal(Array.from(preparedBody.keys()).some(name => /leitstelle/iu.test(name)), false, 'Personnel payloads must never contain a Dispatch Centre assignment field');
 
 assert.throws(
     () => context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml.replace('personal_count_target_only=1', 'coins=1')), scan.queue[0], 5),
     error => error?.dispatchRecruitmentSafeSkip === true,
     'An unexpected target form action must safely skip'
+);
+
+assert.throws(
+    () => context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml.replace('<input type="number"', '<input type="hidden" name="building[leitstelle_building_id]" value=""><input type="number"')), scan.queue[0], 400),
+    error => error?.dispatchRecruitmentFatal === true && error.message.includes('additional building fields'),
+    'An unexpected assignment field must trigger a run-level safety stop before submission'
+);
+assert.throws(
+    () => context.dispatchRecruitmentGuardMutation('/buildings/101/leitstelle-set/0'),
+    error => error?.dispatchRecruitmentFatal === true && error.message.includes('No request was sent'),
+    'Dispatch Recruitment must categorically block the assignment endpoint'
+);
+assert.throws(
+    () => context.dispatchRecruitmentGuardMutation('/buildings/101?personal_count_target_only=1', 'building%5Bleitstelle_building_id%5D='),
+    error => error?.dispatchRecruitmentFatal === true,
+    'Dispatch Recruitment must categorically block assignment fields in a payload'
 );
 
 const hiring = parsed(`
@@ -293,9 +333,10 @@ const baseline = {
     hiring_phase: 0,
     hiring_automatic: false,
 };
-const verified = { ...baseline, personal_count_target: 5, hiring_phase: 3 };
+const personnelVerified = { ...baseline, personal_count_target: 400 };
+const verified = { ...personnelVerified, hiring_phase: 3 };
 const requests = [];
-let apiRecords = [baseline, verified];
+let apiRecords = [baseline, personnelVerified, verified];
 const response = (url, body = '') => ({ ok: true, status: 200, url, text: async () => body });
 context.runtimeFetch = async (input, init = {}) => {
     const url = new URL(String(input));
@@ -310,20 +351,21 @@ context.runtimeFetch = async (input, init = {}) => {
     if (url.pathname === '/buildings/101' && url.searchParams.get('personal_count_target_only') === '1') return response(url.href, '<p>Saved</p>');
     throw new Error(`Unexpected request: ${url.href}`);
 };
-const plan = { dispatchId: '77', hiringPhase: '3', personnelDesired: 5, delayMs: 1500 };
+const plan = { dispatchId: '77', hiringPhase: '3', personnelDesired: 400, delayMs: 1500 };
 const applied = await context.applyDispatchRecruitmentStation(scan.queue[0], plan);
 assert.equal(applied.changed, true);
 assert.equal(applied.detail, 'Hiring Phase + Personnel (Desired)');
 assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), [
     'GET /api/buildings/101',
     'GET /buildings/101/personalCountTarget',
+    'POST /buildings/101?personal_count_target_only=1',
+    'GET /api/buildings/101',
     'GET /buildings/101/hire',
     'GET /buildings/101/hire_do/3',
-    'POST /buildings/101?personal_count_target_only=1',
     'GET /api/buildings/101',
 ]);
 const submitted = new URLSearchParams(requests.find(item => item.method === 'POST').body);
-assert.equal(submitted.get('building[personal_count_target]'), '5');
+assert.equal(submitted.get('building[personal_count_target]'), '400');
 
 requests.length = 0;
 apiRecords = [baseline];
@@ -331,6 +373,58 @@ const allCentresPlan = { dispatchId: 'all', hiringPhase: '0', personnelDesired: 
 const allCentresNoChange = await context.applyDispatchRecruitmentStation(scan.queue[0], allCentresPlan);
 assert.equal(allCentresNoChange.changed, false, 'ALL DISPATCH CENTRES must bind a station to its own scanned centre during the authoritative recheck');
 assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), ['GET /api/buildings/101']);
+
+requests.length = 0;
+const activeHiringBaseline = { ...baseline, hiring_phase: 3 };
+const activeHiringPersonnelVerified = { ...activeHiringBaseline, personal_count_target: 400 };
+apiRecords = [activeHiringBaseline, activeHiringPersonnelVerified, activeHiringPersonnelVerified];
+let partialHireLoads = 0;
+context.runtimeFetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    requests.push({ method: init.method || 'GET', path: `${url.pathname}${url.search}`, body: init.body || '' });
+    if (url.pathname === '/api/buildings/101') return { ...response(url.href), json: async () => apiRecords.shift() };
+    if (url.pathname === '/buildings/101/personalCountTarget') return response(url.href, personnelFormHtml);
+    if (url.pathname === '/buildings/101' && url.searchParams.get('personal_count_target_only') === '1') return response(url.href, '<p>Saved</p>');
+    if (url.pathname === '/buildings/101/hire') {
+        const body = partialHireLoads++ === 0
+            ? '<a href="/buildings/101/hire_do/0">Cancel recruitment phase</a>'
+            : '<a href="/buildings/101/hire_do/3">Restore 3 days</a>';
+        return response(url.href, body);
+    }
+    if (url.pathname === '/buildings/101/hire_do/0' || url.pathname === '/buildings/101/hire_do/3') return response(url.href, '<p>Recruitment action accepted</p>');
+    throw new Error(`Unexpected partial-update request: ${url.href}`);
+};
+const partialPlan = { dispatchId: '77', hiringPhase: 'automatic', personnelDesired: 400, delayMs: 1500 };
+const partial = await context.applyDispatchRecruitmentStation(scan.queue[0], partialPlan);
+assert.equal(partial.changed, true);
+assert.equal(partial.partial, true, 'Personnel (Desired) must remain independently applicable when a requested Hiring Phase is unavailable');
+assert.equal(partial.record.personal_count_target, 400);
+assert.match(partial.detail, /Personnel \(Desired\).*Hiring Phase/u);
+assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), [
+    'GET /api/buildings/101',
+    'GET /buildings/101/personalCountTarget',
+    'POST /buildings/101?personal_count_target_only=1',
+    'GET /api/buildings/101',
+    'GET /buildings/101/hire',
+    'GET /buildings/101/hire_do/0',
+    'GET /buildings/101/hire',
+    'GET /buildings/101/hire_do/3',
+    'GET /api/buildings/101',
+]);
+
+requests.length = 0;
+apiRecords = [baseline, { ...baseline, personal_count_target: 400, leitstelle_building_id: 88 }];
+await assert.rejects(
+    context.applyDispatchRecruitmentStation(scan.queue[0], { ...plan, hiringPhase: '0' }),
+    error => error?.dispatchRecruitmentFatal === true && error.message.includes('Dispatch Centre changed'),
+    'Any assignment change reported after Personnel (Desired) must stop the entire bulk run'
+);
+assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), [
+    'GET /api/buildings/101',
+    'GET /buildings/101/personalCountTarget',
+    'POST /buildings/101?personal_count_target_only=1',
+    'GET /api/buildings/101',
+]);
 
 requests.length = 0;
 apiRecords = [{ ...baseline, leitstelle_building_id: 88 }];
@@ -341,4 +435,26 @@ await assert.rejects(
 );
 assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), ['GET /api/buildings/101']);
 
-console.log('Issue #706 Dispatch Recruitment runtime contract passed: one-centre and all-centres scopes, dynamic types, exact native payloads, sequential actions and per-station membership verification are proven');
+context.state.dispatchRecruitment = { dispatchId: '77', hiringPhase: '3', personnelDesired: '400', delayMs: 1500 };
+dispatchRecruitmentRuntime.dispatches = catalog.dispatches;
+dispatchRecruitmentRuntime.queue = scan.queue.map(item => ({ ...item, outcome: 'ready', outcomeDetail: '' }));
+dispatchRecruitmentRuntime.summary = scan.summary;
+dispatchRecruitmentRuntime.scannedAt = Date.now();
+dispatchRecruitmentRuntime.scannedDispatchId = '77';
+dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
+dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
+shell.window.document.querySelector('[data-setting="dispatch-recruitment-hiring-phase"]').value = '3';
+shell.window.document.querySelector('[data-setting="dispatch-recruitment-personnel"]').value = '400';
+let guardedRunCalls = 0;
+context.applyDispatchRecruitmentStation = async () => {
+    guardedRunCalls += 1;
+    throw context.dispatchRecruitmentSafetyStop('forced assignment mismatch');
+};
+await context.startDispatchRecruitment();
+assert.equal(guardedRunCalls, 1, 'A fatal assignment invariant must prevent the next station from starting');
+assert.equal(dispatchRecruitmentRuntime.processed, 1);
+assert.equal(dispatchRecruitmentRuntime.errors, 1);
+assert.equal(dispatchRecruitmentRuntime.running, false);
+assert.ok(dispatchRecruitmentRuntime.log.some(entry => /SAFETY STOP/u.test(entry.message)));
+
+console.log('Issue #706 Dispatch Recruitment runtime contract passed: unassigned exclusion, independent 400-personnel updates, strict payloads, assignment immutability and the run-level circuit breaker are proven');

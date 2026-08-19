@@ -45,6 +45,7 @@ def main() -> int:
         'Personnel (Desired)',
         'Apply to Selected',
         'station-type filters',
+        'ALL DISPATCH CENTRES',
     ):
         assert token in dispatch_panel, f"Dispatch Recruitment panel is missing {token}"
     for phase in ('value="0">Off', 'value="1">1 day', 'value="2">2 days', 'value="3">3 days', 'value="automatic">Automatic'):
@@ -70,9 +71,13 @@ def main() -> int:
         assert native_contract in implementation, f"Missing native Dispatch Recruitment contract: {native_contract}"
 
     assert "catalog.typeLabels" in implementation
-    assert "buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId)" in implementation
-    assert "assignedDispatchId !== dispatchId" in implementation
+    assert "buildDispatchRecruitmentQueue(doc, dispatchRecruitmentRuntime.typeLabels, dispatchId, dispatches)" in implementation
+    assert "dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES" in implementation
+    assert "allCentres ? !dispatchById.has(assignedDispatchId) : assignedDispatchId !== dispatchId" in implementation
     assert "outsideDispatch" in implementation
+    assert "dispatchCounts" in implementation
+    assert "dispatchId: assignedDispatchId" in implementation
+    assert "dispatchName: dispatchById.get(assignedDispatchId)?.name" in implementation
     assert "typeLabels[typeId] || `Building type ${typeId}`" in implementation
     assert "DISPATCH_RECRUITMENT_SCAN_LIMIT = 2000" in source
     assert "DISPATCH_RECRUITMENT_APPLY_LIMIT = 2000" in source
@@ -85,7 +90,7 @@ def main() -> int:
 
     for guard in (
         "url.origin !== pageWindow.location.origin",
-        "String(baseline.leitstelle_building_id ?? '') !== plan.dispatchId",
+        "String(baseline.leitstelle_building_id ?? '') !== expectedDispatchId",
         "String(baseline.building_type ?? '') !== item.typeId",
         "dispatchRecruitmentRecordMatches(verified, plan)",
         "no automatic retry was made",
@@ -101,6 +106,7 @@ def main() -> int:
     assert "toolkitAnalyticsRecordFeature('dispatchRecruitment')" in run
 
     assert "dispatchRecruitment: { dispatchId: '', hiringPhase: '3', personnelDesired: '', delayMs: 1500 }" in source
+    assert "dispatchRecruitmentDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES" in source
     assert "DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes" in source
     assert "DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes" in source
     assert "setting.startsWith('dispatch-recruitment-')" in source

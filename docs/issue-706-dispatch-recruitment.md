@@ -1,6 +1,6 @@
 # Issue #706 — Dispatch Recruitment
 
-Toolkit v10.8.0 adds **Dispatch → Dispatch Recruitment**, a deliberate bulk editor for the stations assigned to one of the player's Dispatch Centres.
+Toolkit v10.8.0 adds **Dispatch → Dispatch Recruitment**, a deliberate bulk editor for stations assigned to one Dispatch Centre or every loaded Dispatch Centre in a single plan.
 
 It updates two native MissionChief station settings:
 
@@ -13,24 +13,24 @@ The Toolkit discovers the player's current Dispatch Centres and MissionChief's c
 
 1. Open **Toolkit → Dispatch → Dispatch Recruitment**.
 2. Choose **Load Dispatch Centres**.
-3. Select a Dispatch Centre and choose **Scan Stations**. MissionChief's page is an assignment matrix that can contain rows from other centres; the Toolkit includes only rows whose active native assignment matches the centre you selected.
+3. Select one Dispatch Centre, or choose **ALL DISPATCH CENTRES**, then choose **Scan Stations**. MissionChief's page is an assignment matrix containing each row's active native centre. A single-centre scan admits only exact matches; the all-centres scan admits exact assignments belonging to any centre in the freshly loaded catalogue and deduplicates stations by ID.
 4. Review the editable, unavailable and station-type totals.
 5. Leave every native station-type filter selected, or narrow the preview to Fire Stations, Police Stations, Ambulance Stations or any other types returned by MissionChief.
 6. Use **Select All Filtered**, **Clear Filtered** and the station checkboxes to create the exact target set.
 7. Choose the Hiring Phase and enter Personnel (Desired).
-8. Choose **Apply to Selected** and review the confirmation showing the Dispatch Centre, exact station count, types and both requested values.
+8. Choose **Apply to Selected** and review the confirmation showing the Dispatch Centre scope, exact station and centre counts, types and both requested values.
 9. Confirm to start. **Stop** finishes the active request and prevents another station from starting.
 
 All editable stations are selected after a scan. A disabled type filter removes that type from the current target plan without discarding its station checkboxes; re-enabling the type restores the prior per-station selection. Select/Clear affects only stations visible under the active type filters.
 
-The scan summary separates **Assigned here**, **Other centres** and **Unavailable**. Stations assigned elsewhere are informational only and never enter the mutable queue. A missing or ambiguous native assignment marker is treated as unavailable rather than guessed.
+For one centre, the scan summary separates **Assigned here**, **Other centres** and **Unavailable**. For **ALL DISPATCH CENTRES**, it shows **Assigned**, **Selected**, **Centres** and **Unavailable**, and each station row names its centre. A missing or ambiguous native assignment marker is treated as unavailable rather than guessed. An assignment not present in the freshly loaded catalogue is excluded and explained.
 
 ## Native action contract
 
 For every selected station, the Toolkit:
 
-1. Reads the active native Dispatch Centre assignment on every matrix row and admits only exact matches to the selected centre.
-2. Loads `/api/buildings/<id>` before mutation and requires the station still to belong to the confirmed Dispatch Centre and retain the scanned native building type.
+1. Reads the active native Dispatch Centre assignment on every matrix row and admits only exact matches to the selected centre, or exact assignments belonging to the freshly loaded catalogue for **ALL DISPATCH CENTRES**.
+2. Stores each admitted station's exact centre, then loads `/api/buildings/<id>` before mutation and requires the station still to belong to that scanned Dispatch Centre and retain the scanned native building type.
 3. If Personnel (Desired) differs, loads the station's native **Edit** endpoint and requires the exact same-origin `personal_count_target_only=1` PATCH form, authenticity token, number input and Save control.
 4. If Hiring Phase differs, loads the station's native recruitment page and requires the exact same-origin native action for Off, 1 day, 2 days, 3 days or Automatic.
 5. When an active phase must change, uses the exposed Cancel action first, then reloads the page and requires the requested native action. If that action is unavailable, it restores the original phase when MissionChief exposes the restoration action and reports a safe skip.
@@ -43,7 +43,7 @@ The Toolkit does not use coin or credit recruitment endpoints, bypass premium ac
 
 ## Limits and compatibility
 
-- A scan and apply run are bounded to 2,000 stations.
+- A scan and apply run are bounded to 2,000 deduplicated stations, including **ALL DISPATCH CENTRES** runs.
 - Personnel (Desired) accepts 0–10,000 because the native form currently exposes no smaller maximum.
 - Automatic recruitment works only when MissionChief exposes its native Automatic action for that station and account.
 - The workflow is user-triggered and uses no persistent observer, timer or polling loop.

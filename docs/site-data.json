@@ -336,10 +336,11 @@
       "features": [
         {
           "name": "Dispatch Recruitment",
-          "summary": "Applies Hiring Phase and Personnel (Desired) only to stations whose active native assignment matches one selected Dispatch Centre.",
+          "summary": "Applies Hiring Phase and Personnel (Desired) across one selected Dispatch Centre or a deduplicated ALL DISPATCH CENTRES plan.",
           "details": [
             "Dynamic native Dispatch Centre and station-type discovery",
-            "Exact active-assignment filtering with Assigned here, Other centres and Unavailable totals",
+            "ALL DISPATCH CENTRES bulk scope with each station labelled by centre",
+            "Exact active-assignment filtering with per-scope Assigned, Centres, Other centres and Unavailable totals",
             "All matching filtered stations or exact per-station selection",
             "Off, 1 day, 2 days, 3 days and native Automatic Hiring Phase",
             "Native Personnel (Desired) Edit form",
@@ -934,11 +935,11 @@
       "sections": [
         {
           "heading": "Selection workflow",
-          "body": "Load MissionChief's current Dispatch Centres and building types, then scan one centre. The native page is an assignment matrix, so the Toolkit reads each row's active assignment and admits only exact matches while reporting rows assigned to other centres separately. Filter by any returned station types, then keep all matching stations or choose an exact checkbox subset. Apply confirms the centre, station count, types, Hiring Phase and Personnel (Desired)."
+          "body": "Load MissionChief's current Dispatch Centres and building types, then scan one centre or choose ALL DISPATCH CENTRES for one deduplicated plan. The native page is an assignment matrix, so the Toolkit reads each row's active assignment and admits only exact matches within the selected scope. Filter by any returned station types, then keep all matching stations or choose an exact checkbox subset. Apply confirms the centre scope, station and centre counts, types, Hiring Phase and Personnel (Desired)."
         },
         {
           "heading": "Native safeguards",
-          "body": "Every station is rechecked for Dispatch Centre and building-type membership. The Toolkit requires the current Personnel (Desired) Edit form and native recruitment action, submits sequentially, verifies both resulting values and never retries an unverified result automatically. Coin recruitment actions are excluded."
+          "body": "Every station is rechecked against its exact scanned Dispatch Centre and building type. The Toolkit requires the current Personnel (Desired) Edit form and native recruitment action, submits sequentially, verifies both resulting values and never retries an unverified result automatically. Coin recruitment actions are excluded."
         },
         {
           "heading": "Operator guide",

@@ -58,7 +58,7 @@ for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alli
 assert.equal(openUpdateBriefing(), true);
 assert.equal(modal.kind, "Update Briefing");
 assert.equal(modal.title, "What’s New & Feature Beacon · v10.9.3");
-assert.equal(modal.subtitle, "Dispatch Recruitment assignment repair");
+assert.equal(modal.subtitle, "Dispatch Recruitment assignment repair & all-centres control");
 assert.equal(modal.body, body);
 
 sandbox.state.updateBriefing.enabled = false;

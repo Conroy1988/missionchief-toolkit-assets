@@ -336,10 +336,12 @@
       "features": [
         {
           "name": "Dispatch Recruitment",
-          "summary": "Applies Hiring Phase and Personnel (Desired) independently across one selected Dispatch Centre or a deduplicated ALL DISPATCH CENTRES plan without changing station ownership.",
+          "summary": "Targets ALL or one exact native building type across one selected Dispatch Centre or a deduplicated ALL DISPATCH CENTRES plan without changing station ownership.",
           "details": [
             "Dynamic native Dispatch Centre and station-type discovery",
+            "Explicit ALL BUILDING TYPES or one exact native type before scanning",
             "ALL DISPATCH CENTRES bulk scope with each station labelled by centre",
+            "Centre/type-bound scan freshness with stale queue invalidation",
             "Exact active-assignment filtering with per-scope Assigned, Centres, Other centres and Unavailable totals",
             "Explicit Unassigned exclusion for native No control center rows",
             "All matching filtered stations or exact per-station selection",
@@ -936,7 +938,7 @@
       "sections": [
         {
           "heading": "Selection workflow",
-          "body": "Load MissionChief's current Dispatch Centres and building types, then scan one centre or choose ALL DISPATCH CENTRES for one deduplicated plan. The native page is an assignment matrix, so the Toolkit reads each row's active assignment and admits only exact matches within the selected scope. Filter by any returned station types, then keep all matching stations or choose an exact checkbox subset. Apply confirms the centre scope, station and centre counts, types, Hiring Phase and Personnel (Desired)."
+          "body": "Load MissionChief's current Dispatch Centres and building types, choose one centre or ALL DISPATCH CENTRES, then choose ALL BUILDING TYPES or one exact native type before scanning. The native page is an assignment matrix, so the Toolkit admits only exact centre/type matches and binds the result to both choices. Changing either scope destroys the stale queue and disables Apply until a fresh scan succeeds. Post-scan filters and station checkboxes can refine the exact target set."
         },
         {
           "heading": "Native safeguards",

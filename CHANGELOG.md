@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.10.0] - 2026-08-19
+
+### Building-type scoped Dispatch Recruitment
+
+- Adds a dedicated **Building Type** selector immediately after Dispatch Centre scope, with **ALL BUILDING TYPES** plus every current native type returned by MissionChief.
+- Allows one exact type such as Fire Station, Police Station or Ambulance Station to define the scan queue without hard-coding regional building catalogues.
+- Binds a successful scan to both its Dispatch Centre and building-type choices; changing either scope destroys the stale queue and keeps **Apply to Selected** disabled until a fresh scan succeeds.
+- Applies the 2,000-station safety limit to the chosen type while **ALL BUILDING TYPES** retains complete multi-centre scanning and global deduplication.
+- Preserves post-scan type filters, exact station selection, assignment/type rechecks, sequential writes and every existing fail-closed mutation safeguard.
+
 ## [10.9.5] - 2026-08-19
 
 ### Complete ALL DISPATCH CENTRES recruitment scans

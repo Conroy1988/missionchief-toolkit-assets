@@ -30,6 +30,7 @@ const dispatchRecruitmentRuntime = {
     summary: null,
     scannedAt: 0,
     scannedDispatchId: '',
+    scannedTypeId: '',
     selectedBuildingIds: new Set(),
     selectedTypeIds: new Set(),
     currentBuildingId: '',
@@ -61,9 +62,10 @@ const context = vm.createContext({
     runtime: { destroyed: false },
     SCRIPT: { panelId: 'panel' },
     commandExperienceElement: id => shell.window.document.querySelector(`#${id}`),
-    state: { dispatchRecruitment: { dispatchId: '77', hiringPhase: '3', personnelDesired: '5', delayMs: 1500 } },
+    state: { dispatchRecruitment: { dispatchId: '77', buildingTypeId: 'all-types', hiringPhase: '3', personnelDesired: '5', delayMs: 1500 } },
     dispatchRecruitmentRuntime,
     DISPATCH_RECRUITMENT_ALL_CENTRES: 'all',
+    DISPATCH_RECRUITMENT_ALL_TYPES: 'all-types',
     DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS: Object.freeze(['0', '1', '2', '3', 'automatic']),
     DISPATCH_RECRUITMENT_DELAY_OPTIONS: Object.freeze([1000, 1500, 2000, 3000, 5000]),
     DISPATCH_RECRUITMENT_SCAN_LIMIT: 2000,
@@ -92,7 +94,7 @@ vm.runInContext(source.slice(start, end), context, { filename: 'issue706-dispatc
 
 const parsed = html => new shell.window.DOMParser().parseFromString(html, 'text/html');
 
-const catalog = context.parseDispatchRecruitmentCatalog(parsed(`
+const catalogHtml = `
     <select id="building_leitstelle_building_id" name="building[leitstelle_building_id]">
         <option value="">Please select</option>
         <option value="77">North Dispatch</option>
@@ -104,7 +106,8 @@ const catalog = context.parseDispatchRecruitmentCatalog(parsed(`
         <option value="22">Ambulance Station</option>
         <option value="future-opaque">Ignored non-native value</option>
     </select>
-`));
+`;
+const catalog = context.parseDispatchRecruitmentCatalog(parsed(catalogHtml));
 assert.deepEqual(Array.from(catalog.dispatches, item => [item.id, item.name]), [['77', 'North Dispatch'], ['88', 'South Dispatch']]);
 assert.deepEqual({ ...catalog.typeLabels }, { 2: 'Fire Station', 6: 'Police Station', 22: 'Ambulance Station' });
 
@@ -169,6 +172,15 @@ assert.deepEqual(Array.from(scan.summary.unavailableNames), ['Unavailable Ambula
 assert.deepEqual({ ...scan.summary.typeCounts }, { 2: 1, 6: 1 });
 assert.deepEqual({ ...scan.summary.dispatchCounts }, { 77: 2 });
 
+const fireOnlyScan = context.buildDispatchRecruitmentQueue(table, catalog.typeLabels, '77', catalog.dispatches, '2');
+assert.deepEqual(Array.from(fireOnlyScan.queue, item => item.buildingId), ['101'], 'A specific native building type must admit only exact type matches');
+assert.deepEqual({ ...fireOnlyScan.summary.typeCounts }, { 2: 1 });
+assert.equal(fireOnlyScan.summary.eligible, 1);
+assert.equal(fireOnlyScan.summary.outsideType, 2);
+const policeOnlyScan = context.buildDispatchRecruitmentQueue(table, catalog.typeLabels, '77', catalog.dispatches, '6');
+assert.deepEqual(Array.from(policeOnlyScan.queue, item => item.buildingId), ['102']);
+assert.deepEqual({ ...policeOnlyScan.summary.typeCounts }, { 6: 1 });
+
 const allScan = context.buildDispatchRecruitmentQueue(table, catalog.typeLabels, 'all', catalog.dispatches);
 assert.deepEqual(Array.from(allScan.queue, item => item.buildingId), ['101', '102', '104']);
 assert.deepEqual(Array.from(allScan.queue, item => item.dispatchId), ['77', '77', '88']);
@@ -197,6 +209,10 @@ context.DISPATCH_RECRUITMENT_SCAN_LIMIT = 2;
 const limitedAllScan = context.buildDispatchRecruitmentQueue([northMatrix, southMatrix], catalog.typeLabels, 'all', catalog.dispatches);
 assert.deepEqual(Array.from(limitedAllScan.queue, item => item.buildingId), ['101', '102']);
 assert.equal(limitedAllScan.summary.truncated, 1, 'The station safety limit must apply once to the globally deduplicated queue');
+context.DISPATCH_RECRUITMENT_SCAN_LIMIT = 1;
+const limitedPoliceScan = context.buildDispatchRecruitmentQueue([northMatrix, southMatrix], catalog.typeLabels, 'all', catalog.dispatches, '6');
+assert.deepEqual(Array.from(limitedPoliceScan.queue, item => item.buildingId), ['102'], 'Unselected types must not consume the selected type safety limit');
+assert.equal(limitedPoliceScan.summary.truncated, 0);
 context.DISPATCH_RECRUITMENT_SCAN_LIMIT = 2000;
 
 const foreignRows = Array.from({ length: 39 }, (_, index) => {
@@ -234,11 +250,13 @@ dispatchRecruitmentRuntime.queue = scan.queue;
 dispatchRecruitmentRuntime.summary = scan.summary;
 dispatchRecruitmentRuntime.scannedAt = Date.now();
 dispatchRecruitmentRuntime.scannedDispatchId = '77';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 shell.window.document.body.innerHTML = `
     <div id="panel">
         <select data-setting="dispatch-recruitment-centre"></select>
+        <select data-setting="dispatch-recruitment-building-type"></select>
         <select data-setting="dispatch-recruitment-hiring-phase"><option value="3">3 days</option></select>
         <input data-setting="dispatch-recruitment-personnel" value="5">
         <select data-setting="dispatch-recruitment-delay"><option value="1500">1.5 seconds</option></select>
@@ -254,12 +272,40 @@ shell.window.document.body.innerHTML = `
 context.renderDispatchRecruitmentPanel();
 assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-centre"] option')?.value, 'all');
 assert.match(shell.window.document.querySelector('[data-setting="dispatch-recruitment-centre"] option')?.textContent || '', /ALL DISPATCH CENTRES/u);
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-building-type"] option')?.value, 'all-types');
+assert.match(shell.window.document.querySelector('[data-setting="dispatch-recruitment-building-type"] option')?.textContent || '', /ALL BUILDING TYPES/u);
 assert.equal(shell.window.document.querySelectorAll('[data-setting="dispatch-recruitment-type"]').length, 2);
 assert.equal(shell.window.document.querySelectorAll('[data-setting="dispatch-recruitment-station"]').length, 2);
 assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /2 selected \/ 2 visible/u);
 assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Other centres/u);
 assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Other Centre Fire/u);
 assert.equal(shell.window.document.querySelector('[data-action="apply-dispatch-recruitment"]').disabled, false);
+assert.equal(context.setDispatchRecruitmentBuildingTypeScope('6'), true);
+assert.equal(context.state.dispatchRecruitment.buildingTypeId, '6');
+assert.equal(dispatchRecruitmentRuntime.queue.length, 0, 'Changing building type must invalidate the complete station queue');
+assert.equal(dispatchRecruitmentRuntime.scannedAt, 0);
+assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '');
+assert.equal(dispatchRecruitmentRuntime.scannedTypeId, '');
+assert.equal(shell.window.document.querySelector('[data-action="apply-dispatch-recruitment"]').disabled, true, 'Changing building type must leave Apply disabled until a fresh scan');
+assert.equal(context.setDispatchRecruitmentBuildingTypeScope('unknown-native-type'), false);
+assert.equal(context.state.dispatchRecruitment.buildingTypeId, '6', 'An unavailable type must not replace the valid scope');
+context.state.dispatchRecruitment.buildingTypeId = '999';
+dispatchRecruitmentRuntime.catalogAt = 0;
+context.runtimeFetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname === '/buildings/new') return { ok: true, status: 200, url: url.href, text: async () => catalogHtml };
+    throw new Error(`Unexpected catalogue request: ${url.href}`);
+};
+await context.loadDispatchRecruitmentCatalog({ force: true });
+assert.equal(context.state.dispatchRecruitment.buildingTypeId, 'all-types', 'A saved type missing from the fresh native catalogue must fall back to ALL BUILDING TYPES');
+context.state.dispatchRecruitment.buildingTypeId = 'all-types';
+dispatchRecruitmentRuntime.queue = scan.queue;
+dispatchRecruitmentRuntime.summary = scan.summary;
+dispatchRecruitmentRuntime.scannedAt = Date.now();
+dispatchRecruitmentRuntime.scannedDispatchId = '77';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
+dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
+dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 dispatchRecruitmentRuntime.selectedTypeIds.delete('6');
 context.renderDispatchRecruitmentPanel();
 assert.equal(shell.window.document.querySelectorAll('[data-setting="dispatch-recruitment-station"]').length, 1, 'A disabled native type must leave only matching stations visible');
@@ -269,6 +315,7 @@ context.state.dispatchRecruitment.dispatchId = 'all';
 dispatchRecruitmentRuntime.queue = allScan.queue;
 dispatchRecruitmentRuntime.summary = allScan.summary;
 dispatchRecruitmentRuntime.scannedDispatchId = 'all';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102', '104']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 context.renderDispatchRecruitmentPanel();
@@ -281,6 +328,7 @@ context.state.dispatchRecruitment.dispatchId = '77';
 dispatchRecruitmentRuntime.queue = scan.queue;
 dispatchRecruitmentRuntime.summary = scan.summary;
 dispatchRecruitmentRuntime.scannedDispatchId = '77';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 
@@ -297,10 +345,29 @@ const scannedSingleCentre = await context.scanDispatchRecruitmentStations();
 assert.deepEqual(singleScanRequests, ['/buildings/77/leitstelle-buildings']);
 assert.deepEqual(Array.from(scannedSingleCentre, item => item.buildingId), ['101', '102']);
 assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '77');
+assert.equal(dispatchRecruitmentRuntime.scannedTypeId, 'all-types');
+
+const fireTypeScanRequests = [];
+context.state.dispatchRecruitment.buildingTypeId = '2';
+dispatchRecruitmentRuntime.catalogAt = Date.now();
+context.runtimeFetch = async input => {
+    const url = new URL(String(input));
+    fireTypeScanRequests.push(`${url.pathname}${url.search}`);
+    if (url.pathname === '/buildings/77/leitstelle-buildings') return { ok: true, status: 200, url: url.href, text: async () => matrixHtmlFor(['101', '102', '103', '105', '106']) };
+    throw new Error(`Unexpected type-scoped scan request: ${url.href}`);
+};
+const scannedFireStations = await context.scanDispatchRecruitmentStations();
+assert.deepEqual(fireTypeScanRequests, ['/buildings/77/leitstelle-buildings']);
+assert.deepEqual(Array.from(scannedFireStations, item => item.buildingId), ['101'], 'Fire Station scope must exclude every other native building type');
+assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '77');
+assert.equal(dispatchRecruitmentRuntime.scannedTypeId, '2');
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedBuildingIds), ['101']);
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedTypeIds), ['2']);
 
 const allScanRequests = [];
 const allScanProgress = [];
 context.state.dispatchRecruitment.dispatchId = 'all';
+context.state.dispatchRecruitment.buildingTypeId = 'all-types';
 dispatchRecruitmentRuntime.catalogAt = Date.now();
 context.runtimeFetch = async input => {
     const url = new URL(String(input));
@@ -316,11 +383,13 @@ assert.deepEqual(allScanRequests, ['/buildings/77/leitstelle-buildings', '/build
 assert.deepEqual(allScanProgress, ['Scanning 1 of 2 · North Dispatch', 'Scanning 2 of 2 · South Dispatch']);
 assert.deepEqual(Array.from(scannedAllCentres, item => item.buildingId), ['101', '102', '104']);
 assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, 'all');
+assert.equal(dispatchRecruitmentRuntime.scannedTypeId, 'all-types');
 
 const failedScanRequests = [];
 dispatchRecruitmentRuntime.queue = scannedAllCentres;
 dispatchRecruitmentRuntime.scannedAt = Date.now();
 dispatchRecruitmentRuntime.scannedDispatchId = 'all';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 context.runtimeFetch = async input => {
     const url = new URL(String(input));
     failedScanRequests.push(`${url.pathname}${url.search}`);
@@ -340,6 +409,7 @@ context.state.dispatchRecruitment.dispatchId = '77';
 dispatchRecruitmentRuntime.queue = scan.queue;
 dispatchRecruitmentRuntime.summary = scan.summary;
 dispatchRecruitmentRuntime.scannedDispatchId = '77';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 
@@ -504,12 +574,13 @@ await assert.rejects(
 );
 assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), ['GET /api/buildings/101']);
 
-context.state.dispatchRecruitment = { dispatchId: '77', hiringPhase: '3', personnelDesired: '400', delayMs: 1500 };
+context.state.dispatchRecruitment = { dispatchId: '77', buildingTypeId: 'all-types', hiringPhase: '3', personnelDesired: '400', delayMs: 1500 };
 dispatchRecruitmentRuntime.dispatches = catalog.dispatches;
 dispatchRecruitmentRuntime.queue = scan.queue.map(item => ({ ...item, outcome: 'ready', outcomeDetail: '' }));
 dispatchRecruitmentRuntime.summary = scan.summary;
 dispatchRecruitmentRuntime.scannedAt = Date.now();
 dispatchRecruitmentRuntime.scannedDispatchId = '77';
+dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 shell.window.document.querySelector('[data-setting="dispatch-recruitment-hiring-phase"]').value = '3';
@@ -526,4 +597,4 @@ assert.equal(dispatchRecruitmentRuntime.errors, 1);
 assert.equal(dispatchRecruitmentRuntime.running, false);
 assert.ok(dispatchRecruitmentRuntime.log.some(entry => /SAFETY STOP/u.test(entry.message)));
 
-console.log('Issue #706 Dispatch Recruitment runtime contract passed: unassigned exclusion, independent 400-personnel updates, strict payloads, assignment immutability and the run-level circuit breaker are proven');
+console.log('Issues #706/#724/#726 Dispatch Recruitment runtime contract passed: explicit native type scope, stale-scan invalidation, complete matrices and mutation immutability are proven');

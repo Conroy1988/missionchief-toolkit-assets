@@ -90,7 +90,7 @@ Administration is treated as an operation—not a collection of shortcuts. The T
 
 | System | Operational contract |
 |---|---|
-| **Dispatch Recruitment** | Choose one or all Dispatch Centres, exclude native unassigned rows, filter exact stations by type, set Hiring Phase and Personnel Desired independently, and verify assignment immutability after every change. |
+| **Dispatch Recruitment** | Choose one or all Dispatch Centres, select ALL or one exact native building type before scanning, exclude native unassigned rows, refine exact stations, set Hiring Phase and Personnel Desired independently, and verify assignment immutability after every change. |
 | **Alliance Courses** | Match academy and building requirements, select the relevant stations, fill available classrooms and schedule the chosen duration—1 hour, 12 hours, 1 day or 2 days—through native course controls. |
 | **Patient Transport Sweep** | Re-scan live patient state, require confirmation, use exact native Cancel Transport actions in the background when safe, fall back visibly when needed, and never retry an ambiguous release. |
 | **Alliance Member Manager** | Bring member administration into a more legible, deliberate workspace while preserving the permissions supplied by MissionChief. |
@@ -253,7 +253,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 <details>
 <summary><strong>Administration</strong></summary>
 
-- Dispatch Recruitment with Dispatch Centre scope, building-type filters and exact station selection
+- Dispatch Recruitment with Dispatch Centre scope, an explicit ALL-or-one native Building Type selector and exact station selection
 - Hiring Phase and Personnel Desired controls
 - Alliance Courses with academy matching, classroom use and scheduled durations
 - Patient Transport Sweep with background-first native cancellation and visible fail-safe fallback

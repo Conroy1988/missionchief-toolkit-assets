@@ -94,6 +94,7 @@
       "data-action=\"load-dispatch-recruitment\"",
       "data-action=\"scan-dispatch-recruitment\"",
       "data-action=\"apply-dispatch-recruitment\"",
+      "data-setting=\"dispatch-recruitment-building-type\"",
       "data-setting=\"dispatch-recruitment-centre\"",
       "data-setting=\"dispatch-recruitment-hiring-phase\"",
       "data-setting=\"dispatch-recruitment-personnel\"",

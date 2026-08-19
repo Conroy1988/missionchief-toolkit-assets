@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 726,
-    "version": "10.10.0",
-    "sourceBytes": 2465464,
-    "sourceLines": 36919,
-    "sourceSha256": "03cd422b1a6933c0588aba00c54ecf8577da383b1f1d68621f48ed77499508f5",
-    "templateBytes": 833539,
-    "templateLines": 9828,
-    "templateSha256": "755e6da31584a3f66ac69afaeeaa8366afad499b9cc91cb29c8f860e5cd91c77",
-    "canonicalCssSha256": "3df206dd0c138e2a6b9f31f39e691a5f20f5f589c3c5384bb62a32b3d118c874",
-    "maxSourceBytes": 2474000,
-    "maxSourceLines": 37150,
+    "issue": 728,
+    "version": "10.11.0",
+    "sourceBytes": 2537169,
+    "sourceLines": 37938,
+    "sourceSha256": "9627591a5e6450cea38c50ff3c0e0c556c159cbf7a601bd89d8322e268611a80",
+    "templateBytes": 835267,
+    "templateLines": 9837,
+    "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
+    "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
+    "maxSourceBytes": 2548000,
+    "maxSourceLines": 38150,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 103015,
-      "sourceLines": 1493,
-      "templateBytes": 18002,
-      "templateLines": 294
+      "sourceBytes": 174720,
+      "sourceLines": 2512,
+      "templateBytes": 19730,
+      "templateLines": 303
     },
-    "scope": "Issue #726 explicit native building-type scan scope, stale queue invalidation and selected-type safety-limit isolation"
+    "scope": "Issue #728 verified same-type Station Icon Copier with protected defaults, exact native form preservation, sequential mutation and pixel verification"
   }
 }

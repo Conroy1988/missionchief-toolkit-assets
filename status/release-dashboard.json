@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "10.11.1",
+  "currentVersion": "10.12.0",
   "sourceOfTruth": "GitHub",
   "distribution": "TKB Scripts",
   "status": {
@@ -24,10 +24,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-08-19T22:35:44Z",
+  "lastUpdated": "2026-08-19T23:40:05Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "26f5d288b49310a97d589688ffa11858eb1d54812d14feb45146f913eb80f3f4",
+    "validatedSha256": "a4def7b9badd43bbc57a6ec4e33b80cc336ab13ff802b50237701603efc98b41",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -37,25 +37,25 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "10.11.1",
+    "version": "10.12.0",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
     "publicReleaseCreated": true,
-    "completedAt": "2026-08-19T22:35:44Z"
+    "completedAt": "2026-08-19T23:40:05Z"
   },
   "latestRelease": {
-    "version": "10.11.1",
-    "sha256": "26f5d288b49310a97d589688ffa11858eb1d54812d14feb45146f913eb80f3f4",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.11.1",
+    "version": "10.12.0",
+    "sha256": "a4def7b9badd43bbc57a6ec4e33b80cc336ab13ff802b50237701603efc98b41",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.12.0",
     "tkbDistributionVerified": true,
     "distributionAuthority": "tkb-website-only",
-    "privateBackupCommit": "7ce5734c085e648ea804beb8e03588e8756e734d",
-    "discordMessageId": "1539764836731199600",
+    "privateBackupCommit": "d6ade4522ee1ad449271815784770e67e64bb2ab",
+    "discordMessageId": "1539781032050430093",
     "discordChannelId": "1264992613845565440",
     "discordPosted": true,
-    "completedAt": "2026-08-19T22:35:44Z"
+    "completedAt": "2026-08-19T23:40:05Z"
   }
 }

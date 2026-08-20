@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.13.2] - 2026-08-20
+
+### Mission-safe vehicle visibility
+
+- Keeps mission icons visible when MissionChief exposes the same live marker through both its mission and vehicle registries.
+- Gives positive mission identity priority and clears any stale vehicle class or attribute from an overlapping marker.
+- Retains complete native, custom and secondary vehicle coverage while preserving Personal Missions, Alliance Missions and both building filters.
+- Adds no observer, listener, timer, polling loop, selector or network request.
+
 ## [10.13.1] - 2026-08-20
 
 ### Complete vehicle visibility toggle

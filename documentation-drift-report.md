@@ -2,7 +2,7 @@
 
 ✅ **Status:** PASSED
 
-- Toolkit version: **10.12.0**
+- Toolkit version: **10.12.1**
 - Version state: **source-transition**
 - Features: **34**
 - Themes: **8**
@@ -11,4 +11,4 @@
 - Public documentation surfaces checked: **2**
 
 ## Warnings
-- Validated guarded source transition 10.12.0 is ahead of dashboard version 10.3.2.
+- Validated guarded source transition 10.12.1 is ahead of dashboard version 10.3.2.

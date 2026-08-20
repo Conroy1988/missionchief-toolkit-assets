@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.12.0
+// @version      10.12.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.12.0',
+        version: '10.12.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -527,14 +527,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.12.0",
-        title: "Station Icon consistency manager",
+        version: "10.12.1",
+        title: "Station Icon Copier rollback",
         highlights: Object.freeze([
-            "Allows any explicit combination of loaded Dispatch Centres, with select-all and clear controls plus safe migration from the previous single-centre preference.",
-            "Audits decoded pixels for every exact same-type and small/full-size station, then shows an overall consistency score and a detailed per-centre breakdown.",
-            "Adds Fix inconsistencies only, selecting default icons and verified pixel differences while leaving unreadable custom icons unverified and protected.",
-            "Rechecks the scanned source signature and each audited custom target before writing, so a post-scan image change is skipped or invalidates the complete plan.",
-            "Updates consistency scores after verified repairs while preserving native-form field protection, sequential pacing, post-save pixel checks, Stop and fatal safety stops."
+            "Removes the multi-centre consistency manager introduced in v10.12.0 and restores Station Icon Copier to its v10.11.1 workflow.",
+            "Restores one Dispatch Centre or ALL DISPATCH CENTRES selection, protected existing custom icons by default and the explicit replacement option.",
+            "Removes inconsistency-only repair, icon consistency scores, multi-centre checkbox scope and their saved-state migration.",
+            "Retains exact station type and small/full matching, native form preservation, sequential pacing, Stop, fresh state checks and post-save pixel verification.",
+            "Publishes a clean v10.12.1 corrective release so installed users move forward from v10.12.0 without losing unrelated Toolkit fixes."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1373,9 +1373,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const DISPATCH_RECRUITMENT_PERSONNEL_MAX = 10000;
     const DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS = 12000;
     const STATION_ICON_REPLACE_DEFAULTS = 'defaults';
-    const STATION_ICON_REPLACE_INCONSISTENT = 'inconsistent';
     const STATION_ICON_REPLACE_ALL = 'all';
-    const STATION_ICON_REPLACE_OPTIONS = Object.freeze([STATION_ICON_REPLACE_DEFAULTS, STATION_ICON_REPLACE_INCONSISTENT, STATION_ICON_REPLACE_ALL]);
+    const STATION_ICON_REPLACE_OPTIONS = Object.freeze([STATION_ICON_REPLACE_DEFAULTS, STATION_ICON_REPLACE_ALL]);
     const STATION_ICON_DELAY_OPTIONS = Object.freeze([1000, 1500, 2000, 3000, 5000]);
     const STATION_ICON_SCAN_LIMIT = 2000;
     const STATION_ICON_APPLY_LIMIT = 2000;
@@ -1806,10 +1805,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         queue: [],
         summary: null,
         scannedAt: 0,
-        scannedScopeKey: '',
+        scannedDispatchId: '',
         scannedSourceBuildingId: '',
         scannedReplaceMode: '',
-        scannedSourceSignature: null,
         selectedBuildingIds: new Set(),
         currentBuildingId: '',
         currentItem: '',
@@ -2130,16 +2128,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         };
     }
 
-    function normaliseStationIconDispatchSelection(value) {
-        const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-        const legacyDispatchId = String(source.dispatchId || '');
-        const loaded = Array.isArray(source.dispatchIds) ? source.dispatchIds : legacyDispatchId ? [legacyDispatchId] : [];
-        return Array.from(new Set(loaded
-            .map(item => String(item || ''))
-            .filter(item => item === DISPATCH_RECRUITMENT_ALL_CENTRES || /^\d+$/u.test(item))))
-            .slice(0, STATION_ICON_SCAN_LIMIT);
-    }
-
     function defaultState() {
         return {
         uiTheme: 'mapCommand',
@@ -2186,7 +2174,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweep: { delayMs: 2000, maxPerRun: 25, backgroundFirst: true },
         allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
         dispatchRecruitment: { dispatchId: '', buildingTypeId: DISPATCH_RECRUITMENT_ALL_TYPES, hiringPhase: '3', personnelDesired: '', delayMs: 1500 },
-        stationIconCopier: { dispatchIds: [], sourceBuildingId: '', replaceMode: STATION_ICON_REPLACE_DEFAULTS, delayMs: 1500 },
+        stationIconCopier: { dispatchId: '', sourceBuildingId: '', replaceMode: STATION_ICON_REPLACE_DEFAULTS, delayMs: 1500 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
@@ -2320,8 +2308,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const dispatchPersonnelDesired = String(merged.dispatchRecruitment.personnelDesired ?? '').trim();
         merged.dispatchRecruitment.personnelDesired = /^\d+$/u.test(dispatchPersonnelDesired) && Number(dispatchPersonnelDesired) <= DISPATCH_RECRUITMENT_PERSONNEL_MAX ? String(Number(dispatchPersonnelDesired)) : '';
         merged.dispatchRecruitment.delayMs = DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes(Number(merged.dispatchRecruitment.delayMs)) ? Number(merged.dispatchRecruitment.delayMs) : 1500;
-        merged.stationIconCopier.dispatchIds = normaliseStationIconDispatchSelection(parsed?.stationIconCopier);
-        delete merged.stationIconCopier.dispatchId;
+        const stationIconDispatchId = String(merged.stationIconCopier.dispatchId || '');
+        merged.stationIconCopier.dispatchId = stationIconDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES || /^\d+$/u.test(stationIconDispatchId) ? stationIconDispatchId : '';
         const stationIconSourceBuildingId = String(merged.stationIconCopier.sourceBuildingId || '');
         merged.stationIconCopier.sourceBuildingId = /^\d+$/u.test(stationIconSourceBuildingId) ? stationIconSourceBuildingId : '';
         merged.stationIconCopier.replaceMode = STATION_ICON_REPLACE_OPTIONS.includes(String(merged.stationIconCopier.replaceMode)) ? String(merged.stationIconCopier.replaceMode) : STATION_ICON_REPLACE_DEFAULTS;
@@ -12659,43 +12647,18 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-recruitment-findings summary { color:#ffd28a !important; cursor:pointer !important; font-weight:950 !important; }
         #${SCRIPT.panelId} .mcms-icon-copy-card { border-color:rgba(90,195,255,.32) !important; background:rgba(12,49,75,.18) !important; }
         #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-sweep-head { color:#bfe9ff !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-picker { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; max-height:150px !important; overflow-y:auto !important; padding:2px !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-option { display:grid !important; grid-template-columns:auto minmax(0,1fr) !important; align-items:center !important; gap:6px !important; min-width:0 !important; min-height:34px !important; padding:6px 7px !important; border:1px solid rgba(90,195,255,.20) !important; border-radius:8px !important; background:rgba(90,195,255,.06) !important; color:rgba(255,255,255,.76) !important; cursor:pointer !important; font-size:7.5px !important; font-weight:850 !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-option input { width:14px !important; height:14px !important; margin:0 !important; accent-color:#5ac3ff !important; cursor:pointer !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-option span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
         #${SCRIPT.panelId} .mcms-icon-source { display:grid !important; grid-template-columns:40px minmax(0,1fr) !important; align-items:center !important; gap:8px !important; margin:7px 0 !important; padding:7px !important; border:1px solid rgba(90,195,255,.25) !important; border-radius:9px !important; background:rgba(90,195,255,.07) !important; }
         #${SCRIPT.panelId} .mcms-icon-source strong { display:block !important; color:#f7fbff !important; font-size:8.5px !important; overflow-wrap:anywhere !important; }
         #${SCRIPT.panelId} .mcms-icon-source small { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.55) !important; font-size:7px !important; line-height:1.35 !important; }
         #${SCRIPT.panelId} .mcms-icon-thumb { display:grid !important; place-items:center !important; width:34px !important; height:34px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:7px !important; background:rgba(0,0,0,.22) !important; object-fit:contain !important; image-rendering:auto !important; }
         #${SCRIPT.panelId} .mcms-icon-default { color:rgba(255,255,255,.38) !important; font-size:8px !important; font-weight:950 !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency { margin:7px 0 !important; padding:8px !important; border:1px solid rgba(90,195,255,.24) !important; border-radius:9px !important; background:rgba(90,195,255,.055) !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency > div:first-child { display:flex !important; align-items:baseline !important; gap:8px !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency strong { flex:0 0 auto !important; color:#8bd8ff !important; font-size:18px !important; font-weight:950 !important; line-height:1 !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency span { color:rgba(255,255,255,.75) !important; font-size:7.5px !important; font-weight:900 !important; line-height:1.3 !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency small { display:block !important; margin-top:5px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; line-height:1.35 !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency-bar { height:5px !important; margin-top:7px !important; overflow:hidden !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency-bar i { display:block !important; height:100% !important; border-radius:inherit !important; background:#5ac3ff !important; transition:width .18s ease !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency[data-tone="good"] { border-color:rgba(70,229,139,.38) !important; background:rgba(70,229,139,.075) !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency[data-tone="good"] strong { color:#78efac !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency[data-tone="good"] .mcms-icon-consistency-bar i { background:#46e58b !important; }
-        #${SCRIPT.panelId} .mcms-icon-consistency[data-tone="warn"] { border-color:rgba(255,182,72,.38) !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-score { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; align-items:center !important; gap:7px !important; margin-top:5px !important; padding-top:5px !important; border-top:1px solid rgba(255,255,255,.07) !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-score span { min-width:0 !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-score strong { display:block !important; color:#e9f8ff !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-score small { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.50) !important; }
-        #${SCRIPT.panelId} .mcms-icon-centre-score > b { color:#8bd8ff !important; font-size:8px !important; }
         #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-recruitment-station { grid-template-columns:auto 34px minmax(0,1fr) auto !important; }
         #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-recruitment-station[data-outcome="updated"] { border-color:rgba(90,195,255,.46) !important; }
-        #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-recruitment-station[data-consistency="inconsistent"] { box-shadow:inset 2px 0 rgba(255,182,72,.56) !important; }
-        #${SCRIPT.panelId} .mcms-icon-copy-card .mcms-recruitment-station[data-consistency="consistent"] { box-shadow:inset 2px 0 rgba(70,229,139,.48) !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-type { min-height:44px !important; font-size:9px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-type input,
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-station input { width:22px !important; height:22px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-station { min-height:52px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-recruitment-stations { max-height:42vh !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-icon-centre-picker { grid-template-columns:minmax(0,1fr) !important; max-height:32vh !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-icon-centre-option { min-height:44px !important; font-size:9px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-icon-centre-option input { width:22px !important; height:22px !important; }
         #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} .mcms-tab-panel { gap:11px !important; padding:13px !important; }
@@ -19120,62 +19083,16 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             .map(item => [String(item.id), stationIconText(item.name) || `Dispatch Centre ${item.id}`]));
     }
 
-    function stationIconNormaliseDispatchIds(dispatchIds = state.stationIconCopier.dispatchIds) {
-        const values = dispatchIds instanceof Set ? Array.from(dispatchIds) : Array.isArray(dispatchIds) ? dispatchIds : [dispatchIds];
-        return Array.from(new Set(values
-            .map(value => String(value || ''))
-            .filter(value => value === DISPATCH_RECRUITMENT_ALL_CENTRES || /^\d+$/u.test(value))));
+    function stationIconRecordInScope(record, dispatchId, dispatchById = stationIconDispatchMap()) {
+        if (!record || record.dispatchId === '0') return false;
+        return dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? dispatchById.has(record.dispatchId) : record.dispatchId === dispatchId;
     }
 
-    function stationIconResolvedDispatchIds(dispatchIds = state.stationIconCopier.dispatchIds, dispatches = stationIconCopierRuntime.dispatches) {
-        const requested = stationIconNormaliseDispatchIds(dispatchIds);
-        const dispatchById = stationIconDispatchMap(dispatches);
-        if (requested.includes(DISPATCH_RECRUITMENT_ALL_CENTRES)) return Array.from(dispatchById.keys());
-        return Array.from(dispatchById.keys()).filter(id => requested.includes(id));
-    }
-
-    function stationIconScopeKey(dispatchIds = state.stationIconCopier.dispatchIds, dispatches = stationIconCopierRuntime.dispatches) {
-        return stationIconResolvedDispatchIds(dispatchIds, dispatches)
-            .slice()
-            .sort((left, right) => Number(left) - Number(right))
-            .join(',');
-    }
-
-    function stationIconRecordInScope(record, dispatchIds, dispatchById = stationIconDispatchMap()) {
-        if (!record || record.dispatchId === '0' || !dispatchById.has(record.dispatchId)) return false;
-        const requested = dispatchIds instanceof Set ? dispatchIds : new Set(stationIconNormaliseDispatchIds(dispatchIds));
-        return requested.has(DISPATCH_RECRUITMENT_ALL_CENTRES) || requested.has(record.dispatchId);
-    }
-
-    function stationIconSourceChoices(dispatchIds = state.stationIconCopier.dispatchIds) {
+    function stationIconSourceChoices(dispatchId = String(state.stationIconCopier.dispatchId || '')) {
         const dispatchById = stationIconDispatchMap();
-        const scope = new Set(stationIconResolvedDispatchIds(dispatchIds));
         return stationIconCopierRuntime.buildings
-            .filter(record => record.hasCustomIcon && record.customIconUrl && stationIconRecordInScope(record, scope, dispatchById))
+            .filter(record => record.hasCustomIcon && record.customIconUrl && stationIconRecordInScope(record, dispatchId, dispatchById))
             .sort((left, right) => left.caption.localeCompare(right.caption, undefined, { sensitivity: 'base', numeric: true }));
-    }
-
-    function stationIconConsistencyBucket(summary, dispatchId) {
-        return summary?.consistencyByDispatch?.[String(dispatchId || '')] || null;
-    }
-
-    function stationIconMoveConsistency(summary, item, nextConsistency) {
-        const next = String(nextConsistency || '');
-        const previous = String(item?.consistency || '');
-        if (!summary || !item || previous === next || !['consistent', 'inconsistent', 'unverified', 'pending'].includes(next)) return;
-        const bucket = stationIconConsistencyBucket(summary, item.dispatchId);
-        if (['consistent', 'inconsistent', 'unverified', 'pending'].includes(previous)) {
-            summary[previous] = Math.max(0, Number(summary[previous] || 0) - 1);
-            if (bucket) bucket[previous] = Math.max(0, Number(bucket[previous] || 0) - 1);
-        }
-        summary[next] = Number(summary[next] || 0) + 1;
-        if (bucket) bucket[next] = Number(bucket[next] || 0) + 1;
-        item.consistency = next;
-    }
-
-    function stationIconConsistencyPercent(summary) {
-        const total = Number(summary?.exactType || 0);
-        return total ? Math.round((Number(summary?.consistent || 0) / total) * 1000) / 10 : 0;
     }
 
     function resetStationIconResults() {
@@ -19197,10 +19114,9 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         stationIconCopierRuntime.queue = [];
         stationIconCopierRuntime.summary = null;
         stationIconCopierRuntime.scannedAt = 0;
-        stationIconCopierRuntime.scannedScopeKey = '';
+        stationIconCopierRuntime.scannedDispatchId = '';
         stationIconCopierRuntime.scannedSourceBuildingId = '';
         stationIconCopierRuntime.scannedReplaceMode = '';
-        stationIconCopierRuntime.scannedSourceSignature = null;
         stationIconCopierRuntime.selectedBuildingIds.clear();
         if (!preserveLog) stationIconCopierRuntime.log = [];
         resetStationIconResults();
@@ -19215,66 +19131,42 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         renderDispatchRecruitmentPanel();
     }
 
-    function buildStationIconCopyQueue(buildings, dispatchIds, sourceBuildingId, replaceMode, dispatches = []) {
-        const requestedScope = stationIconNormaliseDispatchIds(dispatchIds);
+    function buildStationIconCopyQueue(buildings, dispatchId, sourceBuildingId, replaceMode, dispatches = []) {
+        const scopeId = String(dispatchId || '');
         const sourceId = String(sourceBuildingId || '');
         const mode = String(replaceMode || '');
-        if (!requestedScope.length) throw new Error('Choose at least one Dispatch Centre.');
+        if (scopeId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !/^\d+$/u.test(scopeId)) throw new Error('Choose a valid Dispatch Centre.');
         if (!/^\d+$/u.test(sourceId)) throw new Error('Choose a source station with a custom icon.');
         if (!STATION_ICON_REPLACE_OPTIONS.includes(mode)) throw new Error('Choose a valid existing-icon policy.');
         const dispatchById = stationIconDispatchMap(dispatches);
-        const scopeIds = stationIconResolvedDispatchIds(requestedScope, dispatches);
-        const scope = new Set(scopeIds);
-        if (!scopeIds.length) throw new Error('None of the selected Dispatch Centres is still available.');
-        if (!requestedScope.includes(DISPATCH_RECRUITMENT_ALL_CENTRES) && scopeIds.length !== requestedScope.length) throw new Error('One or more selected Dispatch Centres is no longer available.');
+        if (scopeId === DISPATCH_RECRUITMENT_ALL_CENTRES && !dispatchById.size) throw new Error('No loaded Dispatch Centres are available for an all-centres scan.');
         const records = Array.from(buildings || []).filter(Boolean);
         const source = records.find(record => record.id === sourceId);
         if (!source || !source.hasCustomIcon || !source.customIconUrl) throw new Error('The selected source station no longer has a readable custom icon.');
-        if (!stationIconRecordInScope(source, scope, dispatchById)) throw new Error('The selected source station is outside the current Dispatch Centre scope.');
+        if (!stationIconRecordInScope(source, scopeId, dispatchById)) throw new Error('The selected source station is outside the current Dispatch Centre scope.');
         const sourceTypeKey = stationIconTypeKey(source);
         const queue = [];
-        const auditCandidates = [];
         const summary = {
             total: records.length,
             exactType: 0,
             eligible: 0,
             protectedCustom: 0,
-            matchingCustom: 0,
-            differingCustom: 0,
-            defaultIcons: 0,
-            consistent: 0,
-            inconsistent: 0,
-            unverified: 0,
-            pending: 0,
             outsideDispatch: 0,
             otherType: 0,
             unassigned: 0,
             sourceExcluded: 0,
             truncated: 0,
             protectedNames: [],
-            unverifiedNames: [],
             dispatchCounts: {},
-            consistencyByDispatch: {},
             source: { ...source }
         };
-        for (const dispatchId of scopeIds) {
-            summary.consistencyByDispatch[dispatchId] = {
-                dispatchId,
-                name: dispatchById.get(dispatchId) || `Dispatch Centre ${dispatchId}`,
-                total: 0,
-                consistent: 0,
-                inconsistent: 0,
-                unverified: 0,
-                pending: 0
-            };
-        }
         const sorted = records.slice().sort((left, right) => left.caption.localeCompare(right.caption, undefined, { sensitivity: 'base', numeric: true }));
         for (const record of sorted) {
             if (record.dispatchId === '0') {
                 summary.unassigned += 1;
                 continue;
             }
-            if (!stationIconRecordInScope(record, scope, dispatchById)) {
+            if (!stationIconRecordInScope(record, scopeId, dispatchById)) {
                 summary.outsideDispatch += 1;
                 continue;
             }
@@ -19283,15 +19175,20 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 continue;
             }
             summary.exactType += 1;
-            const consistencyBucket = stationIconConsistencyBucket(summary, record.dispatchId);
-            if (consistencyBucket) consistencyBucket.total += 1;
             if (record.id === sourceId) {
                 summary.sourceExcluded += 1;
-                summary.consistent += 1;
-                if (consistencyBucket) consistencyBucket.consistent += 1;
                 continue;
             }
-            const item = {
+            if (mode === STATION_ICON_REPLACE_DEFAULTS && record.hasCustomIcon) {
+                summary.protectedCustom += 1;
+                if (summary.protectedNames.length < 20) summary.protectedNames.push(record.caption);
+                continue;
+            }
+            if (queue.length >= STATION_ICON_SCAN_LIMIT) {
+                summary.truncated += 1;
+                continue;
+            }
+            queue.push({
                 buildingId: record.id,
                 name: record.caption,
                 dispatchId: record.dispatchId,
@@ -19303,36 +19200,13 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 customIconUrl: record.customIconUrl,
                 latitude: record.latitude,
                 longitude: record.longitude,
-                consistency: record.hasCustomIcon ? 'pending' : 'inconsistent',
-                consistencyReason: record.hasCustomIcon ? 'pending' : 'default',
-                auditSignature: null,
-                auditError: '',
                 outcome: 'ready',
                 outcomeDetail: ''
-            };
-            if (record.hasCustomIcon) {
-                summary.pending += 1;
-                if (consistencyBucket) consistencyBucket.pending += 1;
-                auditCandidates.push(item);
-                if (mode === STATION_ICON_REPLACE_DEFAULTS) {
-                    summary.protectedCustom += 1;
-                    if (summary.protectedNames.length < 20) summary.protectedNames.push(record.caption);
-                    continue;
-                }
-            } else {
-                summary.defaultIcons += 1;
-                summary.inconsistent += 1;
-                if (consistencyBucket) consistencyBucket.inconsistent += 1;
-            }
-            if (mode !== STATION_ICON_REPLACE_INCONSISTENT && queue.length >= STATION_ICON_SCAN_LIMIT) {
-                summary.truncated += 1;
-                continue;
-            }
-            queue.push(item);
+            });
             summary.eligible += 1;
             summary.dispatchCounts[record.dispatchId] = (summary.dispatchCounts[record.dispatchId] || 0) + 1;
         }
-        return { queue, auditCandidates, summary, replaceMode: mode };
+        return { queue, summary };
     }
 
     async function fetchStationIconDocument(pathOrUrl) {
@@ -19575,83 +19449,6 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             && left.pixelDigest === right.pixelDigest);
     }
 
-    function stationIconImageSignature(image) {
-        if (!image?.width || !image?.height || !image?.pixelDigest) return null;
-        return {
-            width: Number(image.width),
-            height: Number(image.height),
-            pixelDigest: String(image.pixelDigest),
-            byteDigest: String(image.byteDigest || ''),
-            mime: String(image.mime || '')
-        };
-    }
-
-    function stationIconScanStopped() {
-        const error = new Error('Consistency audit stopped after the active image check.');
-        error.stationIconScanStopped = true;
-        return error;
-    }
-
-    async function auditStationIconConsistency(result, sourceImage) {
-        const summary = result.summary;
-        const sourceSignature = stationIconImageSignature(sourceImage);
-        if (!sourceSignature) throw new Error('The source icon did not produce a verifiable pixel signature.');
-        if (runtime.destroyed || stationIconCopierRuntime.stopRequested) throw stationIconScanStopped();
-        const signatureCache = new Map();
-        const sourceUrl = String(summary.source?.customIconUrl || '');
-        if (sourceUrl) signatureCache.set(sourceUrl, { signature: sourceSignature });
-        const candidates = result.auditCandidates || [];
-        for (let index = 0; index < candidates.length; index += 1) {
-            if (runtime.destroyed || stationIconCopierRuntime.stopRequested) throw stationIconScanStopped();
-            const item = candidates[index];
-            stationIconCopierRuntime.currentItem = `Auditing custom icon ${index + 1}/${candidates.length} · ${item.name}`;
-            if (index === 0 || (index + 1) % 10 === 0 || index === candidates.length - 1) renderStationIconCopierPanel();
-            try {
-                const url = String(item.customIconUrl || '');
-                if (!url) throw new Error('custom icon URL is missing or unsafe');
-                let cached = signatureCache.get(url);
-                if (!cached) {
-                    try {
-                        const image = await fetchStationIconImage(url, `${item.name} audit icon`);
-                        cached = { signature: stationIconImageSignature(image) };
-                        if (!cached.signature) throw new Error('image pixels could not be signed');
-                    } catch (err) {
-                        cached = { error: stationIconText(err?.message || 'image unavailable') || 'image unavailable' };
-                    }
-                    signatureCache.set(url, cached);
-                }
-                if (cached.error) throw new Error(cached.error);
-                item.auditSignature = { ...cached.signature };
-                if (stationIconImagesMatch(cached.signature, sourceSignature)) {
-                    stationIconMoveConsistency(summary, item, 'consistent');
-                    item.consistencyReason = 'matching';
-                    summary.matchingCustom += 1;
-                } else {
-                    stationIconMoveConsistency(summary, item, 'inconsistent');
-                    item.consistencyReason = 'different';
-                    summary.differingCustom += 1;
-                }
-            } catch (err) {
-                stationIconMoveConsistency(summary, item, 'unverified');
-                item.consistencyReason = 'unverified';
-                item.auditError = stationIconText(err?.message || 'image unavailable') || 'image unavailable';
-                if (summary.unverifiedNames.length < 20) summary.unverifiedNames.push(item.name);
-            }
-            if (runtime.destroyed || stationIconCopierRuntime.stopRequested) throw stationIconScanStopped();
-        }
-        stationIconCopierRuntime.currentItem = '';
-        if (summary.pending) throw new Error(`${summary.pending} custom icon${summary.pending === 1 ? '' : 's'} did not complete the consistency audit.`);
-        if (result.replaceMode === STATION_ICON_REPLACE_INCONSISTENT) {
-            const eligible = result.queue.filter(item => item.consistency === 'inconsistent');
-            summary.truncated = Math.max(0, eligible.length - STATION_ICON_SCAN_LIMIT);
-            result.queue = eligible.slice(0, STATION_ICON_SCAN_LIMIT);
-        }
-        summary.eligible = result.queue.length;
-        summary.dispatchCounts = {};
-        for (const item of result.queue) summary.dispatchCounts[item.dispatchId] = (summary.dispatchCounts[item.dispatchId] || 0) + 1;
-        return { ...result, sourceSignature };
-    }
-
     function stationIconSafeSkip(message) {
         const error = new Error(message);
         error.stationIconSafeSkip = true;
@@ -19783,14 +19580,11 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         const current = await fetchStationIconBuilding(plan.sourceBuildingId, { requireIcon: true });
         if (!current.hasCustomIcon || !current.customIconUrl) throw new Error('The selected source station no longer has a readable custom icon.');
         const dispatchById = stationIconDispatchMap();
-        if (!stationIconRecordInScope(current, plan.dispatchIds, dispatchById)) throw new Error('The source station moved outside the selected Dispatch Centre scope.');
+        if (!stationIconRecordInScope(current, plan.dispatchId, dispatchById)) throw new Error('The source station moved outside the selected Dispatch Centre scope.');
         if (current.caption !== scanned.caption || stationIconTypeKey(current) !== stationIconTypeKey(scanned) || current.dispatchId !== scanned.dispatchId) {
             throw new Error('The source station changed after the scan. Load and scan the plan again.');
         }
         const image = await fetchStationIconImage(current.customIconUrl, `${current.caption} source icon`);
-        if (!stationIconCopierRuntime.scannedSourceSignature || !stationIconImagesMatch(image, stationIconCopierRuntime.scannedSourceSignature)) {
-            throw new Error('The source icon pixels changed after the consistency scan. Scan the plan again before applying.');
-        }
         return { ...image, record: current };
     }
 
@@ -19802,10 +19596,6 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             if (!baseline.customIconUrl) throw stationIconSafeSkip('the current custom icon URL is not safely readable');
             const currentImage = await fetchStationIconImage(baseline.customIconUrl, `${item.name} current icon`);
             if (stationIconImagesMatch(currentImage, sourceImage)) return { changed: false, record: baseline, detail: 'already uses the source icon' };
-            if (plan.replaceMode === STATION_ICON_REPLACE_INCONSISTENT
-                && (!item.auditSignature || !stationIconImagesMatch(currentImage, item.auditSignature))) {
-                throw stationIconSafeSkip('the custom icon changed after its pixel audit');
-            }
         }
         const { doc } = await fetchStationIconDocument(`/buildings/${item.buildingId}/edit`);
         const prepared = prepareStationIconSubmission(doc, item, sourceImage);
@@ -19841,9 +19631,12 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
                 stationIconCopierRuntime.buildings = buildings;
                 stationIconCopierRuntime.catalogAt = Date.now();
                 stationIconCopierRuntime.singleBuildingApi = '';
-                const selectedDispatchIds = stationIconResolvedDispatchIds(state.stationIconCopier.dispatchIds, nativeCatalog.dispatches);
-                state.stationIconCopier.dispatchIds = selectedDispatchIds;
-                const sourceIds = new Set(stationIconSourceChoices(selectedDispatchIds).map(record => record.id));
+                const savedDispatchId = String(state.stationIconCopier.dispatchId || '');
+                const selectedDispatch = savedDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES
+                    ? DISPATCH_RECRUITMENT_ALL_CENTRES
+                    : nativeCatalog.dispatches.some(item => item.id === savedDispatchId) ? savedDispatchId : nativeCatalog.dispatches[0].id;
+                state.stationIconCopier.dispatchId = selectedDispatch;
+                const sourceIds = new Set(stationIconSourceChoices(selectedDispatch).map(record => record.id));
                 if (!sourceIds.has(String(state.stationIconCopier.sourceBuildingId || ''))) state.stationIconCopier.sourceBuildingId = '';
                 saveState();
                 stationIconCopierRuntime.currentItem = '';
@@ -19873,43 +19666,34 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
     async function scanStationIconTargets() {
         if (stationIconCopierRuntime.scanPromise) return stationIconCopierRuntime.scanPromise;
         if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running) return stationIconCopierRuntime.queue;
-        stationIconCopierRuntime.stopRequested = false;
         const scanPromise = (async () => {
             const buildings = await loadStationIconCatalog({ force: true });
             if (!buildings.length || runtime.destroyed) return [];
-            const dispatchIds = stationIconResolvedDispatchIds();
+            const dispatchId = String(state.stationIconCopier.dispatchId || '');
             const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
             const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
-            stationIconCopierRuntime.log = [];
             stationIconCopierRuntime.currentItem = 'Building the exact matching station preview';
             renderStationIconCopierPanel();
             try {
-                const result = buildStationIconCopyQueue(buildings, dispatchIds, sourceBuildingId, replaceMode, stationIconCopierRuntime.dispatches);
+                const result = buildStationIconCopyQueue(buildings, dispatchId, sourceBuildingId, replaceMode, stationIconCopierRuntime.dispatches);
+                stationIconCopierRuntime.queue = result.queue;
                 stationIconCopierRuntime.summary = result.summary;
-                stationIconCopierRuntime.queue = [];
-                stationIconCopierRuntime.currentItem = `Downloading ${result.summary.source.caption}'s source icon for the consistency audit`;
-                renderStationIconCopierPanel();
-                const sourceImage = await fetchStationIconImage(result.summary.source.customIconUrl, `${result.summary.source.caption} source icon`);
-                const audited = await auditStationIconConsistency(result, sourceImage);
-                stationIconCopierRuntime.queue = audited.queue;
-                stationIconCopierRuntime.summary = audited.summary;
                 stationIconCopierRuntime.scannedAt = Date.now();
-                stationIconCopierRuntime.scannedScopeKey = stationIconScopeKey(dispatchIds);
+                stationIconCopierRuntime.scannedDispatchId = dispatchId;
                 stationIconCopierRuntime.scannedSourceBuildingId = sourceBuildingId;
                 stationIconCopierRuntime.scannedReplaceMode = replaceMode;
-                stationIconCopierRuntime.scannedSourceSignature = audited.sourceSignature;
-                stationIconCopierRuntime.selectedBuildingIds = new Set(audited.queue.map(item => item.buildingId));
+                stationIconCopierRuntime.selectedBuildingIds = new Set(result.queue.map(item => item.buildingId));
                 stationIconCopierRuntime.currentItem = '';
+                stationIconCopierRuntime.log = [];
                 resetStationIconResults();
-                const score = stationIconConsistencyPercent(audited.summary);
-                stationIconLog(`${audited.summary.source.caption} · ${stationIconTypeLabel(audited.summary.source)}: ${score}% consistent (${audited.summary.consistent}/${audited.summary.exactType}) across ${dispatchIds.length} Dispatch Centre${dispatchIds.length === 1 ? '' : 's'} · ${audited.summary.inconsistent} inconsistent · ${audited.summary.unverified} unverified · ${audited.summary.eligible} eligible`);
-                if (audited.summary.unverified) stationIconLog(`${audited.summary.unverified} custom icon${audited.summary.unverified === 1 ? '' : 's'} could not be pixel-verified and will not be selected by inconsistency-only mode`, 'warn');
-                if (audited.summary.truncated) stationIconLog(`${audited.summary.truncated} eligible stations exceed the ${STATION_ICON_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
-                return audited.queue;
+                const centreCount = Object.keys(result.summary.dispatchCounts).length;
+                stationIconLog(`${result.summary.source.caption} · ${stationIconTypeLabel(result.summary.source)}: ${result.summary.eligible} eligible target${result.summary.eligible === 1 ? '' : 's'} across ${centreCount} Dispatch Centre${centreCount === 1 ? '' : 's'} · ${result.summary.protectedCustom} existing custom icon${result.summary.protectedCustom === 1 ? '' : 's'} protected · source excluded`);
+                if (result.summary.truncated) stationIconLog(`${result.summary.truncated} matching stations exceed the ${STATION_ICON_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
+                return result.queue;
             } catch (err) {
                 clearStationIconScan({ preserveLog: true });
                 stationIconCopierRuntime.currentItem = '';
-                stationIconLog(err?.stationIconScanStopped ? 'Consistency audit stopped; no partial plan was retained.' : `Target scan failed: ${err?.message || 'unknown error'}`, err?.stationIconScanStopped ? 'warn' : 'error');
+                stationIconLog(`Target scan failed: ${err?.message || 'unknown error'}`, 'error');
                 return [];
             }
         })();
@@ -19918,7 +19702,6 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         try { return await scanPromise; }
         finally {
             if (stationIconCopierRuntime.scanPromise === scanPromise) stationIconCopierRuntime.scanPromise = null;
-            if (!stationIconCopierRuntime.running) stationIconCopierRuntime.stopRequested = false;
             renderStationIconCopierPanel();
         }
     }
@@ -19937,21 +19720,10 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         renderStationIconCopierPanel();
     }
 
-    function stationIconSelectDispatches(selected) {
-        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running) return;
-        state.stationIconCopier.dispatchIds = selected ? stationIconCopierRuntime.dispatches.map(item => item.id) : [];
-        if (!stationIconSourceChoices().some(record => record.id === state.stationIconCopier.sourceBuildingId)) state.stationIconCopier.sourceBuildingId = '';
-        clearStationIconScan();
-        saveState();
-        updateUI();
-        showToast(selected ? `Station Icon Copier: all ${state.stationIconCopier.dispatchIds.length} Dispatch Centres selected` : 'Station Icon Copier: Dispatch Centre selection cleared');
-    }
-
     function stationIconPanelControlIndex(panel) {
         const settings = new Map();
         const actions = new Map();
         let host = null;
-        let centres = null;
         for (const select of Array.from(panel?.getElementsByTagName?.('select') || [])) {
             if (select.dataset.setting) settings.set(select.dataset.setting, select);
         }
@@ -19959,10 +19731,9 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             if (button.dataset.action) actions.set(button.dataset.action, button);
         }
         for (const container of Array.from(panel?.getElementsByTagName?.('div') || [])) {
-            if (container.hasAttribute('data-station-icon-copier')) host = container;
-            if (container.hasAttribute('data-station-icon-centres')) centres = container;
+            if (container.hasAttribute('data-station-icon-copier')) { host = container; break; }
         }
-        return { settings, actions, host, centres };
+        return { settings, actions, host };
     }
 
     function renderStationIconCopierPanel() {
@@ -19972,25 +19743,25 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         if (!host) return;
         const runtimeState = stationIconCopierRuntime;
         const locked = runtimeState.running || runtimeState.preparing || runtimeState.catalogPromise || runtimeState.scanPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.catalogPromise || dispatchRecruitmentRuntime.scanPromise;
-        const dispatchIds = stationIconResolvedDispatchIds();
-        const selectedDispatches = new Set(dispatchIds);
-        const scopeKey = stationIconScopeKey(dispatchIds);
+        const dispatchId = String(state.stationIconCopier.dispatchId || '');
         const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
         const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
-        const multipleCentres = dispatchIds.length > 1;
-        const allCentresSelected = Boolean(runtimeState.dispatches.length) && dispatchIds.length === runtimeState.dispatches.length;
-        if (controls.centres) {
+        const allCentres = dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES;
+        const dispatchSelect = controls.settings.get('station-icon-centre');
+        if (dispatchSelect) {
             const options = runtimeState.dispatches.length
-                ? runtimeState.dispatches.map(item => `<label class="mcms-icon-centre-option"><input type="checkbox" data-setting="station-icon-centre-option" value="${escapeHtml(item.id)}" ${selectedDispatches.has(item.id) ? 'checked' : ''} ${locked ? 'disabled' : ''}><span>${escapeHtml(item.name)}</span></label>`).join('')
-                : '<div class="mcms-empty-state">Load stations to choose Dispatch Centres.</div>';
-            setInnerHtmlIfChanged(controls.centres, options);
+                ? `<option value="${DISPATCH_RECRUITMENT_ALL_CENTRES}">ALL DISPATCH CENTRES</option>${runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}`
+                : '<option value="">Load stations first</option>';
+            setInnerHtmlIfChanged(dispatchSelect, options);
+            updateUiSetProperty(dispatchSelect, 'value', dispatchId);
+            dispatchSelect.disabled = locked || !runtimeState.dispatches.length;
         }
         const sourceSelect = controls.settings.get('station-icon-source');
-        const sources = stationIconSourceChoices(dispatchIds);
+        const sources = stationIconSourceChoices(dispatchId);
         if (sourceSelect) {
             const options = sources.length
-                ? `<option value="">Choose a source station</option>${sources.map(record => `<option value="${escapeHtml(record.id)}">${escapeHtml(record.caption)} · ${escapeHtml(stationIconTypeLabel(record))}${multipleCentres ? ` · ${escapeHtml(stationIconDispatchMap().get(record.dispatchId) || `Dispatch Centre ${record.dispatchId}`)}` : ''}</option>`).join('')}`
-                : `<option value="">${runtimeState.buildings.length ? dispatchIds.length ? 'No custom-icon source in this scope' : 'Select one or more Dispatch Centres' : 'Load stations first'}</option>`;
+                ? `<option value="">Choose a source station</option>${sources.map(record => `<option value="${escapeHtml(record.id)}">${escapeHtml(record.caption)} · ${escapeHtml(stationIconTypeLabel(record))}${allCentres ? ` · ${escapeHtml(stationIconDispatchMap().get(record.dispatchId) || `Dispatch Centre ${record.dispatchId}`)}` : ''}</option>`).join('')}`
+                : `<option value="">${runtimeState.buildings.length ? 'No custom-icon source in this scope' : 'Load stations first'}</option>`;
             setInnerHtmlIfChanged(sourceSelect, options);
             updateUiSetProperty(sourceSelect, 'value', sourceBuildingId);
             sourceSelect.disabled = locked || !sources.length;
@@ -19999,47 +19770,35 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         if (policySelect) { updateUiSetProperty(policySelect, 'value', replaceMode); policySelect.disabled = locked; }
         const delaySelect = controls.settings.get('station-icon-delay');
         if (delaySelect) { updateUiSetProperty(delaySelect, 'value', String(state.stationIconCopier.delayMs)); delaySelect.disabled = locked; }
-        const summary = runtimeState.summary || { exactType: 0, eligible: 0, protectedCustom: 0, matchingCustom: 0, differingCustom: 0, defaultIcons: 0, consistent: 0, inconsistent: 0, unverified: 0, pending: 0, outsideDispatch: 0, otherType: 0, unassigned: 0, dispatchCounts: {}, consistencyByDispatch: {}, protectedNames: [], unverifiedNames: [] };
+        const summary = runtimeState.summary || { eligible: 0, protectedCustom: 0, outsideDispatch: 0, otherType: 0, unassigned: 0, dispatchCounts: {}, protectedNames: [] };
         const planned = stationIconPlannedQueue();
         const source = runtimeState.buildings.find(record => record.id === sourceBuildingId) || summary.source;
         const sourcePreview = source?.customIconUrl
-            ? `<div class="mcms-icon-source"><img class="mcms-icon-thumb" src="${escapeHtml(source.customIconUrl)}" alt=""><span><strong>${escapeHtml(source.caption)}</strong><small>Source · ${escapeHtml(stationIconTypeLabel(source))}${multipleCentres ? ` · ${escapeHtml(stationIconDispatchMap().get(source.dispatchId) || `Dispatch Centre ${source.dispatchId}`)}` : ''}</small></span></div>`
+            ? `<div class="mcms-icon-source"><img class="mcms-icon-thumb" src="${escapeHtml(source.customIconUrl)}" alt=""><span><strong>${escapeHtml(source.caption)}</strong><small>Source · ${escapeHtml(stationIconTypeLabel(source))}${allCentres ? ` · ${escapeHtml(stationIconDispatchMap().get(source.dispatchId) || `Dispatch Centre ${source.dispatchId}`)}` : ''}</small></span></div>`
             : '<div class="mcms-empty-state">Load stations and choose one owned station that already has the custom icon to copy.</div>';
-        const consistencyPercent = stationIconConsistencyPercent(summary);
-        const consistencyTone = summary.pending ? 'pending' : summary.unverified ? 'warn' : consistencyPercent === 100 ? 'good' : 'work';
-        const consistencyCard = summary.exactType
-            ? `<div class="mcms-icon-consistency" data-tone="${consistencyTone}"><div><strong>${consistencyPercent}%</strong><span>${summary.consistent} of ${summary.exactType} exact-type stations match the source pixels</span></div><div class="mcms-icon-consistency-bar"><i style="width:${Math.max(0, Math.min(100, consistencyPercent))}%"></i></div><small>${summary.pending ? `${summary.pending} custom icon${summary.pending === 1 ? '' : 's'} still being audited · ` : ''}${summary.inconsistent} inconsistent · ${summary.unverified} unverified${summary.unverified ? ' and protected from inconsistency-only repair' : ''}</small></div>`
-            : '';
         const stationRows = runtimeState.queue.length ? runtimeState.queue.map(item => {
             const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
             const current = runtimeState.currentBuildingId === item.buildingId;
             const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
             const thumb = item.customIconUrl ? `<img class="mcms-icon-thumb" src="${escapeHtml(item.customIconUrl)}" alt="">` : '<span class="mcms-icon-thumb mcms-icon-default">DEFAULT</span>';
-            const centre = multipleCentres ? `${item.dispatchName} · ` : '';
-            const consistency = item.consistency === 'consistent' ? 'Pixel match' : item.consistencyReason === 'default' ? 'Default icon · inconsistent' : item.consistency === 'inconsistent' ? 'Different pixels · inconsistent' : item.consistency === 'unverified' ? 'Unverified custom icon' : 'Audit pending';
+            const centre = allCentres ? `${item.dispatchName} · ` : '';
             const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
-            return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}" data-consistency="${escapeHtml(item.consistency)}"><input type="checkbox" data-setting="station-icon-target" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}>${thumb}<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · ${escapeHtml(consistency)}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
-        }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? summary.inconsistent ? 'No stations are eligible under this repair policy. Unverified custom icons remain protected.' : 'Every exact-type station in this scope already matches the source icon.' : 'Scan after choosing a source station to audit pixels and preview the exact target list.'}</div>`;
+            return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="station-icon-target" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}>${thumb}<span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · ${item.hasCustomIcon ? 'Custom icon' : 'Default icon'}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
+        }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? 'No target stations match this exact source type and protection policy.' : 'Scan after choosing a source station to preview the exact target list.'}</div>`;
         const runStats = runtimeState.running || runtimeState.processed
             ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(planned.length || runtimeState.processed, STATION_ICON_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
-            : `<div class="mcms-sweep-stat"><b>${summary.exactType ? `${consistencyPercent}%` : '—'}</b><span>Consistent</span></div><div class="mcms-sweep-stat"><b>${summary.inconsistent}</b><span>Needs repair</span></div><div class="mcms-sweep-stat"><b>${summary.unverified}</b><span>Unverified</span></div><div class="mcms-sweep-stat"><b>${planned.length}</b><span>Selected</span></div>`;
+            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>Eligible</span></div><div class="mcms-sweep-stat"><b>${planned.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${summary.protectedCustom}</b><span>Protected</span></div><div class="mcms-sweep-stat"><b>${Object.keys(summary.dispatchCounts || {}).length}</b><span>Centres</span></div>`;
         const status = runtimeState.running ? 'RUNNING' : runtimeState.preparing ? 'VERIFYING SOURCE' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scanPromise ? 'SCANNING' : runtimeState.scannedAt ? 'READY' : runtimeState.buildings.length ? 'CHOOSE + SCAN' : 'NOT LOADED';
         const activity = runtimeState.currentItem ? `<div class="mcms-status"><strong>Current:</strong> ${escapeHtml(runtimeState.currentItem)}</div>` : '';
         const protectedDetails = summary.protectedNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.protectedCustom} existing custom icon${summary.protectedCustom === 1 ? '' : 's'} protected by the default policy</summary>${summary.protectedNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.protectedCustom > summary.protectedNames.length ? `<div>+ ${summary.protectedCustom - summary.protectedNames.length} more</div>` : ''}</details>` : '';
-        const unverifiedDetails = summary.unverifiedNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unverified} custom icon${summary.unverified === 1 ? '' : 's'} could not be pixel-verified</summary>${summary.unverifiedNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unverified > summary.unverifiedNames.length ? `<div>+ ${summary.unverified - summary.unverifiedNames.length} more</div>` : ''}</details>` : '';
-        const centreBreakdownRows = Object.values(summary.consistencyByDispatch || {}).filter(item => item.total).map(item => {
-            const percent = item.total ? Math.round((item.consistent / item.total) * 1000) / 10 : 0;
-            return `<div class="mcms-icon-centre-score"><span><strong>${escapeHtml(item.name)}</strong><small>${item.consistent}/${item.total} matching · ${item.inconsistent} inconsistent · ${item.unverified} unverified</small></span><b>${percent}%</b></div>`;
-        }).join('');
-        const centreBreakdown = centreBreakdownRows ? `<details class="mcms-recruitment-findings mcms-icon-centre-scores"><summary>Consistency by Dispatch Centre</summary>${centreBreakdownRows}</details>` : '';
         const findings = runtimeState.scannedAt ? `<div class="mcms-recruitment-findings">Exact-type exclusions: ${summary.otherType} other type / size · ${summary.outsideDispatch} outside scope · ${summary.unassigned} unassigned · source station excluded.</div>` : '';
         const logs = runtimeState.log.length ? runtimeState.log.map(entry => {
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             return `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No icon-copy activity yet.</div>';
-        setInnerHtmlIfChanged(host, `<div class="mcms-sweep-card mcms-icon-copy-card"><div class="mcms-sweep-head"><span>Station Icon Copier</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div>${sourcePreview}${consistencyCard}<div class="mcms-sweep-stats">${runStats}</div>${activity}<div class="mcms-recruitment-filter-head"><span>Exact matching targets</span><b>${planned.length} selected / ${runtimeState.queue.length} visible</b></div><div class="mcms-recruitment-stations">${stationRows}</div>${protectedDetails}${unverifiedDetails}${centreBreakdown}${findings}<div class="mcms-sweep-log">${logs}</div></div>`);
+        setInnerHtmlIfChanged(host, `<div class="mcms-sweep-card mcms-icon-copy-card"><div class="mcms-sweep-head"><span>Station Icon Copier</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div>${sourcePreview}<div class="mcms-sweep-stats">${runStats}</div>${activity}<div class="mcms-recruitment-filter-head"><span>Exact matching targets</span><b>${planned.length} selected / ${runtimeState.queue.length} visible</b></div><div class="mcms-recruitment-stations">${stationRows}</div>${protectedDetails}${findings}<div class="mcms-sweep-log">${logs}</div></div>`);
         const fresh = runtimeState.scannedAt
-            && runtimeState.scannedScopeKey === scopeKey
+            && runtimeState.scannedDispatchId === dispatchId
             && runtimeState.scannedSourceBuildingId === sourceBuildingId
             && runtimeState.scannedReplaceMode === replaceMode;
         const load = controls.actions.get('load-station-icons');
@@ -20048,27 +19807,23 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         const stop = controls.actions.get('stop-station-icons');
         const selectAll = controls.actions.get('select-all-station-icons');
         const clear = controls.actions.get('clear-station-icons');
-        const selectAllCentres = controls.actions.get('select-all-station-icon-centres');
-        const clearCentres = controls.actions.get('clear-station-icon-centres');
         if (load) load.disabled = locked;
-        if (scan) scan.disabled = locked || !dispatchIds.length || !sourceBuildingId || !sources.some(record => record.id === sourceBuildingId);
+        if (scan) scan.disabled = locked || !sourceBuildingId || !sources.some(record => record.id === sourceBuildingId);
         if (apply) apply.disabled = locked || !fresh || !planned.length;
-        if (stop) stop.disabled = !runtimeState.running && !runtimeState.scanPromise;
+        if (stop) stop.disabled = !runtimeState.running;
         if (selectAll) selectAll.disabled = locked || !runtimeState.queue.length;
         if (clear) clear.disabled = locked || !runtimeState.queue.length;
-        if (selectAllCentres) selectAllCentres.disabled = locked || !runtimeState.dispatches.length || allCentresSelected;
-        if (clearCentres) clearCentres.disabled = locked || !dispatchIds.length;
     }
 
     function readStationIconPlan() {
-        const dispatchIds = stationIconResolvedDispatchIds();
+        const dispatchId = String(state.stationIconCopier.dispatchId || '');
         const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
         const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
         const delayMs = Number(state.stationIconCopier.delayMs);
-        if (!dispatchIds.length) throw new Error('Choose at least one Dispatch Centre loaded from MissionChief.');
-        if (!stationIconSourceChoices(dispatchIds).some(record => record.id === sourceBuildingId)) throw new Error('Choose a source station with a readable custom icon.');
+        if (dispatchId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !stationIconCopierRuntime.dispatches.some(item => item.id === dispatchId)) throw new Error('Choose a Dispatch Centre loaded from MissionChief.');
+        if (!stationIconSourceChoices(dispatchId).some(record => record.id === sourceBuildingId)) throw new Error('Choose a source station with a readable custom icon.');
         if (!STATION_ICON_REPLACE_OPTIONS.includes(replaceMode)) throw new Error('Choose a valid existing-icon policy.');
-        return { dispatchIds, scopeKey: stationIconScopeKey(dispatchIds), sourceBuildingId, replaceMode, delayMs: STATION_ICON_DELAY_OPTIONS.includes(delayMs) ? delayMs : 1500 };
+        return { dispatchId, sourceBuildingId, replaceMode, delayMs: STATION_ICON_DELAY_OPTIONS.includes(delayMs) ? delayMs : 1500 };
     }
 
     async function startStationIconCopier() {
@@ -20077,10 +19832,10 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         try { plan = readStationIconPlan(); }
         catch (err) { showToast(err?.message || 'Check the Station Icon Copier values'); return; }
         if (!stationIconCopierRuntime.scannedAt
-            || stationIconCopierRuntime.scannedScopeKey !== plan.scopeKey
+            || stationIconCopierRuntime.scannedDispatchId !== plan.dispatchId
             || stationIconCopierRuntime.scannedSourceBuildingId !== plan.sourceBuildingId
             || stationIconCopierRuntime.scannedReplaceMode !== plan.replaceMode) {
-            showToast('Scan this exact Dispatch Centre selection, source and repair policy before applying icons');
+            showToast('Scan this exact Dispatch Centre, source and protection policy before applying icons');
             return;
         }
         const planned = stationIconPlannedQueue().map(item => ({ ...item }));
@@ -20100,13 +19855,11 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
             return;
         }
         stationIconCopierRuntime.currentItem = '';
-        const centreCount = plan.dispatchIds.length;
-        const scope = centreCount > 1 ? `${centreCount} Dispatch Centres` : stationIconDispatchMap().get(plan.dispatchIds[0]) || planned[0].dispatchName;
+        const centreCount = new Set(planned.map(item => item.dispatchId)).size;
+        const scope = plan.dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? `${centreCount} Dispatch Centre${centreCount === 1 ? '' : 's'}` : planned[0].dispatchName;
         const replaceWarning = plan.replaceMode === STATION_ICON_REPLACE_ALL
             ? 'REPLACE MODE: existing custom icons in the selected target list will be overwritten.'
-            : plan.replaceMode === STATION_ICON_REPLACE_INCONSISTENT
-                ? 'CONSISTENCY MODE: only audited pixel differences and default icons are eligible; changed or unverified custom icons are protected.'
-                : 'PROTECTED MODE: any station that gains a custom icon before its turn will be skipped.';
+            : 'PROTECTED MODE: any station that gains a custom icon before its turn will be skipped.';
         const confirmed = pageWindow.confirm(`Station Icon Copier will copy the icon from ${sourceImage.record.caption} to ${planned.length} selected ${sourceImage.record.small ? 'small ' : ''}${stationIconTypeLabel(sourceImage.record).replace(/ · Small$/u, '')} station${planned.length === 1 ? '' : 's'} across ${scope}.
 
 Source image: ${sourceImage.width}×${sourceImage.height}px ${sourceImage.mime === 'image/png' ? 'PNG' : 'JPEG'}
@@ -20138,12 +19891,6 @@ Each target will be rechecked, submitted through its current native building-edi
                 stationIconLog(`Checking ${item.name}`);
                 try {
                     const result = await applyStationIconToStation(item, plan, sourceImage);
-                    const previousReason = item.consistencyReason;
-                    stationIconMoveConsistency(stationIconCopierRuntime.summary, item, 'consistent');
-                    item.consistencyReason = 'matching';
-                    item.auditSignature = stationIconImageSignature(sourceImage);
-                    if (previousReason === 'default') stationIconCopierRuntime.summary.defaultIcons = Math.max(0, Number(stationIconCopierRuntime.summary.defaultIcons || 0) - 1);
-                    if (previousReason === 'different') stationIconCopierRuntime.summary.differingCustom = Math.max(0, Number(stationIconCopierRuntime.summary.differingCustom || 0) - 1);
                     if (result.changed) {
                         item.outcome = 'updated';
                         item.outcomeDetail = result.detail;
@@ -20191,19 +19938,16 @@ Each target will be rechecked, submitted through its current native building-edi
             stationIconCopierRuntime.stopRequested = false;
             stationIconCopierRuntime.currentBuildingId = '';
             stationIconCopierRuntime.currentItem = '';
-            const score = stationIconConsistencyPercent(stationIconCopierRuntime.summary);
-            stationIconLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${stationIconCopierRuntime.updated} updated, ${stationIconCopierRuntime.unchanged} unchanged, ${stationIconCopierRuntime.skipped} skipped, ${stationIconCopierRuntime.errors} errors · consistency now ${score}%`, stationIconCopierRuntime.errors ? 'error' : 'info');
+            stationIconLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${stationIconCopierRuntime.updated} updated, ${stationIconCopierRuntime.unchanged} unchanged, ${stationIconCopierRuntime.skipped} skipped, ${stationIconCopierRuntime.errors} errors`, stationIconCopierRuntime.errors ? 'error' : 'info');
             showToast(`${wasStopped ? 'Station Icon Copier stopped' : 'Station Icon Copier complete'} · ${stationIconCopierRuntime.updated} updated · ${stationIconCopierRuntime.unchanged} unchanged · ${stationIconCopierRuntime.skipped + stationIconCopierRuntime.errors} issues`);
             renderStationIconCopierPanel();
         }
     }
 
     function stopStationIconCopier() {
-        if (!stationIconCopierRuntime.running && !stationIconCopierRuntime.scanPromise) return;
+        if (!stationIconCopierRuntime.running) return;
         stationIconCopierRuntime.stopRequested = true;
-        stationIconLog(stationIconCopierRuntime.running
-            ? 'Stop requested — the active MissionChief request and verification will finish, then no further stations will be changed'
-            : 'Stop requested — the active image audit will finish, then no partial consistency plan will be retained', 'warn');
+        stationIconLog('Stop requested — the active MissionChief request and verification will finish, then no further stations will be changed', 'warn');
         renderStationIconCopierPanel();
     }
 
@@ -33789,7 +33533,7 @@ Each target will be rechecked, submitted through its current native building-edi
 
         add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
         add('dispatch-recruitment', 'Open Dispatch Recruitment', 'Choose one or all Dispatch Centres, filter station types and prepare a recruitment plan', 'dispatch centre all centres station hiring phase personnel desired recruitment bulk', () => commandPaletteOpenSetting('dispatch', 'dispatch-recruitment'), true);
-        add('station-icon-copier', 'Open Station Icon Copier', 'Audit and repair exact-type station icon consistency across selected Dispatch Centres', 'dispatch station building image icon graphic copy bulk consistency score multiple centres protect custom', () => commandPaletteOpenSetting('dispatch', 'station-icon-copier'), true);
+        add('station-icon-copier', 'Open Station Icon Copier', 'Copy one owned station icon to exact same-type stations with a verified preview', 'dispatch station building image icon graphic copy bulk protect custom', () => commandPaletteOpenSetting('dispatch', 'station-icon-copier'), true);
         add('personalisation', 'Open Personalisation Studio', 'Layouts, themes, game styling, input, Quick Wheel, backups, setup and alerts', 'customize customise appearance sound notification backup wizard hotkeys gestures reskin', () => openPersonalisationStudio(), true);
         add('input-studio', 'Open Hotkey & Gesture Studio', 'Remap Toolkit keys, assign touch gestures and learn contextual commands', 'input shortcuts right click long press context menu swipe', () => openPersonalisationStudio('input'), true);
         add('shell-studio', 'Open Toolkit & Game Style', 'MissionChief reskin, smart auto-hiding dock and Safe Mode', 'theme reskin dock collapse safe recovery', () => openPersonalisationStudio('shell'), true);
@@ -35258,24 +35002,19 @@ Each target will be rechecked, submitted through its current native building-edi
                     <button class="mcms-small-btn" type="button" data-action="apply-station-icons">Apply to Selected</button>
                     <button class="mcms-small-btn" type="button" data-action="stop-station-icons">Stop</button>
                 </div>
-                <div class="mcms-recruitment-filter-head"><span>Dispatch Centres</span><b>Choose one or more</b></div>
-                <div class="mcms-icon-centre-picker" data-station-icon-centres><div class="mcms-empty-state">Load stations first.</div></div>
-                <div class="mcms-grid-2">
-                    <button class="mcms-small-btn" type="button" data-action="select-all-station-icon-centres">Select All Centres</button>
-                    <button class="mcms-small-btn" type="button" data-action="clear-station-icon-centres">Clear Centres</button>
-                </div>
+                <div class="mcms-row"><span class="mcms-row-label">Dispatch Centre</span><select class="mcms-select" data-setting="station-icon-centre"><option value="">Load stations first</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Source Station</span><select class="mcms-select" data-setting="station-icon-source"><option value="">Load stations first</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Repair Policy</span><select class="mcms-select" data-setting="station-icon-replace-mode"><option value="${STATION_ICON_REPLACE_DEFAULTS}">Fill default icons only (safest)</option><option value="${STATION_ICON_REPLACE_INCONSISTENT}">Fix inconsistencies only (pixel verified)</option><option value="${STATION_ICON_REPLACE_ALL}">Replace all selected custom icons</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Existing custom icons</span><select class="mcms-select" data-setting="station-icon-replace-mode"><option value="${STATION_ICON_REPLACE_DEFAULTS}">Protect them (recommended)</option><option value="${STATION_ICON_REPLACE_ALL}">Replace selected custom icons</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Delay between stations</span><select class="mcms-select" data-setting="station-icon-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
                 <div class="mcms-grid-2">
                     <button class="mcms-small-btn" type="button" data-action="select-all-station-icons">Select All</button>
                     <button class="mcms-small-btn" type="button" data-action="clear-station-icons">Clear All</button>
                 </div>
-                <div class="mcms-status"><strong>Audit, then copy:</strong> select any combination of Dispatch Centres and an owned source station. Scan pixel-checks every custom icon of the same exact native building type and small/full classification, calculates overall and per-centre consistency, and protects anything it cannot verify. Choose whether to fill defaults, repair verified inconsistencies, or explicitly replace all selected icons.</div>
+                <div class="mcms-status"><strong>Copy, do not upload:</strong> choose an owned source station that already has the required custom icon. Its exact native building type and small/full classification define the targets automatically. The default policy protects every existing custom icon; replacement requires an explicit mode change and final confirmation.</div>
                 <div data-station-icon-copier></div>
                 <details class="mcms-alliance-course-guide">
                     <summary>Native image-copy safeguards</summary>
-                    <p>The scan accepts MissionChief PNG or JPEG icons up to 200×200 and compares decoded image pixels, not filenames, URLs or compressed file bytes. Before Apply, the source pixels must still match the scan. In inconsistency-only mode, a custom target must also match its audited pre-write pixels or it is skipped. Each selected target is freshly rechecked, submitted through its exact current native building-edit form one at a time, and pixel-compared with the source before the next station starts. Dispatch assignment, building type, size, name and coordinates are verified unchanged. A submitted but unverified upload stops the complete run and is never retried automatically.</p>
+                    <p>The source image is downloaded once into memory and checked as PNG or JPEG up to MissionChief's 200×200 limit. Each selected target is freshly rechecked, submitted through its exact current native building-edit form, and pixel-compared with the source before the next station starts. Dispatch assignment, building type, size, name and coordinates are verified unchanged. A submitted but unverified upload stops the complete run and is never retried automatically.</p>
                 </details>
             </section>
             <section class="mcms-tab-panel" data-panel="resources">
@@ -35715,9 +35454,7 @@ Each target will be rechecked, submitted through its current native building-edi
         if (action === 'apply-dispatch-recruitment') { void startDispatchRecruitment(); return; }
         if (action === 'stop-dispatch-recruitment') { stopDispatchRecruitment(); return; }
         if (action === 'load-station-icons') { void loadStationIconCatalog({ force: true }); return; }
-        if (action === 'scan-station-icons') { void scanStationIconTargets().then(queue => showToast(queue.length ? `Consistency audit complete · ${queue.length} eligible station${queue.length === 1 ? '' : 's'}` : stationIconCopierRuntime.scannedAt ? 'Consistency audit complete · no repairs eligible' : 'No eligible exact matching stations found')); return; }
-        if (action === 'select-all-station-icon-centres') { stationIconSelectDispatches(true); return; }
-        if (action === 'clear-station-icon-centres') { stationIconSelectDispatches(false); return; }
+        if (action === 'scan-station-icons') { void scanStationIconTargets().then(queue => showToast(queue.length ? `${queue.length} exact matching station${queue.length === 1 ? '' : 's'} ready` : 'No eligible exact matching stations found')); return; }
         if (action === 'select-all-station-icons') { stationIconSelectTargets(true); return; }
         if (action === 'clear-station-icons') { stationIconSelectTargets(false); return; }
         if (action === 'apply-station-icons') { void startStationIconCopier(); return; }
@@ -36018,21 +35755,18 @@ Each target will be rechecked, submitted through its current native building-edi
             renderDispatchRecruitmentPanel();
             return;
         }
-        if (setting === 'station-icon-centre-option') {
+        if (setting === 'station-icon-centre') {
             const dispatchId = String(target.value || '');
-            if (!stationIconCopierRuntime.dispatches.some(item => item.id === dispatchId)) {
+            if (dispatchId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !stationIconCopierRuntime.dispatches.some(item => item.id === dispatchId)) {
                 updateUI();
                 showToast('Choose a Dispatch Centre loaded from MissionChief');
                 return;
             }
-            const selected = new Set(stationIconResolvedDispatchIds());
-            if (target.checked) selected.add(dispatchId);
-            else selected.delete(dispatchId);
-            state.stationIconCopier.dispatchIds = stationIconCopierRuntime.dispatches.map(item => item.id).filter(id => selected.has(id));
-            if (!stationIconSourceChoices().some(record => record.id === state.stationIconCopier.sourceBuildingId)) state.stationIconCopier.sourceBuildingId = '';
+            state.stationIconCopier.dispatchId = dispatchId;
+            if (!stationIconSourceChoices(dispatchId).some(record => record.id === state.stationIconCopier.sourceBuildingId)) state.stationIconCopier.sourceBuildingId = '';
             clearStationIconScan();
             saveState(); updateUI();
-            showToast(`Station Icon Copier: ${state.stationIconCopier.dispatchIds.length} Dispatch Centre${state.stationIconCopier.dispatchIds.length === 1 ? '' : 's'} selected`);
+            showToast(`Station Icon Copier: ${dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? 'ALL DISPATCH CENTRES' : stationIconCopierRuntime.dispatches.find(item => item.id === dispatchId)?.name || 'centre selected'}`);
             return;
         }
         if (setting === 'station-icon-source') {
@@ -36053,11 +35787,7 @@ Each target will be rechecked, submitted through its current native building-edi
             state.stationIconCopier.replaceMode = STATION_ICON_REPLACE_OPTIONS.includes(String(target.value)) ? String(target.value) : STATION_ICON_REPLACE_DEFAULTS;
             clearStationIconScan();
             saveState(); updateUI();
-            showToast(state.stationIconCopier.replaceMode === STATION_ICON_REPLACE_ALL
-                ? 'Station Icon Copier: selected custom icons may be replaced after confirmation'
-                : state.stationIconCopier.replaceMode === STATION_ICON_REPLACE_INCONSISTENT
-                    ? 'Station Icon Copier: only pixel-verified inconsistencies will be repaired'
-                    : 'Station Icon Copier: existing custom icons protected');
+            showToast(state.stationIconCopier.replaceMode === STATION_ICON_REPLACE_ALL ? 'Station Icon Copier: selected custom icons may be replaced after confirmation' : 'Station Icon Copier: existing custom icons protected');
             return;
         }
         if (setting === 'station-icon-delay') {

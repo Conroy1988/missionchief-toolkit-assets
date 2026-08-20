@@ -1,14 +1,14 @@
 # Changelog
 
-## [10.12.0] - 2026-08-20
+## [10.12.1] - 2026-08-20
 
-### Station Icon consistency manager
+### Station Icon Copier rollback
 
-- Allows any explicit combination of loaded Dispatch Centres, with select-all and clear controls plus safe migration from the previous single-centre preference.
-- Audits decoded pixels for every exact same-type and small/full-size station, then shows an overall consistency score and a detailed per-centre breakdown.
-- Adds Fix inconsistencies only, selecting default icons and verified pixel differences while leaving unreadable custom icons unverified and protected.
-- Rechecks the scanned source signature and each audited custom target before writing, so a post-scan image change is skipped or invalidates the complete plan.
-- Updates consistency scores after verified repairs while preserving native-form field protection, sequential pacing, post-save pixel checks, Stop and fatal safety stops.
+- Removes the multi-centre consistency manager introduced in v10.12.0 and restores Station Icon Copier to its v10.11.1 workflow.
+- Restores one Dispatch Centre or ALL DISPATCH CENTRES selection, protected existing custom icons by default and the explicit replacement option.
+- Removes inconsistency-only repair, icon consistency scores, multi-centre checkbox scope and their saved-state migration.
+- Retains exact station type and small/full matching, native form preservation, sequential pacing, Stop, fresh state checks and post-save pixel verification.
+- Publishes a clean v10.12.1 corrective release so installed users move forward from v10.12.0 without losing unrelated Toolkit fixes.
 
 ## [10.11.1] - 2026-08-19
 

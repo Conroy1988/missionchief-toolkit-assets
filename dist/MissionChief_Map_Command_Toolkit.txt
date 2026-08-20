@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.13.0
+// @version      10.13.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.13.0',
+        version: '10.13.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -527,14 +527,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.13.0",
-        title: "Native map visibility shortcuts",
+        version: "10.13.1",
+        title: "Complete vehicle visibility toggle",
         highlights: Object.freeze([
-            "Makes buttons 1–4 drive MissionChief’s own Personal Missions, Alliance Missions, Vehicles and My Buildings filters directly without opening or scrolling the native menu.",
-            "Keeps the Toolkit buttons synchronized when the same native filters are changed from MissionChief’s menu.",
-            "Maps button 4 only to My Buildings; MissionChief’s separate Alliance Buildings toggle remains independent and untouched.",
-            "Carries existing Toolkit visibility choices into native filters once; fresh installs and later sessions treat MissionChief’s saved filter state as authoritative.",
-            "Uses bounded startup retries and per-feature fallback without a new poller, while avoiding duplicate marker classification when native filters are available."
+            "Fixes Vehicles OFF hiding only the subset covered by MissionChief’s native vehicle control.",
+            "Combines the native filter with Toolkit vehicle-marker classification so custom and secondary vehicle icons hide as one complete fleet.",
+            "Restores every classified vehicle when Vehicles is turned back on while leaving missions, My Buildings and Alliance Buildings unchanged.",
+            "Keeps the background-native shortcut and adds no new observer, timer or polling loop."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -21797,7 +21796,10 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function nativeVisibilityFallbackNeeded(feature) {
-        return !nativeVisibilityBoundFeatures.has(feature);
+        // The MissionChief vehicle control can cover only one of the live vehicle marker
+        // populations. Keep classifying the complete registry as a CSS supplement even
+        // when the native control is bound; other features can fully hand off to native.
+        return feature === 'vehicles' || !nativeVisibilityBoundFeatures.has(feature);
     }
 
     function applyNativeVisibilityPreference(feature, desired, { persistMigration = true } = {}) {
@@ -33389,7 +33391,7 @@ Each target will be rechecked, submitted through its current native building-edi
     function applyMapVisibilityToggleEffects(feature) {
         const visibilityFeature = nativeVisibilityDescriptor(feature);
         const nativeHandled = visibilityFeature ? applyNativeVisibilityPreference(feature, state.visibility[feature]) : false;
-        if (feature === 'vehicles' && !nativeHandled) synchroniseVehicleMarkerClasses();
+        if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
         if (feature === 'buildings' && !nativeHandled) synchronisePersonalBuildingVisibility();
         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
         if (feature === 'missionAge') {

@@ -83,6 +83,29 @@ const controls = [
   makeControl("user_buildings", "My buildings", true),
   makeControl("alliance_buildings", "Alliance buildings", false),
 ];
+
+function makeMarkerIcon() {
+  const classes = new Set(["leaflet-marker-icon"]);
+  const attributes = new Map();
+  return {
+    nodeType: 1,
+    dataset: {},
+    classList: {
+      contains: className => classes.has(className),
+      toggle(className, enabled) {
+        if (enabled) classes.add(className);
+        else classes.delete(className);
+      },
+    },
+    getAttribute: name => attributes.get(name) ?? null,
+    setAttribute: (name, value) => attributes.set(name, String(value)),
+    hasAttribute: name => attributes.has(name),
+    removeAttribute: name => attributes.delete(name),
+  };
+}
+
+const nativeVehicleIcon = makeMarkerIcon();
+const secondaryVehicleIcon = makeMarkerIcon();
 let availableControls = controls;
 const root = {
   nodeType: 1,
@@ -130,6 +153,7 @@ const sandbox = {
   NATIVE_VISIBILITY_FEATURES: Object.freeze(["myMissions", "allianceMissions", "vehicles", "buildings"]),
   pageWindow: {
     I18n: { t: key => ({ "map_filters.user_missions": "My missions", "map_filters.alliance_missions": "Shared by alliance", "map_filters.user_buildings": "My buildings", "common.vehicles": "Vehicles" })[key] || key },
+    vehicle_markers: [{ _icon: nativeVehicleIcon }, { _icon: secondaryVehicleIcon }],
   },
   runtime: { destroyed: false },
   state: { visibility: { myMissions: true, allianceMissions: false, vehicles: true, buildings: true }, nativeVisibility: { migratedFeatures: [] }, economyMode: false },
@@ -139,7 +163,6 @@ const sandbox = {
   reconcileFeatureRefreshes() {},
   scheduleEconomyLayerSync() {},
   scheduleMarkerClassification() {},
-  synchroniseVehicleMarkerClasses() {},
   synchronisePersonalBuildingVisibility: () => { fallbackReleases += 1; },
   restorePersonalBuildingLayerOpacity: () => { opacityRestores += 1; },
   findLeafletMapInstance: () => map,
@@ -147,6 +170,9 @@ const sandbox = {
 
 vm.createContext(sandbox);
 const declarations = `
+const MARKER_REGISTRY_CACHE_MS=350;
+const MARKER_CLASS_NAMES=['mcms-marker-mission','mcms-marker-my-mission','mcms-marker-alliance-mission','mcms-marker-building','mcms-marker-personal-building','mcms-marker-vehicle','mcms-marker-unknown'];
+const markerRegistryCache=new Map();
 const nativeVisibilityBoundFeatures=new Set();
 const nativeVisibilitySessionInitialised=new Set();
 const nativeVisibilityPendingFeatures=new Set();
@@ -157,6 +183,8 @@ let nativeVisibilityWriteDepth=0;
 let toolkitFreshInstallAtLoad=false;
 `;
 const functionNames = [
+  "normaliseRegistryValues",
+  "getCachedRegistry",
   "normaliseNativeVisibilityToken",
   "normaliseNativeVisibilityLabel",
   "nativeVisibilityDescriptor",
@@ -182,12 +210,20 @@ const functionNames = [
   "applyNativeVisibilityPreference",
   "adoptNativeVisibilityFeature",
   "reconcileNativeVisibilityBridge",
+  "getVehicleMarkerLayers",
+  "getVehicleMarkerIcons",
+  "markVehicleIcon",
+  "synchroniseVehicleMarkerClasses",
+  "markerClassesForType",
+  "markerTypeIsApplied",
+  "applyMarkerType",
+  "applyMapVisibilityToggleEffects",
 ];
 vm.runInContext(declarations + functionNames.map(extractFunction).join("\n\n") + `
 this.__probe={
   findNativeVisibilityControl,nativeVisibilityFeatureForControl,writeNativeVisibilityState,
   applyNativeVisibilityPreference,adoptNativeVisibilityFeature,nativeVisibilityFallbackNeeded,
-  releasePersonalBuildingVisibilityFallback,reconcileNativeVisibilityBridge,
+  releasePersonalBuildingVisibilityFallback,reconcileNativeVisibilityBridge,applyMapVisibilityToggleEffects,
   resetBridge(fresh=false){
     nativeVisibilityBoundFeatures.clear();nativeVisibilitySessionInitialised.clear();nativeVisibilityPendingFeatures.clear();
     hiddenPersonalBuildingLayers.clear();personalBuildingLayerOpacity.clear();nativeVisibilityReconcileQueued=false;
@@ -236,6 +272,13 @@ assert.equal(adopted.changed, true);
 assert.equal(sandbox.state.visibility.vehicles, false);
 assert.equal(rootRefreshes, 1);
 assert.equal(uiRefreshes, 1);
+assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("vehicles"), true, "native vehicle binding must retain the complete-registry supplement");
+assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("buildings"), false, "the supplement must remain vehicle-only");
+sandbox.__probe.applyMapVisibilityToggleEffects("vehicles");
+for (const icon of [nativeVehicleIcon, secondaryVehicleIcon]) {
+  assert.equal(icon.classList.contains("mcms-marker-vehicle"), true, "every vehicle population must be classified");
+  assert.equal(icon.getAttribute("data-mcms-vehicle-marker"), "true");
+}
 
 sandbox.__probe.resetBridge(true);
 sandbox.state.visibility = { myMissions: true, allianceMissions: true, vehicles: true, buildings: true };
@@ -274,4 +317,4 @@ assert.equal(result.verified, true);
 assert.equal(mapLayers.has(legacyLayers.user_missions), false);
 assert.equal(mapEvents.at(-1)?.event, "overlayremove", "legacy filter mutation was not exposed to MissionChief persistence listeners");
 
-console.log("Native map visibility bridge runtime passed: native controls, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");
+console.log("Native map visibility bridge runtime passed: native controls, complete vehicle supplementation, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");

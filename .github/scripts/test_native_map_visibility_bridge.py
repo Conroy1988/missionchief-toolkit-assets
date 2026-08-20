@@ -17,7 +17,7 @@ metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", SOURCE)
 runtime = re.search(r"version:\s*'([^']+)'", SOURCE)
 assert metadata and runtime
 assert metadata.group(1) == runtime.group(1)
-assert version_tuple(metadata.group(1)) >= (10, 13, 0)
+assert version_tuple(metadata.group(1)) >= (10, 13, 1)
 
 for token in (
     "const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);",
@@ -46,6 +46,8 @@ for token in (
     "const nativeVisibilityFeature = handleNativeVisibilityControlEvent(event);",
     "adoptNativeVisibilityFeature(nativeVisibilityFeature);",
     "if (mutations.some(mutationTouchesNativeVisibilityControls)) scheduleNativeVisibilityReconcile(0);",
+    "return feature === 'vehicles' || !nativeVisibilityBoundFeatures.has(feature);",
+    "if (feature === 'vehicles') synchroniseVehicleMarkerClasses();",
     "if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();",
 ):
     assert token in SOURCE, token

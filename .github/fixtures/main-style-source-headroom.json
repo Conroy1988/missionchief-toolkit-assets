@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 736,
-    "version": "10.13.0",
-    "sourceBytes": 2565532,
-    "sourceLines": 38520,
-    "sourceSha256": "d313e67ec6d4c3469845110a1e3baf0b289b73e926f1ff7dedd6dca10d243d5c",
+    "issue": 738,
+    "version": "10.13.1",
+    "sourceBytes": 2565522,
+    "sourceLines": 38522,
+    "sourceSha256": "253d6b2b4bff29ffb52b495f1e618fc5dc4748eebbb58f5e7db9c762824fb4b0",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
@@ -141,6 +141,6 @@
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #736 native MissionChief visibility shortcuts, bidirectional filter state and strict My Buildings versus Alliance Buildings isolation"
+    "scope": "Issue #738 complete hybrid vehicle visibility across native, custom and secondary marker populations"
   }
 }

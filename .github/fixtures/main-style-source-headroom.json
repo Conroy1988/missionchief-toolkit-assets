@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 738,
-    "version": "10.13.1",
-    "sourceBytes": 2565522,
-    "sourceLines": 38522,
-    "sourceSha256": "253d6b2b4bff29ffb52b495f1e618fc5dc4748eebbb58f5e7db9c762824fb4b0",
+    "issue": 740,
+    "version": "10.13.2",
+    "sourceBytes": 2566638,
+    "sourceLines": 38545,
+    "sourceSha256": "13a20e44a5c1fb4ed3dd42859cc8688a9553a3d65827eaa3ea25d726c66320cb",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
@@ -136,11 +136,11 @@
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 203083,
-      "sourceLines": 3094,
+      "sourceBytes": 204199,
+      "sourceLines": 3117,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #738 complete hybrid vehicle visibility across native, custom and secondary marker populations"
+    "scope": "Issue #740 mission-first isolation for dual-registry vehicle and mission markers"
   }
 }

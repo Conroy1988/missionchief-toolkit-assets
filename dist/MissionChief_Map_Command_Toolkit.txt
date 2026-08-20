@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.13.1
+// @version      10.13.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.13.1',
+        version: '10.13.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -527,13 +527,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.13.1",
-        title: "Complete vehicle visibility toggle",
+        version: "10.13.2",
+        title: "Mission-safe vehicle visibility",
         highlights: Object.freeze([
-            "Fixes Vehicles OFF hiding only the subset covered by MissionChief’s native vehicle control.",
-            "Combines the native filter with Toolkit vehicle-marker classification so custom and secondary vehicle icons hide as one complete fleet.",
-            "Restores every classified vehicle when Vehicles is turned back on while leaving missions, My Buildings and Alliance Buildings unchanged.",
-            "Keeps the background-native shortcut and adds no new observer, timer or polling loop."
+            "Keeps mission icons visible when MissionChief exposes the same live marker through both its mission and vehicle registries.",
+            "Gives positive mission identity priority and clears any stale vehicle class or attribute from an overlapping marker.",
+            "Retains complete native, custom and secondary vehicle coverage while preserving Personal Missions, Alliance Missions and both building filters.",
+            "Adds no observer, listener, timer, polling loop, selector or network request."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -22276,25 +22276,48 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function synchroniseVehicleMarkerClasses() {
+        const { missionMarkerIcons, personalMissionIcons, allianceMissionIcons } = getMissionIconsByOwnership();
         const vehicleMarkerIcons = getVehicleMarkerIcons();
-        for (const icon of vehicleMarkerIcons) markVehicleIcon(icon);
+        for (const icon of vehicleMarkerIcons) {
+        if (missionMarkerIcons.has(icon)) continue;
+        markVehicleIcon(icon);
+        }
+        for (const icon of missionMarkerIcons) {
+        const leakedVehicleClassification = vehicleMarkerIcons.has(icon)
+            || icon.classList?.contains('mcms-marker-vehicle')
+            || icon.getAttribute?.('data-mcms-vehicle-marker') === 'true'
+            || icon.dataset?.mcmsMarkerKind === 'vehicle';
+        if (!leakedVehicleClassification) continue;
+        const existingMissionType = icon.dataset?.mcmsMarkerKind;
+        const missionType = personalMissionIcons.has(icon)
+            ? 'my-mission'
+            : allianceMissionIcons.has(icon)
+                ? 'alliance-mission'
+                : ['my-mission', 'alliance-mission'].includes(existingMissionType)
+                    ? existingMissionType
+                    : 'unknown';
+        applyMarkerType(icon, missionType);
+        vehicleMarkerIcons.delete(icon);
+        }
         return vehicleMarkerIcons;
     }
 
     function getMissionIconsByOwnership() {
+        const missionMarkerIcons = new Set();
         const personalMissionIcons = new Set();
         const allianceMissionIcons = new Set();
         const normalisedCurrentUserId = currentUserIdCached();
-        if (normalisedCurrentUserId === null) return { personalMissionIcons, allianceMissionIcons };
         for (const marker of getMissionMarkerLayers()) {
         if (!marker || marker.mission_id === undefined || marker.mission_id === null) continue;
         if (!marker._icon || marker._icon.nodeType !== 1) continue;
+        missionMarkerIcons.add(marker._icon);
+        if (normalisedCurrentUserId === null) continue;
         if (marker.user_id === undefined || marker.user_id === null) continue;
         if (String(marker.user_id) === normalisedCurrentUserId) personalMissionIcons.add(marker._icon);
         else allianceMissionIcons.add(marker._icon);
         }
 
-        return { personalMissionIcons, allianceMissionIcons };
+        return { missionMarkerIcons, personalMissionIcons, allianceMissionIcons };
     }
 
     const MARKER_CLASS_NAMES = [

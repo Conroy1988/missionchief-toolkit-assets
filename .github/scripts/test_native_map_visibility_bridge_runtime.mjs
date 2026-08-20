@@ -106,6 +106,10 @@ function makeMarkerIcon() {
 
 const nativeVehicleIcon = makeMarkerIcon();
 const secondaryVehicleIcon = makeMarkerIcon();
+const overlappingMissionIcon = makeMarkerIcon();
+overlappingMissionIcon.classList.toggle("mcms-marker-vehicle", true);
+overlappingMissionIcon.setAttribute("data-mcms-vehicle-marker", "true");
+overlappingMissionIcon.dataset.mcmsMarkerKind = "vehicle";
 let availableControls = controls;
 const root = {
   nodeType: 1,
@@ -153,7 +157,9 @@ const sandbox = {
   NATIVE_VISIBILITY_FEATURES: Object.freeze(["myMissions", "allianceMissions", "vehicles", "buildings"]),
   pageWindow: {
     I18n: { t: key => ({ "map_filters.user_missions": "My missions", "map_filters.alliance_missions": "Shared by alliance", "map_filters.user_buildings": "My buildings", "common.vehicles": "Vehicles" })[key] || key },
-    vehicle_markers: [{ _icon: nativeVehicleIcon }, { _icon: secondaryVehicleIcon }],
+    user_id: 7,
+    mission_markers: [{ mission_id: 740, user_id: 7, _icon: overlappingMissionIcon }],
+    vehicle_markers: [{ _icon: nativeVehicleIcon }, { _icon: secondaryVehicleIcon }, { _icon: overlappingMissionIcon }],
   },
   runtime: { destroyed: false },
   state: { visibility: { myMissions: true, allianceMissions: false, vehicles: true, buildings: true }, nativeVisibility: { migratedFeatures: [] }, economyMode: false },
@@ -166,6 +172,7 @@ const sandbox = {
   synchronisePersonalBuildingVisibility: () => { fallbackReleases += 1; },
   restorePersonalBuildingLayerOpacity: () => { opacityRestores += 1; },
   findLeafletMapInstance: () => map,
+  currentUserIdCached: () => "7",
 };
 
 vm.createContext(sandbox);
@@ -211,9 +218,11 @@ const functionNames = [
   "adoptNativeVisibilityFeature",
   "reconcileNativeVisibilityBridge",
   "getVehicleMarkerLayers",
+  "getMissionMarkerLayers",
   "getVehicleMarkerIcons",
   "markVehicleIcon",
   "synchroniseVehicleMarkerClasses",
+  "getMissionIconsByOwnership",
   "markerClassesForType",
   "markerTypeIsApplied",
   "applyMarkerType",
@@ -279,6 +288,10 @@ for (const icon of [nativeVehicleIcon, secondaryVehicleIcon]) {
   assert.equal(icon.classList.contains("mcms-marker-vehicle"), true, "every vehicle population must be classified");
   assert.equal(icon.getAttribute("data-mcms-vehicle-marker"), "true");
 }
+assert.equal(overlappingMissionIcon.classList.contains("mcms-marker-my-mission"), true, "mission identity must win a registry overlap");
+assert.equal(overlappingMissionIcon.classList.contains("mcms-marker-vehicle"), false, "overlapping mission retained the vehicle class");
+assert.equal(overlappingMissionIcon.getAttribute("data-mcms-vehicle-marker"), null, "overlapping mission retained the vehicle attribute");
+assert.equal(overlappingMissionIcon.dataset.mcmsMarkerKind, "my-mission", "overlapping mission ownership was not restored");
 
 sandbox.__probe.resetBridge(true);
 sandbox.state.visibility = { myMissions: true, allianceMissions: true, vehicles: true, buildings: true };
@@ -317,4 +330,4 @@ assert.equal(result.verified, true);
 assert.equal(mapLayers.has(legacyLayers.user_missions), false);
 assert.equal(mapEvents.at(-1)?.event, "overlayremove", "legacy filter mutation was not exposed to MissionChief persistence listeners");
 
-console.log("Native map visibility bridge runtime passed: native controls, complete vehicle supplementation, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");
+console.log("Native map visibility bridge runtime passed: native controls, complete mission-safe vehicle supplementation, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");

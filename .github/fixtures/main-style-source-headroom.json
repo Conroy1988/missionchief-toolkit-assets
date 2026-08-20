@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
   "candidateVersion": "5.0.7",
@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 734,
-    "version": "10.12.1",
-    "sourceBytes": 2540938,
-    "sourceLines": 38019,
-    "sourceSha256": "d960e9a240789ba4269e7be78956a04790bc6c006f29b55bab795abbdbfaf772",
+    "issue": 736,
+    "version": "10.13.0",
+    "sourceBytes": 2565532,
+    "sourceLines": 38520,
+    "sourceSha256": "d313e67ec6d4c3469845110a1e3baf0b289b73e926f1ff7dedd6dca10d243d5c",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
     "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2548000,
-    "maxSourceLines": 38150,
+    "maxSourceBytes": 2571000,
+    "maxSourceLines": 38620,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 178489,
-      "sourceLines": 2593,
+      "sourceBytes": 203083,
+      "sourceLines": 3094,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #734 rollback of the Station Icon consistency manager with the v10.11.1 copier workflow restored in corrective release v10.12.1"
+    "scope": "Issue #736 native MissionChief visibility shortcuts, bidirectional filter state and strict My Buildings versus Alliance Buildings isolation"
   }
 }

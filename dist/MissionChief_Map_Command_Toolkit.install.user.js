@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.12.1
+// @version      10.13.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.12.1',
+        version: '10.13.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -527,14 +527,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.12.1",
-        title: "Station Icon Copier rollback",
+        version: "10.13.0",
+        title: "Native map visibility shortcuts",
         highlights: Object.freeze([
-            "Removes the multi-centre consistency manager introduced in v10.12.0 and restores Station Icon Copier to its v10.11.1 workflow.",
-            "Restores one Dispatch Centre or ALL DISPATCH CENTRES selection, protected existing custom icons by default and the explicit replacement option.",
-            "Removes inconsistency-only repair, icon consistency scores, multi-centre checkbox scope and their saved-state migration.",
-            "Retains exact station type and small/full matching, native form preservation, sequential pacing, Stop, fresh state checks and post-save pixel verification.",
-            "Publishes a clean v10.12.1 corrective release so installed users move forward from v10.12.0 without losing unrelated Toolkit fixes."
+            "Makes buttons 1–4 drive MissionChief’s own Personal Missions, Alliance Missions, Vehicles and My Buildings filters directly without opening or scrolling the native menu.",
+            "Keeps the Toolkit buttons synchronized when the same native filters are changed from MissionChief’s menu.",
+            "Maps button 4 only to My Buildings; MissionChief’s separate Alliance Buildings toggle remains independent and untouched.",
+            "Carries existing Toolkit visibility choices into native filters once; fresh installs and later sessions treat MissionChief’s saved filter state as authoritative.",
+            "Uses bounded startup retries and per-feature fallback without a new poller, while avoiding duplicate marker classification when native filters are available."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1331,6 +1331,34 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const STARTUP_SETTLE_WINDOW_MS = 8000;
     const STARTUP_MUTATION_DEBOUNCE_MS = 520;
     const BUILDING_VISIBILITY_RECHECK_MS = 4000;
+    const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);
+    const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']);
+    const NATIVE_VISIBILITY_FILTERS = Object.freeze({
+        myMissions: Object.freeze({
+        filterId: 'user_missions',
+        aliases: Object.freeze(['user_missions', 'my_missions', 'personal_missions']),
+        labels: Object.freeze(['My missions', 'Personal missions']),
+        i18n: Object.freeze(['map_filters.user_missions'])
+        }),
+        allianceMissions: Object.freeze({
+        filterId: 'alliance_missions',
+        aliases: Object.freeze(['alliance_missions', 'shared_missions']),
+        labels: Object.freeze(['Alliance missions', 'Shared by alliance']),
+        i18n: Object.freeze(['map_filters.alliance_missions'])
+        }),
+        vehicles: Object.freeze({
+        filterId: '',
+        aliases: Object.freeze(['vehicles', 'vehicle_markers', 'show_vehicle', 'show_vehicles']),
+        labels: Object.freeze(['Vehicles', 'Show vehicles', 'Show vehicles on map']),
+        i18n: Object.freeze(['common.vehicles', 'map.vehicles', 'settings.show_vehicle'])
+        }),
+        buildings: Object.freeze({
+        filterId: 'user_buildings',
+        aliases: Object.freeze(['user_buildings', 'my_buildings', 'personal_buildings', 'own_buildings']),
+        labels: Object.freeze(['My buildings', 'Personal buildings', 'Own buildings']),
+        i18n: Object.freeze(['map_filters.user_buildings'])
+        })
+    });
     const MAP_DISCOVERY_RETRY_MS = 2000;
     const FALLBACK_MISSION_REFRESH_MS = 15 * 1000;
     const MISSION_PROGRESS_PAGE_REFRESH_MS = 30 * 1000;
@@ -1579,6 +1607,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let fitTimer = null;
     let dragState = null;
     let suppressNextOutsideClick = false;
+    const nativeVisibilityBoundFeatures = new Set();
+    const nativeVisibilitySessionInitialised = new Set();
+    const nativeVisibilityPendingFeatures = new Set();
+    let nativeVisibilityReconcileQueued = false;
+    let nativeVisibilityWriteDepth = 0;
+    let nativeVisibilityBridgeInstalled = false;
     const hiddenPersonalBuildingLayers = new Set();
     const personalBuildingLayerOpacity = new Map();
     let enforcingPersonalBuildingVisibility = false;
@@ -2182,6 +2216,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         nudge: { x: 0, y: 0 },
         panelPosition: null,
         visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
+        nativeVisibility: { migratedFeatures: [] },
         quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
         coverage: { enabled: false, radiusMi: 10 },
         bookmarks: [null, null, null, null, null]
@@ -2194,6 +2229,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         ...parsed,
         nudge: { ...base.nudge, ...(parsed.nudge || {}) },
         visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+        nativeVisibility: { ...base.nativeVisibility, ...(parsed.nativeVisibility || {}) },
         quickPins: normaliseQuickPins(parsed.quickPins, base.quickPins),
         coverage: { ...base.coverage, ...(parsed.coverage || {}) },
         stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
@@ -2294,6 +2330,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         )).slice(-12);
         merged.pressureBoard.includeAllianceMissions = merged.pressureBoard.includeAllianceMissions === true;
         merged.pressureBoard.timelineLoggingEnabled = merged.pressureBoard.timelineLoggingEnabled === true;
+        merged.nativeVisibility.migratedFeatures = Array.from(new Set(
+        (Array.isArray(merged.nativeVisibility.migratedFeatures) ? merged.nativeVisibility.migratedFeatures : [])
+            .filter(feature => NATIVE_VISIBILITY_FEATURES.includes(feature))
+        ));
         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
         merged.transportSweep.backgroundFirst = merged.transportSweep.backgroundFirst !== false;
@@ -21481,6 +21521,434 @@ Each target will be rechecked, submitted through its current native building-edi
         if (announce) showToast(next ? 'Maximum Economy Mode on · decorative effects stopped and map work minimised' : 'Economy Mode off · full rendering restored');
     }
 
+    function normaliseNativeVisibilityToken(value) {
+        return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/gu, '_').replace(/^_+|_+$/gu, '');
+    }
+
+    function normaliseNativeVisibilityLabel(value) {
+        return String(value || '').replace(/\s+/gu, ' ').trim().toLowerCase();
+    }
+
+    function nativeVisibilityDescriptor(feature) {
+        return NATIVE_VISIBILITY_FILTERS[feature] || null;
+    }
+
+    function nativeVisibilityTranslatedLabels(feature) {
+        const descriptor = nativeVisibilityDescriptor(feature);
+        if (!descriptor) return [];
+        const labels = new Set(descriptor.labels.map(normaliseNativeVisibilityLabel).filter(Boolean));
+        const translator = pageWindow.I18n?.t;
+        if (typeof translator === 'function') {
+        for (const key of descriptor.i18n) {
+            try {
+            const translated = String(translator.call(pageWindow.I18n, key) || '');
+            if (!/translation missing|missing translation/iu.test(translated)) labels.add(normaliseNativeVisibilityLabel(translated));
+            } catch (err) {}
+        }
+        }
+        return Array.from(labels).filter(Boolean);
+    }
+
+    function nativeVisibilityElementById(id) {
+        return document.getElementById(id);
+    }
+
+    function nativeVisibilityControlRoots() {
+        const roots = [];
+        const seen = new Set();
+        const add = element => {
+        if (!element || seen.has(element) || typeof element.getElementsByTagName !== 'function') return;
+        seen.add(element);
+        roots.push(element);
+        };
+        add(nativeVisibilityElementById('map_filters'));
+        for (const className of ['map-filters-list', 'leaflet-control-layers']) {
+        try { Array.from(document.getElementsByClassName(className)).forEach(add); } catch (err) {}
+        }
+        const trigger = nativeVisibilityElementById('dropdownMapFiltersBtn');
+        add(trigger?.closest?.('[data-map-filters], .dropdown, .btn-group, .leaflet-control') || trigger?.parentElement);
+        return roots;
+    }
+
+    function nativeVisibilityControlBelongsToToolkit(control) {
+        if (!control?.closest) return false;
+        return Boolean(control.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.commandPaletteId}`));
+    }
+
+    function nativeVisibilityControlTokens(control) {
+        if (!control) return [];
+        const values = [
+        control.value,
+        control.id,
+        control.name,
+        control.getAttribute?.('data-filter-id'),
+        control.getAttribute?.('data-map-filter'),
+        control.getAttribute?.('data-layer-id'),
+        control.getAttribute?.('data-filter')
+        ];
+        return values.map(normaliseNativeVisibilityToken).filter(Boolean);
+    }
+
+    function nativeVisibilityControlLabel(control) {
+        if (!control) return '';
+        const labels = [];
+        try { Array.from(control.labels || []).forEach(label => labels.push(label.textContent)); } catch (err) {}
+        const wrapper = control.closest?.('label, li, .filter_list__item, .leaflet-control-layers-overlays > label');
+        if (wrapper) labels.push(wrapper.textContent);
+        labels.push(control.getAttribute?.('aria-label'), control.getAttribute?.('title'));
+        return normaliseNativeVisibilityLabel(labels.filter(Boolean).join(' '));
+    }
+
+    function nativeVisibilityControlMatchesFeature(control, feature, { allowLabel = true } = {}) {
+        const descriptor = nativeVisibilityDescriptor(feature);
+        if (!descriptor || !control || nativeVisibilityControlBelongsToToolkit(control)) return false;
+        const aliases = descriptor.aliases.map(normaliseNativeVisibilityToken);
+        const tokenMatch = nativeVisibilityControlTokens(control).some(token => aliases.some(alias => (
+        token === alias || token.endsWith(`_${alias}`) || token.startsWith(`${alias}_`)
+        )));
+        if (tokenMatch) return true;
+        if (!allowLabel) return false;
+        const label = nativeVisibilityControlLabel(control);
+        if (!label) return false;
+        return nativeVisibilityTranslatedLabels(feature).some(candidate => (
+        label === candidate || label.startsWith(`${candidate} `) || label.endsWith(` ${candidate}`)
+        ));
+    }
+
+    function nativeVisibilityInteractiveControls(root) {
+        if (!root?.getElementsByTagName) return [];
+        const controls = [];
+        if (root.matches?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]')) controls.push(root);
+        try {
+        controls.push(...Array.from(root.getElementsByTagName('*')).filter(control => (
+            control.matches?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]')
+        )));
+        } catch (err) {}
+        return controls;
+    }
+
+    function findNativeVisibilityControl(feature) {
+        const roots = nativeVisibilityControlRoots();
+        for (const root of roots) {
+        const match = nativeVisibilityInteractiveControls(root).find(control => nativeVisibilityControlMatchesFeature(control, feature));
+        if (match) return match;
+        }
+        const descriptor = nativeVisibilityDescriptor(feature);
+        if (!descriptor) return null;
+        const exactControls = [];
+        const seen = new Set();
+        const add = control => {
+        if (!control || seen.has(control)) return;
+        seen.add(control);
+        exactControls.push(control);
+        };
+        for (const alias of descriptor.aliases) {
+        add(nativeVisibilityElementById(alias));
+        add(nativeVisibilityElementById(`map_filter_${alias}`));
+        try { Array.from(document.getElementsByName(alias)).forEach(add); } catch (err) {}
+        }
+        for (const tagName of ['input', 'button']) {
+        try {
+            Array.from(document.getElementsByTagName(tagName))
+            .filter(control => nativeVisibilityControlMatchesFeature(control, feature, { allowLabel: false }))
+            .forEach(add);
+        } catch (err) {}
+        }
+        return exactControls.find(control => (
+        nativeVisibilityControlState(control) !== null &&
+        nativeVisibilityControlMatchesFeature(control, feature, { allowLabel: false })
+        )) || null;
+    }
+
+    function nativeVisibilityFeatureForControl(control) {
+        if (!control || nativeVisibilityControlBelongsToToolkit(control)) return '';
+        for (const feature of NATIVE_VISIBILITY_FEATURES) {
+        if (nativeVisibilityControlMatchesFeature(control, feature, { allowLabel: false })) return feature;
+        }
+        const inNativeRoot = nativeVisibilityControlRoots().some(root => root === control || root.contains?.(control));
+        if (!inNativeRoot) return '';
+        for (const feature of NATIVE_VISIBILITY_FEATURES) {
+        if (nativeVisibilityControlMatchesFeature(control, feature)) return feature;
+        }
+        return '';
+    }
+
+    function nativeVisibilityControlState(control) {
+        if (!control) return null;
+        if (control.matches?.('input[type="checkbox"]')) return Boolean(control.checked);
+        for (const attribute of ['aria-checked', 'aria-pressed', 'data-checked', 'data-active']) {
+        if (!control.hasAttribute?.(attribute)) continue;
+        const value = String(control.getAttribute(attribute)).toLowerCase();
+        if (value === 'true' || value === '1') return true;
+        if (value === 'false' || value === '0') return false;
+        }
+        return null;
+    }
+
+    function nativeVisibilityServiceState(feature) {
+        const descriptor = nativeVisibilityDescriptor(feature);
+        if (!descriptor?.filterId) return null;
+        const filterId = descriptor.filterId;
+        const modern = pageWindow.xy_map_filters_service;
+        try {
+        const layers = modern?.getMapFiltersLayers?.();
+        if (layers && Object.prototype.hasOwnProperty.call(layers, filterId) && typeof modern.isFilterEnabled === 'function') {
+            return { available: true, value: Boolean(modern.isFilterEnabled(filterId)), source: 'xy-filter-service' };
+        }
+        } catch (err) {}
+        const legacy = pageWindow.map_filters_service;
+        try {
+        const layers = legacy?.getMapFiltersLayers?.();
+        if (!layers || !Object.prototype.hasOwnProperty.call(layers, filterId)) return null;
+        const layer = legacy.getLayerByLayerId?.(filterId) || layers[filterId];
+        const map = findLeafletMapInstance(false);
+        if (!map || !layer) return null;
+        const value = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : layer._map === map;
+        return { available: true, value: Boolean(value), source: 'leaflet-filter-layer', layer, map };
+        } catch (err) {
+        return null;
+        }
+    }
+
+    function readNativeVisibilityState(feature) {
+        const control = findNativeVisibilityControl(feature);
+        const controlState = nativeVisibilityControlState(control);
+        if (controlState !== null) return { available: true, value: controlState, source: 'native-control', control };
+        const serviceState = nativeVisibilityServiceState(feature);
+        if (serviceState) return serviceState;
+        if (feature === 'vehicles') {
+        try {
+            if (typeof pageWindow.show_vehicle === 'boolean') return { available: true, value: pageWindow.show_vehicle, source: 'vehicle-runtime' };
+        } catch (err) {}
+        }
+        return { available: false, value: null, source: 'fallback' };
+    }
+
+    function dispatchNativeVisibilityControl(control, desired) {
+        if (!control || control.disabled || control.getAttribute?.('aria-disabled') === 'true') return false;
+        const current = nativeVisibilityControlState(control);
+        if (current === desired) return true;
+        nativeVisibilityWriteDepth += 1;
+        try {
+        if (typeof control.click === 'function') control.click();
+        let verified = nativeVisibilityControlState(control);
+        if (verified !== desired && control.matches?.('input[type="checkbox"]')) {
+            control.checked = desired;
+            const ViewEvent = control.ownerDocument?.defaultView?.Event || pageWindow.Event || Event;
+            control.dispatchEvent(new ViewEvent('change', { bubbles: true }));
+            verified = nativeVisibilityControlState(control);
+        }
+        return verified === desired;
+        } catch (err) {
+        return false;
+        } finally {
+        nativeVisibilityWriteDepth = Math.max(0, nativeVisibilityWriteDepth - 1);
+        }
+    }
+
+    function writeNativeVisibilityState(feature, desired) {
+        const wanted = Boolean(desired);
+        const control = findNativeVisibilityControl(feature);
+        if (control && dispatchNativeVisibilityControl(control, wanted)) {
+        return { handled: true, verified: true, source: 'native-control' };
+        }
+        const serviceState = nativeVisibilityServiceState(feature);
+        if (serviceState?.source === 'leaflet-filter-layer' && serviceState.map && serviceState.layer) {
+        nativeVisibilityWriteDepth += 1;
+        try {
+            const changed = wanted !== serviceState.value;
+            if (wanted && changed) serviceState.map.addLayer?.(serviceState.layer);
+            if (!wanted && changed) serviceState.map.removeLayer?.(serviceState.layer);
+            if (changed) serviceState.map.fire?.(wanted ? 'overlayadd' : 'overlayremove', { layer: serviceState.layer, filterId: nativeVisibilityDescriptor(feature)?.filterId || '' });
+            const verified = nativeVisibilityServiceState(feature);
+            return { handled: Boolean(verified?.available), verified: verified?.value === wanted, source: 'leaflet-filter-layer' };
+        } catch (err) {
+            return { handled: false, verified: false, source: 'fallback' };
+        } finally {
+            nativeVisibilityWriteDepth = Math.max(0, nativeVisibilityWriteDepth - 1);
+        }
+        }
+        return { handled: false, verified: false, source: 'fallback' };
+    }
+
+    function releasePersonalBuildingVisibilityFallback() {
+        const layers = new Set([...hiddenPersonalBuildingLayers, ...personalBuildingLayerOpacity.keys()]);
+        if (!layers.size) return;
+        if (state.visibility.buildings) {
+        const map = findLeafletMapInstance(false);
+        if (map) {
+            synchronisePersonalBuildingVisibility(map);
+            return;
+        }
+        }
+        hiddenPersonalBuildingLayers.clear();
+        for (const layer of layers) restorePersonalBuildingLayerOpacity(layer);
+    }
+
+    function nativeVisibilityFeatureMigrated(feature) {
+        return state.nativeVisibility.migratedFeatures.includes(feature);
+    }
+
+    function markNativeVisibilityFeatureMigrated(feature) {
+        if (nativeVisibilityFeatureMigrated(feature)) return false;
+        state.nativeVisibility.migratedFeatures.push(feature);
+        state.nativeVisibility.migratedFeatures = NATIVE_VISIBILITY_FEATURES.filter(item => state.nativeVisibility.migratedFeatures.includes(item));
+        return true;
+    }
+
+    function nativeVisibilityFallbackNeeded(feature) {
+        return !nativeVisibilityBoundFeatures.has(feature);
+    }
+
+    function applyNativeVisibilityPreference(feature, desired, { persistMigration = true } = {}) {
+        if (!nativeVisibilityDescriptor(feature)) return false;
+        const result = writeNativeVisibilityState(feature, desired);
+        if (!result.handled || !result.verified) {
+        nativeVisibilityBoundFeatures.delete(feature);
+        nativeVisibilitySessionInitialised.delete(feature);
+        nativeVisibilityPendingFeatures.add(feature);
+        return false;
+        }
+        nativeVisibilityBoundFeatures.add(feature);
+        nativeVisibilitySessionInitialised.add(feature);
+        nativeVisibilityPendingFeatures.delete(feature);
+        const migrated = markNativeVisibilityFeatureMigrated(feature);
+        if (feature === 'buildings') releasePersonalBuildingVisibilityFallback();
+        if (migrated && persistMigration) saveState();
+        return true;
+    }
+
+    function adoptNativeVisibilityFeature(feature, { persist = true, refresh = true } = {}) {
+        const snapshot = readNativeVisibilityState(feature);
+        if (!snapshot.available) return { handled: false, changed: false, migrated: false };
+        nativeVisibilityBoundFeatures.add(feature);
+        nativeVisibilitySessionInitialised.add(feature);
+        nativeVisibilityPendingFeatures.delete(feature);
+        const changed = state.visibility[feature] !== snapshot.value;
+        state.visibility[feature] = snapshot.value;
+        const migrated = markNativeVisibilityFeatureMigrated(feature);
+        if (feature === 'buildings') releasePersonalBuildingVisibilityFallback();
+        if (changed || migrated) {
+        if (persist) saveState();
+        if (refresh) {
+            applyRootAttributes();
+            updateUI();
+            if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+            reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
+        }
+        }
+        return { handled: true, changed, migrated };
+    }
+
+    function reconcileNativeVisibilityBridge() {
+        nativeVisibilityReconcileQueued = false;
+        if (runtime.destroyed) return;
+        let stateChanged = false;
+        let economyVisibilityChanged = false;
+        for (const feature of NATIVE_VISIBILITY_FEATURES) {
+        const snapshot = readNativeVisibilityState(feature);
+        if (!snapshot.available) {
+            const wasBound = nativeVisibilityBoundFeatures.delete(feature);
+            nativeVisibilitySessionInitialised.delete(feature);
+            if (wasBound && !state.visibility[feature]) {
+            if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
+            if (feature === 'buildings') synchronisePersonalBuildingVisibility();
+            if (feature === 'myMissions' || feature === 'allianceMissions') scheduleMarkerClassification();
+            }
+            continue;
+        }
+        if (nativeVisibilityPendingFeatures.has(feature)) {
+            const wasMigrated = nativeVisibilityFeatureMigrated(feature);
+            if (applyNativeVisibilityPreference(feature, state.visibility[feature], { persistMigration: false })) {
+            stateChanged ||= !wasMigrated && nativeVisibilityFeatureMigrated(feature);
+            }
+            continue;
+        }
+        if (!nativeVisibilityFeatureMigrated(feature)) {
+            if (toolkitFreshInstallAtLoad) {
+            const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
+            stateChanged ||= adopted.changed || adopted.migrated;
+            economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
+            continue;
+            }
+            const wasMigrated = nativeVisibilityFeatureMigrated(feature);
+            if (applyNativeVisibilityPreference(feature, state.visibility[feature], { persistMigration: false })) {
+            stateChanged ||= !wasMigrated && nativeVisibilityFeatureMigrated(feature);
+            }
+            continue;
+        }
+        if (!nativeVisibilitySessionInitialised.has(feature)) {
+            const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
+            stateChanged ||= adopted.changed || adopted.migrated;
+            economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
+            continue;
+        }
+        if (nativeVisibilityWriteDepth === 0 && state.visibility[feature] !== snapshot.value) {
+            const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
+            stateChanged ||= adopted.changed || adopted.migrated;
+            economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
+        }
+        }
+        if (stateChanged) {
+        saveState();
+        applyRootAttributes();
+        updateUI();
+        if (state.economyMode && economyVisibilityChanged) scheduleEconomyLayerSync(0);
+        reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
+        }
+    }
+
+    function scheduleNativeVisibilityReconcile(delay = 0) {
+        const delayMs = Math.max(0, Number(delay) || 0);
+        if (delayMs > 0) {
+        void runtimeDelay(delayMs).then(completed => {
+            if (completed) scheduleNativeVisibilityReconcile(0);
+        });
+        return;
+        }
+        if (nativeVisibilityReconcileQueued || runtime.destroyed) return;
+        nativeVisibilityReconcileQueued = true;
+        Promise.resolve().then(() => {
+        if (!runtime.destroyed) reconcileNativeVisibilityBridge();
+        else nativeVisibilityReconcileQueued = false;
+        });
+    }
+
+    function mutationTouchesNativeVisibilityControls(mutation) {
+        const nodes = [mutation?.target, ...Array.from(mutation?.addedNodes || [])];
+        return nodes.some(node => {
+        if (!node || node.nodeType !== 1) return false;
+        if (node.id === 'map_filters' || node.id === 'dropdownMapFiltersBtn') return true;
+        try {
+            if (node.closest?.('#map_filters, .leaflet-control-layers')) return true;
+            return Boolean(node.querySelector?.('#map_filters, #dropdownMapFiltersBtn, .leaflet-control-layers'));
+        } catch (err) {
+            return false;
+        }
+        });
+    }
+
+    function handleNativeVisibilityControlEvent(event) {
+        const control = event?.target?.closest?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]');
+        if (!control) return '';
+        return nativeVisibilityFeatureForControl(control);
+    }
+
+    function installNativeVisibilityBridge() {
+        if (nativeVisibilityBridgeInstalled) return;
+        nativeVisibilityBridgeInstalled = true;
+        for (const delay of NATIVE_VISIBILITY_RETRY_DELAYS_MS) scheduleNativeVisibilityReconcile(delay);
+    }
+
+    runtimeOnCleanup(() => {
+        nativeVisibilityReconcileQueued = false;
+        nativeVisibilityBoundFeatures.clear();
+        nativeVisibilitySessionInitialised.clear();
+        nativeVisibilityPendingFeatures.clear();
+        nativeVisibilityBridgeInstalled = false;
+        nativeVisibilityWriteDepth = 0;
+    });
+
     function getVehicleMarkerLayers() {
         return getCachedRegistry('vehicle_markers');
     }
@@ -21905,8 +22373,8 @@ Each target will be rechecked, submitted through its current native building-edi
         if (trailing) markerStateTrailingTimer = null;
         else markerStateSyncTimer = null;
         if (runtime.destroyed || document.hidden) return;
-        if (!state.visibility.vehicles || state.markerFocus) synchroniseVehicleMarkerClasses();
-        if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+        if ((nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) || state.markerFocus) synchroniseVehicleMarkerClasses();
+        if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();
         if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
         };
         const id = runtimeSetTimeout(callback, Math.max(0, Number(delay) || 0));
@@ -21924,8 +22392,10 @@ Each target will be rechecked, submitted through its current native building-edi
         if (state.safeMode.enabled) return false;
         return Boolean(
         state.markerFocus || state.missionPulse ||
-        !state.visibility.vehicles || !state.visibility.buildings ||
-        !state.visibility.myMissions || !state.visibility.allianceMissions
+        (nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) ||
+        (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) ||
+        (nativeVisibilityFallbackNeeded('myMissions') && !state.visibility.myMissions) ||
+        (nativeVisibilityFallbackNeeded('allianceMissions') && !state.visibility.allianceMissions)
         );
     }
 
@@ -22235,7 +22705,7 @@ Each target will be rechecked, submitted through its current native building-edi
         if (state.markerFocus && isVehicleLayer) scheduleMarkerStateSync(0, false);
         if (scope === 'building') {
             const isPersonalBuilding = markPersonalBuildingLayerIfOwned(layer);
-            if (isPersonalBuilding && !state.visibility.buildings) hidePersonalBuildingLayer(map, layer);
+            if (isPersonalBuilding && nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) hidePersonalBuildingLayer(map, layer);
             if (!isPersonalBuilding) suppressLeakedAllianceBuildingLayer(map, layer);
         }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all', positionPanel: false });
@@ -22257,6 +22727,7 @@ Each target will be rechecked, submitted through its current native building-edi
         };
 
         const onNativeOverlayChange = () => {
+        scheduleNativeVisibilityReconcile(0);
         if (deferMapInteractionRefresh({ scope: 'building', markerSync: true })) return;
         invalidateMarkerRegistryCaches('building');
         scheduleMarkerStateSync(0, false);
@@ -22272,7 +22743,12 @@ Each target will be rechecked, submitted through its current native building-edi
         if (event?.type === 'viewreset' && mapInteractionMoving) return;
         mapInteractionMoving = false;
         mapInteractionSettling = true;
-        mapInteractionMarkerSyncNeeded ||= Boolean(!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement(map));
+        mapInteractionMarkerSyncNeeded ||= Boolean(
+            (nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) ||
+            state.markerFocus ||
+            (nativeVisibilityFallbackNeeded('buildings') && !enforcingPersonalBuildingVisibility && !state.visibility.buildings) ||
+            nativeAllianceBuildingFilterMayNeedEnforcement(map)
+        );
         document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
         scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: true, refreshOperational: false, mapOnly: true });
         };
@@ -26782,8 +27258,9 @@ Each target will be rechecked, submitted through its current native building-edi
         renderProfiles();
         renderScreenPins();
         updateUI();
-        synchroniseVehicleMarkerClasses();
-        synchronisePersonalBuildingVisibility();
+        for (const feature of NATIVE_VISIBILITY_FEATURES) applyNativeVisibilityPreference(feature, state.visibility[feature]);
+        if (nativeVisibilityFallbackNeeded('vehicles')) synchroniseVehicleMarkerClasses();
+        if (nativeVisibilityFallbackNeeded('buildings')) synchronisePersonalBuildingVisibility();
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
     }
 
@@ -32909,7 +33386,25 @@ Each target will be rechecked, submitted through its current native building-edi
         else return false;
         return true;
     }
-    function applyMapVisibilityToggleEffects(feature) { if(feature==='vehicles')synchroniseVehicleMarkerClasses();if(feature==='buildings')synchronisePersonalBuildingVisibility();if(state.economyMode&&(feature==='vehicles'||feature==='buildings'))scheduleEconomyLayerSync(0);if(feature==='missionAge'){runtimeClearTimeout(missionAgeTimer);missionAgeTimer=null;if(state.missionAge){inlineMissionDataScanned=false;scanInlineMissionMarkerData(true);invalidateMarkerRegistryCaches('mission');scheduleMarkerStateSync(0,true);scheduleMissionAgeRefresh(0);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000);}else clearMissionAgeLabels();} }
+    function applyMapVisibilityToggleEffects(feature) {
+        const visibilityFeature = nativeVisibilityDescriptor(feature);
+        const nativeHandled = visibilityFeature ? applyNativeVisibilityPreference(feature, state.visibility[feature]) : false;
+        if (feature === 'vehicles' && !nativeHandled) synchroniseVehicleMarkerClasses();
+        if (feature === 'buildings' && !nativeHandled) synchronisePersonalBuildingVisibility();
+        if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+        if (feature === 'missionAge') {
+        runtimeClearTimeout(missionAgeTimer);
+        missionAgeTimer = null;
+        if (state.missionAge) {
+            inlineMissionDataScanned = false;
+            scanInlineMissionMarkerData(true);
+            invalidateMarkerRegistryCaches('mission');
+            scheduleMarkerStateSync(0, true);
+            scheduleMissionAgeRefresh(0);
+            runtimeSetTimeout(() => { if (state.missionAge) scheduleMissionAgeRefresh(0); }, 1000);
+        } else clearMissionAgeLabels();
+        }
+    }
     function handleMissionWindowToggle(feature) {
         if (feature === 'missionValue') state.missionValue = !state.missionValue;
         else if (feature === 'customVehicleBadges') state.customVehicleBadges = !state.customVehicleBadges;
@@ -36935,13 +37430,13 @@ Each target will be rechecked, submitted through its current native building-edi
             economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
         });
         runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
-            if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+            if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();
             if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
             if (state.economyMode) scheduleEconomyLayerSync(0);
         }, {
-            intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+            intervalResolver: () => nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
             economyIntervalMs: 45 * 1000,
-            economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+            economyIntervalResolver: () => ((nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
         });
     }
 
@@ -36957,6 +37452,7 @@ Each target will be rechecked, submitted through its current native building-edi
         runBootIntegration('Alliance Buildings optimisation', installAllianceBuildingsPageOptimisation);
         if (allianceBuildingsOnly) return;
         runBootIntegration('clean-mode exit', createCleanExit);
+        runBootIntegration('native map visibility bridge', installNativeVisibilityBridge);
         if (state.autoLoadAllVehicles) runBootIntegration('auto-load all vehicles', installAutoLoadAllVehicles);
         runBootIntegration('mission marker hook', installMissionMarkerAddHook);
         runBootIntegration('radio message hook', installRadioMessageHook);
@@ -36965,6 +37461,7 @@ Each target will be rechecked, submitted through its current native building-edi
         runBootIntegration('credits observer', observeCreditValue);
         runBootIntegration('custom vehicle badges', installCustomVehicleBadges);
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+            if (mutations.some(mutationTouchesNativeVisibilityControls)) scheduleNativeVisibilityReconcile(0);
             if (mapInteractionWorkDeferred()) {
                 if (!mutations.every(mutationIsLeafletTileNoise)) deferMapInteractionRefresh({ includeSnapshots: true, domMutation: true });
                 return;
@@ -36995,7 +37492,7 @@ Each target will be rechecked, submitted through its current native building-edi
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
-                if (!state.visibility.buildings || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
+                if ((nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
             }
             if (layoutChanged) invalidateMapElementCache();
             if (document.hidden || dragState || mapInteractionWorkDeferred()) return;
@@ -37028,20 +37525,23 @@ Each target will be rechecked, submitted through its current native building-edi
         runtimeListen(document, 'contextmenu', handleContextCommandRequest, true);
         runtimeListen(document, 'pointerdown', () => { unlockPayoutAudio(); if (state.notifications.enabled) unlockNotificationAudio(); }, { once: true, capture: true });
         runtimeListen(document, 'click', event => {
+            const nativeVisibilityFeature = handleNativeVisibilityControlEvent(event);
             if (handleCommandExperienceAction(event)) return;
             const contextMenu = commandExperienceElement(SCRIPT.contextMenuId);
             if (contextMenu && !contextMenu.contains(event.target)) closeContextCommandMenu();
-            runtimeSetTimeout(refreshSuppression, 0);
+            runtimeSetTimeout(() => {
+                refreshSuppression();
+                if (nativeVisibilityFeature && nativeVisibilityWriteDepth === 0) adoptNativeVisibilityFeature(nativeVisibilityFeature);
+            }, 0);
             if (suppressNextOutsideClick) {
                 event.preventDefault();
                 event.stopPropagation();
                 suppressNextOutsideClick = false;
                 return;
             }
-            const control = document.getElementById(SCRIPT.controlId);
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel || !panel.classList.contains('mcms-open')) return;
-            if (control && control.contains(event.target)) return;
+            if (event.target?.closest?.(`#${SCRIPT.controlId}`)) return;
             if (panel.contains(event.target)) return;
             closePanel();
         }, true);
@@ -37073,6 +37573,7 @@ Each target will be rechecked, submitted through its current native building-edi
         } catch (err) {}
         runtimeListen(pageWindow, 'focus', () => {
             scheduleVisualViewportStabilisation('window-focus'); if (dragState) return;
+            scheduleNativeVisibilityReconcile(0);
             refreshSuppression();
             fitControlToMap();
             schedulePanelPosition(true, 40);

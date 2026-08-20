@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.13.0] - 2026-08-20
+
+### Native map visibility shortcuts
+
+- Makes buttons 1–4 drive MissionChief’s own Personal Missions, Alliance Missions, Vehicles and My Buildings filters directly without opening or scrolling the native menu.
+- Keeps the Toolkit buttons synchronized when the same native filters are changed from MissionChief’s menu.
+- Maps button 4 only to My Buildings; MissionChief’s separate Alliance Buildings toggle remains independent and untouched.
+- Carries existing Toolkit visibility choices into native filters once; fresh installs and later sessions treat MissionChief’s saved filter state as authoritative.
+- Uses bounded startup retries and per-feature fallback without a new poller, while avoiding duplicate marker classification when native filters are available.
+
 ## [10.12.1] - 2026-08-20
 
 ### Station Icon Copier rollback

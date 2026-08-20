@@ -9,7 +9,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
 
-assert.match(source, /^\/\/ @version\s+10\.12\.1$/m);
+assert.match(source, /^\/\/ @version\s+10\.13\.0$/m);
 assert.ok(source.includes("transportSweepReportState: 'mc_map_command_toolkit_transport_sweep_report_v1'"));
 assert.ok(source.includes("autoIntervalMs: 60 * 1000"), 'The requested 60-second update check must remain unchanged');
 assert.ok(!source.includes('scheduleTransportSweepHudDismiss'), 'The final report must not auto-dismiss');
@@ -56,7 +56,7 @@ const transportSweepRuntime = {
 };
 const context = vm.createContext({
     console,
-    SCRIPT: { version: '10.12.1', transportSweepReportState: 'sweep-report' },
+    SCRIPT: { version: '10.13.0', transportSweepReportState: 'sweep-report' },
     transportSweepRuntime,
     gmGetValueSafe: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
     gmSetValueSafe: (key, value) => { storage.set(key, value); return true; },
@@ -98,7 +98,7 @@ assert.equal(restored.successRate, 80);
 
 const created = context.createTransportSweepReport(false, { total: 5, completed: 5 });
 assert.equal(created.outcome, 'partial');
-assert.equal(created.toolkitVersion, '10.12.1');
+assert.equal(created.toolkitVersion, '10.13.0');
 assert.equal(created.missionsChecked, 14);
 assert.equal(created.discord.status, 'sending');
 context.setTransportSweepReport(created, { render: false });

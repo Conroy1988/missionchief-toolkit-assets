@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.13.1] - 2026-08-20
+
+### Complete vehicle visibility toggle
+
+- Fixes Vehicles OFF hiding only the subset covered by MissionChief’s native vehicle control.
+- Combines the native filter with Toolkit vehicle-marker classification so custom and secondary vehicle icons hide as one complete fleet.
+- Restores every classified vehicle when Vehicles is turned back on while leaving missions, My Buildings and Alliance Buildings unchanged.
+- Keeps the background-native shortcut and adds no new observer, timer or polling loop.
+
 ## [10.13.0] - 2026-08-20
 
 ### Native map visibility shortcuts

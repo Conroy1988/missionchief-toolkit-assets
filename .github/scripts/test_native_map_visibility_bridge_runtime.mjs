@@ -83,21 +83,22 @@ const controls = [
   makeControl("user_buildings", "My buildings", true),
   makeControl("alliance_buildings", "Alliance buildings", false),
 ];
+let availableControls = controls;
 const root = {
   nodeType: 1,
   id: "map_filters",
   matches: () => false,
-  querySelectorAll: () => controls,
+  getElementsByTagName: tagName => tagName === "*" || tagName === "input" ? availableControls : [],
   contains: control => controls.includes(control),
 };
 const document = {
-  querySelectorAll(selector) {
-    if (selector === "#map_filters") return [root];
-    if (["[data-map-filters]", ".map-filters-list", ".leaflet-control-layers"].includes(selector)) return [];
-    return controls.filter(control => selector.includes(control.value) || selector === `#${control.id}`);
+  getElementById(id) {
+    if (id === "map_filters") return root;
+    return availableControls.find(control => control.id === id || control.value === id) || null;
   },
-  getElementById: id => id === "map_filters" ? root : null,
-  getElementsByTagName: () => [],
+  getElementsByClassName: () => [],
+  getElementsByName: name => availableControls.filter(control => control.name === name),
+  getElementsByTagName: tagName => tagName === "*" || tagName === "input" ? availableControls : [],
 };
 for (const control of controls) control.ownerDocument = { defaultView: { Event } };
 
@@ -151,7 +152,7 @@ const nativeVisibilitySessionInitialised=new Set();
 const nativeVisibilityPendingFeatures=new Set();
 const hiddenPersonalBuildingLayers=new Set();
 const personalBuildingLayerOpacity=new Map();
-let nativeVisibilityReconcileTimer=null;
+let nativeVisibilityReconcileQueued=false;
 let nativeVisibilityWriteDepth=0;
 let toolkitFreshInstallAtLoad=false;
 `;
@@ -160,6 +161,7 @@ const functionNames = [
   "normaliseNativeVisibilityLabel",
   "nativeVisibilityDescriptor",
   "nativeVisibilityTranslatedLabels",
+  "nativeVisibilityElementById",
   "nativeVisibilityControlRoots",
   "nativeVisibilityControlBelongsToToolkit",
   "nativeVisibilityControlTokens",
@@ -188,7 +190,7 @@ this.__probe={
   releasePersonalBuildingVisibilityFallback,reconcileNativeVisibilityBridge,
   resetBridge(fresh=false){
     nativeVisibilityBoundFeatures.clear();nativeVisibilitySessionInitialised.clear();nativeVisibilityPendingFeatures.clear();
-    hiddenPersonalBuildingLayers.clear();personalBuildingLayerOpacity.clear();nativeVisibilityReconcileTimer=null;
+    hiddenPersonalBuildingLayers.clear();personalBuildingLayerOpacity.clear();nativeVisibilityReconcileQueued=false;
     toolkitFreshInstallAtLoad=fresh;state.nativeVisibility.migratedFeatures=[];
   },
   hideBuildingForFallback(layer,opacity=1){hiddenPersonalBuildingLayers.add(layer);personalBuildingLayerOpacity.set(layer,opacity);}
@@ -256,16 +258,11 @@ assert.deepEqual(Array.from(sandbox.state.nativeVisibility.migratedFeatures), ["
 assert.equal(saveCount, savesBeforeUpgrade + 1, "upgraded Toolkit visibility was not migrated once");
 assert.equal(controls[4].checked, allianceBeforeUpgrade, "upgrade migration changed alliance buildings");
 
-root.querySelectorAll = () => controls.filter(control => control.value !== "show_vehicle");
-document.querySelectorAll = selector => {
-  if (selector === "#map_filters") return [root];
-  if (["[data-map-filters]", ".map-filters-list", ".leaflet-control-layers"].includes(selector)) return [];
-  return [];
-};
+availableControls = controls.filter(control => control.value !== "show_vehicle");
 delete sandbox.pageWindow.show_vehicle;
 assert.equal(sandbox.__probe.writeNativeVisibilityState("vehicles", true).handled, false);
 
-root.querySelectorAll = () => [];
+availableControls = [];
 sandbox.pageWindow.map_filters_service = {
   getMapFiltersLayers: () => legacyLayers,
   getLayerByLayerId: id => legacyLayers[id],

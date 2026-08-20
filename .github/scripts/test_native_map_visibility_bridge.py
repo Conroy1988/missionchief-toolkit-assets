@@ -41,8 +41,10 @@ for token in (
     "serviceState.map.fire?.(wanted ? 'overlayadd' : 'overlayremove'",
     "function installNativeVisibilityBridge(",
     "runBootIntegration('native map visibility bridge', installNativeVisibilityBridge);",
-    "runtimeListen(document, 'change', handleNativeVisibilityControlEvent, true);",
-    "runtimeListen(document, 'click', handleNativeVisibilityControlEvent, true);",
+    "for (const delay of NATIVE_VISIBILITY_RETRY_DELAYS_MS) scheduleNativeVisibilityReconcile(delay);",
+    "void runtimeDelay(delayMs).then(completed => {",
+    "const nativeVisibilityFeature = handleNativeVisibilityControlEvent(event);",
+    "adoptNativeVisibilityFeature(nativeVisibilityFeature);",
     "if (mutations.some(mutationTouchesNativeVisibilityControls)) scheduleNativeVisibilityReconcile(0);",
     "if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();",
 ):
@@ -61,5 +63,7 @@ assert "document.getElementsByTagName('label')" not in SOURCE
 assert SOURCE.count("runtimeRegisterTask('building-visibility'") == 1
 assert "runtimeRegisterTask('native-visibility'" not in SOURCE
 assert "setInterval(" not in SOURCE[SOURCE.index("function installNativeVisibilityBridge("):SOURCE.index("function getVehicleMarkerLayers(")]
+assert "runtimeListen(" not in SOURCE[SOURCE.index("function installNativeVisibilityBridge("):SOURCE.index("function getVehicleMarkerLayers(")]
+assert "runtimeSetTimeout(" not in SOURCE[SOURCE.index("function scheduleNativeVisibilityReconcile("):SOURCE.index("function getVehicleMarkerLayers(")]
 
 print(f"Native map visibility bridge contract passed for Toolkit {metadata.group(1)}.")

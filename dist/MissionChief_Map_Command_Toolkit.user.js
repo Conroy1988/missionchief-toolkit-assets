@@ -1610,7 +1610,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const nativeVisibilityBoundFeatures = new Set();
     const nativeVisibilitySessionInitialised = new Set();
     const nativeVisibilityPendingFeatures = new Set();
-    let nativeVisibilityReconcileTimer = null;
+    let nativeVisibilityReconcileQueued = false;
     let nativeVisibilityWriteDepth = 0;
     let nativeVisibilityBridgeInstalled = false;
     const hiddenPersonalBuildingLayers = new Set();
@@ -21549,19 +21549,24 @@ Each target will be rechecked, submitted through its current native building-edi
         return Array.from(labels).filter(Boolean);
     }
 
+    function nativeVisibilityElementById(id) {
+        return document.getElementById(id);
+    }
+
     function nativeVisibilityControlRoots() {
         const roots = [];
         const seen = new Set();
         const add = element => {
-        if (!element || seen.has(element) || typeof element.querySelectorAll !== 'function') return;
+        if (!element || seen.has(element) || typeof element.getElementsByTagName !== 'function') return;
         seen.add(element);
         roots.push(element);
         };
-        for (const selector of ['#map_filters', '[data-map-filters]', '.map-filters-list', '.leaflet-control-layers']) {
-        try { document.querySelectorAll(selector).forEach(add); } catch (err) {}
+        add(nativeVisibilityElementById('map_filters'));
+        for (const className of ['map-filters-list', 'leaflet-control-layers']) {
+        try { Array.from(document.getElementsByClassName(className)).forEach(add); } catch (err) {}
         }
-        const trigger = document.getElementById('dropdownMapFiltersBtn');
-        add(trigger?.closest?.('.dropdown, .btn-group, .leaflet-control') || trigger?.parentElement);
+        const trigger = nativeVisibilityElementById('dropdownMapFiltersBtn');
+        add(trigger?.closest?.('[data-map-filters], .dropdown, .btn-group, .leaflet-control') || trigger?.parentElement);
         return roots;
     }
 
@@ -21611,11 +21616,13 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function nativeVisibilityInteractiveControls(root) {
-        if (!root?.querySelectorAll) return [];
+        if (!root?.getElementsByTagName) return [];
         const controls = [];
         if (root.matches?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]')) controls.push(root);
         try {
-        controls.push(...root.querySelectorAll('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]'));
+        controls.push(...Array.from(root.getElementsByTagName('*')).filter(control => (
+            control.matches?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]')
+        )));
         } catch (err) {}
         return controls;
     }
@@ -21628,17 +21635,24 @@ Each target will be rechecked, submitted through its current native building-edi
         }
         const descriptor = nativeVisibilityDescriptor(feature);
         if (!descriptor) return null;
-        const selectors = descriptor.aliases.flatMap(alias => [
-        `#${alias}`,
-        `input[type="checkbox"][value="${alias}"]`,
-        `input[type="checkbox"][name="${alias}"]`,
-        `[role="checkbox"][data-filter-id="${alias}"]`,
-        `button[role="switch"][data-filter-id="${alias}"]`,
-        `button[aria-pressed][data-map-filter="${alias}"]`
-        ]);
         const exactControls = [];
-        for (const selector of selectors) {
-        try { document.querySelectorAll(selector).forEach(control => exactControls.push(control)); } catch (err) {}
+        const seen = new Set();
+        const add = control => {
+        if (!control || seen.has(control)) return;
+        seen.add(control);
+        exactControls.push(control);
+        };
+        for (const alias of descriptor.aliases) {
+        add(nativeVisibilityElementById(alias));
+        add(nativeVisibilityElementById(`map_filter_${alias}`));
+        try { Array.from(document.getElementsByName(alias)).forEach(add); } catch (err) {}
+        }
+        for (const tagName of ['input', 'button']) {
+        try {
+            Array.from(document.getElementsByTagName(tagName))
+            .filter(control => nativeVisibilityControlMatchesFeature(control, feature, { allowLabel: false }))
+            .forEach(add);
+        } catch (err) {}
         }
         return exactControls.find(control => (
         nativeVisibilityControlState(control) !== null &&
@@ -21827,7 +21841,7 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function reconcileNativeVisibilityBridge() {
-        nativeVisibilityReconcileTimer = null;
+        nativeVisibilityReconcileQueued = false;
         if (runtime.destroyed) return;
         let stateChanged = false;
         let economyVisibilityChanged = false;
@@ -21885,8 +21899,19 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function scheduleNativeVisibilityReconcile(delay = 0) {
-        runtimeClearTimeout(nativeVisibilityReconcileTimer);
-        nativeVisibilityReconcileTimer = runtimeSetTimeout(reconcileNativeVisibilityBridge, Math.max(0, Number(delay) || 0));
+        const delayMs = Math.max(0, Number(delay) || 0);
+        if (delayMs > 0) {
+        void runtimeDelay(delayMs).then(completed => {
+            if (completed) scheduleNativeVisibilityReconcile(0);
+        });
+        return;
+        }
+        if (nativeVisibilityReconcileQueued || runtime.destroyed) return;
+        nativeVisibilityReconcileQueued = true;
+        Promise.resolve().then(() => {
+        if (!runtime.destroyed) reconcileNativeVisibilityBridge();
+        else nativeVisibilityReconcileQueued = false;
+        });
     }
 
     function mutationTouchesNativeVisibilityControls(mutation) {
@@ -21905,25 +21930,18 @@ Each target will be rechecked, submitted through its current native building-edi
 
     function handleNativeVisibilityControlEvent(event) {
         const control = event?.target?.closest?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]');
-        if (!control) return;
-        const feature = nativeVisibilityFeatureForControl(control);
-        if (!feature) return;
-        runtimeSetTimeout(() => {
-        if (nativeVisibilityWriteDepth === 0) adoptNativeVisibilityFeature(feature);
-        }, 0);
+        if (!control) return '';
+        return nativeVisibilityFeatureForControl(control);
     }
 
     function installNativeVisibilityBridge() {
         if (nativeVisibilityBridgeInstalled) return;
         nativeVisibilityBridgeInstalled = true;
-        runtimeListen(document, 'change', handleNativeVisibilityControlEvent, true);
-        runtimeListen(document, 'click', handleNativeVisibilityControlEvent, true);
-        for (const delay of NATIVE_VISIBILITY_RETRY_DELAYS_MS) runtimeSetTimeout(() => scheduleNativeVisibilityReconcile(0), delay);
+        for (const delay of NATIVE_VISIBILITY_RETRY_DELAYS_MS) scheduleNativeVisibilityReconcile(delay);
     }
 
     runtimeOnCleanup(() => {
-        runtimeClearTimeout(nativeVisibilityReconcileTimer);
-        nativeVisibilityReconcileTimer = null;
+        nativeVisibilityReconcileQueued = false;
         nativeVisibilityBoundFeatures.clear();
         nativeVisibilitySessionInitialised.clear();
         nativeVisibilityPendingFeatures.clear();
@@ -37507,20 +37525,23 @@ Each target will be rechecked, submitted through its current native building-edi
         runtimeListen(document, 'contextmenu', handleContextCommandRequest, true);
         runtimeListen(document, 'pointerdown', () => { unlockPayoutAudio(); if (state.notifications.enabled) unlockNotificationAudio(); }, { once: true, capture: true });
         runtimeListen(document, 'click', event => {
+            const nativeVisibilityFeature = handleNativeVisibilityControlEvent(event);
             if (handleCommandExperienceAction(event)) return;
             const contextMenu = commandExperienceElement(SCRIPT.contextMenuId);
             if (contextMenu && !contextMenu.contains(event.target)) closeContextCommandMenu();
-            runtimeSetTimeout(refreshSuppression, 0);
+            runtimeSetTimeout(() => {
+                refreshSuppression();
+                if (nativeVisibilityFeature && nativeVisibilityWriteDepth === 0) adoptNativeVisibilityFeature(nativeVisibilityFeature);
+            }, 0);
             if (suppressNextOutsideClick) {
                 event.preventDefault();
                 event.stopPropagation();
                 suppressNextOutsideClick = false;
                 return;
             }
-            const control = document.getElementById(SCRIPT.controlId);
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel || !panel.classList.contains('mcms-open')) return;
-            if (control && control.contains(event.target)) return;
+            if (event.target?.closest?.(`#${SCRIPT.controlId}`)) return;
             if (panel.contains(event.target)) return;
             closePanel();
         }, true);

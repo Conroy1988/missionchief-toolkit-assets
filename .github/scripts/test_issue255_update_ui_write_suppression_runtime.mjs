@@ -16,7 +16,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
 const EXPECTED_VERSION = "10.13.0";
-const EXPECTED_SHA = "90d3a281d88b92e7a183594a19cc19eb4352ab926ae4380572ec1d0da2859644";
+const EXPECTED_SHA = "d313e67ec6d4c3469845110a1e3baf0b289b73e926f1ff7dedd6dca10d243d5c";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader", "syncMapMeasureToolbarButton"];
 

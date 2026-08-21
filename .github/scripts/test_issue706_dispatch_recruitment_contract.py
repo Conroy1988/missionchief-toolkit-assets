@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.3"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -64,7 +64,7 @@ def main() -> int:
         'input[name="building[personal_count_target]"]',
         'input[name="authenticity_token"]',
         'input[name="_method"]',
-        "params.set('_method', 'patch')",
+        "params.set('_method', methodOverride)",
         "params.set('building[personal_count_target]'",
         '/hire_do/',
         '/api/buildings/',
@@ -121,7 +121,7 @@ def main() -> int:
         "assignedDispatchId === '0'",
         "summary.unassigned += 1",
         "dispatchRecruitmentGuardMutation(action.href, params.toString())",
-        "dispatchRecruitmentAssertStationScope(record, item, expectedDispatchId, true)",
+        "dispatchRecruitmentAssertStationScope(await fetchDispatchRecruitmentBuilding(item.buildingId), item, expectedDispatchId, true)",
         "unexpectedBuildingFields",
         "dispatchRecruitmentFatal = true",
         "No further stations were changed",
@@ -130,6 +130,12 @@ def main() -> int:
         assert immutability_guard in implementation, f"Missing Dispatch Centre immutability guard: {immutability_guard}"
     personnel = source_section(implementation, "    function prepareDispatchRecruitmentPersonnelSubmission(", "    async function prepareDispatchRecruitmentHiring(")
     assert "for (const hidden of form.querySelectorAll" not in personnel, "Personnel submission must not forward arbitrary hidden form fields"
+    assert "['put', 'patch'].includes(methodOverride)" in personnel
+    assert "'X-CSRF-Token': token" in personnel
+    assert "'X-Requested-With': 'XMLHttpRequest'" in personnel
+    verification = source_section(implementation, "    async function verifyDispatchRecruitmentMutation(", "    function dispatchRecruitmentBoolean(")
+    assert "for (const delay of [250, 500, 1000])" in verification
+    assert "if (expected(lastRecord)) return lastRecord" in verification
     assert "params.set('building[leitstelle_building_id]'" not in implementation
     assert "/hire_do/coins" not in implementation and "hire_do/credits" not in implementation
     run = source_section(source, "    async function startDispatchRecruitment(", "    function stopDispatchRecruitment(")
@@ -146,6 +152,10 @@ def main() -> int:
     assert "DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes" in source
     assert "DISPATCH_RECRUITMENT_DELAY_OPTIONS.includes" in source
     assert "setting.startsWith('dispatch-recruitment-')" in source
+    assert "captureDispatchRecruitmentPersonnelDraft(event.target)" in source
+    personnel_draft = source_section(source, "    function captureDispatchRecruitmentPersonnelDraft(", "    function handleSettingChange(")
+    assert "state.dispatchRecruitment.personnelDesired = normalised" in personnel_draft
+    assert "saveState()" in personnel_draft
     assert "[data-setting^=\"dispatch-recruitment-\"]" in implementation
     assert GUIDE.exists(), "Issue #706 operator guide is missing"
     preflight = PREFLIGHT.read_text(encoding="utf-8")

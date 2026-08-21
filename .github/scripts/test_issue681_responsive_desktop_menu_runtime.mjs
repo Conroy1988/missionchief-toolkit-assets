@@ -33,6 +33,9 @@ function extractFunction(name) {
 const sandbox = {
   Math,
   Number,
+  SCRIPT: { panelId: "panel" },
+  mobileModeActive: false,
+  tabletModeActive: false,
   DESKTOP_WORKSPACE_MIN_WIDTH: 560,
   DESKTOP_WORKSPACE_MAX_WIDTH: 1440,
   clamp(value, minimum, maximum, fallback) {
@@ -40,9 +43,30 @@ const sandbox = {
     return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
   },
 };
+const panelStyle = new Map([["width", "720px"]]);
+const panel = {
+  style: {
+    setProperty: (name, value) => panelStyle.set(name, value),
+    removeProperty: name => panelStyle.delete(name),
+  },
+};
+let clearedTouchSizing = 0;
+let restoredDesktopSizing = 0;
+sandbox.document = { getElementById: id => id === "panel" ? panel : null };
+sandbox.applyTabletPanelPosition = () => { throw new Error("Desktop position used touch sizing"); };
+sandbox.clearTabletPanelSizing = target => {
+  assert.equal(target, panel);
+  clearedTouchSizing += 1;
+  panelStyle.delete("width");
+};
+sandbox.applyDesktopPanelSizing = target => {
+  assert.equal(target, panel);
+  restoredDesktopSizing += 1;
+  panelStyle.set("width", "928px");
+};
 vm.createContext(sandbox);
 vm.runInContext(
-  `${extractFunction("resolveResponsiveDesktopPanelWidth")}\n${extractFunction("resolveResponsiveDesktopPanelHeightCap")}\nthis.resolveWidth = resolveResponsiveDesktopPanelWidth;\nthis.resolveCap = resolveResponsiveDesktopPanelHeightCap;`,
+  `${extractFunction("resolveResponsiveDesktopPanelWidth")}\n${extractFunction("resolveResponsiveDesktopPanelHeightCap")}\n${extractFunction("setPanelCssPosition")}\nthis.resolveWidth = resolveResponsiveDesktopPanelWidth;\nthis.resolveCap = resolveResponsiveDesktopPanelHeightCap;\nthis.setPosition = setPanelCssPosition;`,
   sandbox,
 );
 const resolveWidth = sandbox.resolveWidth;
@@ -63,5 +87,10 @@ assert.equal(resolveCap({ width: 1366, height: 768 }, defaults), Infinity, "shor
 assert.equal(resolveCap({ width: 2560, height: 1440 }, defaults), Infinity, "wide Desktop geometry changed unexpectedly");
 assert.equal(resolveCap({ width: 1688, height: 1266 }, { panelWidth: 880, panelHeight: 82 }), Infinity, "custom Desktop width was overridden");
 assert.equal(resolveCap({ width: 1688, height: 1266 }, { panelWidth: 720, panelHeight: 96 }), Infinity, "custom Desktop height was overridden");
+
+sandbox.setPosition(320, 80);
+assert.equal(clearedTouchSizing, 1, "Desktop position did not clear stale touch geometry");
+assert.equal(restoredDesktopSizing, 1, "Desktop position did not immediately restore its saved workspace size");
+assert.equal(panelStyle.get("width"), "928px", "main-page navigation collapsed the Desktop toolkit width");
 
 console.log("Issue #681 responsive Desktop menu geometry regression passed: adaptive width remains fixed across content changes and height caps retain their established behaviour.");

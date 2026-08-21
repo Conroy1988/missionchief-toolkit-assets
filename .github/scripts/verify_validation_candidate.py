@@ -6,6 +6,7 @@ from pathlib import Path
 
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 SOURCE_VERSION_RE = re.compile(r"^//\s*@version\s+([^\s]+)", re.MULTILINE)
+VALIDATION_WORKFLOW = "Toolkit Hotfix Gate"
 
 def fail(message: str) -> None:
     raise AssertionError(message)
@@ -31,7 +32,7 @@ def verify(evidence_path: Path, source_path: Path, dist_dir: Path, expected_comm
         fail("Validation evidence schemaVersion must be 1")
     if evidence.get("state") != "validated":
         fail("Validation evidence state must be validated")
-    if evidence.get("workflow") != "Validate Canonical Userscript":
+    if evidence.get("workflow") != VALIDATION_WORKFLOW:
         fail("Validation evidence workflow identity changed")
     if evidence.get("sourceCommit") != expected_commit:
         fail("Validation evidence sourceCommit does not match the triggering commit")
@@ -109,7 +110,7 @@ def self_test() -> None:
             }) + "\n", encoding="utf-8")
         evidence = root / "validation-candidate.json"
         evidence.write_text(json.dumps({
-            "schemaVersion": 1, "state": "validated", "workflow": "Validate Canonical Userscript",
+            "schemaVersion": 1, "state": "validated", "workflow": VALIDATION_WORKFLOW,
             "sourceCommit": "abc123", "sourceRef": "refs/heads/main", "eventName": "push",
             "version": "1.2.3", "sha256": digest,
             "distribution": {

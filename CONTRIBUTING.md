@@ -40,7 +40,7 @@ Contained userscript changes should use the fastest safe route:
    ```
 
 4. Open one pull request.
-5. Allow the targeted validation matrix and parallel Full Userscript Audit lanes to complete.
+5. Allow the single-runner Toolkit Hotfix Gate to complete its path-aware checks.
 6. Merge the exact reviewed head and use the permanent guarded release command when a public version is required.
 
 Do not create diagnostic pull requests or test-only commits when the required code and fixtures can be prepared and verified before the pull request is opened.
@@ -51,7 +51,7 @@ The owner-authorised development-package workflow remains available for large ge
 
 ## Validation
 
-Pull requests may run userscript validation, code-integrity auditing, performance-regression checks, asset-health checks and documentation-site validation. The Full Userscript Audit executes contract, static-analysis and ESLint lanes concurrently, then reports through one aggregate required check. Do not bypass a failed check without identifying and correcting the underlying cause.
+Pull requests use one path-aware Toolkit Hotfix Gate runner. Product changes run canonical integrity generation, deterministic runtime contracts and the lightweight performance budget sequentially, then upload the immutable release candidate from that same exact checkout. Exhaustive static, ESLint, deep-performance and repository-wide audits remain scheduled or manually dispatched instead of multiplying every pull request into parallel jobs. Do not bypass a failed check without identifying and correcting the underlying cause.
 
 ## Releases
 

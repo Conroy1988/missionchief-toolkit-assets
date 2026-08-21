@@ -34,6 +34,7 @@ def main() -> int:
     automatic = AUTOMATIC.read_text(encoding="utf-8")
     owner = OWNER.read_text(encoding="utf-8")
     release = RELEASE.read_text(encoding="utf-8")
+    verifier = VERIFIER.read_text(encoding="utf-8")
     generator = DASHBOARD_GENERATOR.read_text(encoding="utf-8")
     reconciler = RETIRED_RECONCILER.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
@@ -58,10 +59,10 @@ def main() -> int:
         "name: Toolkit Hotfix Gate",
         "name: Classify changed paths",
         "classify_pr_paths.py",
-        "name: Runtime lane",
-        "name: Integrity lane",
-        "name: Performance lane",
-        "name: Repository lane",
+        "Run deterministic runtime contracts",
+        "Summarise single-runner gate",
+        "GitHub runners used: **1**",
+        "Parallel validation lanes: **0**",
     ], "Canonical validation workflow")
     forbid(validation, [
         "contents: write",
@@ -73,6 +74,11 @@ def main() -> int:
         "github-actions[bot]",
         "  push:\n",
     ], "Canonical validation workflow")
+    require(verifier, [
+        'VALIDATION_WORKFLOW = "Toolkit Hotfix Gate"',
+        'evidence.get("workflow") != VALIDATION_WORKFLOW',
+    ], "Validation candidate verifier")
+    forbid(verifier, ["Validate Canonical Userscript"], "Validation candidate verifier")
     expected_candidate_files = {
         *manifest["distributionFiles"],
         "dist/SHA256SUMS.txt",

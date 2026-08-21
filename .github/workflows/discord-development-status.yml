@@ -3,16 +3,8 @@ name: Discord Development Status
 run-name: Development status · ${{ github.event_name }} · ${{ github.event.action || github.event.workflow_run.name }}
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-    branches:
-      - main
   workflow_run:
     workflows:
-      - Validate Canonical Userscript
       - Release Readiness Check
       - Release Toolkit
     types:
@@ -30,13 +22,6 @@ concurrency:
 jobs:
   notify:
     name: Post staged development status
-    if: >-
-      github.event_name == 'workflow_run' ||
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        github.actor != 'dependabot[bot]'
-      )
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -114,7 +99,7 @@ jobs:
             else
               if [[ "$CONCLUSION" == 'success' ]]; then
                 case "$WORKFLOW_NAME" in
-                  'Validate Canonical Userscript')
+                  'Toolkit Hotfix Gate')
                     TITLE='✅ Development candidate validated'
                     DESCRIPTION='Canonical source validation, JavaScript syntax and distribution parity completed successfully.'
                     COLOR='5763719'

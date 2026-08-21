@@ -42,17 +42,16 @@ def main() -> int:
     require(
         validation,
         (
-            "classify:",
+            "gate:",
             "name: Classify changed paths",
             "classify_pr_paths.py",
-            "needs.classify.outputs.runtime == 'true'",
-            "needs.classify.outputs.integrity == 'true'",
-            "needs.classify.outputs.performance == 'true'",
-            "needs.classify.outputs.releaseCandidate == 'true'",
-            "needs.classify.outputs.exhaustiveIntegrity == 'true'",
-            "needs.classify.outputs.exhaustivePerformance == 'true'",
-            "Allow intentionally skipped lanes",
-            "CLASSIFY_RESULT: ${{ needs.classify.result }}",
+            "steps.paths.outputs.runtime == 'true'",
+            "steps.paths.outputs.integrity == 'true'",
+            "steps.paths.outputs.performance == 'true'",
+            "steps.paths.outputs.releaseCandidate == 'true'",
+            "Run deterministic runtime contracts",
+            "Check lightweight performance budget",
+            "Parallel validation lanes: **0**",
         ),
         "validation workflow",
     )
@@ -78,8 +77,8 @@ def main() -> int:
         "path-aware documentation",
     )
     print(
-        "Path-aware blocking contract passed: selective lanes, "
-        "fail-closed unknown paths and release-aware promotion."
+        "Path-aware blocking contract passed: selective sequential checks, "
+        "fail-closed unknown paths and release-aware promotion on one runner."
     )
     return 0
 

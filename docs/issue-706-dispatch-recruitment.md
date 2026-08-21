@@ -37,8 +37,8 @@ For every selected station, the Toolkit:
 
 1. Loads the selected centre's native matrix, or every freshly loaded centre matrix for **ALL DISPATCH CENTRES**, then reads each row's active native assignment and admits only exact centre and selected building-type matches after the complete scan succeeds.
 2. Stores each admitted station's exact centre, then loads `/api/buildings/<id>` before mutation and requires the station still to belong to that scanned Dispatch Centre and retain the scanned native building type.
-3. If Personnel (Desired) differs, loads the station's native **Edit** endpoint and requires the exact same-origin `personal_count_target_only=1` PATCH form, authenticity token, number input and Save control. It constructs a strict allow-listed payload and refuses any additional `building[...]` field.
-4. Applies Personnel (Desired) independently first and immediately reloads authoritative building data to verify the requested target, exact Dispatch Centre and building type.
+3. If Personnel (Desired) differs, loads the station's native **Edit** endpoint and requires the exact same-origin `personal_count_target_only=1` form, its current native PUT or PATCH override, authenticity token, number input and Save control. It constructs a strict allow-listed payload, sends the native CSRF and AJAX headers and refuses any additional `building[...]` field.
+4. Applies Personnel (Desired) independently first and performs bounded authoritative building read-back until the requested target is visible, while never repeating the mutation. Exact Dispatch Centre and building type remain mandatory on every read.
 5. If Hiring Phase differs, loads the station's native recruitment page and requires the exact same-origin native action for Off, 1 day, 2 days, 3 days or Automatic.
 6. When an active phase must change, uses the exposed Cancel action first, then reloads the page and requires the requested native action. If that action is unavailable, it restores the original phase when MissionChief exposes the restoration action and reports a safe partial result without undoing an already verified Personnel (Desired) change.
 7. Rechecks authoritative assignment, building type and Hiring Phase after the native Hiring action, then submits the next station only after the configured delay.
@@ -51,6 +51,7 @@ The Toolkit does not call `/leitstelle-set/`, include `building[leitstelle_build
 
 - A scan and apply run are bounded to one queue of 2,000 deduplicated editable stations. For a specific **Building Type**, unselected types do not consume that limit; for **ALL BUILDING TYPES**, the limit remains global across every selected Dispatch Centre. Duplicate centre-matrix rows never consume it twice.
 - Personnel (Desired) accepts 0–10,000 because the native form currently exposes no smaller maximum.
+- Every valid Personnel (Desired) keystroke updates saved Toolkit state immediately, so another UI refresh or main-page change cannot restore an older value before blur.
 - Automatic recruitment works only when MissionChief exposes its native Automatic action for that station and account.
 - The workflow is user-triggered and uses no persistent observer, timer or polling loop.
 - The same selection and safeguards are used on Desktop, Tablet and iOS. Mobile checkboxes and station rows retain touch-safe sizing.

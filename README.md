@@ -245,7 +245,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 <summary><strong>Map command and places</strong></summary>
 
 - Buttons 1, 2 and 4 mirror MissionChief’s native My Missions, Alliance Missions and My Buildings filters without opening the filter menu
-- Button 3 reads MissionChief’s persisted **Show vehicles on map** value, discovers and submits the exact native form in the game’s global **Map and vehicles** settings area, verifies the result through the settings API and asks MissionChief’s own map routines to refresh; the Toolkit owns no separate vehicle mask and does not depend on an active Dispatch Centre
+- Button 3 reads MissionChief’s persisted **Show vehicles on map** value, targets only the exact desktop `show_vehicle` control—not `mobile_show_vehicle`—submits its native global **Map and vehicles** form, verifies the result through the settings API and asks MissionChief’s own map routines to refresh; the Toolkit owns no separate vehicle mask
 - MissionChief’s separate Alliance Buildings toggle remains independent and untouched
 - Quick Places and Smart Bookmark Labels
 - Coverage rings

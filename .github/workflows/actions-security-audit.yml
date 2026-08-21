@@ -3,12 +3,6 @@ name: GitHub Actions Security Audit
 run-name: Actions security · ${{ github.event_name }}
 
 on:
-  pull_request:
-    paths:
-      - ".github/actions-security-policy.json"
-      - ".github/dependabot.yml"
-      - ".github/scripts/audit_actions_security.py"
-      - ".github/workflows/**"
   push:
     branches:
       - main

@@ -162,7 +162,7 @@ let settingsApiValue = false;
 let settingsApiAvailable = true;
 let settingsFormAmbiguous = false;
 let settingsFormToken = "native-csrf-token";
-let settingsFormAction = "/settings/map";
+let settingsFormAction = "/settings/index?tab=map_and_vehicles";
 let settingsPostCount = 0;
 const settingsRequests = [];
 const nativeSettingsForm = {
@@ -179,10 +179,14 @@ const nativeSettingsCheckbox = {
   disabled: false,
   closest: selector => selector === "form" ? nativeSettingsForm : null,
 };
+const mobileSettingsCheckbox = {
+  ...nativeSettingsCheckbox,
+  name: "mobile_show_vehicle",
+};
 const duplicateSettingsCheckbox = { ...nativeSettingsCheckbox };
 const settingsMapAnchor = {
-  href: "https://www.missionchief.co.uk/settings/map",
-  getAttribute: name => name === "href" ? "/settings/map" : null,
+  href: "https://www.missionchief.co.uk/settings/index?tab=map_and_vehicles",
+  getAttribute: name => name === "href" ? "/settings/index?tab=map_and_vehicles" : null,
 };
 const nativeSettingsIndexDocument = {
   querySelectorAll(selector) {
@@ -194,7 +198,9 @@ const nativeSettingsIndexDocument = {
 const nativeSettingsDocument = {
   querySelectorAll(selector) {
     if (selector === 'input[type="checkbox"][name]') {
-      return settingsFormAmbiguous ? [nativeSettingsCheckbox, duplicateSettingsCheckbox] : [nativeSettingsCheckbox];
+      return settingsFormAmbiguous
+        ? [nativeSettingsCheckbox, mobileSettingsCheckbox, duplicateSettingsCheckbox]
+        : [nativeSettingsCheckbox, mobileSettingsCheckbox];
     }
     if (selector === "a[href]") return [];
     return [];
@@ -214,6 +220,7 @@ class NativeFormData {
       ["authenticity_token", settingsFormToken ? [settingsFormToken] : []],
       ["route_show", ["1"]],
       ["show_vehicle", nativeSettingsCheckbox.checked ? ["0", "1"] : ["0"]],
+      ["mobile_show_vehicle", ["0"]],
     ]);
   }
   get(name) { return this.getAll(name)[0] ?? null; }
@@ -240,13 +247,13 @@ async function runtimeFetch(urlValue, init = {}) {
     if (!settingsApiAvailable) return nativeResponse({ ok: false, status: 503, url: url.href, json: {} });
     return nativeResponse({ url: url.href, json: { show_vehicle: settingsApiValue, leitstelle_building_id: null } });
   }
-  if (url.pathname === "/settings/index" && String(init.method || "GET").toUpperCase() === "GET") {
+  if (url.pathname === "/settings/index" && !url.searchParams.has("tab") && String(init.method || "GET").toUpperCase() === "GET") {
     return nativeResponse({ url: url.href, text: "<settings-index-page>" });
   }
-  if (url.pathname === "/settings/map" && String(init.method || "GET").toUpperCase() === "GET") {
+  if (url.pathname === "/settings/index" && url.searchParams.get("tab") === "map_and_vehicles" && String(init.method || "GET").toUpperCase() === "GET") {
     return nativeResponse({ url: url.href, text: "<native-settings-page>" });
   }
-  if (url.pathname === "/settings/map" && String(init.method || "GET").toUpperCase() === "POST") {
+  if (url.pathname === "/settings/index" && url.searchParams.get("tab") === "map_and_vehicles" && String(init.method || "GET").toUpperCase() === "POST") {
     settingsPostCount += 1;
     const values = init.body.getAll("show_vehicle");
     settingsApiValue = values.at(-1) === "1";
@@ -465,10 +472,12 @@ assert.equal(controls[2].checked, true, "Button 3 did not mirror MissionChief's 
 assert.equal(sandbox.state.visibility.vehicles, true, "Toolkit UI did not mirror MissionChief Vehicles ON");
 assert.equal(saveCount, savesBeforeNativeToggle + 1);
 assert.equal(settingsPostCount, 1, "Button 3 did not submit exactly one native settings form");
-assert.equal(settingsRequests.find(request => request.method === "POST")?.url, "https://www.missionchief.co.uk/settings/map");
+assert.equal(settingsRequests.find(request => request.method === "POST")?.url, "https://www.missionchief.co.uk/settings/index?tab=map_and_vehicles");
 assert.ok(settingsRequests.some(request => request.method === "GET" && request.url === "https://www.missionchief.co.uk/settings/index"), "Button 3 did not enter MissionChief's global settings area");
-assert.ok(settingsRequests.some(request => request.method === "GET" && request.url === "https://www.missionchief.co.uk/settings/map"), "Button 3 did not discover the native Map and vehicles settings tab");
+assert.ok(settingsRequests.some(request => request.method === "GET" && request.url === "https://www.missionchief.co.uk/settings/index?tab=map_and_vehicles"), "Button 3 did not discover the native Map and vehicles settings tab");
 assert.equal(settingsRequests.find(request => request.method === "POST")?.init.body.get("authenticity_token"), settingsFormToken, "native CSRF token was not preserved");
+assert.equal(settingsRequests.find(request => request.method === "POST")?.init.headers["X-CSRF-Token"], settingsFormToken, "native CSRF request header was not preserved");
+assert.equal(settingsRequests.find(request => request.method === "POST")?.init.headers["X-Requested-With"], "XMLHttpRequest", "native settings submission was not marked as MissionChief AJAX");
 assert.equal(nativeVehicleLoads, 1, "MissionChief's native vehicle reload was not requested after enabling");
 assert.equal(toasts.at(-1), "MissionChief vehicles on");
 assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), true);
@@ -556,7 +565,7 @@ settingsFormAction = "/buildings/314";
 assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), false);
 assert.equal(settingsPostCount, postsBeforeAmbiguousForm, "an out-of-scope native form action was submitted");
 assert.equal(sandbox.state.visibility.vehicles, vehicleMirrorBeforeUnavailableToggle, "an out-of-scope form action created a Toolkit-only vehicle state");
-settingsFormAction = "/settings/map";
+settingsFormAction = "/settings/index?tab=map_and_vehicles";
 settingsApiAvailable = false;
 assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), false);
 assert.equal(sandbox.state.visibility.vehicles, vehicleMirrorBeforeUnavailableToggle, "unavailable native setting created a Toolkit-only vehicle state");

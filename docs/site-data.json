@@ -385,6 +385,31 @@
           ]
         },
         {
+          "name": "Expansion & Upgrade Planner",
+          "summary": "Plans current station level, bay and extension purchases from fresh native Credit controls within an explicit hard budget.",
+          "details": [
+            "One Dispatch Centre or ALL DISPATCH CENTRES scope",
+            "Exact native building type or ALL BUILDING TYPES filtering",
+            "Current level, bay and extension Credit actions only",
+            "No static prices, inferred endpoints or Coin actions",
+            "At most one selected operation per station",
+            "Fresh scope, action, state, path and price revalidation",
+            "Exact selected total, hard budget and unspent-budget confirmation",
+            "Sequential native POST submission and authoritative post-write verification",
+            "100-operation apply cap, configurable pacing and Stop",
+            "Complete-run stop after any ambiguous submission with no automatic mutation retry"
+          ],
+          "visual": "expansion-upgrade-planner",
+          "tags": [
+            "dispatch",
+            "stations",
+            "extensions",
+            "credits",
+            "admin",
+            "native"
+          ]
+        },
+        {
           "name": "Alliance Courses",
           "summary": "Starts ready day-coded academy courses sequentially through MissionChief's verified native education form.",
           "details": [

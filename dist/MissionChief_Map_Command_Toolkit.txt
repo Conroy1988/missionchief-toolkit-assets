@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.13.3
+// @version      10.14.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.13.3',
+        version: '10.14.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -501,6 +501,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionProgressState: 'mc_map_command_toolkit_mission_progress_v250',
         operationalTimelineState: 'mc_map_command_toolkit_operational_timeline_v1',
         transportSweepReportState: 'mc_map_command_toolkit_transport_sweep_report_v1',
+        expansionPlannerReportState: 'mc_map_command_toolkit_expansion_planner_report_v1',
         discordWebhookState: 'mc_map_command_toolkit_discord_webhook_v300',
         discordLastReportState: 'mc_map_command_toolkit_discord_last_report_v310',
         financeVaultState: 'mc_map_command_toolkit_finance_vault_v450',
@@ -527,13 +528,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.13.3",
-        title: "Mission-layer-safe vehicle toggle",
+        version: "10.14.0",
+        title: "Expansion & Upgrade Planner",
         highlights: Object.freeze([
-            "Fixes live missions using camelCase or nested marker metadata disappearing and returning with the Vehicles shortcut.",
-            "Recognises every supported mission ID and owner shape before vehicle classification, then clears stale vehicle classes from those mission icons.",
-            "Keeps MissionChief’s shared vehicle layer mounted while shortcut 3 applies the complete mission-first vehicle mask, preventing registry overlap from unmounting missions.",
-            "Preserves native Personal Missions, Alliance Missions and My Buildings behaviour, keeps Alliance Buildings independent and adds no lifecycle resource."
+            "Adds an on-demand Dispatch planner for current station level, bay and extension purchases priced in Credits.",
+            "Builds every preview from freshly fetched native MissionChief controls — no static costs, inferred endpoints or Coin actions.",
+            "Revalidates the exact selected scope, actions and total before confirmation, then executes one verified purchase at a time within a hard credit budget.",
+            "Stops the complete run after any ambiguous submission, never retries a purchase automatically and retains a dismissible result report."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -866,7 +867,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         'allianceBuildingsMapBlocker', 'majorIncidentFeed', 'allianceCredits',
         'missionAge', 'unitCommitment', 'transportWatcher', 'resourceGap',
         'commandPalette', 'pressureBoard', 'patientTransportSweep', 'unitLocator',
-        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'stationIconCopier', 'procurementBrain', 'operationalTimeline', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
+        'financialIntelligence', 'allianceCourses', 'dispatchRecruitment', 'stationIconCopier', 'expansionPlanner', 'procurementBrain', 'operationalTimeline', 'toolkitDoctor', 'safeMode', 'sessionCleanup',
         'mapMeasure'
     ]);
     const toolkitAnalyticsSessionSignals = new Set();
@@ -1410,6 +1411,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const STATION_ICON_MAX_DIMENSION = 200;
     const STATION_ICON_MIME_TYPES = Object.freeze(['image/png', 'image/jpeg']);
     const STATION_ICON_PRIVILEGED_IMAGE_HOSTS = Object.freeze(['leitstellenspiel.s3.amazonaws.com']);
+    const EXPANSION_PLANNER_OPERATION_OPTIONS = Object.freeze(['all', 'level', 'extension']);
+    const EXPANSION_PLANNER_DELAY_OPTIONS = Object.freeze([1000, 1500, 2000, 3000, 5000]);
+    const EXPANSION_PLANNER_SCAN_STATION_LIMIT = 500;
+    const EXPANSION_PLANNER_SCAN_CONCURRENCY = 4;
+    const EXPANSION_PLANNER_OPERATION_LIMIT = 1000;
+    const EXPANSION_PLANNER_APPLY_LIMIT = 100;
+    const EXPANSION_PLANNER_MAX_BUDGET = 2000000000;
+    const EXPANSION_PLANNER_REQUEST_TIMEOUT_MS = 15000;
     const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
     const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
     const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
@@ -1853,10 +1862,42 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         singleBuildingApi: '',
         log: []
     };
+    const restoredExpansionPlannerReport = loadExpansionPlannerReport();
+    const expansionPlannerRuntime = {
+        running: false,
+        preparing: false,
+        stopRequested: false,
+        catalogPromise: null,
+        scanPromise: null,
+        dispatches: [],
+        typeLabels: {},
+        buildings: [],
+        catalogAt: 0,
+        queue: [],
+        summary: null,
+        scannedAt: 0,
+        scannedDispatchId: '',
+        scannedTypeId: '',
+        scannedOperationKind: '',
+        scannedMaxStations: 0,
+        selectedOperationIds: new Set(),
+        currentBuildingId: '',
+        currentItem: '',
+        processed: 0,
+        purchased: 0,
+        skipped: 0,
+        errors: 0,
+        creditsSpent: 0,
+        startedAt: 0,
+        singleBuildingApi: '',
+        lastReport: restoredExpansionPlannerReport,
+        log: []
+    };
     runtimeOnCleanup(() => {
         allianceCourseRuntime.stopRequested = true;
         dispatchRecruitmentRuntime.stopRequested = true;
         stationIconCopierRuntime.stopRequested = true;
+        expansionPlannerRuntime.stopRequested = true;
     });
     const personalVehicleApiCache = new Map();
     const missionCommitmentIndex = new Map();
@@ -2208,6 +2249,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         allianceCourses: { day: 'today', shareDuration: 86400, delayMs: 1500 },
         dispatchRecruitment: { dispatchId: '', buildingTypeId: DISPATCH_RECRUITMENT_ALL_TYPES, hiringPhase: '3', personnelDesired: '', delayMs: 1500 },
         stationIconCopier: { dispatchId: '', sourceBuildingId: '', replaceMode: STATION_ICON_REPLACE_DEFAULTS, delayMs: 1500 },
+        expansionPlanner: { dispatchId: '', buildingTypeId: DISPATCH_RECRUITMENT_ALL_TYPES, operationKind: 'all', creditBudget: '', maxStations: 100, delayMs: 1500 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
@@ -2239,6 +2281,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         allianceCourses: { ...base.allianceCourses, ...(parsed.allianceCourses || {}) },
         dispatchRecruitment: { ...base.dispatchRecruitment, ...(parsed.dispatchRecruitment || {}) },
         stationIconCopier: { ...base.stationIconCopier, ...(parsed.stationIconCopier || {}) },
+        expansionPlanner: { ...base.expansionPlanner, ...(parsed.expansionPlanner || {}) },
         majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
@@ -2353,6 +2396,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.stationIconCopier.sourceBuildingId = /^\d+$/u.test(stationIconSourceBuildingId) ? stationIconSourceBuildingId : '';
         merged.stationIconCopier.replaceMode = STATION_ICON_REPLACE_OPTIONS.includes(String(merged.stationIconCopier.replaceMode)) ? String(merged.stationIconCopier.replaceMode) : STATION_ICON_REPLACE_DEFAULTS;
         merged.stationIconCopier.delayMs = STATION_ICON_DELAY_OPTIONS.includes(Number(merged.stationIconCopier.delayMs)) ? Number(merged.stationIconCopier.delayMs) : 1500;
+        const expansionPlannerDispatchId = String(merged.expansionPlanner.dispatchId || '');
+        merged.expansionPlanner.dispatchId = expansionPlannerDispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES || /^\d+$/u.test(expansionPlannerDispatchId) ? expansionPlannerDispatchId : '';
+        const expansionPlannerTypeId = String(merged.expansionPlanner.buildingTypeId || DISPATCH_RECRUITMENT_ALL_TYPES);
+        merged.expansionPlanner.buildingTypeId = expansionPlannerTypeId === DISPATCH_RECRUITMENT_ALL_TYPES || /^\d+$/u.test(expansionPlannerTypeId) ? expansionPlannerTypeId : DISPATCH_RECRUITMENT_ALL_TYPES;
+        merged.expansionPlanner.operationKind = EXPANSION_PLANNER_OPERATION_OPTIONS.includes(String(merged.expansionPlanner.operationKind)) ? String(merged.expansionPlanner.operationKind) : 'all';
+        const expansionPlannerBudget = String(merged.expansionPlanner.creditBudget ?? '').trim();
+        merged.expansionPlanner.creditBudget = /^\d+$/u.test(expansionPlannerBudget) && Number(expansionPlannerBudget) <= EXPANSION_PLANNER_MAX_BUDGET ? String(Number(expansionPlannerBudget)) : '';
+        merged.expansionPlanner.maxStations = Math.round(clamp(merged.expansionPlanner.maxStations, 1, EXPANSION_PLANNER_SCAN_STATION_LIMIT, 100));
+        merged.expansionPlanner.delayMs = EXPANSION_PLANNER_DELAY_OPTIONS.includes(Number(merged.expansionPlanner.delayMs)) ? Number(merged.expansionPlanner.delayMs) : 1500;
         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
         const loadedPayoutDuration = Number(parsed?.payoutFlash?.durationMs);
@@ -18410,7 +18462,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
 
     async function loadDispatchRecruitmentCatalog({ force = false } = {}) {
         if (dispatchRecruitmentRuntime.catalogPromise) return dispatchRecruitmentRuntime.catalogPromise;
-        if (dispatchRecruitmentRuntime.running || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return dispatchRecruitmentRuntime.dispatches;
+        if (dispatchRecruitmentRuntime.running || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return dispatchRecruitmentRuntime.dispatches;
         if (!force && dispatchRecruitmentRuntime.catalogAt && dispatchRecruitmentRuntime.dispatches.length) return dispatchRecruitmentRuntime.dispatches;
         dispatchRecruitmentRuntime.currentItem = 'Loading native Dispatch Centre and building-type options';
         const catalogPromise = (async () => {
@@ -18467,7 +18519,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
 
     async function scanDispatchRecruitmentStations({ forceCatalog = false } = {}) {
         if (dispatchRecruitmentRuntime.scanPromise) return dispatchRecruitmentRuntime.scanPromise;
-        if (dispatchRecruitmentRuntime.running || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return dispatchRecruitmentRuntime.queue;
+        if (dispatchRecruitmentRuntime.running || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return dispatchRecruitmentRuntime.queue;
         const dispatches = await loadDispatchRecruitmentCatalog({ force: forceCatalog });
         if (!dispatches.length || dispatchRecruitmentRuntime.running || runtime.destroyed) return [];
         const dispatchId = String(state.dispatchRecruitment.dispatchId || '');
@@ -18819,7 +18871,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     function dispatchRecruitmentSelectVisible(selected) {
-        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return;
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return;
         for (const item of dispatchRecruitmentVisibleQueue()) {
             if (selected) dispatchRecruitmentRuntime.selectedBuildingIds.add(item.buildingId);
             else dispatchRecruitmentRuntime.selectedBuildingIds.delete(item.buildingId);
@@ -18833,7 +18885,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const host = panel?.querySelector?.('[data-dispatch-recruitment]');
         if (!host) return;
         const runtimeState = dispatchRecruitmentRuntime;
-        const locked = runtimeState.running || Boolean(runtimeState.scanPromise) || Boolean(runtimeState.catalogPromise) || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || Boolean(stationIconCopierRuntime.scanPromise) || Boolean(stationIconCopierRuntime.catalogPromise);
+        const locked = runtimeState.running || Boolean(runtimeState.scanPromise) || Boolean(runtimeState.catalogPromise) || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || Boolean(stationIconCopierRuntime.scanPromise) || Boolean(stationIconCopierRuntime.catalogPromise) || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || Boolean(expansionPlannerRuntime.scanPromise) || Boolean(expansionPlannerRuntime.catalogPromise);
         const dispatchSelect = panel.querySelector('[data-setting="dispatch-recruitment-centre"]');
         const dispatchOptions = runtimeState.dispatches.length
             ? `<option value="${DISPATCH_RECRUITMENT_ALL_CENTRES}">ALL DISPATCH CENTRES</option>${runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}`
@@ -18938,7 +18990,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     }
 
     async function startDispatchRecruitment() {
-        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise) return;
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return;
         let plan;
         try { plan = readDispatchRecruitmentPlan(); }
         catch (err) { showToast(err?.message || 'Check the Dispatch Recruitment values'); return; }
@@ -19655,7 +19707,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
 
     async function loadStationIconCatalog({ force = false } = {}) {
         if (stationIconCopierRuntime.catalogPromise) return stationIconCopierRuntime.catalogPromise;
-        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running) return stationIconCopierRuntime.buildings;
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return stationIconCopierRuntime.buildings;
         if (!force && stationIconCopierRuntime.catalogAt && stationIconCopierRuntime.buildings.length) return stationIconCopierRuntime.buildings;
         if (force) clearStationIconScan({ preserveLog: true });
         stationIconCopierRuntime.currentItem = 'Loading native Dispatch Centres and owned stations';
@@ -19704,7 +19756,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
 
     async function scanStationIconTargets() {
         if (stationIconCopierRuntime.scanPromise) return stationIconCopierRuntime.scanPromise;
-        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running) return stationIconCopierRuntime.queue;
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || dispatchRecruitmentRuntime.running || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return stationIconCopierRuntime.queue;
         const scanPromise = (async () => {
             const buildings = await loadStationIconCatalog({ force: true });
             if (!buildings.length || runtime.destroyed) return [];
@@ -19781,7 +19833,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
         const host = controls.host;
         if (!host) return;
         const runtimeState = stationIconCopierRuntime;
-        const locked = runtimeState.running || runtimeState.preparing || runtimeState.catalogPromise || runtimeState.scanPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.catalogPromise || dispatchRecruitmentRuntime.scanPromise;
+        const locked = runtimeState.running || runtimeState.preparing || runtimeState.catalogPromise || runtimeState.scanPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.catalogPromise || dispatchRecruitmentRuntime.scanPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise;
         const dispatchId = String(state.stationIconCopier.dispatchId || '');
         const sourceBuildingId = String(state.stationIconCopier.sourceBuildingId || '');
         const replaceMode = String(state.stationIconCopier.replaceMode || STATION_ICON_REPLACE_DEFAULTS);
@@ -19866,7 +19918,7 @@ Each station will be rechecked against its exact scanned Dispatch Centre, submit
     }
 
     async function startStationIconCopier() {
-        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise) return;
+        if (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return;
         let plan;
         try { plan = readStationIconPlan(); }
         catch (err) { showToast(err?.message || 'Check the Station Icon Copier values'); return; }
@@ -19988,6 +20040,826 @@ Each target will be rechecked, submitted through its current native building-edi
         stationIconCopierRuntime.stopRequested = true;
         stationIconLog('Stop requested — the active MissionChief request and verification will finish, then no further stations will be changed', 'warn');
         renderStationIconCopierPanel();
+    }
+
+    function expansionPlannerText(value) {
+        return String(value || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function expansionPlannerBoolean(value) {
+        return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+    }
+
+    function expansionPlannerExtensions(raw) {
+        return Array.from(Array.isArray(raw) ? raw : []).map((extension, index) => ({
+            caption: expansionPlannerText(extension?.caption) || `Extension ${index + 1}`,
+            typeId: String(extension?.type_id ?? index),
+            enabled: expansionPlannerBoolean(extension?.enabled),
+            available: extension?.available !== false,
+            availableAt: String(extension?.available_at || '')
+        }));
+    }
+
+    function normaliseExpansionPlannerRecord(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const id = String(raw.id ?? '').trim();
+        const typeId = String(raw.building_type ?? '').trim();
+        if (!/^\d+$/u.test(id) || !/^\d+$/u.test(typeId)) return null;
+        const dispatchValue = raw.leitstelle_building_id ?? raw.control_center_id ?? raw.controlCentreId ?? 0;
+        const dispatchId = /^\d+$/u.test(String(dispatchValue ?? '').trim()) && Number(dispatchValue) > 0 ? String(dispatchValue) : '0';
+        return {
+            id,
+            caption: expansionPlannerText(raw.caption ?? raw.name) || `Station ${id}`,
+            typeId,
+            dispatchId,
+            small: expansionPlannerBoolean(raw.small_building),
+            level: Math.max(0, Math.round(Number(raw.level) || 0)),
+            latitude: Number.isFinite(Number(raw.latitude)) ? Number(raw.latitude) : null,
+            longitude: Number.isFinite(Number(raw.longitude)) ? Number(raw.longitude) : null,
+            extensions: expansionPlannerExtensions(raw.extensions)
+        };
+    }
+
+    function expansionPlannerExtensionDigest(record) {
+        return Array.from(record?.extensions || []).map(extension => [extension.typeId, extension.caption, extension.enabled ? 1 : 0, extension.available ? 1 : 0, extension.availableAt].join('|')).join('||');
+    }
+
+    function expansionPlannerHasPendingConstruction(record, doc) {
+        if (Array.from(record?.extensions || []).some(extension => !extension.available && extension.availableAt)) return true;
+        const table = doc?.getElementById?.('ausbauten');
+        if (!table) return false;
+        if (table.querySelector?.('[data-end-time], a[href*="extension_finish"]')) return true;
+        return Array.from(table.getElementsByTagName?.('span') || []).some(span => /under construction|being built|available at|ready in/iu.test(expansionPlannerText(span.textContent)));
+    }
+
+    function expansionPlannerControlText(control) {
+        const values = [control?.textContent, control?.value, control?.getAttribute?.('title'), control?.getAttribute?.('aria-label')];
+        for (const image of Array.from(control?.getElementsByTagName?.('img') || [])) values.push(image.alt, image.title);
+        return expansionPlannerText(values.filter(Boolean).join(' '));
+    }
+
+    function expansionPlannerCreditPrice(control) {
+        const text = expansionPlannerControlText(control);
+        if (!text || /\b(?:coins?|gold)\b/iu.test(text)) return 0;
+        const matches = Array.from(text.matchAll(/(?:^|[^\d])([\d][\d\s.,']*)\s*credits?\b/giu));
+        if (matches.length !== 1) return 0;
+        const digits = String(matches[0][1] || '').replace(/\D/gu, '');
+        const value = /^\d+$/u.test(digits) ? Number(digits) : 0;
+        return Number.isSafeInteger(value) && value > 0 && value <= EXPANSION_PLANNER_MAX_BUDGET ? value : 0;
+    }
+
+    function expansionPlannerMutationReference(rawUrl, buildingId, kind) {
+        let url;
+        try { url = new URL(rawUrl || '', `${pageWindow.location.origin}/buildings/${buildingId}`); }
+        catch (err) { return null; }
+        if (url.origin !== pageWindow.location.origin || url.search || url.hash) return null;
+        const escapedId = String(buildingId).replace(/[^\d]/gu, '');
+        const prefix = `/buildings/${escapedId}/`;
+        if (!escapedId || !url.pathname.startsWith(prefix)) return null;
+        const suffix = url.pathname.slice(prefix.length).replace(/\/+$/u, '').toLowerCase();
+        if (kind === 'level') {
+            if (!/^(?:small_)?expand$/u.test(suffix)) return null;
+        } else {
+            if (!suffix.includes('extension') || /(?:ready|finish|cancel|delete|remove|disable|enable|coin|gold)/u.test(suffix)) return null;
+        }
+        return { href: url.href, path: url.pathname, suffix };
+    }
+
+    function expansionPlannerOperationLabel(control, kind, row, record, reference) {
+        if (kind === 'extension') {
+            const bold = row?.getElementsByTagName?.('b')?.[0];
+            const firstCell = row?.cells?.[0];
+            return expansionPlannerText(bold?.textContent || firstCell?.textContent);
+        }
+        if (reference?.suffix === 'small_expand') return 'Convert small station to full station';
+        const own = expansionPlannerControlText(control).replace(/[\d\s.,']+\s*credits?\b/giu, '').replace(/[·|()\-–—]+$/gu, '').trim();
+        return own || `Upgrade to level ${Math.max(0, Number(record?.level) || 0) + 1}`;
+    }
+
+    function expansionPlannerDescriptor(control, buildingId, kind, row, record, form = null) {
+        const priceCredits = expansionPlannerCreditPrice(control);
+        if (!priceCredits) return null;
+        const rawAction = form?.getAttribute?.('action') || control?.getAttribute?.('href');
+        const reference = expansionPlannerMutationReference(rawAction, buildingId, kind);
+        if (!reference) return null;
+        if (form) {
+            if (String(form.getAttribute('method') || '').toLowerCase() !== 'post') return null;
+            const token = Array.from(form.elements || []).find(element => element.name === 'authenticity_token' && element.value);
+            if (!token) return null;
+        } else {
+            const method = String(control?.getAttribute?.('data-method') || control?.getAttribute?.('data-turbo-method') || '').toLowerCase();
+            if (method !== 'post') return null;
+        }
+        const label = expansionPlannerOperationLabel(control, kind, row, record, reference);
+        if (!label) return null;
+        const submitKey = form && control?.name ? `${control.name}=${control.value || ''}` : '';
+        const fingerprint = [kind, reference.path, label.toLowerCase(), priceCredits, submitKey].join('|');
+        return {
+            operationId: `${buildingId}:${fingerprint}`,
+            buildingId: String(buildingId),
+            kind,
+            label,
+            priceCredits,
+            actionHref: reference.href,
+            actionPath: reference.path,
+            actionSuffix: reference.suffix,
+            fingerprint,
+            transport: form ? 'form' : 'anchor',
+            submitName: form && control?.name ? String(control.name) : '',
+            submitValue: form && control?.name ? String(control.value || '') : '',
+            control,
+            form
+        };
+    }
+
+    function parseExpansionPlannerActions(doc, record, operationKind = 'all') {
+        const id = String(record?.id || '');
+        if (!/^\d+$/u.test(id) || !doc) return { operations: [], ambiguous: 0 };
+        const operations = [];
+        const requestedKinds = operationKind === 'all' ? ['level', 'extension'] : [operationKind];
+        const extensionTable = doc.getElementById?.('ausbauten');
+        for (const kind of requestedKinds) {
+            const scope = kind === 'extension' ? extensionTable : doc;
+            if (!scope) continue;
+            const rows = kind === 'extension' ? Array.from(scope.getElementsByTagName?.('tr') || []) : [null];
+            for (const row of rows) {
+                const root = row || scope;
+                for (const anchor of Array.from(root.getElementsByTagName?.('a') || [])) {
+                    if (kind === 'level' && extensionTable?.contains?.(anchor)) continue;
+                    const descriptor = expansionPlannerDescriptor(anchor, id, kind, row, record);
+                    if (descriptor) operations.push(descriptor);
+                }
+                for (const form of Array.from(root.getElementsByTagName?.('form') || [])) {
+                    if (kind === 'level' && extensionTable?.contains?.(form)) continue;
+                    const submitters = Array.from(form.elements || []).filter(element => ['submit', 'image'].includes(String(element.type || '').toLowerCase()));
+                    for (const submitter of submitters) {
+                        const descriptor = expansionPlannerDescriptor(submitter, id, kind, row, record, form);
+                        if (descriptor) operations.push(descriptor);
+                    }
+                }
+            }
+        }
+        const byMutation = new Map();
+        for (const operation of operations) {
+            const key = `${operation.transport}|${operation.actionPath}|${operation.submitName}|${operation.submitValue}`;
+            if (!byMutation.has(key)) byMutation.set(key, []);
+            byMutation.get(key).push(operation);
+        }
+        const ambiguous = Array.from(byMutation.values()).filter(group => group.length !== 1).reduce((total, group) => total + group.length, 0);
+        const exact = Array.from(byMutation.values()).filter(group => group.length === 1).map(group => group[0]);
+        return { operations: exact.slice(0, EXPANSION_PLANNER_OPERATION_LIMIT), ambiguous };
+    }
+
+    function expansionPlannerPublicOperation(operation, record, dispatchName, typeLabel) {
+        return {
+            operationId: operation.operationId,
+            fingerprint: operation.fingerprint,
+            buildingId: record.id,
+            name: record.caption,
+            dispatchId: record.dispatchId,
+            dispatchName,
+            typeId: record.typeId,
+            typeLabel,
+            small: record.small,
+            latitude: record.latitude,
+            longitude: record.longitude,
+            level: record.level,
+            extensionDigest: expansionPlannerExtensionDigest(record),
+            kind: operation.kind,
+            label: operation.label,
+            priceCredits: operation.priceCredits,
+            actionPath: operation.actionPath,
+            actionSuffix: operation.actionSuffix,
+            transport: operation.transport,
+            submitName: operation.submitName,
+            submitValue: operation.submitValue,
+            outcome: 'ready',
+            outcomeDetail: ''
+        };
+    }
+
+    async function fetchExpansionPlannerDocument(pathOrUrl) {
+        const url = new URL(pathOrUrl, document.baseURI || pageWindow.location.href);
+        if (url.origin !== pageWindow.location.origin) throw new Error('Blocked an unexpected external Expansion Planner URL.');
+        const response = await runtimeFetch(url.href, {
+            method: 'GET', credentials: 'same-origin', cache: 'no-store',
+            headers: { Accept: 'text/html,application/xhtml+xml' }, timeoutMs: EXPANSION_PLANNER_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief redirected Expansion Planner away from the authenticated game page.');
+        return { doc: new DOMParser().parseFromString(await response.text(), 'text/html'), url: finalUrl.href };
+    }
+
+    async function fetchExpansionPlannerBuildings() {
+        const url = new URL('/api/v2/buildings', document.baseURI || pageWindow.location.href);
+        const response = await runtimeFetch(url.href, {
+            method: 'GET', credentials: 'same-origin', cache: 'no-store',
+            headers: { Accept: 'application/json' }, timeoutMs: EXPANSION_PLANNER_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while loading owned stations.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin || finalUrl.pathname.replace(/\/+$/u, '') !== '/api/v2/buildings') throw new Error('MissionChief redirected the owned-station catalogue unexpectedly.');
+        const payload = await response.json();
+        if (!Array.isArray(payload?.result)) throw new Error('MissionChief did not return the expected owned-station catalogue.');
+        const records = payload.result.map(normaliseExpansionPlannerRecord).filter(Boolean);
+        const reportedTotal = Number(payload?.pagination?.total ?? payload?.pagination?.total_entries ?? payload?.total);
+        if (Number.isFinite(reportedTotal) && reportedTotal > records.length) throw new Error(`MissionChief returned an incomplete owned-station catalogue (${records.length} of ${reportedTotal}).`);
+        const unique = new Map();
+        for (const record of records) {
+            if (unique.has(record.id)) throw new Error(`MissionChief returned duplicate station ${record.id} records.`);
+            unique.set(record.id, record);
+        }
+        return Array.from(unique.values());
+    }
+
+    async function fetchExpansionPlannerApiRecord(path, buildingId, { allowMissing = false } = {}) {
+        const url = new URL(path, document.baseURI || pageWindow.location.href);
+        const response = await runtimeFetch(url.href, {
+            method: 'GET', credentials: 'same-origin', cache: 'no-store',
+            headers: { Accept: 'application/json' }, timeoutMs: EXPANSION_PLANNER_REQUEST_TIMEOUT_MS
+        });
+        if (allowMissing && [404, 405].includes(Number(response.status))) return null;
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} while checking station ${buildingId}.`);
+        const finalUrl = new URL(response.url || url.href, url.href);
+        if (finalUrl.origin !== pageWindow.location.origin || finalUrl.pathname.replace(/\/+$/u, '') !== url.pathname.replace(/\/+$/u, '')) throw new Error(`MissionChief redirected station ${buildingId} data unexpectedly.`);
+        const payload = await response.json();
+        const raw = Array.isArray(payload?.result) ? payload.result.find(item => String(item?.id) === String(buildingId)) : payload?.result && typeof payload.result === 'object' ? payload.result : payload;
+        const record = normaliseExpansionPlannerRecord(raw);
+        if (!record || record.id !== String(buildingId)) throw new Error(`MissionChief did not return authoritative station ${buildingId} data.`);
+        return record;
+    }
+
+    async function fetchExpansionPlannerBuilding(buildingId) {
+        const id = String(buildingId || '');
+        if (!/^\d+$/u.test(id)) throw new Error('Invalid station identifier.');
+        let record = null;
+        if (expansionPlannerRuntime.singleBuildingApi !== 'legacy') {
+            record = await fetchExpansionPlannerApiRecord(`/api/v2/buildings/${id}`, id, { allowMissing: expansionPlannerRuntime.singleBuildingApi === '' });
+            if (record) expansionPlannerRuntime.singleBuildingApi = 'v2';
+            else expansionPlannerRuntime.singleBuildingApi = 'legacy';
+        }
+        return record || fetchExpansionPlannerApiRecord(`/api/buildings/${id}`, id);
+    }
+
+    function expansionPlannerCoordinatesMatch(left, right) {
+        if (left === null || right === null) return true;
+        return Math.abs(Number(left) - Number(right)) <= 0.0000001;
+    }
+
+    function expansionPlannerAssertScope(record, item, afterMutation = false) {
+        const problem = record?.id !== item.buildingId ? 'station identity changed'
+            : record.dispatchId !== item.dispatchId ? 'Dispatch Centre assignment changed'
+            : record.typeId !== item.typeId ? 'building type changed'
+            : record.small !== item.small && item.actionSuffix !== 'small_expand' ? 'small/full classification changed'
+            : record.caption !== item.name ? 'station name changed'
+            : !expansionPlannerCoordinatesMatch(record.latitude, item.latitude) || !expansionPlannerCoordinatesMatch(record.longitude, item.longitude) ? 'station coordinates changed'
+            : '';
+        if (!problem) return record;
+        const prefix = afterMutation ? 'after MissionChief accepted the purchase' : 'after the confirmed preview';
+        throw expansionPlannerSafetyStop(`${item.name}'s ${problem} ${prefix}. No further purchases were attempted.`);
+    }
+
+    function expansionPlannerSafetyStop(message) {
+        const error = new Error(`Expansion Planner safety stop: ${message}`);
+        error.expansionPlannerFatal = true;
+        return error;
+    }
+
+    function expansionPlannerStoppedBeforeMutation(message) {
+        const error = new Error(message || 'Expansion Planner stopped before this purchase. No request was sent.');
+        error.expansionPlannerStoppedBeforeMutation = true;
+        return error;
+    }
+
+    function resetExpansionPlannerResults() {
+        expansionPlannerRuntime.currentBuildingId = '';
+        expansionPlannerRuntime.currentItem = '';
+        expansionPlannerRuntime.processed = 0;
+        expansionPlannerRuntime.purchased = 0;
+        expansionPlannerRuntime.skipped = 0;
+        expansionPlannerRuntime.errors = 0;
+        expansionPlannerRuntime.creditsSpent = 0;
+        for (const item of expansionPlannerRuntime.queue) { item.outcome = 'ready'; item.outcomeDetail = ''; }
+    }
+
+    function clearExpansionPlannerScan({ preserveLog = false } = {}) {
+        expansionPlannerRuntime.queue = [];
+        expansionPlannerRuntime.summary = null;
+        expansionPlannerRuntime.scannedAt = 0;
+        expansionPlannerRuntime.scannedDispatchId = '';
+        expansionPlannerRuntime.scannedTypeId = '';
+        expansionPlannerRuntime.scannedOperationKind = '';
+        expansionPlannerRuntime.scannedMaxStations = 0;
+        expansionPlannerRuntime.selectedOperationIds.clear();
+        if (!preserveLog) expansionPlannerRuntime.log = [];
+        resetExpansionPlannerResults();
+    }
+
+    function expansionPlannerLog(message, level = 'info') {
+        const clean = expansionPlannerText(message);
+        if (!clean) return;
+        expansionPlannerRuntime.log.unshift({ time: Date.now(), message: clean, level: String(level || 'info') });
+        if (expansionPlannerRuntime.log.length > 30) expansionPlannerRuntime.log.length = 30;
+        renderExpansionPlannerPanel();
+    }
+
+    function expansionPlannerOtherDispatchBusy() {
+        return dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise
+            || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise;
+    }
+
+    async function loadExpansionPlannerCatalog({ force = false } = {}) {
+        if (expansionPlannerRuntime.catalogPromise) return expansionPlannerRuntime.catalogPromise;
+        if (expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerOtherDispatchBusy()) return expansionPlannerRuntime.buildings;
+        if (!force && expansionPlannerRuntime.catalogAt && expansionPlannerRuntime.buildings.length) return expansionPlannerRuntime.buildings;
+        if (force) clearExpansionPlannerScan({ preserveLog: true });
+        expansionPlannerRuntime.currentItem = 'Loading native Dispatch Centres and owned stations';
+        const catalogPromise = (async () => {
+            try {
+                const [{ doc }, buildings] = await Promise.all([fetchExpansionPlannerDocument('/buildings/new'), fetchExpansionPlannerBuildings()]);
+                const catalog = parseDispatchRecruitmentCatalog(doc);
+                if (!catalog.dispatches.length) throw new Error('MissionChief did not expose any Dispatch Centre options.');
+                expansionPlannerRuntime.dispatches = catalog.dispatches;
+                expansionPlannerRuntime.typeLabels = catalog.typeLabels;
+                expansionPlannerRuntime.buildings = buildings;
+                expansionPlannerRuntime.catalogAt = Date.now();
+                expansionPlannerRuntime.singleBuildingApi = '';
+                const savedDispatch = String(state.expansionPlanner.dispatchId || '');
+                state.expansionPlanner.dispatchId = savedDispatch === DISPATCH_RECRUITMENT_ALL_CENTRES ? savedDispatch : catalog.dispatches.some(item => item.id === savedDispatch) ? savedDispatch : catalog.dispatches[0].id;
+                if (state.expansionPlanner.buildingTypeId !== DISPATCH_RECRUITMENT_ALL_TYPES && !Object.prototype.hasOwnProperty.call(catalog.typeLabels, state.expansionPlanner.buildingTypeId)) state.expansionPlanner.buildingTypeId = DISPATCH_RECRUITMENT_ALL_TYPES;
+                saveState();
+                expansionPlannerRuntime.currentItem = '';
+                expansionPlannerLog(`Loaded ${buildings.length} owned station${buildings.length === 1 ? '' : 's'} across ${catalog.dispatches.length} Dispatch Centre${catalog.dispatches.length === 1 ? '' : 's'}`);
+                return buildings;
+            } catch (err) {
+                expansionPlannerRuntime.dispatches = [];
+                expansionPlannerRuntime.typeLabels = {};
+                expansionPlannerRuntime.buildings = [];
+                expansionPlannerRuntime.catalogAt = 0;
+                expansionPlannerRuntime.currentItem = '';
+                clearExpansionPlannerScan({ preserveLog: true });
+                expansionPlannerLog(`Station load failed: ${err?.message || 'unknown error'}`, 'error');
+                return [];
+            }
+        })();
+        expansionPlannerRuntime.catalogPromise = catalogPromise;
+        renderExpansionPlannerPanel();
+        try { return await catalogPromise; }
+        finally { expansionPlannerRuntime.catalogPromise = null; renderExpansionPlannerPanel(); }
+    }
+
+    function expansionPlannerScopedBuildings() {
+        const dispatchId = String(state.expansionPlanner.dispatchId || '');
+        const typeId = String(state.expansionPlanner.buildingTypeId || DISPATCH_RECRUITMENT_ALL_TYPES);
+        const dispatchIds = new Set(expansionPlannerRuntime.dispatches.map(item => item.id));
+        return expansionPlannerRuntime.buildings.filter(record => {
+            if (record.dispatchId === '0') return false;
+            if (dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? !dispatchIds.has(record.dispatchId) : record.dispatchId !== dispatchId) return false;
+            return typeId === DISPATCH_RECRUITMENT_ALL_TYPES || record.typeId === typeId;
+        }).sort((left, right) => left.caption.localeCompare(right.caption, undefined, { sensitivity: 'base', numeric: true }));
+    }
+
+    async function scanExpansionPlanner() {
+        if (expansionPlannerRuntime.scanPromise) return expansionPlannerRuntime.queue;
+        if (expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerOtherDispatchBusy()) return expansionPlannerRuntime.queue;
+        const scanPromise = (async () => {
+            const buildings = await loadExpansionPlannerCatalog({ force: true });
+            if (!buildings.length || runtime.destroyed) return [];
+            const dispatchId = String(state.expansionPlanner.dispatchId || '');
+            const typeId = String(state.expansionPlanner.buildingTypeId || DISPATCH_RECRUITMENT_ALL_TYPES);
+            const operationKind = String(state.expansionPlanner.operationKind || 'all');
+            const maxStations = Math.round(clamp(state.expansionPlanner.maxStations, 1, EXPANSION_PLANNER_SCAN_STATION_LIMIT, 100));
+            if (dispatchId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !expansionPlannerRuntime.dispatches.some(item => item.id === dispatchId)) throw new Error('Choose a Dispatch Centre loaded from MissionChief.');
+            if (typeId !== DISPATCH_RECRUITMENT_ALL_TYPES && !Object.prototype.hasOwnProperty.call(expansionPlannerRuntime.typeLabels, typeId)) throw new Error('Choose a building type loaded from MissionChief.');
+            if (!EXPANSION_PLANNER_OPERATION_OPTIONS.includes(operationKind)) throw new Error('Choose a valid upgrade type.');
+            const scoped = expansionPlannerScopedBuildings();
+            const targets = scoped.slice(0, maxStations);
+            const dispatchNames = new Map(expansionPlannerRuntime.dispatches.map(item => [item.id, item.name]));
+            const queue = [];
+            const summary = { scoped: scoped.length, scanned: 0, eligibleStations: 0, operations: 0, pending: 0, unavailable: 0, ambiguous: 0, truncatedStations: Math.max(0, scoped.length - targets.length), unavailableNames: [] };
+            let cursor = 0;
+            expansionPlannerRuntime.stopRequested = false;
+            const worker = async () => {
+                while (!runtime.destroyed && !expansionPlannerRuntime.stopRequested) {
+                    const index = cursor++;
+                    if (index >= targets.length) break;
+                    const record = targets[index];
+                    expansionPlannerRuntime.currentBuildingId = record.id;
+                    expansionPlannerRuntime.currentItem = `Scanning ${index + 1}/${targets.length} · ${record.caption}`;
+                    renderExpansionPlannerPanel();
+                    try {
+                        const { doc } = await fetchExpansionPlannerDocument(`/buildings/${record.id}`);
+                        summary.scanned += 1;
+                        if (expansionPlannerHasPendingConstruction(record, doc)) { summary.pending += 1; continue; }
+                        const parsed = parseExpansionPlannerActions(doc, record, operationKind);
+                        summary.ambiguous += parsed.ambiguous;
+                        if (!parsed.operations.length) { summary.unavailable += 1; continue; }
+                        summary.eligibleStations += 1;
+                        for (const operation of parsed.operations) {
+                            if (queue.length >= EXPANSION_PLANNER_OPERATION_LIMIT) break;
+                            queue.push(expansionPlannerPublicOperation(operation, record, dispatchNames.get(record.dispatchId) || `Dispatch Centre ${record.dispatchId}`, expansionPlannerRuntime.typeLabels[record.typeId] || `Building type ${record.typeId}`));
+                        }
+                    } catch (err) {
+                        summary.unavailable += 1;
+                        if (summary.unavailableNames.length < 20) summary.unavailableNames.push(`${record.caption}: ${err?.message || 'unavailable'}`);
+                    }
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(EXPANSION_PLANNER_SCAN_CONCURRENCY, targets.length || 1) }, worker));
+            queue.sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base', numeric: true }) || left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
+            summary.operations = queue.length;
+            expansionPlannerRuntime.queue = queue;
+            expansionPlannerRuntime.summary = summary;
+            expansionPlannerRuntime.scannedAt = Date.now();
+            expansionPlannerRuntime.scannedDispatchId = dispatchId;
+            expansionPlannerRuntime.scannedTypeId = typeId;
+            expansionPlannerRuntime.scannedOperationKind = operationKind;
+            expansionPlannerRuntime.scannedMaxStations = maxStations;
+            expansionPlannerRuntime.selectedOperationIds = new Set();
+            expansionPlannerRuntime.currentBuildingId = '';
+            expansionPlannerRuntime.currentItem = '';
+            resetExpansionPlannerResults();
+            expansionPlannerLog(`Scan complete: ${queue.length} live Credit action${queue.length === 1 ? '' : 's'} across ${summary.eligibleStations} station${summary.eligibleStations === 1 ? '' : 's'} · nothing selected`);
+            return queue;
+        })();
+        expansionPlannerRuntime.scanPromise = scanPromise;
+        renderExpansionPlannerPanel();
+        try { return await scanPromise; }
+        catch (err) { expansionPlannerLog(`Scan failed: ${err?.message || 'unknown error'}`, 'error'); return []; }
+        finally { expansionPlannerRuntime.scanPromise = null; expansionPlannerRuntime.stopRequested = false; expansionPlannerRuntime.currentItem = ''; renderExpansionPlannerPanel(); }
+    }
+
+    function expansionPlannerPlannedQueue() {
+        return expansionPlannerRuntime.queue.filter(item => expansionPlannerRuntime.selectedOperationIds.has(item.operationId));
+    }
+
+    function expansionPlannerSelectTargets(selected) {
+        if (expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return;
+        expansionPlannerRuntime.selectedOperationIds.clear();
+        if (selected) {
+            const usedBuildings = new Set();
+            for (const item of expansionPlannerRuntime.queue) {
+                if (usedBuildings.has(item.buildingId) || expansionPlannerRuntime.selectedOperationIds.size >= EXPANSION_PLANNER_APPLY_LIMIT) continue;
+                usedBuildings.add(item.buildingId);
+                expansionPlannerRuntime.selectedOperationIds.add(item.operationId);
+            }
+        }
+        resetExpansionPlannerResults();
+        renderExpansionPlannerPanel();
+    }
+
+    function expansionPlannerSetTarget(operationId, selected) {
+        if (expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise) return;
+        const item = expansionPlannerRuntime.queue.find(candidate => candidate.operationId === operationId);
+        if (!item) return;
+        if (selected) {
+            for (const candidate of expansionPlannerRuntime.queue) {
+                if (candidate.buildingId === item.buildingId) expansionPlannerRuntime.selectedOperationIds.delete(candidate.operationId);
+            }
+            expansionPlannerRuntime.selectedOperationIds.add(item.operationId);
+        } else expansionPlannerRuntime.selectedOperationIds.delete(item.operationId);
+        resetExpansionPlannerResults();
+        renderExpansionPlannerPanel();
+    }
+
+    function expansionPlannerFindCurrentAction(doc, record, item) {
+        const parsed = parseExpansionPlannerActions(doc, record, item.kind);
+        const matches = parsed.operations.filter(operation => operation.fingerprint === item.fingerprint);
+        if (parsed.ambiguous || matches.length !== 1) throw expansionPlannerSafetyStop(`${item.name}'s exact native ${item.label} Credit action is unavailable or ambiguous. No request was sent.`);
+        const operation = matches[0];
+        if (operation.priceCredits !== item.priceCredits || operation.actionPath !== item.actionPath || operation.transport !== item.transport) throw expansionPlannerSafetyStop(`${item.name}'s native action or live Credit price changed. No request was sent.`);
+        return operation;
+    }
+
+    async function preflightExpansionPlannerSelection(items) {
+        const fresh = [];
+        for (let index = 0; index < items.length; index += 1) {
+            if (runtime.destroyed || expansionPlannerRuntime.stopRequested) throw new Error('Expansion Planner preparation stopped.');
+            const item = items[index];
+            expansionPlannerRuntime.currentBuildingId = item.buildingId;
+            expansionPlannerRuntime.currentItem = `Revalidating ${index + 1}/${items.length} · ${item.name}`;
+            renderExpansionPlannerPanel();
+            const [record, page] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerDocument(`/buildings/${item.buildingId}`)]);
+            if (runtime.destroyed || expansionPlannerRuntime.stopRequested) throw expansionPlannerStoppedBeforeMutation('Expansion Planner preparation stopped before confirmation. No request was sent.');
+            expansionPlannerAssertScope(record, item);
+            if (record.level !== item.level || expansionPlannerExtensionDigest(record) !== item.extensionDigest) throw expansionPlannerSafetyStop(`${item.name}'s level or extension state changed after the scan. Scan again before purchasing.`);
+            if (expansionPlannerHasPendingConstruction(record, page.doc)) throw expansionPlannerSafetyStop(`${item.name} now has an expansion under construction. No request was sent.`);
+            expansionPlannerFindCurrentAction(page.doc, record, item);
+            fresh.push({ ...item, level: record.level, extensionDigest: expansionPlannerExtensionDigest(record) });
+        }
+        return fresh;
+    }
+
+    function prepareExpansionPlannerSubmission(operation, doc) {
+        if (operation.transport === 'form') {
+            const form = operation.form;
+            const formData = new FormData(form);
+            if (operation.submitName) formData.append(operation.submitName, operation.submitValue);
+            if (!formData.get('authenticity_token')) throw expansionPlannerSafetyStop('the current native purchase form lost its authenticity token. No request was sent.');
+            return { href: operation.actionHref, body: formData, headers: { Accept: 'text/html,application/xhtml+xml' } };
+        }
+        const token = doc?.querySelector?.('meta[name="csrf-token"]')?.getAttribute?.('content');
+        if (!token) throw expansionPlannerSafetyStop('the current building page did not expose a native CSRF token. No request was sent.');
+        const body = new URLSearchParams();
+        body.set('_method', 'post');
+        body.set('authenticity_token', token);
+        return { href: operation.actionHref, body, headers: { Accept: 'text/html,application/xhtml+xml', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' } };
+    }
+
+    async function submitExpansionPlannerOperation(prepared, item) {
+        const action = new URL(prepared.href, document.baseURI || pageWindow.location.href);
+        if (action.origin !== pageWindow.location.origin || action.pathname !== item.actionPath || action.search || action.hash) throw expansionPlannerSafetyStop('blocked an unexpected purchase URL. No request was sent.');
+        let response;
+        try {
+            response = await runtimeFetch(action.href, {
+                method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'follow',
+                headers: prepared.headers, body: prepared.body, timeoutMs: EXPANSION_PLANNER_REQUEST_TIMEOUT_MS
+            });
+        } catch (err) {
+            throw expansionPlannerSafetyStop('MissionChief may have received the purchase, but its response could not be verified. No further purchases were attempted.');
+        }
+        if (!response.ok) throw expansionPlannerSafetyStop(`MissionChief returned HTTP ${response.status} after the purchase. No further purchases were attempted.`);
+        let finalUrl;
+        try { finalUrl = new URL(response.url || action.href, action.href); }
+        catch (err) { throw expansionPlannerSafetyStop('MissionChief returned an unreadable destination after the purchase. No further purchases were attempted.'); }
+        if (finalUrl.origin !== pageWindow.location.origin || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw expansionPlannerSafetyStop('MissionChief redirected the purchase outside the authenticated building flow. No further purchases were attempted.');
+    }
+
+    async function applyExpansionPlannerOperation(item, budgetRemaining) {
+        const [before, page] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerDocument(`/buildings/${item.buildingId}`)]);
+        expansionPlannerAssertScope(before, item);
+        if (before.level !== item.level || expansionPlannerExtensionDigest(before) !== item.extensionDigest) throw expansionPlannerSafetyStop(`${item.name}'s level or extension state changed after final confirmation. No request was sent.`);
+        if (expansionPlannerHasPendingConstruction(before, page.doc)) throw expansionPlannerSafetyStop(`${item.name} has an expansion under construction. No request was sent.`);
+        const operation = expansionPlannerFindCurrentAction(page.doc, before, item);
+        if (operation.priceCredits > budgetRemaining) throw expansionPlannerSafetyStop(`the remaining hard budget is lower than ${item.name}'s live price. No request was sent.`);
+        if (runtime.destroyed || expansionPlannerRuntime.stopRequested) throw expansionPlannerStoppedBeforeMutation(`${item.name}'s purchase was stopped before submission. No request was sent.`);
+        const prepared = prepareExpansionPlannerSubmission(operation, page.doc);
+        await submitExpansionPlannerOperation(prepared, item);
+        if (!await runtimeDelay(350)) throw expansionPlannerSafetyStop('the purchase was submitted, but the Toolkit stopped before verification.');
+        let after;
+        let verifiedPage;
+        try { [after, verifiedPage] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerDocument(`/buildings/${item.buildingId}`)]); }
+        catch (err) { throw expansionPlannerSafetyStop('the purchase was submitted, but authoritative station verification failed. No further purchases were attempted.'); }
+        expansionPlannerAssertScope(after, item, true);
+        const stillOffered = parseExpansionPlannerActions(verifiedPage.doc, after, item.kind).operations.some(candidate => candidate.fingerprint === item.fingerprint);
+        if (stillOffered) throw expansionPlannerSafetyStop(`MissionChief still exposes ${item.name}'s exact purchased action. No further purchases were attempted.`);
+        if (item.kind === 'level') {
+            const verified = item.actionSuffix === 'small_expand' ? before.small && !after.small : after.level === before.level + 1;
+            if (!verified) throw expansionPlannerSafetyStop(`MissionChief did not verify ${item.name}'s requested level/bay upgrade. No further purchases were attempted.`);
+        } else if (expansionPlannerExtensionDigest(after) === expansionPlannerExtensionDigest(before)) {
+            throw expansionPlannerSafetyStop(`MissionChief did not verify ${item.name}'s requested extension state. No further purchases were attempted.`);
+        }
+        return { record: after, detail: `${item.label} · ${item.priceCredits.toLocaleString()} Credits verified` };
+    }
+
+    function normaliseExpansionPlannerReport(value) {
+        let source = value;
+        if (typeof source === 'string') { try { source = JSON.parse(source); } catch (err) { return null; } }
+        if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+        const reportId = String(source.reportId || '');
+        const outcome = String(source.outcome || '');
+        if (!/^upgrade-\d{10,16}-[a-z0-9]{6}$/u.test(reportId) || !['successful', 'partial', 'failed', 'manually-stopped'].includes(outcome)) return null;
+        const number = input => Math.max(0, Math.round(Number(input) || 0));
+        const items = Array.from(Array.isArray(source.items) ? source.items : []).slice(0, EXPANSION_PLANNER_APPLY_LIMIT).map(item => ({
+            name: expansionPlannerText(item?.name).slice(0, 120), label: expansionPlannerText(item?.label).slice(0, 160),
+            priceCredits: number(item?.priceCredits), outcome: ['purchased', 'skipped', 'error'].includes(item?.outcome) ? item.outcome : 'error',
+            detail: expansionPlannerText(item?.detail).slice(0, 220)
+        }));
+        return Object.freeze({
+            schemaVersion: 1, reportId, toolkitVersion: String(source.toolkitVersion || SCRIPT.version).slice(0, 24),
+            startedAt: number(source.startedAt), completedAt: number(source.completedAt), outcome,
+            planned: number(source.planned), purchased: number(source.purchased), skipped: number(source.skipped), errors: number(source.errors),
+            plannedCredits: number(source.plannedCredits), creditsSpent: number(source.creditsSpent), items: Object.freeze(items)
+        });
+    }
+
+    function loadExpansionPlannerReport() {
+        return normaliseExpansionPlannerReport(gmGetValueSafe(SCRIPT.expansionPlannerReportState, ''));
+    }
+
+    function persistExpansionPlannerReport(report) {
+        const clean = normaliseExpansionPlannerReport(report);
+        if (!clean) return null;
+        expansionPlannerRuntime.lastReport = clean;
+        gmSetValueSafe(SCRIPT.expansionPlannerReportState, JSON.stringify(clean));
+        return clean;
+    }
+
+    function dismissExpansionPlannerReport() {
+        expansionPlannerRuntime.lastReport = null;
+        gmDeleteValueSafe(SCRIPT.expansionPlannerReportState);
+        renderExpansionPlannerPanel();
+        showToast('Expansion Planner report dismissed');
+    }
+
+    async function startExpansionPlanner() {
+        if (expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise || expansionPlannerOtherDispatchBusy()) return;
+        const freshScope = expansionPlannerRuntime.scannedAt
+            && expansionPlannerRuntime.scannedDispatchId === state.expansionPlanner.dispatchId
+            && expansionPlannerRuntime.scannedTypeId === state.expansionPlanner.buildingTypeId
+            && expansionPlannerRuntime.scannedOperationKind === state.expansionPlanner.operationKind
+            && expansionPlannerRuntime.scannedMaxStations === Number(state.expansionPlanner.maxStations);
+        if (!freshScope) { showToast('Scan this exact Dispatch Centre, building type, upgrade type and station limit before purchasing'); return; }
+        const planned = expansionPlannerPlannedQueue().map(item => ({ ...item }));
+        if (!planned.length) { showToast('Select at least one upgrade or extension'); return; }
+        if (planned.length > EXPANSION_PLANNER_APPLY_LIMIT || new Set(planned.map(item => item.buildingId)).size !== planned.length) { showToast(`Choose at most one operation per station and ${EXPANSION_PLANNER_APPLY_LIMIT} per run`); return; }
+        const budgetText = String(state.expansionPlanner.creditBudget || '').trim();
+        if (!/^\d+$/u.test(budgetText) || Number(budgetText) < 1 || Number(budgetText) > EXPANSION_PLANNER_MAX_BUDGET) { showToast(`Set a hard Credit budget from 1 to ${EXPANSION_PLANNER_MAX_BUDGET.toLocaleString()}`); return; }
+        const budget = Number(budgetText);
+        expansionPlannerRuntime.preparing = true;
+        expansionPlannerRuntime.stopRequested = false;
+        renderExpansionPlannerPanel();
+        let confirmedPlan;
+        try { confirmedPlan = await preflightExpansionPlannerSelection(planned); }
+        catch (err) {
+            const stopped = Boolean(err?.expansionPlannerStoppedBeforeMutation);
+            expansionPlannerRuntime.preparing = false;
+            if (stopped) expansionPlannerRuntime.stopRequested = false;
+            expansionPlannerRuntime.currentBuildingId = '';
+            expansionPlannerRuntime.currentItem = '';
+            expansionPlannerLog(err?.message || 'Final plan revalidation failed', stopped ? 'warn' : 'error');
+            showToast(err?.message || 'Final plan revalidation failed');
+            return;
+        }
+        const total = confirmedPlan.reduce((sum, item) => sum + item.priceCredits, 0);
+        if (!Number.isSafeInteger(total) || total > budget) {
+            expansionPlannerRuntime.preparing = false;
+            expansionPlannerRuntime.currentBuildingId = '';
+            expansionPlannerRuntime.currentItem = '';
+            expansionPlannerLog(`Plan blocked: ${total.toLocaleString()} Credits exceeds the ${budget.toLocaleString()} Credit hard budget`, 'error');
+            showToast('The freshly revalidated total exceeds the hard Credit budget');
+            return;
+        }
+        const levels = confirmedPlan.filter(item => item.kind === 'level').length;
+        const extensions = confirmedPlan.length - levels;
+        const sample = confirmedPlan.slice(0, 8).map(item => `• ${item.name}: ${item.label} — ${item.priceCredits.toLocaleString()} Credits`).join('\n');
+        const more = confirmedPlan.length > 8 ? `\n• + ${confirmedPlan.length - 8} more selected operation${confirmedPlan.length - 8 === 1 ? '' : 's'}` : '';
+        const confirmed = pageWindow.confirm(`Expansion & Upgrade Planner has freshly revalidated ${confirmedPlan.length} selected operation${confirmedPlan.length === 1 ? '' : 's'}.
+
+${sample}${more}
+
+Level / bay upgrades: ${levels}
+Extensions: ${extensions}
+EXACT TOTAL: ${total.toLocaleString()} Credits
+HARD BUDGET: ${budget.toLocaleString()} Credits
+UNSPENT BUDGET: ${(budget - total).toLocaleString()} Credits
+
+Credits only. Each station and native action will be fetched again, purchased one at a time and verified before the next starts. A submitted but unverified purchase stops the complete run and is never retried automatically. Continue?`);
+        if (!confirmed) {
+            expansionPlannerRuntime.preparing = false;
+            expansionPlannerRuntime.currentBuildingId = '';
+            expansionPlannerRuntime.currentItem = '';
+            renderExpansionPlannerPanel();
+            return;
+        }
+        toolkitAnalyticsRecordFeature('expansionPlanner');
+        expansionPlannerRuntime.running = true;
+        expansionPlannerRuntime.preparing = false;
+        expansionPlannerRuntime.stopRequested = false;
+        expansionPlannerRuntime.startedAt = Date.now();
+        expansionPlannerRuntime.log = [];
+        resetExpansionPlannerResults();
+        expansionPlannerLog(`Run started: ${confirmedPlan.length} operation${confirmedPlan.length === 1 ? '' : 's'} · ${total.toLocaleString()} Credits exact total · ${budget.toLocaleString()} Credits hard budget`);
+        const resultItems = [];
+        try {
+            for (let index = 0; index < confirmedPlan.length; index += 1) {
+                if (runtime.destroyed || expansionPlannerRuntime.stopRequested) break;
+                const snapshot = confirmedPlan[index];
+                const item = expansionPlannerRuntime.queue.find(candidate => candidate.operationId === snapshot.operationId) || snapshot;
+                expansionPlannerRuntime.currentBuildingId = item.buildingId;
+                expansionPlannerRuntime.currentItem = `${index + 1}/${confirmedPlan.length} · ${item.name} · ${item.label}`;
+                renderExpansionPlannerPanel();
+                let countProcessed = true;
+                try {
+                    const result = await applyExpansionPlannerOperation(snapshot, budget - expansionPlannerRuntime.creditsSpent);
+                    item.outcome = 'purchased';
+                    item.outcomeDetail = result.detail;
+                    expansionPlannerRuntime.purchased += 1;
+                    expansionPlannerRuntime.creditsSpent += snapshot.priceCredits;
+                    resultItems.push({ name: item.name, label: item.label, priceCredits: snapshot.priceCredits, outcome: 'purchased', detail: result.detail });
+                    expansionPlannerLog(`Purchased ${item.name}: ${result.detail}`);
+                } catch (err) {
+                    item.outcomeDetail = String(err?.message || 'unknown error');
+                    expansionPlannerRuntime.stopRequested = true;
+                    if (err?.expansionPlannerStoppedBeforeMutation) {
+                        countProcessed = false;
+                        item.outcome = 'ready';
+                        expansionPlannerLog(`Stopped before ${item.name}: ${item.outcomeDetail}`, 'warn');
+                    } else {
+                        item.outcome = 'error';
+                        expansionPlannerRuntime.errors += 1;
+                        resultItems.push({ name: item.name, label: item.label, priceCredits: snapshot.priceCredits, outcome: 'error', detail: item.outcomeDetail });
+                        expansionPlannerLog(`SAFETY STOP at ${item.name}: ${item.outcomeDetail}`, 'error');
+                    }
+                } finally {
+                    if (countProcessed) expansionPlannerRuntime.processed += 1;
+                    renderExpansionPlannerPanel();
+                }
+                if (expansionPlannerRuntime.stopRequested) break;
+                if (index < confirmedPlan.length - 1 && !await runtimeDelay(state.expansionPlanner.delayMs)) break;
+            }
+        } finally {
+            const manuallyStopped = expansionPlannerRuntime.stopRequested && expansionPlannerRuntime.errors === 0;
+            for (const item of confirmedPlan.slice(expansionPlannerRuntime.processed)) resultItems.push({ name: item.name, label: item.label, priceCredits: item.priceCredits, outcome: 'skipped', detail: manuallyStopped ? 'Run stopped before this purchase' : 'Not attempted after safety stop' });
+            expansionPlannerRuntime.skipped = Math.max(0, confirmedPlan.length - expansionPlannerRuntime.processed);
+            const outcome = manuallyStopped ? 'manually-stopped' : expansionPlannerRuntime.errors ? (expansionPlannerRuntime.purchased ? 'partial' : 'failed') : expansionPlannerRuntime.purchased === confirmedPlan.length ? 'successful' : 'partial';
+            persistExpansionPlannerReport({
+                schemaVersion: 1, reportId: `upgrade-${Date.now()}-${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`,
+                toolkitVersion: SCRIPT.version, startedAt: expansionPlannerRuntime.startedAt, completedAt: Date.now(), outcome,
+                planned: confirmedPlan.length, purchased: expansionPlannerRuntime.purchased, skipped: expansionPlannerRuntime.skipped,
+                errors: expansionPlannerRuntime.errors, plannedCredits: total, creditsSpent: expansionPlannerRuntime.creditsSpent, items: resultItems
+            });
+            expansionPlannerRuntime.running = false;
+            expansionPlannerRuntime.stopRequested = false;
+            expansionPlannerRuntime.currentBuildingId = '';
+            expansionPlannerRuntime.currentItem = '';
+            expansionPlannerLog(`${outcome === 'successful' ? 'Complete' : outcome === 'manually-stopped' ? 'Stopped' : 'Ended safely'}: ${expansionPlannerRuntime.purchased} purchased · ${expansionPlannerRuntime.creditsSpent.toLocaleString()} Credits spent · ${expansionPlannerRuntime.skipped} not attempted · ${expansionPlannerRuntime.errors} errors`, expansionPlannerRuntime.errors ? 'error' : 'info');
+            showToast(`Expansion Planner ${outcome === 'successful' ? 'complete' : outcome === 'manually-stopped' ? 'stopped' : 'ended safely'} · ${expansionPlannerRuntime.purchased} purchased · ${expansionPlannerRuntime.creditsSpent.toLocaleString()} Credits spent`);
+            renderExpansionPlannerPanel();
+        }
+    }
+
+    function stopExpansionPlanner() {
+        if (!expansionPlannerRuntime.running && !expansionPlannerRuntime.preparing && !expansionPlannerRuntime.scanPromise) return;
+        expansionPlannerRuntime.stopRequested = true;
+        expansionPlannerLog('Stop requested — the active read, purchase or verification will finish, then no further stations will be changed', 'warn');
+        renderExpansionPlannerPanel();
+    }
+
+    function expansionPlannerPanelControlIndex(panel) {
+        const settings = new Map();
+        const actions = new Map();
+        let host = null;
+        for (const control of [...Array.from(panel?.getElementsByTagName?.('select') || []), ...Array.from(panel?.getElementsByTagName?.('input') || [])]) if (control.dataset.setting) settings.set(control.dataset.setting, control);
+        for (const button of Array.from(panel?.getElementsByTagName?.('button') || [])) if (button.dataset.action) actions.set(button.dataset.action, button);
+        for (const container of Array.from(panel?.getElementsByTagName?.('div') || [])) if (container.hasAttribute('data-expansion-planner')) { host = container; break; }
+        return { settings, actions, host };
+    }
+
+    function expansionPlannerReportHtml(report) {
+        if (!report) return '';
+        const label = report.outcome === 'successful' ? 'COMPLETE' : report.outcome === 'manually-stopped' ? 'STOPPED' : report.outcome === 'failed' ? 'FAILED SAFELY' : 'PARTIAL';
+        const rows = report.items.slice(0, 8).map(item => `<div class="mcms-sweep-entry"><span><b class="mcms-sweep-title">${escapeHtml(item.name)} · ${escapeHtml(item.label)}</b><small class="mcms-sweep-meta">${escapeHtml(item.detail)}</small></span><b class="mcms-sweep-count">${item.outcome === 'purchased' ? `${item.priceCredits.toLocaleString()} CR` : item.outcome.toUpperCase()}</b></div>`).join('');
+        return `<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Last Expansion Planner report</span><span class="mcms-sweep-state">${label}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${report.purchased}/${report.planned}</b><span>Purchased</span></div><div class="mcms-sweep-stat"><b>${report.creditsSpent.toLocaleString()}</b><span>Credits spent</span></div><div class="mcms-sweep-stat"><b>${report.skipped}</b><span>Not attempted</span></div><div class="mcms-sweep-stat"><b>${report.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${rows}</div><button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="dismiss-expansion-planner-report">Dismiss Report</button></div>`;
+    }
+
+    function renderExpansionPlannerPanel() {
+        const panel = commandExperienceElement(SCRIPT.panelId);
+        const controls = expansionPlannerPanelControlIndex(panel);
+        if (!controls.host) return;
+        const runtimeState = expansionPlannerRuntime;
+        const locked = runtimeState.running || runtimeState.preparing || runtimeState.scanPromise || runtimeState.catalogPromise || expansionPlannerOtherDispatchBusy();
+        const dispatchId = String(state.expansionPlanner.dispatchId || '');
+        const typeId = String(state.expansionPlanner.buildingTypeId || DISPATCH_RECRUITMENT_ALL_TYPES);
+        const dispatchSelect = controls.settings.get('expansion-planner-centre');
+        const typeSelect = controls.settings.get('expansion-planner-building-type');
+        if (dispatchSelect) {
+            setInnerHtmlIfChanged(dispatchSelect, runtimeState.dispatches.length ? `<option value="${DISPATCH_RECRUITMENT_ALL_CENTRES}">ALL DISPATCH CENTRES</option>${runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}` : '<option value="">Load stations first</option>');
+            updateUiSetProperty(dispatchSelect, 'value', dispatchId); dispatchSelect.disabled = locked || !runtimeState.dispatches.length;
+        }
+        if (typeSelect) {
+            const types = Object.entries(runtimeState.typeLabels).sort((left, right) => left[1].localeCompare(right[1], undefined, { sensitivity: 'base' }));
+            setInnerHtmlIfChanged(typeSelect, runtimeState.dispatches.length ? `<option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">ALL BUILDING TYPES</option>${types.map(([id, label]) => `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`).join('')}` : `<option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">Load stations first</option>`);
+            updateUiSetProperty(typeSelect, 'value', typeId); typeSelect.disabled = locked || !runtimeState.dispatches.length;
+        }
+        for (const [setting, control] of controls.settings) {
+            if (['expansion-planner-centre', 'expansion-planner-building-type'].includes(setting)) continue;
+            if (document.activeElement !== control) updateUiSetProperty(control, 'value', setting === 'expansion-planner-operation' ? state.expansionPlanner.operationKind : setting === 'expansion-planner-budget' ? state.expansionPlanner.creditBudget : setting === 'expansion-planner-max-stations' ? String(state.expansionPlanner.maxStations) : String(state.expansionPlanner.delayMs));
+            control.disabled = locked;
+        }
+        const planned = expansionPlannerPlannedQueue();
+        const total = planned.reduce((sum, item) => sum + item.priceCredits, 0);
+        const budget = /^\d+$/u.test(String(state.expansionPlanner.creditBudget || '')) ? Number(state.expansionPlanner.creditBudget) : 0;
+        const rows = runtimeState.queue.length ? runtimeState.queue.map(item => {
+            const selected = runtimeState.selectedOperationIds.has(item.operationId);
+            const current = runtimeState.currentBuildingId === item.buildingId;
+            const outcome = item.outcome === 'purchased' ? 'PURCHASED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
+            const centre = dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? `${item.dispatchName} · ` : '';
+            const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
+            return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="expansion-planner-target" value="${escapeHtml(item.operationId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}><span><strong>${escapeHtml(item.name)} · ${escapeHtml(item.label)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · ${item.kind === 'level' ? 'Level / bay' : 'Extension'}${escapeHtml(detail)}</small></span><b>${item.priceCredits.toLocaleString()} CR · ${outcome}</b></label>`;
+        }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? 'No unambiguous native Credit upgrades are currently available in this exact scope.' : 'Load and scan stations to build a current Credit-only purchase preview.'}</div>`;
+        const summary = runtimeState.summary || { scoped: 0, scanned: 0, eligibleStations: 0, operations: 0, pending: 0, unavailable: 0, ambiguous: 0, truncatedStations: 0, unavailableNames: [] };
+        const status = runtimeState.running ? (runtimeState.stopRequested ? 'STOPPING' : 'RUNNING') : runtimeState.preparing ? 'REVALIDATING' : runtimeState.scanPromise ? 'SCANNING' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scannedAt ? (runtimeState.processed ? 'COMPLETE' : 'READY') : 'IDLE';
+        const stats = runtimeState.running || runtimeState.processed ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${planned.length || runtimeState.processed}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.purchased}</b><span>Purchased</span></div><div class="mcms-sweep-stat"><b>${runtimeState.creditsSpent.toLocaleString()}</b><span>Credits spent</span></div><div class="mcms-sweep-stat"><b>${runtimeState.errors}</b><span>Errors</span></div>` : `<div class="mcms-sweep-stat"><b>${summary.operations}</b><span>Available</span></div><div class="mcms-sweep-stat"><b>${planned.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${total.toLocaleString()}</b><span>Exact total</span></div><div class="mcms-sweep-stat"><b>${summary.pending}</b><span>Already building</span></div>`;
+        const activity = runtimeState.currentItem ? `<div class="mcms-status"><strong>Current:</strong> ${escapeHtml(runtimeState.currentItem)}</div>` : '';
+        const findings = runtimeState.scannedAt ? `<div class="mcms-recruitment-findings">${summary.scanned}/${summary.scoped} scoped stations scanned · ${summary.unavailable} without a supported live Credit action · ${summary.ambiguous} ambiguous controls rejected · ${summary.truncatedStations} beyond this scan's hard station limit.</div>` : '';
+        const budgetStatus = planned.length ? `<div class="mcms-status"><strong>Selected total:</strong> ${total.toLocaleString()} Credits · <strong>Hard budget:</strong> ${budget ? `${budget.toLocaleString()} Credits` : 'required'} · ${budget && total <= budget ? `${(budget - total).toLocaleString()} Credits remain` : budget ? 'OVER BUDGET — purchase disabled' : 'set a budget before purchase'}</div>` : '';
+        const logs = runtimeState.log.length ? runtimeState.log.map(entry => `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))} · ${escapeHtml(entry.message)}</div>`).join('') : '<div>No Expansion Planner activity yet.</div>';
+        setInnerHtmlIfChanged(controls.host, `${expansionPlannerReportHtml(runtimeState.lastReport)}<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Expansion &amp; Upgrade Planner</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${stats}</div>${activity}${budgetStatus}<div class="mcms-recruitment-filter-head"><span>Fresh native Credit actions</span><b>${planned.length} selected / ${runtimeState.queue.length} available</b></div><div class="mcms-recruitment-stations">${rows}</div>${findings}<div class="mcms-sweep-log">${logs}</div></div>`);
+        const fresh = runtimeState.scannedAt && runtimeState.scannedDispatchId === dispatchId && runtimeState.scannedTypeId === typeId && runtimeState.scannedOperationKind === state.expansionPlanner.operationKind && runtimeState.scannedMaxStations === Number(state.expansionPlanner.maxStations);
+        const load = controls.actions.get('load-expansion-planner');
+        const scan = controls.actions.get('scan-expansion-planner');
+        const apply = controls.actions.get('apply-expansion-planner');
+        const stop = controls.actions.get('stop-expansion-planner');
+        const selectAll = controls.actions.get('select-all-expansion-planner');
+        const clear = controls.actions.get('clear-expansion-planner');
+        if (load) load.disabled = locked;
+        if (scan) scan.disabled = locked || !runtimeState.dispatches.length;
+        if (apply) apply.disabled = locked || !fresh || !planned.length || planned.length > EXPANSION_PLANNER_APPLY_LIMIT || !budget || total > budget;
+        if (stop) stop.disabled = !runtimeState.running && !runtimeState.preparing && !runtimeState.scanPromise;
+        if (selectAll) selectAll.disabled = locked || !runtimeState.queue.length;
+        if (clear) clear.disabled = locked || !runtimeState.queue.length;
     }
 
     function vehicleTargetInfo(vehicle) {
@@ -34082,6 +34954,7 @@ Each target will be rechecked, submitted through its current native building-edi
         add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
         add('dispatch-recruitment', 'Open Dispatch Recruitment', 'Choose one or all Dispatch Centres, filter station types and prepare a recruitment plan', 'dispatch centre all centres station hiring phase personnel desired recruitment bulk', () => commandPaletteOpenSetting('dispatch', 'dispatch-recruitment'), true);
         add('station-icon-copier', 'Open Station Icon Copier', 'Copy one owned station icon to exact same-type stations with a verified preview', 'dispatch station building image icon graphic copy bulk protect custom', () => commandPaletteOpenSetting('dispatch', 'station-icon-copier'), true);
+        add('expansion-upgrade-planner', 'Open Expansion & Upgrade Planner', 'Preview current native Credit upgrades, enforce a hard budget and purchase a verified selection', 'dispatch station building bay level extension expand upgrade credits budget planner', () => commandPaletteOpenSetting('dispatch', 'expansion-planner'), true);
         add('personalisation', 'Open Personalisation Studio', 'Layouts, themes, game styling, input, Quick Wheel, backups, setup and alerts', 'customize customise appearance sound notification backup wizard hotkeys gestures reskin', () => openPersonalisationStudio(), true);
         add('input-studio', 'Open Hotkey & Gesture Studio', 'Remap Toolkit keys, assign touch gestures and learn contextual commands', 'input shortcuts right click long press context menu swipe', () => openPersonalisationStudio('input'), true);
         add('shell-studio', 'Open Toolkit & Game Style', 'MissionChief reskin, smart auto-hiding dock and Safe Mode', 'theme reskin dock collapse safe recovery', () => openPersonalisationStudio('shell'), true);
@@ -35564,6 +36437,29 @@ Each target will be rechecked, submitted through its current native building-edi
                     <summary>Native image-copy safeguards</summary>
                     <p>The source image is downloaded once into memory and checked as PNG or JPEG up to MissionChief's 200×200 limit. Each selected target is freshly rechecked, submitted through its exact current native building-edit form, and pixel-compared with the source before the next station starts. Dispatch assignment, building type, size, name and coordinates are verified unchanged. A submitted but unverified upload stops the complete run and is never retried automatically.</p>
                 </details>
+                <div class="mcms-section-label">Expansion &amp; Upgrade Planner</div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="load-expansion-planner">Load Stations</button>
+                    <button class="mcms-small-btn" type="button" data-action="scan-expansion-planner">Scan Upgrades</button>
+                    <button class="mcms-small-btn" type="button" data-action="apply-expansion-planner">Purchase Selected</button>
+                    <button class="mcms-small-btn" type="button" data-action="stop-expansion-planner">Stop</button>
+                </div>
+                <div class="mcms-row"><span class="mcms-row-label">Dispatch Centre</span><select class="mcms-select" data-setting="expansion-planner-centre"><option value="">Load stations first</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Building Type</span><select class="mcms-select" data-setting="expansion-planner-building-type"><option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">Load stations first</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Upgrade Type</span><select class="mcms-select" data-setting="expansion-planner-operation"><option value="all">Levels, bays &amp; extensions</option><option value="level">Levels &amp; bays only</option><option value="extension">Extensions only</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Hard Credit Budget</span><input class="mcms-input" type="number" min="1" max="${EXPANSION_PLANNER_MAX_BUDGET}" step="1" inputmode="numeric" placeholder="Required before purchase" data-setting="expansion-planner-budget"></div>
+                <div class="mcms-row"><span class="mcms-row-label">Maximum stations scanned</span><input class="mcms-input" type="number" min="1" max="${EXPANSION_PLANNER_SCAN_STATION_LIMIT}" step="1" inputmode="numeric" data-setting="expansion-planner-max-stations"></div>
+                <div class="mcms-row"><span class="mcms-row-label">Delay between purchases</span><select class="mcms-select" data-setting="expansion-planner-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="select-all-expansion-planner">Select One Per Station</button>
+                    <button class="mcms-small-btn" type="button" data-action="clear-expansion-planner">Clear Selection</button>
+                </div>
+                <div class="mcms-status"><strong>Credits only:</strong> the planner never uses a static cost table. It discovers each current native Credit action from the freshly fetched station page, rejects Coin and ambiguous controls, requires one exact operation per station and blocks Purchase until the selected total is within your hard budget.</div>
+                <div data-expansion-planner></div>
+                <details class="mcms-alliance-course-guide">
+                    <summary>Purchase safeguards</summary>
+                    <p>Manual start only. The selected stations, action paths and prices are revalidated before the exact-total confirmation and once again before each sequential purchase. Any changed scope, pending construction, changed price, unclear response or failed post-purchase verification stops the complete run. A submitted action is never retried automatically, and the result report remains until dismissed.</p>
+                </details>
             </section>
             <section class="mcms-tab-panel" data-panel="resources">
                 <div class="mcms-section-label">Resource Gap Finder</div>
@@ -36007,6 +36903,13 @@ Each target will be rechecked, submitted through its current native building-edi
         if (action === 'clear-station-icons') { stationIconSelectTargets(false); return; }
         if (action === 'apply-station-icons') { void startStationIconCopier(); return; }
         if (action === 'stop-station-icons') { stopStationIconCopier(); return; }
+        if (action === 'load-expansion-planner') { void loadExpansionPlannerCatalog({ force: true }); return; }
+        if (action === 'scan-expansion-planner') { void scanExpansionPlanner().then(queue => showToast(queue.length ? `${queue.length} live Credit upgrade${queue.length === 1 ? '' : 's'} found · nothing selected` : 'No supported Credit upgrades found in this scope')); return; }
+        if (action === 'select-all-expansion-planner') { expansionPlannerSelectTargets(true); return; }
+        if (action === 'clear-expansion-planner') { expansionPlannerSelectTargets(false); return; }
+        if (action === 'apply-expansion-planner') { void startExpansionPlanner(); return; }
+        if (action === 'stop-expansion-planner') { stopExpansionPlanner(); return; }
+        if (action === 'dismiss-expansion-planner-report') { dismissExpansionPlannerReport(); return; }
         if (action === 'scan-transport-sweep') { void scanTransportSweepQueue().then(queue => showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found')); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
@@ -36150,14 +37053,19 @@ Each target will be rechecked, submitted through its current native building-edi
             showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
             return;
         }
-        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise)) {
+        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise)) {
             updateUI();
             showToast('Wait for Dispatch Recruitment to finish loading or scanning, or stop the active run before changing its plan');
             return;
         }
-        if (setting.startsWith('station-icon-') && (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise)) {
+        if (setting.startsWith('station-icon-') && (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise)) {
             updateUI();
             showToast('Wait for the active Dispatch operation to finish loading or scanning, or stop its current run before changing this icon plan');
+            return;
+        }
+        if (setting.startsWith('expansion-planner-') && (expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise || expansionPlannerOtherDispatchBusy())) {
+            updateUI();
+            showToast('Wait for the active Dispatch operation to finish, or stop the Expansion Planner before changing its exact scope');
             return;
         }
         if (handleDeviceLayoutSettingChange(target, setting)) return;
@@ -36350,6 +37258,50 @@ Each target will be rechecked, submitted through its current native building-edi
             else stationIconCopierRuntime.selectedBuildingIds.delete(buildingId);
             resetStationIconResults();
             renderStationIconCopierPanel();
+            return;
+        }
+        if (setting === 'expansion-planner-centre') {
+            const dispatchId = String(target.value || '');
+            if (dispatchId !== DISPATCH_RECRUITMENT_ALL_CENTRES && !expansionPlannerRuntime.dispatches.some(item => item.id === dispatchId)) { updateUI(); showToast('Choose a Dispatch Centre loaded from MissionChief'); return; }
+            state.expansionPlanner.dispatchId = dispatchId;
+            clearExpansionPlannerScan(); saveState(); updateUI();
+            showToast(`Expansion Planner: ${dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES ? 'ALL DISPATCH CENTRES' : expansionPlannerRuntime.dispatches.find(item => item.id === dispatchId)?.name || 'centre selected'}`);
+            return;
+        }
+        if (setting === 'expansion-planner-building-type') {
+            const typeId = String(target.value || '');
+            if (typeId !== DISPATCH_RECRUITMENT_ALL_TYPES && !Object.prototype.hasOwnProperty.call(expansionPlannerRuntime.typeLabels, typeId)) { updateUI(); showToast('Choose a building type loaded from MissionChief'); return; }
+            state.expansionPlanner.buildingTypeId = typeId;
+            clearExpansionPlannerScan(); saveState(); updateUI();
+            showToast(`Expansion Planner building type: ${typeId === DISPATCH_RECRUITMENT_ALL_TYPES ? 'ALL BUILDING TYPES' : expansionPlannerRuntime.typeLabels[typeId]}`);
+            return;
+        }
+        if (setting === 'expansion-planner-operation') {
+            state.expansionPlanner.operationKind = EXPANSION_PLANNER_OPERATION_OPTIONS.includes(String(target.value)) ? String(target.value) : 'all';
+            clearExpansionPlannerScan(); saveState(); updateUI();
+            showToast(`Expansion Planner upgrade type: ${state.expansionPlanner.operationKind === 'all' ? 'levels, bays and extensions' : state.expansionPlanner.operationKind}`);
+            return;
+        }
+        if (setting === 'expansion-planner-budget') {
+            const value = String(target.value || '').trim();
+            if (value && (!/^\d+$/u.test(value) || Number(value) > EXPANSION_PLANNER_MAX_BUDGET)) { target.value = state.expansionPlanner.creditBudget; showToast(`Hard Credit Budget must be 1–${EXPANSION_PLANNER_MAX_BUDGET.toLocaleString()}`); return; }
+            state.expansionPlanner.creditBudget = value ? String(Number(value)) : '';
+            saveState(); renderExpansionPlannerPanel();
+            return;
+        }
+        if (setting === 'expansion-planner-max-stations') {
+            state.expansionPlanner.maxStations = Math.round(clamp(target.value, 1, EXPANSION_PLANNER_SCAN_STATION_LIMIT, 100));
+            clearExpansionPlannerScan(); saveState(); updateUI();
+            showToast(`Expansion Planner scan limit: ${state.expansionPlanner.maxStations} stations`);
+            return;
+        }
+        if (setting === 'expansion-planner-delay') {
+            state.expansionPlanner.delayMs = EXPANSION_PLANNER_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 1500;
+            saveState(); updateUI(); showToast(`Expansion Planner delay: ${state.expansionPlanner.delayMs / 1000}s`);
+            return;
+        }
+        if (setting === 'expansion-planner-target') {
+            expansionPlannerSetTarget(String(target.value || ''), Boolean(target.checked));
             return;
         }
         if (setting === 'resource-gap-radius') {
@@ -36660,6 +37612,7 @@ Each target will be rechecked, submitted through its current native building-edi
         if (panel.classList.contains('mcms-open') && state.activeTab === 'dispatch') {
             renderDispatchRecruitmentPanel();
             renderStationIconCopierPanel();
+            renderExpansionPlannerPanel();
         }
         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
         if (payoutTemplate) updateUiSetProperty(payoutTemplate, 'value', state.payoutFlash.template);

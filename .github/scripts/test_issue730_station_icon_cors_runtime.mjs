@@ -52,6 +52,7 @@ const context = vm.createContext({
     state: { stationIconCopier: { dispatchId: '', sourceBuildingId: '', replaceMode: 'defaults', delayMs: 1500 } },
     stationIconCopierRuntime,
     dispatchRecruitmentRuntime: { running: false },
+    expansionPlannerRuntime: { running: false, preparing: false, scanPromise: null, catalogPromise: null },
     DISPATCH_RECRUITMENT_ALL_CENTRES: 'all',
     STATION_ICON_REPLACE_DEFAULTS: 'defaults',
     STATION_ICON_REPLACE_ALL: 'all',

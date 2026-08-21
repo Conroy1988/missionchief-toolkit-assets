@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.14.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.14.3"
     assert "'expansionPlanner'" in source, "Expansion Planner analytics allow-list entry is missing"
     assert "expansion-upgrade-planner" in source_section(source, "    function commandPaletteActionEntries(", "    function commandPaletteMissionEntries(")
     assert "@connect      *" not in source, "Expansion Planner must not request wildcard userscript network access"
@@ -93,7 +93,8 @@ def main() -> int:
     assert "suffix === 'small_expand'" in parser, "Native small-to-full conversion controls must remain supported"
     assert "(?:small_)?expand" not in parser, "The /expand navigation page must never be treated as a mutation"
     assert "entries.length !== 1" in parser and "entries[0][0] !== 'level'" in parser, "The level route must permit exactly one bounded query parameter"
-    assert "entries[0][1] !== expectedLevel" in parser, "The level route must target exactly the next authoritative level"
+    assert "expansionPlannerImmediateRouteLevel(record)" in parser, "The native zero-indexed route must bind the immediate target to the current API level"
+    assert "entries[0][1] !== expectedLevel" in parser, "The level route must reject later cumulative targets"
     assert "reference.requestMethod === 'get' ? method && method !== 'get' : method !== 'post'" in parser, "Only the exact native level route may use GET"
     assert "(?:ready|finish|cancel|delete|remove|disable|enable|coin|gold)" in parser
     assert "levelPrices" not in implementation and "levelcost" not in implementation, "Prices must never come from a static building table"
@@ -161,7 +162,7 @@ def main() -> int:
     assert "test_issue744_expansion_upgrade_planner_contract.py" in preflight
     assert "test_issue744_expansion_upgrade_planner_runtime.mjs" in preflight
 
-    print("Issue #744/#748 Expansion & Upgrade Planner source contract passed: exact native expand-page discovery, page-bound Credit-only actions, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
+    print("Issue #744/#748/#750 Expansion & Upgrade Planner source contract passed: zero-indexed immediate-level routing, exact native expand-page discovery, page-bound Credit-only actions, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
     return 0
 
 

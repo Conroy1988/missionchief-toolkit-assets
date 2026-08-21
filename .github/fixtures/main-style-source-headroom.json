@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 748,
-    "version": "10.14.2",
-    "sourceBytes": 2655006,
-    "sourceLines": 39686,
-    "sourceSha256": "0b8f65d56704b87d057ae2e7a6512ec69e881b024a027c9d32328ab15147403e",
+    "issue": 750,
+    "version": "10.14.3",
+    "sourceBytes": 2655201,
+    "sourceLines": 39692,
+    "sourceSha256": "380a9ac4c1308dbae9b389caba0f735511d6d4a44a889cea70226c01cefccb33",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
     "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2660006,
-    "maxSourceLines": 39786,
+    "maxSourceBytes": 2660201,
+    "maxSourceLines": 39792,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 292567,
-      "sourceLines": 4258,
+      "sourceBytes": 292762,
+      "sourceLines": 4264,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #748 exact native expansion-page discovery, page-bound revalidation and bounded live-control diagnostics"
+    "scope": "Issue #750 zero-indexed immediate level-target selection with cumulative-route rejection"
   }
 }

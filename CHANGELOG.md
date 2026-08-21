@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.15.0] - 2026-08-21
+
+### Resizable Desktop Toolkit Workspace
+
+- Opens the Desktop Toolkit menu as a movable workspace that resizes from its bottom-right corner while the command toolbar stays attached to the map.
+- Remembers the chosen width, exact height and position, then safely clamps saved geometry back on-screen after viewport or browser-chrome changes.
+- Adds temporary maximise and restore controls that fill the safe desktop workspace without overwriting the saved windowed size or position.
+- Raises Desktop typography and control-size floors, then reflows command cards across one, two or three columns according to the workspace itself.
+- Keeps one shared Toolkit runtime and preserves every existing feature, setting and theme while Tablet and iOS layouts retain their established behaviour.
+
 ## [10.14.3] - 2026-08-21
 
 ### Immediate level-target hotfix

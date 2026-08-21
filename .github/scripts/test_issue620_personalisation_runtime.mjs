@@ -68,6 +68,7 @@ const sandbox = {
   SCRIPT: { version: "10.2.5", settingsSnapshotsState: "snapshots" },
   POSITIONS: { bl: { label: "Bottom left" }, tr: { label: "Top right" } },
   LAYOUT_DEVICE_KEYS: ["desktop", "tablet", "mobile"],
+  DESKTOP_WORKSPACE_MAX_WIDTH: 1440,
   DEFAULT_LAYOUT_GROUP_ORDER: ["visibility", "intelligence", "dashboard", "performance"],
   LAYOUT_CONTROL_GROUPS: {
     visibility: { controls: ["clean", "myMissions"] },
@@ -139,13 +140,14 @@ vm.runInContext(
 );
 
 const layout = sandbox.__probe.layout({ layouts: {
-  desktop: { position: "tr", groupOrder: ["dashboard"], controlOrder: { dashboard: ["open-pressure-board"] }, hiddenControls: ["myMissions"], panelWidth: 2000, panelHeight: 20 },
+  desktop: { position: "tr", groupOrder: ["dashboard"], controlOrder: { dashboard: ["open-pressure-board"] }, hiddenControls: ["myMissions"], panelWidth: 2000, panelHeight: 20, panelHeightPx: 777 },
   tablet: { position: "bl", groupOrder: ["visibility"], controlOrder: {}, panelWidth: 640, panelHeight: 90 },
   mobile: { position: "tr", groupOrder: [], controlOrder: {}, panelWidth: 800, panelHeight: 75 },
 } }, "bl");
 assert.equal(layout.layouts.desktop.position, "tr");
-assert.equal(layout.layouts.desktop.panelWidth, 960, "desktop width must clamp");
+assert.equal(layout.layouts.desktop.panelWidth, 1440, "desktop workspace width must clamp");
 assert.equal(layout.layouts.desktop.panelHeight, 60, "desktop height must clamp");
+assert.equal(layout.layouts.desktop.panelHeightPx, 777, "direct desktop resize height must persist");
 assert.equal(layout.layouts.tablet.panelWidth, 640);
 assert.equal(layout.layouts.mobile.panelWidth, 100, "iOS width remains fixed");
 assert.deepEqual(plain(layout.layouts.desktop.groupOrder), ["dashboard", "visibility", "intelligence", "performance"], "missing groups must be restored once");

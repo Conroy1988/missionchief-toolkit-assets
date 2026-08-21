@@ -506,6 +506,25 @@
       "description": "Use the same Toolkit state across Desktop, Tablet/iPad and iOS layouts.",
       "features": [
         {
+          "name": "Resizable Desktop Toolkit Workspace",
+          "summary": "Moves, resizes and temporarily maximises the complete Desktop menu without detaching the map command toolbar.",
+          "details": [
+            "Saved width, exact height and position",
+            "Safe off-screen geometry recovery",
+            "Readable one-, two- and three-column reflow",
+            "Pointer and keyboard resize controls",
+            "Single shared Toolkit runtime",
+            "Tablet and iOS behaviour preserved"
+          ],
+          "visual": "desktop-toolkit-workspace",
+          "tags": [
+            "desktop",
+            "workspace",
+            "responsive",
+            "accessibility"
+          ]
+        },
+        {
           "name": "Desktop, Tablet and iOS Mobile Mode",
           "summary": "Purpose-built layouts for full desktop maps, landscape tablets and Safari on iOS.",
           "details": [

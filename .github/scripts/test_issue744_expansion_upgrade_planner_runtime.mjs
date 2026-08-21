@@ -34,7 +34,7 @@ const context = vm.createContext({
     console, Date, Set, Map, Array, Number, String, Object, Promise, Error, URL, URLSearchParams, Math, JSON,
     FormData: shell.window.FormData, DOMParser: shell.window.DOMParser, document: shell.window.document,
     pageWindow: { location: shell.window.location, confirm: () => true }, runtime: { destroyed: false },
-    SCRIPT: { panelId: 'panel', version: '10.14.3', expansionPlannerReportState: 'upgrade-report' },
+    SCRIPT: { panelId: 'panel', version: '10.15.0', expansionPlannerReportState: 'upgrade-report' },
     state: { expansionPlanner: { dispatchId: '10', buildingTypeId: 'all-types', operationKind: 'all', creditBudget: '500000', maxStations: 100, delayMs: 1500 } },
     expansionPlannerRuntime,
     dispatchRecruitmentRuntime: { running: false, scanPromise: null, catalogPromise: null },

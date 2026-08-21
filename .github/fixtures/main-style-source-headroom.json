@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 750,
-    "version": "10.14.3",
-    "sourceBytes": 2655201,
-    "sourceLines": 39692,
-    "sourceSha256": "380a9ac4c1308dbae9b389caba0f735511d6d4a44a889cea70226c01cefccb33",
-    "templateBytes": 835267,
-    "templateLines": 9837,
-    "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
-    "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2660201,
-    "maxSourceLines": 39792,
+    "issue": 753,
+    "version": "10.15.0",
+    "sourceBytes": 2687929,
+    "sourceLines": 40138,
+    "sourceSha256": "22d92bcc911fcefc63e62ebb58207c3f75355190ed9b1bb8447b0ab80b69946b",
+    "templateBytes": 850729,
+    "templateLines": 9995,
+    "templateSha256": "a36e0ec42cbf4bfcf634fe706b4745bd6834583c43f4fbb7886aab50168f6449",
+    "canonicalCssSha256": "b8b728c40a1dcf796df3ad099e0776c18f03042453302458187063af6cf8acaa",
+    "maxSourceBytes": 2692929,
+    "maxSourceLines": 40238,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 292762,
-      "sourceLines": 4264,
-      "templateBytes": 19730,
-      "templateLines": 303
+      "sourceBytes": 325490,
+      "sourceLines": 4710,
+      "templateBytes": 35192,
+      "templateLines": 461
     },
-    "scope": "Issue #750 zero-indexed immediate level-target selection with cumulative-route rejection"
+    "scope": "Desktop-only resizable Toolkit Workspace with saved geometry, readable container reflow and preserved map-toolbar and touch-layout contracts"
   }
 }

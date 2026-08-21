@@ -126,7 +126,7 @@ The operational hierarchy survives the change in screen—not just the colour sc
 
 | Surface | Experience |
 |---|---|
-| **Desktop** | Full operational density, multi-panel awareness, direct keyboard command and persistent map context. |
+| **Desktop** | A movable, resizable Toolkit Workspace with readable adaptive columns, direct keyboard command, temporary maximise/restore and a persistent map-attached toolbar. |
 | **Tablet** | Reflowed panels, touch-safe targets and the same command structure without a stripped-down feature set. |
 | **iOS Mobile** | Compact, touch-first MissionChief operation with administration, patient transport and recovery behaviour designed for the smaller surface. |
 

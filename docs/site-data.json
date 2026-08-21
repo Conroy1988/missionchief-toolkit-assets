@@ -319,7 +319,7 @@
           "details": [
             "Coverage rings",
             "Quick jumps and landmarks",
-            "Button 3 submits the active Dispatch Centre's native Show vehicles on map form, verifies the persisted API value and uses the game's map refresh with no Toolkit-owned vehicle mask",
+            "Button 3 discovers the global Map and vehicles settings form, verifies the persisted Show vehicles on map API value and uses the game's map refresh with no Toolkit-owned vehicle mask or Dispatch Centre dependency",
             "Alliance Buildings performance guard"
           ],
           "visual": "rings",

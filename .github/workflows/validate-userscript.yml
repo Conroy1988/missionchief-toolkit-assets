@@ -91,6 +91,8 @@ jobs:
           ARGS=(
             --candidate src/MissionChief_Map_Command_Toolkit.user.js
             --policy .github/performance-budget.json
+            --json-output /tmp/performance-budget-report.json
+            --markdown-output /tmp/performance-budget-report.md
           )
           if [[ -n "$PR_BASE_SHA" ]] && git cat-file -e "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" 2>/dev/null; then
             git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/performance-base.user.js

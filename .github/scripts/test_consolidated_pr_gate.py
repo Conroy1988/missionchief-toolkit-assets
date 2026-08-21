@@ -36,6 +36,8 @@ def main() -> int:
         "Summarise single-runner gate",
         "GitHub runners used: **1**",
         "Parallel validation lanes: **0**",
+        "--json-output /tmp/performance-budget-report.json",
+        "--markdown-output /tmp/performance-budget-report.md",
     ]:
         assert marker in text, marker
     assert text.count("runs-on: ubuntu-latest") == 1

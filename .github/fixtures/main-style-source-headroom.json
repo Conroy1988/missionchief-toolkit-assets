@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 746,
-    "version": "10.14.1",
-    "sourceBytes": 2646131,
-    "sourceLines": 39544,
-    "sourceSha256": "f7d2b34206134ed074c95a244a2b3a411149204e83c8b7925068cdbe990c7707",
+    "issue": 748,
+    "version": "10.14.2",
+    "sourceBytes": 2655006,
+    "sourceLines": 39686,
+    "sourceSha256": "0b8f65d56704b87d057ae2e7a6512ec69e881b024a027c9d32328ab15147403e",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
     "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2651131,
-    "maxSourceLines": 39644,
+    "maxSourceBytes": 2660006,
+    "maxSourceLines": 39786,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 283692,
-      "sourceLines": 4116,
+      "sourceBytes": 292567,
+      "sourceLines": 4258,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #746 exact native level and vehicle-bay Credit GET route discovery with bounded query and method revalidation"
+    "scope": "Issue #748 exact native expansion-page discovery, page-bound revalidation and bounded live-control diagnostics"
   }
 }

@@ -1,6 +1,6 @@
 # Expansion & Upgrade Planner (Issue #744)
 
-Toolkit v10.14.1 provides the manual, Credit-only Expansion & Upgrade Planner under **Dispatch** and supports MissionChief's current native level and vehicle-bay purchase route.
+Toolkit v10.14.2 provides the manual, Credit-only Expansion & Upgrade Planner under **Dispatch** and supports MissionChief's current native expansion-page, level and vehicle-bay purchase flow.
 
 ## Operator workflow
 
@@ -18,14 +18,15 @@ Toolkit v10.14.1 provides the manual, Credit-only Expansion & Upgrade Planner un
 
 - No request runs until Load, Scan or Purchase is selected; there is no polling or automatic schedule.
 - Prices are read only from the current native action's own **Credits** text. Static price tables are not used.
+- Level and vehicle-bay discovery follows only the station page's exact same-origin `/buildings/<id>/expand` link. Queried, external, redirected and inferred discovery pages are rejected.
 - Native extension actions remain POST-only. A level or vehicle-bay action may use GET only for the exact same-origin `expand_do/credits?level=<next>` route, where `level` is the sole query field and equals the next authoritative station level.
 - Coin, gold, external, wrong-level, extra-query, completion, cancellation, method-mismatched and ambiguous controls are rejected.
 - Owned-station identity, Dispatch Centre, building type, small/full classification, name and coordinates stay bound to the scan.
 - A station with an expansion already under construction is excluded.
-- The selected level and extension state, exact action path, action fingerprint and price are revalidated before confirmation and again before the write.
+- The selected level and extension state, exact discovery page, action path, action fingerprint and price are revalidated before confirmation and again before the write.
 - Purchases are sequential and constrained by the hard per-run operation and Credit limits.
 - The current native CSRF token or complete native POST form is used. The exact next-level GET carries MissionChief's CSRF header; form fields unrelated to POST purchases are preserved.
 - MissionChief's authoritative building record and native page are fetched after every write. The next purchase starts only after the expected change is proven.
 - An uncertain submitted request, changed response, missing action or failed verification stops the complete run. Mutation requests are never retried automatically.
 
-The planner cannot make an unsupported MissionChief control safe. If a current page does not expose an unambiguous Credit action, that operation remains unavailable and must be handled natively.
+The scan summary reports how many native expansion pages and Credit-labelled controls were inspected, plus price, route and method rejections. The planner cannot make an unsupported MissionChief control safe; if a current page does not expose an unambiguous Credit action, that operation remains unavailable and must be handled natively.

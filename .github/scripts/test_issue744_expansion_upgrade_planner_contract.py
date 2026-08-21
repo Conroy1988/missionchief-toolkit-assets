@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.14.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.14.2"
     assert "'expansionPlanner'" in source, "Expansion Planner analytics allow-list entry is missing"
     assert "expansion-upgrade-planner" in source_section(source, "    function commandPaletteActionEntries(", "    function commandPaletteMissionEntries(")
     assert "@connect      *" not in source, "Expansion Planner must not request wildcard userscript network access"
@@ -65,6 +65,7 @@ def main() -> int:
         "actionPath",
         "actionSearch",
         "requestMethod",
+        "discoveryPath",
         "fingerprint",
         "expansionPlannerExtensionDigest",
         "expansionPlannerAssertScope",
@@ -89,15 +90,28 @@ def main() -> int:
     assert "method !== 'post'" in parser
     assert "url.hash" in parser
     assert "suffix === 'expand_do/credits'" in parser, "MissionChief's native Credit level route must be recognised"
+    assert "suffix === 'small_expand'" in parser, "Native small-to-full conversion controls must remain supported"
+    assert "(?:small_)?expand" not in parser, "The /expand navigation page must never be treated as a mutation"
     assert "entries.length !== 1" in parser and "entries[0][0] !== 'level'" in parser, "The level route must permit exactly one bounded query parameter"
     assert "entries[0][1] !== expectedLevel" in parser, "The level route must target exactly the next authoritative level"
     assert "reference.requestMethod === 'get' ? method && method !== 'get' : method !== 'post'" in parser, "Only the exact native level route may use GET"
     assert "(?:ready|finish|cancel|delete|remove|disable|enable|coin|gold)" in parser
     assert "levelPrices" not in implementation and "levelcost" not in implementation, "Prices must never come from a static building table"
 
+    discovery = source_section(implementation, "    function expansionPlannerBoundDiscoveryPath(", "    function expansionPlannerPublicOperation(")
+    assert "`${detailPath}/expand`" in discovery, "Only the exact native expansion page may extend level discovery"
+    assert "url.origin !== pageWindow.location.origin || url.search || url.hash" in discovery
+    assert "expansionPlannerLevelNavigationReference" in discovery
+    assert "await fetchExpansionPlannerDocument(navigation.href)" in discovery
+    assert "finalUrl.pathname !== navigation.path" in discovery
+    assert "parseExpansionPlannerActions(page.doc, record, 'level', navigation.path)" in discovery
+    assert "[kind, discoveryPath, reference.requestMethod" in discovery, "The discovery page must be bound into the immutable fingerprint"
+
     scan = source_section(implementation, "    async function scanExpansionPlanner(", "    function expansionPlannerPlannedQueue(")
     assert "EXPANSION_PLANNER_SCAN_CONCURRENCY" in scan
     assert "fetchExpansionPlannerDocument(`/buildings/${record.id}`)" in scan
+    assert "await discoverExpansionPlannerActions(doc, record, operationKind)" in scan
+    assert "levelPagesFetched" in scan and "priceRejected" in scan and "routeRejected" in scan and "methodRejected" in scan
     assert "selectedOperationIds = new Set()" in scan, "A fresh scan must not pre-approve purchases"
 
     selection = source_section(implementation, "    function expansionPlannerSelectTargets(", "    function expansionPlannerFindCurrentAction(")
@@ -110,6 +124,9 @@ def main() -> int:
         "operation.priceCredits !== item.priceCredits",
         "operation.actionSearch !== item.actionSearch",
         "operation.requestMethod !== item.requestMethod",
+        "operation.discoveryPath !== item.discoveryPath",
+        "fetchExpansionPlannerRevalidationPages(item)",
+        "pages.operationPage.doc",
         "before.level !== item.level",
         "expansionPlannerHasPendingConstruction",
         "operation.priceCredits > budgetRemaining",
@@ -144,7 +161,7 @@ def main() -> int:
     assert "test_issue744_expansion_upgrade_planner_contract.py" in preflight
     assert "test_issue744_expansion_upgrade_planner_runtime.mjs" in preflight
 
-    print("Issue #744 Expansion & Upgrade Planner source contract passed: live Credit-only POST and exact next-level GET discovery, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
+    print("Issue #744/#748 Expansion & Upgrade Planner source contract passed: exact native expand-page discovery, page-bound Credit-only actions, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
     return 0
 
 

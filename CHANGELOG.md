@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.13.3] - 2026-08-21
+
+### Mission-layer-safe vehicle toggle
+
+- Fixes live missions using camelCase or nested marker metadata disappearing and returning with the Vehicles shortcut.
+- Recognises every supported mission ID and owner shape before vehicle classification, then clears stale vehicle classes from those mission icons.
+- Keeps MissionChief’s shared vehicle layer mounted while shortcut 3 applies the complete mission-first vehicle mask, preventing registry overlap from unmounting missions.
+- Preserves native Personal Missions, Alliance Missions and My Buildings behaviour, keeps Alliance Buildings independent and adds no lifecycle resource.
+
 ## [10.13.2] - 2026-08-20
 
 ### Mission-safe vehicle visibility

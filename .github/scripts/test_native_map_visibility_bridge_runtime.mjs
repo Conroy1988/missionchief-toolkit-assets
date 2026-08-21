@@ -110,6 +110,14 @@ const overlappingMissionIcon = makeMarkerIcon();
 overlappingMissionIcon.classList.toggle("mcms-marker-vehicle", true);
 overlappingMissionIcon.setAttribute("data-mcms-vehicle-marker", "true");
 overlappingMissionIcon.dataset.mcmsMarkerKind = "vehicle";
+const camelCaseMissionIcon = makeMarkerIcon();
+camelCaseMissionIcon.classList.toggle("mcms-marker-vehicle", true);
+camelCaseMissionIcon.setAttribute("data-mcms-vehicle-marker", "true");
+camelCaseMissionIcon.dataset.mcmsMarkerKind = "vehicle";
+const nestedAllianceMissionIcon = makeMarkerIcon();
+nestedAllianceMissionIcon.classList.toggle("mcms-marker-vehicle", true);
+nestedAllianceMissionIcon.setAttribute("data-mcms-vehicle-marker", "true");
+nestedAllianceMissionIcon.dataset.mcmsMarkerKind = "vehicle";
 let availableControls = controls;
 const root = {
   nodeType: 1,
@@ -158,8 +166,18 @@ const sandbox = {
   pageWindow: {
     I18n: { t: key => ({ "map_filters.user_missions": "My missions", "map_filters.alliance_missions": "Shared by alliance", "map_filters.user_buildings": "My buildings", "common.vehicles": "Vehicles" })[key] || key },
     user_id: 7,
-    mission_markers: [{ mission_id: 740, user_id: 7, _icon: overlappingMissionIcon }],
-    vehicle_markers: [{ _icon: nativeVehicleIcon }, { _icon: secondaryVehicleIcon }, { _icon: overlappingMissionIcon }],
+    mission_markers: [
+      { mission_id: 740, user_id: 7, _icon: overlappingMissionIcon },
+      { missionId: 741, userId: 7, _icon: camelCaseMissionIcon },
+      { options: { mission_id: 742, user_id: 99 }, _icon: nestedAllianceMissionIcon },
+    ],
+    vehicle_markers: [
+      { _icon: nativeVehicleIcon },
+      { _icon: secondaryVehicleIcon },
+      { _icon: overlappingMissionIcon },
+      { _icon: camelCaseMissionIcon },
+      { _icon: nestedAllianceMissionIcon },
+    ],
   },
   runtime: { destroyed: false },
   state: { visibility: { myMissions: true, allianceMissions: false, vehicles: true, buildings: true }, nativeVisibility: { migratedFeatures: [] }, economyMode: false },
@@ -173,6 +191,11 @@ const sandbox = {
   restorePersonalBuildingLayerOpacity: () => { opacityRestores += 1; },
   findLeafletMapInstance: () => map,
   currentUserIdCached: () => "7",
+  missionIdFromMarker: marker => {
+    const value = marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId;
+    return value === undefined || value === null || value === "" ? null : String(value);
+  },
+  missionOwnerId: marker => marker?.user_id ?? marker?.userId ?? marker?.options?.user_id ?? marker?.options?.userId ?? null,
 };
 
 vm.createContext(sandbox);
@@ -279,6 +302,7 @@ const adopted = sandbox.__probe.adoptNativeVisibilityFeature("vehicles");
 assert.equal(adopted.handled, true);
 assert.equal(adopted.changed, true);
 assert.equal(sandbox.state.visibility.vehicles, false);
+assert.equal(controls[2].checked, true, "adopting native Vehicles OFF must remount the unsafe shared native layer");
 assert.equal(rootRefreshes, 1);
 assert.equal(uiRefreshes, 1);
 assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("vehicles"), true, "native vehicle binding must retain the complete-registry supplement");
@@ -292,6 +316,12 @@ assert.equal(overlappingMissionIcon.classList.contains("mcms-marker-my-mission")
 assert.equal(overlappingMissionIcon.classList.contains("mcms-marker-vehicle"), false, "overlapping mission retained the vehicle class");
 assert.equal(overlappingMissionIcon.getAttribute("data-mcms-vehicle-marker"), null, "overlapping mission retained the vehicle attribute");
 assert.equal(overlappingMissionIcon.dataset.mcmsMarkerKind, "my-mission", "overlapping mission ownership was not restored");
+assert.equal(camelCaseMissionIcon.classList.contains("mcms-marker-my-mission"), true, "camelCase mission identity was not recognised");
+assert.equal(camelCaseMissionIcon.classList.contains("mcms-marker-vehicle"), false, "camelCase mission retained the vehicle class");
+assert.equal(camelCaseMissionIcon.getAttribute("data-mcms-vehicle-marker"), null, "camelCase mission retained the vehicle attribute");
+assert.equal(nestedAllianceMissionIcon.classList.contains("mcms-marker-alliance-mission"), true, "nested alliance mission identity was not recognised");
+assert.equal(nestedAllianceMissionIcon.classList.contains("mcms-marker-vehicle"), false, "nested alliance mission retained the vehicle class");
+assert.equal(nestedAllianceMissionIcon.getAttribute("data-mcms-vehicle-marker"), null, "nested alliance mission retained the vehicle attribute");
 
 sandbox.__probe.resetBridge(true);
 sandbox.state.visibility = { myMissions: true, allianceMissions: true, vehicles: true, buildings: true };
@@ -300,8 +330,23 @@ const allianceBeforeFreshAdoption = controls[4].checked;
 const savesBeforeFreshAdoption = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
 assert.deepEqual(JSON.parse(JSON.stringify(sandbox.state.visibility)), { myMissions: false, allianceMissions: true, vehicles: false, buildings: false });
+assert.equal(controls[2].checked, true, "fresh adoption must preserve Vehicles OFF through CSS while remounting the native layer");
 assert.equal(saveCount, savesBeforeFreshAdoption + 1, "fresh native visibility was not persisted once");
 assert.equal(controls[4].checked, allianceBeforeFreshAdoption, "fresh adoption changed alliance buildings");
+
+const savesBeforePinnedReconcile = saveCount;
+sandbox.__probe.reconcileNativeVisibilityBridge();
+assert.equal(sandbox.state.visibility.vehicles, false, "the pinned native vehicle layer overwrote Toolkit Vehicles OFF");
+assert.equal(controls[2].checked, true);
+assert.equal(saveCount, savesBeforePinnedReconcile, "stable pinned-layer reconciliation rewrote saved state");
+
+sandbox.state.visibility.vehicles = true;
+controls[2].checked = false;
+const savesBeforeManualVehicleDisable = saveCount;
+sandbox.__probe.reconcileNativeVisibilityBridge();
+assert.equal(sandbox.state.visibility.vehicles, false, "a deliberate native Vehicles OFF change was not adopted");
+assert.equal(controls[2].checked, true, "manual Vehicles OFF left the shared native layer unmounted");
+assert.equal(saveCount, savesBeforeManualVehicleDisable + 1, "manual Vehicles OFF was not persisted exactly once");
 
 sandbox.__probe.resetBridge(false);
 sandbox.state.visibility = { myMissions: true, allianceMissions: false, vehicles: true, buildings: true };
@@ -330,4 +375,4 @@ assert.equal(result.verified, true);
 assert.equal(mapLayers.has(legacyLayers.user_missions), false);
 assert.equal(mapEvents.at(-1)?.event, "overlayremove", "legacy filter mutation was not exposed to MissionChief persistence listeners");
 
-console.log("Native map visibility bridge runtime passed: native controls, complete mission-safe vehicle supplementation, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");
+console.log("Native map visibility bridge runtime passed: pinned vehicle layer, nested mission identities, complete vehicle masking, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");

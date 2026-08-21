@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.14.0
+// @version      10.14.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.14.0',
+        version: '10.14.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,13 +528,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.14.0",
-        title: "Expansion & Upgrade Planner",
+        version: "10.14.1",
+        title: "Native level-upgrade route hotfix",
         highlights: Object.freeze([
-            "Adds an on-demand Dispatch planner for current station level, bay and extension purchases priced in Credits.",
-            "Builds every preview from freshly fetched native MissionChief controls — no static costs, inferred endpoints or Coin actions.",
-            "Revalidates the exact selected scope, actions and total before confirmation, then executes one verified purchase at a time within a hard credit budget.",
-            "Stops the complete run after any ambiguous submission, never retries a purchase automatically and retains a dismissible result report."
+            "Fixes Expansion & Upgrade Planner scans missing every available level and vehicle-bay upgrade exposed through MissionChief's current native Credit route.",
+            "Accepts only the exact same-origin expand_do/credits?level=<next> GET control and binds its path, single next-level query and method into every revalidation.",
+            "Rejects Coin routes, wrong levels, extra query fields, external controls and method changes before any purchase request.",
+            "Retains native CSRF protection, hard budgets, one operation per station, sequential execution and authoritative post-purchase verification."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -20108,21 +20108,30 @@ Each target will be rechecked, submitted through its current native building-edi
         return Number.isSafeInteger(value) && value > 0 && value <= EXPANSION_PLANNER_MAX_BUDGET ? value : 0;
     }
 
-    function expansionPlannerMutationReference(rawUrl, buildingId, kind) {
+    function expansionPlannerMutationReference(rawUrl, buildingId, kind, record) {
         let url;
         try { url = new URL(rawUrl || '', `${pageWindow.location.origin}/buildings/${buildingId}`); }
         catch (err) { return null; }
-        if (url.origin !== pageWindow.location.origin || url.search || url.hash) return null;
+        if (url.origin !== pageWindow.location.origin || url.hash) return null;
         const escapedId = String(buildingId).replace(/[^\d]/gu, '');
         const prefix = `/buildings/${escapedId}/`;
         if (!escapedId || !url.pathname.startsWith(prefix)) return null;
         const suffix = url.pathname.slice(prefix.length).replace(/\/+$/u, '').toLowerCase();
+        let requestMethod = 'post';
         if (kind === 'level') {
-            if (!/^(?:small_)?expand$/u.test(suffix)) return null;
+            if (/^(?:small_)?expand$/u.test(suffix)) {
+                if (url.search) return null;
+            } else if (suffix === 'expand_do/credits') {
+                const expectedLevel = String(Math.max(0, Number(record?.level) || 0) + 1);
+                const entries = Array.from(url.searchParams.entries());
+                if (entries.length !== 1 || entries[0][0] !== 'level' || entries[0][1] !== expectedLevel) return null;
+                requestMethod = 'get';
+            } else return null;
         } else {
+            if (url.search) return null;
             if (!suffix.includes('extension') || /(?:ready|finish|cancel|delete|remove|disable|enable|coin|gold)/u.test(suffix)) return null;
         }
-        return { href: url.href, path: url.pathname, suffix };
+        return { href: url.href, path: url.pathname, search: url.search, suffix, requestMethod };
     }
 
     function expansionPlannerOperationLabel(control, kind, row, record, reference) {
@@ -20140,20 +20149,20 @@ Each target will be rechecked, submitted through its current native building-edi
         const priceCredits = expansionPlannerCreditPrice(control);
         if (!priceCredits) return null;
         const rawAction = form?.getAttribute?.('action') || control?.getAttribute?.('href');
-        const reference = expansionPlannerMutationReference(rawAction, buildingId, kind);
+        const reference = expansionPlannerMutationReference(rawAction, buildingId, kind, record);
         if (!reference) return null;
         if (form) {
-            if (String(form.getAttribute('method') || '').toLowerCase() !== 'post') return null;
+            if (reference.requestMethod !== 'post' || String(form.getAttribute('method') || '').toLowerCase() !== 'post') return null;
             const token = Array.from(form.elements || []).find(element => element.name === 'authenticity_token' && element.value);
             if (!token) return null;
         } else {
             const method = String(control?.getAttribute?.('data-method') || control?.getAttribute?.('data-turbo-method') || '').toLowerCase();
-            if (method !== 'post') return null;
+            if (reference.requestMethod === 'get' ? method && method !== 'get' : method !== 'post') return null;
         }
         const label = expansionPlannerOperationLabel(control, kind, row, record, reference);
         if (!label) return null;
         const submitKey = form && control?.name ? `${control.name}=${control.value || ''}` : '';
-        const fingerprint = [kind, reference.path, label.toLowerCase(), priceCredits, submitKey].join('|');
+        const fingerprint = [kind, reference.requestMethod, reference.path, reference.search, label.toLowerCase(), priceCredits, submitKey].join('|');
         return {
             operationId: `${buildingId}:${fingerprint}`,
             buildingId: String(buildingId),
@@ -20162,7 +20171,9 @@ Each target will be rechecked, submitted through its current native building-edi
             priceCredits,
             actionHref: reference.href,
             actionPath: reference.path,
+            actionSearch: reference.search,
             actionSuffix: reference.suffix,
+            requestMethod: reference.requestMethod,
             fingerprint,
             transport: form ? 'form' : 'anchor',
             submitName: form && control?.name ? String(control.name) : '',
@@ -20201,7 +20212,7 @@ Each target will be rechecked, submitted through its current native building-edi
         }
         const byMutation = new Map();
         for (const operation of operations) {
-            const key = `${operation.transport}|${operation.actionPath}|${operation.submitName}|${operation.submitValue}`;
+            const key = `${operation.requestMethod}|${operation.transport}|${operation.actionPath}${operation.actionSearch}|${operation.submitName}|${operation.submitValue}`;
             if (!byMutation.has(key)) byMutation.set(key, []);
             byMutation.get(key).push(operation);
         }
@@ -20229,7 +20240,9 @@ Each target will be rechecked, submitted through its current native building-edi
             label: operation.label,
             priceCredits: operation.priceCredits,
             actionPath: operation.actionPath,
+            actionSearch: operation.actionSearch,
             actionSuffix: operation.actionSuffix,
+            requestMethod: operation.requestMethod,
             transport: operation.transport,
             submitName: operation.submitName,
             submitValue: operation.submitValue,
@@ -20528,7 +20541,7 @@ Each target will be rechecked, submitted through its current native building-edi
         const matches = parsed.operations.filter(operation => operation.fingerprint === item.fingerprint);
         if (parsed.ambiguous || matches.length !== 1) throw expansionPlannerSafetyStop(`${item.name}'s exact native ${item.label} Credit action is unavailable or ambiguous. No request was sent.`);
         const operation = matches[0];
-        if (operation.priceCredits !== item.priceCredits || operation.actionPath !== item.actionPath || operation.transport !== item.transport) throw expansionPlannerSafetyStop(`${item.name}'s native action or live Credit price changed. No request was sent.`);
+        if (operation.priceCredits !== item.priceCredits || operation.actionPath !== item.actionPath || operation.actionSearch !== item.actionSearch || operation.requestMethod !== item.requestMethod || operation.transport !== item.transport) throw expansionPlannerSafetyStop(`${item.name}'s native action or live Credit price changed. No request was sent.`);
         return operation;
     }
 
@@ -20557,23 +20570,27 @@ Each target will be rechecked, submitted through its current native building-edi
             const formData = new FormData(form);
             if (operation.submitName) formData.append(operation.submitName, operation.submitValue);
             if (!formData.get('authenticity_token')) throw expansionPlannerSafetyStop('the current native purchase form lost its authenticity token. No request was sent.');
-            return { href: operation.actionHref, body: formData, headers: { Accept: 'text/html,application/xhtml+xml' } };
+            return { href: operation.actionHref, method: 'POST', body: formData, headers: { Accept: 'text/html,application/xhtml+xml' } };
         }
         const token = doc?.querySelector?.('meta[name="csrf-token"]')?.getAttribute?.('content');
         if (!token) throw expansionPlannerSafetyStop('the current building page did not expose a native CSRF token. No request was sent.');
+        if (operation.requestMethod === 'get') {
+            return { href: operation.actionHref, method: 'GET', body: null, headers: { Accept: 'text/html,application/xhtml+xml', 'X-CSRF-Token': token } };
+        }
         const body = new URLSearchParams();
         body.set('_method', 'post');
         body.set('authenticity_token', token);
-        return { href: operation.actionHref, body, headers: { Accept: 'text/html,application/xhtml+xml', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' } };
+        return { href: operation.actionHref, method: 'POST', body, headers: { Accept: 'text/html,application/xhtml+xml', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' } };
     }
 
     async function submitExpansionPlannerOperation(prepared, item) {
         const action = new URL(prepared.href, document.baseURI || pageWindow.location.href);
-        if (action.origin !== pageWindow.location.origin || action.pathname !== item.actionPath || action.search || action.hash) throw expansionPlannerSafetyStop('blocked an unexpected purchase URL. No request was sent.');
+        const method = String(prepared.method || '').toUpperCase();
+        if (action.origin !== pageWindow.location.origin || action.pathname !== item.actionPath || action.search !== item.actionSearch || action.hash || !['GET', 'POST'].includes(method) || method.toLowerCase() !== item.requestMethod || (method === 'GET' && prepared.body !== null)) throw expansionPlannerSafetyStop('blocked an unexpected purchase URL or method. No request was sent.');
         let response;
         try {
             response = await runtimeFetch(action.href, {
-                method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'follow',
+                method, credentials: 'same-origin', cache: 'no-store', redirect: 'follow',
                 headers: prepared.headers, body: prepared.body, timeoutMs: EXPANSION_PLANNER_REQUEST_TIMEOUT_MS
             });
         } catch (err) {

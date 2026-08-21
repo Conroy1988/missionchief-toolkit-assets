@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.14.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.14.1"
     assert "'expansionPlanner'" in source, "Expansion Planner analytics allow-list entry is missing"
     assert "expansion-upgrade-planner" in source_section(source, "    function commandPaletteActionEntries(", "    function commandPaletteMissionEntries(")
     assert "@connect      *" not in source, "Expansion Planner must not request wildcard userscript network access"
@@ -63,6 +63,8 @@ def main() -> int:
         "cache: 'no-store'",
         "priceCredits",
         "actionPath",
+        "actionSearch",
+        "requestMethod",
         "fingerprint",
         "expansionPlannerExtensionDigest",
         "expansionPlannerAssertScope",
@@ -85,7 +87,11 @@ def main() -> int:
     assert "\\s*credits?\\b" in parser, "A positive Credits label must be required on the native control itself"
     assert "url.origin !== pageWindow.location.origin" in parser
     assert "method !== 'post'" in parser
-    assert "url.search || url.hash" in parser
+    assert "url.hash" in parser
+    assert "suffix === 'expand_do/credits'" in parser, "MissionChief's native Credit level route must be recognised"
+    assert "entries.length !== 1" in parser and "entries[0][0] !== 'level'" in parser, "The level route must permit exactly one bounded query parameter"
+    assert "entries[0][1] !== expectedLevel" in parser, "The level route must target exactly the next authoritative level"
+    assert "reference.requestMethod === 'get' ? method && method !== 'get' : method !== 'post'" in parser, "Only the exact native level route may use GET"
     assert "(?:ready|finish|cancel|delete|remove|disable|enable|coin|gold)" in parser
     assert "levelPrices" not in implementation and "levelcost" not in implementation, "Prices must never come from a static building table"
 
@@ -102,11 +108,16 @@ def main() -> int:
     for guard in (
         "matches.length !== 1",
         "operation.priceCredits !== item.priceCredits",
+        "operation.actionSearch !== item.actionSearch",
+        "operation.requestMethod !== item.requestMethod",
         "before.level !== item.level",
         "expansionPlannerHasPendingConstruction",
         "operation.priceCredits > budgetRemaining",
         "expansionPlannerStoppedBeforeMutation",
         "submitExpansionPlannerOperation",
+        "action.search !== item.actionSearch",
+        "method.toLowerCase() !== item.requestMethod",
+        "'X-CSRF-Token': token",
         "stillOffered",
         "after.level === before.level + 1",
         "expansionPlannerExtensionDigest(after) === expansionPlannerExtensionDigest(before)",
@@ -133,7 +144,7 @@ def main() -> int:
     assert "test_issue744_expansion_upgrade_planner_contract.py" in preflight
     assert "test_issue744_expansion_upgrade_planner_runtime.mjs" in preflight
 
-    print("Issue #744 Expansion & Upgrade Planner source contract passed: live Credit-only discovery, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
+    print("Issue #744 Expansion & Upgrade Planner source contract passed: live Credit-only POST and exact next-level GET discovery, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
     return 0
 
 

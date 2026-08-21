@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.14.1] - 2026-08-21
+
+### Native level-upgrade route hotfix
+
+- Fixes Expansion & Upgrade Planner scans missing every available level and vehicle-bay upgrade exposed through MissionChief's current native Credit route.
+- Accepts only the exact same-origin `expand_do/credits?level=<next>` GET control and binds its path, single next-level query and method into every revalidation.
+- Rejects Coin routes, wrong levels, extra query fields, external controls and method changes before any purchase request.
+- Retains native CSRF protection, hard budgets, one operation per station, sequential execution and authoritative post-purchase verification.
+
 ## [10.14.0] - 2026-08-21
 
 ### Expansion & Upgrade Planner

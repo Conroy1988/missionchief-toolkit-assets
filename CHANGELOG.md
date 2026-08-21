@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.14.2] - 2026-08-21
+
+### Native expansion-page discovery hotfix
+
+- Fixes Expansion & Upgrade Planner scans still showing no Fire Station level or vehicle-bay upgrades after v10.14.1.
+- Follows only the exact same-origin native `/buildings/<id>/expand` link exposed by each station, then reads the direct live Credit purchase control from that page.
+- Binds the discovery page into the immutable operation fingerprint and refetches both station state and that exact page before confirmation, immediately before purchase and during verification.
+- Shows bounded discovery, Credit-control, price, route and method diagnostics so unsupported live markup no longer collapses into an unexplained zero-result scan.
+- Keeps exact next-level queries, native CSRF protection, hard budgets, one operation per station, sequential execution and authoritative post-purchase verification.
+
 ## [10.14.1] - 2026-08-21
 
 ### Native level-upgrade route hotfix

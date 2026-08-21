@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.14.1
+// @version      10.14.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.14.1',
+        version: '10.14.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,13 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.14.1",
-        title: "Native level-upgrade route hotfix",
+        version: "10.14.2",
+        title: "Native expansion-page discovery hotfix",
         highlights: Object.freeze([
-            "Fixes Expansion & Upgrade Planner scans missing every available level and vehicle-bay upgrade exposed through MissionChief's current native Credit route.",
-            "Accepts only the exact same-origin expand_do/credits?level=<next> GET control and binds its path, single next-level query and method into every revalidation.",
-            "Rejects Coin routes, wrong levels, extra query fields, external controls and method changes before any purchase request.",
-            "Retains native CSRF protection, hard budgets, one operation per station, sequential execution and authoritative post-purchase verification."
+            "Fixes Expansion & Upgrade Planner scans still showing no Fire Station level or vehicle-bay upgrades after v10.14.1.",
+            "Follows only the exact same-origin native /buildings/<id>/expand link exposed by each station, then reads the direct live Credit purchase control from that page.",
+            "Binds the discovery page into the immutable operation fingerprint and refetches both station state and that exact page before confirmation, immediately before purchase and during verification.",
+            "Shows bounded discovery, Credit-control, price, route and method diagnostics so unsupported live markup no longer collapses into an unexplained zero-result scan.",
+            "Keeps exact next-level queries, native CSRF protection, hard budgets, one operation per station, sequential execution and authoritative post-purchase verification."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -20108,6 +20109,54 @@ Each target will be rechecked, submitted through its current native building-edi
         return Number.isSafeInteger(value) && value > 0 && value <= EXPANSION_PLANNER_MAX_BUDGET ? value : 0;
     }
 
+    function emptyExpansionPlannerDiscoveryDiagnostics() {
+        return {
+            inspectedControls: 0,
+            creditControls: 0,
+            priceRejected: 0,
+            routeRejected: 0,
+            methodRejected: 0,
+            acceptedControls: 0,
+            levelNavigationFound: 0,
+            levelNavigationMissing: 0,
+            levelPagesFetched: 0
+        };
+    }
+
+    function mergeExpansionPlannerDiscoveryDiagnostics(target, source) {
+        const merged = target || emptyExpansionPlannerDiscoveryDiagnostics();
+        for (const key of Object.keys(merged)) merged[key] += Math.max(0, Number(source?.[key]) || 0);
+        return merged;
+    }
+
+    function expansionPlannerBoundDiscoveryPath(rawPath, buildingId, kind) {
+        const id = String(buildingId || '');
+        if (!/^\d+$/u.test(id)) return '';
+        let url;
+        try { url = new URL(rawPath || `/buildings/${id}`, `${pageWindow.location.origin}/buildings/${id}`); }
+        catch (err) { return ''; }
+        if (url.origin !== pageWindow.location.origin || url.search || url.hash) return '';
+        const path = url.pathname.replace(/\/+$/u, '') || '/';
+        const detailPath = `/buildings/${id}`;
+        if (path === detailPath) return path;
+        return kind === 'level' && path === `${detailPath}/expand` ? path : '';
+    }
+
+    function expansionPlannerLevelNavigationReference(doc, buildingId) {
+        const id = String(buildingId || '');
+        const expectedPath = `/buildings/${id}/expand`;
+        if (!/^\d+$/u.test(id) || !doc) return null;
+        const matches = new Map();
+        for (const anchor of Array.from(doc.getElementsByTagName?.('a') || [])) {
+            let url;
+            try { url = new URL(anchor.getAttribute?.('href') || '', `${pageWindow.location.origin}/buildings/${id}`); }
+            catch (err) { continue; }
+            if (url.origin !== pageWindow.location.origin || url.pathname !== expectedPath || url.search || url.hash) continue;
+            matches.set(url.href, { href: url.href, path: expectedPath });
+        }
+        return matches.size === 1 ? Array.from(matches.values())[0] : null;
+    }
+
     function expansionPlannerMutationReference(rawUrl, buildingId, kind, record) {
         let url;
         try { url = new URL(rawUrl || '', `${pageWindow.location.origin}/buildings/${buildingId}`); }
@@ -20119,7 +20168,7 @@ Each target will be rechecked, submitted through its current native building-edi
         const suffix = url.pathname.slice(prefix.length).replace(/\/+$/u, '').toLowerCase();
         let requestMethod = 'post';
         if (kind === 'level') {
-            if (/^(?:small_)?expand$/u.test(suffix)) {
+            if (suffix === 'small_expand') {
                 if (url.search) return null;
             } else if (suffix === 'expand_do/credits') {
                 const expectedLevel = String(Math.max(0, Number(record?.level) || 0) + 1);
@@ -20145,24 +20194,44 @@ Each target will be rechecked, submitted through its current native building-edi
         return own || `Upgrade to level ${Math.max(0, Number(record?.level) || 0) + 1}`;
     }
 
-    function expansionPlannerDescriptor(control, buildingId, kind, row, record, form = null) {
+    function expansionPlannerDescriptor(control, buildingId, kind, row, record, form = null, discoveryPath = '', diagnostics = null) {
+        if (diagnostics) {
+            diagnostics.inspectedControls += 1;
+            if (/\bcredits?\b/iu.test(expansionPlannerControlText(control))) diagnostics.creditControls += 1;
+        }
         const priceCredits = expansionPlannerCreditPrice(control);
-        if (!priceCredits) return null;
+        if (!priceCredits) {
+            if (diagnostics && /\bcredits?\b/iu.test(expansionPlannerControlText(control))) diagnostics.priceRejected += 1;
+            return null;
+        }
         const rawAction = form?.getAttribute?.('action') || control?.getAttribute?.('href');
         const reference = expansionPlannerMutationReference(rawAction, buildingId, kind, record);
-        if (!reference) return null;
+        if (!reference) {
+            if (diagnostics) diagnostics.routeRejected += 1;
+            return null;
+        }
         if (form) {
-            if (reference.requestMethod !== 'post' || String(form.getAttribute('method') || '').toLowerCase() !== 'post') return null;
+            if (reference.requestMethod !== 'post' || String(form.getAttribute('method') || '').toLowerCase() !== 'post') {
+                if (diagnostics) diagnostics.methodRejected += 1;
+                return null;
+            }
             const token = Array.from(form.elements || []).find(element => element.name === 'authenticity_token' && element.value);
-            if (!token) return null;
+            if (!token) {
+                if (diagnostics) diagnostics.methodRejected += 1;
+                return null;
+            }
         } else {
             const method = String(control?.getAttribute?.('data-method') || control?.getAttribute?.('data-turbo-method') || '').toLowerCase();
-            if (reference.requestMethod === 'get' ? method && method !== 'get' : method !== 'post') return null;
+            if (reference.requestMethod === 'get' ? method && method !== 'get' : method !== 'post') {
+                if (diagnostics) diagnostics.methodRejected += 1;
+                return null;
+            }
         }
         const label = expansionPlannerOperationLabel(control, kind, row, record, reference);
         if (!label) return null;
         const submitKey = form && control?.name ? `${control.name}=${control.value || ''}` : '';
-        const fingerprint = [kind, reference.requestMethod, reference.path, reference.search, label.toLowerCase(), priceCredits, submitKey].join('|');
+        const fingerprint = [kind, discoveryPath, reference.requestMethod, reference.path, reference.search, label.toLowerCase(), priceCredits, submitKey].join('|');
+        if (diagnostics) diagnostics.acceptedControls += 1;
         return {
             operationId: `${buildingId}:${fingerprint}`,
             buildingId: String(buildingId),
@@ -20174,6 +20243,7 @@ Each target will be rechecked, submitted through its current native building-edi
             actionSearch: reference.search,
             actionSuffix: reference.suffix,
             requestMethod: reference.requestMethod,
+            discoveryPath,
             fingerprint,
             transport: form ? 'form' : 'anchor',
             submitName: form && control?.name ? String(control.name) : '',
@@ -20183,13 +20253,16 @@ Each target will be rechecked, submitted through its current native building-edi
         };
     }
 
-    function parseExpansionPlannerActions(doc, record, operationKind = 'all') {
+    function parseExpansionPlannerActions(doc, record, operationKind = 'all', rawDiscoveryPath = '') {
         const id = String(record?.id || '');
-        if (!/^\d+$/u.test(id) || !doc) return { operations: [], ambiguous: 0 };
+        const diagnostics = emptyExpansionPlannerDiscoveryDiagnostics();
+        if (!/^\d+$/u.test(id) || !doc) return { operations: [], ambiguous: 0, diagnostics };
         const operations = [];
         const requestedKinds = operationKind === 'all' ? ['level', 'extension'] : [operationKind];
         const extensionTable = doc.getElementById?.('ausbauten');
         for (const kind of requestedKinds) {
+            const discoveryPath = expansionPlannerBoundDiscoveryPath(rawDiscoveryPath || `/buildings/${id}`, id, kind);
+            if (!discoveryPath) continue;
             const scope = kind === 'extension' ? extensionTable : doc;
             if (!scope) continue;
             const rows = kind === 'extension' ? Array.from(scope.getElementsByTagName?.('tr') || []) : [null];
@@ -20197,14 +20270,14 @@ Each target will be rechecked, submitted through its current native building-edi
                 const root = row || scope;
                 for (const anchor of Array.from(root.getElementsByTagName?.('a') || [])) {
                     if (kind === 'level' && extensionTable?.contains?.(anchor)) continue;
-                    const descriptor = expansionPlannerDescriptor(anchor, id, kind, row, record);
+                    const descriptor = expansionPlannerDescriptor(anchor, id, kind, row, record, null, discoveryPath, diagnostics);
                     if (descriptor) operations.push(descriptor);
                 }
                 for (const form of Array.from(root.getElementsByTagName?.('form') || [])) {
                     if (kind === 'level' && extensionTable?.contains?.(form)) continue;
                     const submitters = Array.from(form.elements || []).filter(element => ['submit', 'image'].includes(String(element.type || '').toLowerCase()));
                     for (const submitter of submitters) {
-                        const descriptor = expansionPlannerDescriptor(submitter, id, kind, row, record, form);
+                        const descriptor = expansionPlannerDescriptor(submitter, id, kind, row, record, form, discoveryPath, diagnostics);
                         if (descriptor) operations.push(descriptor);
                     }
                 }
@@ -20218,7 +20291,43 @@ Each target will be rechecked, submitted through its current native building-edi
         }
         const ambiguous = Array.from(byMutation.values()).filter(group => group.length !== 1).reduce((total, group) => total + group.length, 0);
         const exact = Array.from(byMutation.values()).filter(group => group.length === 1).map(group => group[0]);
-        return { operations: exact.slice(0, EXPANSION_PLANNER_OPERATION_LIMIT), ambiguous };
+        diagnostics.acceptedControls = exact.length;
+        return { operations: exact.slice(0, EXPANSION_PLANNER_OPERATION_LIMIT), ambiguous, diagnostics };
+    }
+
+    async function discoverExpansionPlannerActions(detailDoc, record, operationKind = 'all') {
+        const id = String(record?.id || '');
+        const detailPath = `/buildings/${id}`;
+        const operations = [];
+        const diagnostics = emptyExpansionPlannerDiscoveryDiagnostics();
+        let ambiguous = 0;
+        if (operationKind === 'all' || operationKind === 'extension') {
+            const parsed = parseExpansionPlannerActions(detailDoc, record, 'extension', detailPath);
+            operations.push(...parsed.operations);
+            ambiguous += parsed.ambiguous;
+            mergeExpansionPlannerDiscoveryDiagnostics(diagnostics, parsed.diagnostics);
+        }
+        if (operationKind === 'all' || operationKind === 'level') {
+            const direct = parseExpansionPlannerActions(detailDoc, record, 'level', detailPath);
+            operations.push(...direct.operations);
+            ambiguous += direct.ambiguous;
+            mergeExpansionPlannerDiscoveryDiagnostics(diagnostics, direct.diagnostics);
+            if (!direct.operations.length && !direct.ambiguous) {
+                const navigation = expansionPlannerLevelNavigationReference(detailDoc, id);
+                if (navigation) {
+                    diagnostics.levelNavigationFound += 1;
+                    const page = await fetchExpansionPlannerDocument(navigation.href);
+                    const finalUrl = new URL(page.url || navigation.href, navigation.href);
+                    if (finalUrl.origin !== pageWindow.location.origin || finalUrl.pathname !== navigation.path || finalUrl.search || finalUrl.hash) throw new Error(`MissionChief redirected station ${id}'s native expansion page unexpectedly.`);
+                    diagnostics.levelPagesFetched += 1;
+                    const parsed = parseExpansionPlannerActions(page.doc, record, 'level', navigation.path);
+                    operations.push(...parsed.operations);
+                    ambiguous += parsed.ambiguous;
+                    mergeExpansionPlannerDiscoveryDiagnostics(diagnostics, parsed.diagnostics);
+                } else diagnostics.levelNavigationMissing += 1;
+            }
+        }
+        return { operations: operations.slice(0, EXPANSION_PLANNER_OPERATION_LIMIT), ambiguous, diagnostics };
     }
 
     function expansionPlannerPublicOperation(operation, record, dispatchName, typeLabel) {
@@ -20243,6 +20352,7 @@ Each target will be rechecked, submitted through its current native building-edi
             actionSearch: operation.actionSearch,
             actionSuffix: operation.actionSuffix,
             requestMethod: operation.requestMethod,
+            discoveryPath: operation.discoveryPath,
             transport: operation.transport,
             submitName: operation.submitName,
             submitValue: operation.submitValue,
@@ -20262,6 +20372,28 @@ Each target will be rechecked, submitted through its current native building-edi
         const finalUrl = new URL(response.url || url.href, url.href);
         if (finalUrl.origin !== pageWindow.location.origin || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief redirected Expansion Planner away from the authenticated game page.');
         return { doc: new DOMParser().parseFromString(await response.text(), 'text/html'), url: finalUrl.href };
+    }
+
+    async function fetchExpansionPlannerOperationDocument(item) {
+        const discoveryPath = expansionPlannerBoundDiscoveryPath(item?.discoveryPath, item?.buildingId, item?.kind);
+        if (!discoveryPath || discoveryPath !== item?.discoveryPath) throw expansionPlannerSafetyStop(`${item?.name || 'the selected station'} lost its exact native discovery page. No request was sent.`);
+        const page = await fetchExpansionPlannerDocument(discoveryPath);
+        const finalUrl = new URL(page.url || discoveryPath, `${pageWindow.location.origin}${discoveryPath}`);
+        if (finalUrl.origin !== pageWindow.location.origin || finalUrl.pathname !== discoveryPath || finalUrl.search || finalUrl.hash) throw expansionPlannerSafetyStop(`${item.name}'s native discovery page redirected unexpectedly. No request was sent.`);
+        return page;
+    }
+
+    async function fetchExpansionPlannerRevalidationPages(item) {
+        const detailPath = `/buildings/${item.buildingId}`;
+        if (item.discoveryPath === detailPath) {
+            const page = await fetchExpansionPlannerOperationDocument(item);
+            return { detailPage: page, operationPage: page };
+        }
+        const [detailPage, operationPage] = await Promise.all([
+            fetchExpansionPlannerDocument(detailPath),
+            fetchExpansionPlannerOperationDocument(item)
+        ]);
+        return { detailPage, operationPage };
     }
 
     async function fetchExpansionPlannerBuildings() {
@@ -20450,7 +20582,12 @@ Each target will be rechecked, submitted through its current native building-edi
             const targets = scoped.slice(0, maxStations);
             const dispatchNames = new Map(expansionPlannerRuntime.dispatches.map(item => [item.id, item.name]));
             const queue = [];
-            const summary = { scoped: scoped.length, scanned: 0, eligibleStations: 0, operations: 0, pending: 0, unavailable: 0, ambiguous: 0, truncatedStations: Math.max(0, scoped.length - targets.length), unavailableNames: [] };
+            const summary = {
+                scoped: scoped.length, scanned: 0, eligibleStations: 0, operations: 0, pending: 0, unavailable: 0, ambiguous: 0,
+                truncatedStations: Math.max(0, scoped.length - targets.length), unavailableNames: [],
+                inspectedControls: 0, creditControls: 0, priceRejected: 0, routeRejected: 0, methodRejected: 0, acceptedControls: 0,
+                levelNavigationFound: 0, levelNavigationMissing: 0, levelPagesFetched: 0
+            };
             let cursor = 0;
             expansionPlannerRuntime.stopRequested = false;
             const worker = async () => {
@@ -20465,8 +20602,9 @@ Each target will be rechecked, submitted through its current native building-edi
                         const { doc } = await fetchExpansionPlannerDocument(`/buildings/${record.id}`);
                         summary.scanned += 1;
                         if (expansionPlannerHasPendingConstruction(record, doc)) { summary.pending += 1; continue; }
-                        const parsed = parseExpansionPlannerActions(doc, record, operationKind);
+                        const parsed = await discoverExpansionPlannerActions(doc, record, operationKind);
                         summary.ambiguous += parsed.ambiguous;
+                        for (const key of Object.keys(parsed.diagnostics)) summary[key] += Math.max(0, Number(parsed.diagnostics[key]) || 0);
                         if (!parsed.operations.length) { summary.unavailable += 1; continue; }
                         summary.eligibleStations += 1;
                         for (const operation of parsed.operations) {
@@ -20493,7 +20631,7 @@ Each target will be rechecked, submitted through its current native building-edi
             expansionPlannerRuntime.currentBuildingId = '';
             expansionPlannerRuntime.currentItem = '';
             resetExpansionPlannerResults();
-            expansionPlannerLog(`Scan complete: ${queue.length} live Credit action${queue.length === 1 ? '' : 's'} across ${summary.eligibleStations} station${summary.eligibleStations === 1 ? '' : 's'} · nothing selected`);
+            expansionPlannerLog(`Scan complete: ${queue.length} live Credit action${queue.length === 1 ? '' : 's'} across ${summary.eligibleStations} station${summary.eligibleStations === 1 ? '' : 's'} · ${summary.levelPagesFetched} native expansion page${summary.levelPagesFetched === 1 ? '' : 's'} checked · nothing selected`);
             return queue;
         })();
         expansionPlannerRuntime.scanPromise = scanPromise;
@@ -20537,11 +20675,11 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     function expansionPlannerFindCurrentAction(doc, record, item) {
-        const parsed = parseExpansionPlannerActions(doc, record, item.kind);
+        const parsed = parseExpansionPlannerActions(doc, record, item.kind, item.discoveryPath);
         const matches = parsed.operations.filter(operation => operation.fingerprint === item.fingerprint);
         if (parsed.ambiguous || matches.length !== 1) throw expansionPlannerSafetyStop(`${item.name}'s exact native ${item.label} Credit action is unavailable or ambiguous. No request was sent.`);
         const operation = matches[0];
-        if (operation.priceCredits !== item.priceCredits || operation.actionPath !== item.actionPath || operation.actionSearch !== item.actionSearch || operation.requestMethod !== item.requestMethod || operation.transport !== item.transport) throw expansionPlannerSafetyStop(`${item.name}'s native action or live Credit price changed. No request was sent.`);
+        if (operation.priceCredits !== item.priceCredits || operation.actionPath !== item.actionPath || operation.actionSearch !== item.actionSearch || operation.requestMethod !== item.requestMethod || operation.discoveryPath !== item.discoveryPath || operation.transport !== item.transport) throw expansionPlannerSafetyStop(`${item.name}'s native action, discovery page or live Credit price changed. No request was sent.`);
         return operation;
     }
 
@@ -20553,12 +20691,12 @@ Each target will be rechecked, submitted through its current native building-edi
             expansionPlannerRuntime.currentBuildingId = item.buildingId;
             expansionPlannerRuntime.currentItem = `Revalidating ${index + 1}/${items.length} · ${item.name}`;
             renderExpansionPlannerPanel();
-            const [record, page] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerDocument(`/buildings/${item.buildingId}`)]);
+            const [record, pages] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerRevalidationPages(item)]);
             if (runtime.destroyed || expansionPlannerRuntime.stopRequested) throw expansionPlannerStoppedBeforeMutation('Expansion Planner preparation stopped before confirmation. No request was sent.');
             expansionPlannerAssertScope(record, item);
             if (record.level !== item.level || expansionPlannerExtensionDigest(record) !== item.extensionDigest) throw expansionPlannerSafetyStop(`${item.name}'s level or extension state changed after the scan. Scan again before purchasing.`);
-            if (expansionPlannerHasPendingConstruction(record, page.doc)) throw expansionPlannerSafetyStop(`${item.name} now has an expansion under construction. No request was sent.`);
-            expansionPlannerFindCurrentAction(page.doc, record, item);
+            if (expansionPlannerHasPendingConstruction(record, pages.detailPage.doc)) throw expansionPlannerSafetyStop(`${item.name} now has an expansion under construction. No request was sent.`);
+            expansionPlannerFindCurrentAction(pages.operationPage.doc, record, item);
             fresh.push({ ...item, level: record.level, extensionDigest: expansionPlannerExtensionDigest(record) });
         }
         return fresh;
@@ -20604,22 +20742,22 @@ Each target will be rechecked, submitted through its current native building-edi
     }
 
     async function applyExpansionPlannerOperation(item, budgetRemaining) {
-        const [before, page] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerDocument(`/buildings/${item.buildingId}`)]);
+        const [before, pages] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerRevalidationPages(item)]);
         expansionPlannerAssertScope(before, item);
         if (before.level !== item.level || expansionPlannerExtensionDigest(before) !== item.extensionDigest) throw expansionPlannerSafetyStop(`${item.name}'s level or extension state changed after final confirmation. No request was sent.`);
-        if (expansionPlannerHasPendingConstruction(before, page.doc)) throw expansionPlannerSafetyStop(`${item.name} has an expansion under construction. No request was sent.`);
-        const operation = expansionPlannerFindCurrentAction(page.doc, before, item);
+        if (expansionPlannerHasPendingConstruction(before, pages.detailPage.doc)) throw expansionPlannerSafetyStop(`${item.name} has an expansion under construction. No request was sent.`);
+        const operation = expansionPlannerFindCurrentAction(pages.operationPage.doc, before, item);
         if (operation.priceCredits > budgetRemaining) throw expansionPlannerSafetyStop(`the remaining hard budget is lower than ${item.name}'s live price. No request was sent.`);
         if (runtime.destroyed || expansionPlannerRuntime.stopRequested) throw expansionPlannerStoppedBeforeMutation(`${item.name}'s purchase was stopped before submission. No request was sent.`);
-        const prepared = prepareExpansionPlannerSubmission(operation, page.doc);
+        const prepared = prepareExpansionPlannerSubmission(operation, pages.operationPage.doc);
         await submitExpansionPlannerOperation(prepared, item);
         if (!await runtimeDelay(350)) throw expansionPlannerSafetyStop('the purchase was submitted, but the Toolkit stopped before verification.');
         let after;
-        let verifiedPage;
-        try { [after, verifiedPage] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerDocument(`/buildings/${item.buildingId}`)]); }
+        let verifiedPages;
+        try { [after, verifiedPages] = await Promise.all([fetchExpansionPlannerBuilding(item.buildingId), fetchExpansionPlannerRevalidationPages(item)]); }
         catch (err) { throw expansionPlannerSafetyStop('the purchase was submitted, but authoritative station verification failed. No further purchases were attempted.'); }
         expansionPlannerAssertScope(after, item, true);
-        const stillOffered = parseExpansionPlannerActions(verifiedPage.doc, after, item.kind).operations.some(candidate => candidate.fingerprint === item.fingerprint);
+        const stillOffered = parseExpansionPlannerActions(verifiedPages.operationPage.doc, after, item.kind, item.discoveryPath).operations.some(candidate => candidate.fingerprint === item.fingerprint);
         if (stillOffered) throw expansionPlannerSafetyStop(`MissionChief still exposes ${item.name}'s exact purchased action. No further purchases were attempted.`);
         if (item.kind === 'level') {
             const verified = item.actionSuffix === 'small_expand' ? before.small && !after.small : after.level === before.level + 1;
@@ -20856,11 +20994,15 @@ Credits only. Each station and native action will be fetched again, purchased on
             const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
             return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="expansion-planner-target" value="${escapeHtml(item.operationId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}><span><strong>${escapeHtml(item.name)} · ${escapeHtml(item.label)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · ${item.kind === 'level' ? 'Level / bay' : 'Extension'}${escapeHtml(detail)}</small></span><b>${item.priceCredits.toLocaleString()} CR · ${outcome}</b></label>`;
         }).join('') : `<div class="mcms-empty-state">${runtimeState.scannedAt ? 'No unambiguous native Credit upgrades are currently available in this exact scope.' : 'Load and scan stations to build a current Credit-only purchase preview.'}</div>`;
-        const summary = runtimeState.summary || { scoped: 0, scanned: 0, eligibleStations: 0, operations: 0, pending: 0, unavailable: 0, ambiguous: 0, truncatedStations: 0, unavailableNames: [] };
+        const summary = runtimeState.summary || {
+            scoped: 0, scanned: 0, eligibleStations: 0, operations: 0, pending: 0, unavailable: 0, ambiguous: 0, truncatedStations: 0, unavailableNames: [],
+            inspectedControls: 0, creditControls: 0, priceRejected: 0, routeRejected: 0, methodRejected: 0, acceptedControls: 0,
+            levelNavigationFound: 0, levelNavigationMissing: 0, levelPagesFetched: 0
+        };
         const status = runtimeState.running ? (runtimeState.stopRequested ? 'STOPPING' : 'RUNNING') : runtimeState.preparing ? 'REVALIDATING' : runtimeState.scanPromise ? 'SCANNING' : runtimeState.catalogPromise ? 'LOADING' : runtimeState.scannedAt ? (runtimeState.processed ? 'COMPLETE' : 'READY') : 'IDLE';
         const stats = runtimeState.running || runtimeState.processed ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${planned.length || runtimeState.processed}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.purchased}</b><span>Purchased</span></div><div class="mcms-sweep-stat"><b>${runtimeState.creditsSpent.toLocaleString()}</b><span>Credits spent</span></div><div class="mcms-sweep-stat"><b>${runtimeState.errors}</b><span>Errors</span></div>` : `<div class="mcms-sweep-stat"><b>${summary.operations}</b><span>Available</span></div><div class="mcms-sweep-stat"><b>${planned.length}</b><span>Selected</span></div><div class="mcms-sweep-stat"><b>${total.toLocaleString()}</b><span>Exact total</span></div><div class="mcms-sweep-stat"><b>${summary.pending}</b><span>Already building</span></div>`;
         const activity = runtimeState.currentItem ? `<div class="mcms-status"><strong>Current:</strong> ${escapeHtml(runtimeState.currentItem)}</div>` : '';
-        const findings = runtimeState.scannedAt ? `<div class="mcms-recruitment-findings">${summary.scanned}/${summary.scoped} scoped stations scanned · ${summary.unavailable} without a supported live Credit action · ${summary.ambiguous} ambiguous controls rejected · ${summary.truncatedStations} beyond this scan's hard station limit.</div>` : '';
+        const findings = runtimeState.scannedAt ? `<div class="mcms-recruitment-findings">${summary.scanned}/${summary.scoped} scoped stations scanned · ${summary.levelPagesFetched} native expansion page${summary.levelPagesFetched === 1 ? '' : 's'} opened from ${summary.levelNavigationFound} exact link${summary.levelNavigationFound === 1 ? '' : 's'} · ${summary.creditControls} Credit-labelled control${summary.creditControls === 1 ? '' : 's'} inspected · ${summary.priceRejected} price, ${summary.routeRejected} route and ${summary.methodRejected} method rejection${summary.priceRejected + summary.routeRejected + summary.methodRejected === 1 ? '' : 's'} · ${summary.unavailable} station${summary.unavailable === 1 ? '' : 's'} unavailable · ${summary.ambiguous} ambiguous control${summary.ambiguous === 1 ? '' : 's'} rejected · ${summary.truncatedStations} beyond this scan's hard station limit.</div>` : '';
         const budgetStatus = planned.length ? `<div class="mcms-status"><strong>Selected total:</strong> ${total.toLocaleString()} Credits · <strong>Hard budget:</strong> ${budget ? `${budget.toLocaleString()} Credits` : 'required'} · ${budget && total <= budget ? `${(budget - total).toLocaleString()} Credits remain` : budget ? 'OVER BUDGET — purchase disabled' : 'set a budget before purchase'}</div>` : '';
         const logs = runtimeState.log.length ? runtimeState.log.map(entry => `<div data-level="${escapeHtml(entry.level)}">${escapeHtml(new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))} · ${escapeHtml(entry.message)}</div>`).join('') : '<div>No Expansion Planner activity yet.</div>';
         setInnerHtmlIfChanged(controls.host, `${expansionPlannerReportHtml(runtimeState.lastReport)}<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Expansion &amp; Upgrade Planner</span><span class="mcms-sweep-state ${runtimeState.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats">${stats}</div>${activity}${budgetStatus}<div class="mcms-recruitment-filter-head"><span>Fresh native Credit actions</span><b>${planned.length} selected / ${runtimeState.queue.length} available</b></div><div class="mcms-recruitment-stations">${rows}</div>${findings}<div class="mcms-sweep-log">${logs}</div></div>`);

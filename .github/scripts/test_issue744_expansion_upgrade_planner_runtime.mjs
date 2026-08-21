@@ -34,7 +34,7 @@ const context = vm.createContext({
     console, Date, Set, Map, Array, Number, String, Object, Promise, Error, URL, URLSearchParams, Math, JSON,
     FormData: shell.window.FormData, DOMParser: shell.window.DOMParser, document: shell.window.document,
     pageWindow: { location: shell.window.location, confirm: () => true }, runtime: { destroyed: false },
-    SCRIPT: { panelId: 'panel', version: '10.14.1', expansionPlannerReportState: 'upgrade-report' },
+    SCRIPT: { panelId: 'panel', version: '10.14.2', expansionPlannerReportState: 'upgrade-report' },
     state: { expansionPlanner: { dispatchId: '10', buildingTypeId: 'all-types', operationKind: 'all', creditBudget: '500000', maxStations: 100, delayMs: 1500 } },
     expansionPlannerRuntime,
     dispatchRecruitmentRuntime: { running: false, scanPromise: null, catalogPromise: null },
@@ -90,6 +90,39 @@ assert.deepEqual(Array.from(actions.operations, operation => [operation.kind, op
 ]);
 assert.equal(actions.operations.some(operation => /coin/iu.test(operation.actionPath)), false, 'Coin actions must never enter the queue');
 
+const detailWithExpandNavigation = parsed(`<!doctype html><html><head><meta name="csrf-token" content="csrf-detail"></head><body>
+<a href="/buildings/101/expand">Expand building</a>
+<a href="/buildings/101/expand?level=3">Queried navigation must be ignored</a>
+<a href="https://evil.example/buildings/101/expand">External navigation must be ignored</a>
+</body></html>`);
+const nativeExpandPage = parsed(`<!doctype html><html><head><meta name="csrf-token" content="csrf-expand"></head><body>
+<a href="/buildings/101/expand_do/credits?level=3">Upgrade bay — 20,000 Credits</a>
+<a href="/buildings/101/expand_do/coins?level=3">Upgrade bay — 10 Coins</a>
+</body></html>`);
+const discoveryRequests = [];
+context.fetchExpansionPlannerDocument = async input => {
+    discoveryRequests.push(String(input));
+    return { doc: nativeExpandPage, url: 'https://www.missionchief.co.uk/buildings/101/expand' };
+};
+const discovered = await context.discoverExpansionPlannerActions(detailWithExpandNavigation, record, 'level');
+assert.deepEqual(discoveryRequests, ['https://www.missionchief.co.uk/buildings/101/expand']);
+assert.equal(discovered.operations.length, 1);
+assert.equal(discovered.operations[0].discoveryPath, '/buildings/101/expand');
+assert.equal(discovered.operations[0].actionSearch, '?level=3');
+assert.equal(discovered.diagnostics.levelNavigationFound, 1);
+assert.equal(discovered.diagnostics.levelPagesFetched, 1);
+assert.equal(discovered.diagnostics.creditControls, 1);
+
+let hostileNavigationFetched = false;
+context.fetchExpansionPlannerDocument = async () => { hostileNavigationFetched = true; throw new Error('Hostile navigation was fetched'); };
+const hostileNavigation = await context.discoverExpansionPlannerActions(parsed('<a href="https://evil.example/buildings/101/expand">External</a><a href="/buildings/101/expand?confirm=1">Queried</a>'), record, 'level');
+assert.equal(hostileNavigationFetched, false);
+assert.equal(hostileNavigation.operations.length, 0);
+assert.equal(hostileNavigation.diagnostics.levelNavigationMissing, 1);
+
+context.fetchExpansionPlannerDocument = async () => ({ doc: nativeExpandPage, url: 'https://www.missionchief.co.uk/buildings/101' });
+await assert.rejects(context.discoverExpansionPlannerActions(detailWithExpandNavigation, record, 'level'), /redirected station 101's native expansion page unexpectedly/u);
+
 const ambiguousPage = parsed(`<meta name="csrf-token" content="x"><table id="ausbauten"><tr><td><b>Ambiguous</b></td><td><a data-method="post" href="/buildings/101/extension/9">10,000 Credits</a><a data-method="post" href="/buildings/101/extension/9">10,000 Credits</a></td></tr></table>`);
 const ambiguous = context.parseExpansionPlannerActions(ambiguousPage, record, 'extension');
 assert.equal(ambiguous.operations.length, 0);
@@ -100,6 +133,9 @@ assert.equal(context.expansionPlannerHasPendingConstruction(pendingRecord, nativ
 
 const publicLevel = context.expansionPlannerPublicOperation(actions.operations[0], record, 'North Dispatch', 'Fire Station');
 const publicExtension = context.expansionPlannerPublicOperation(actions.operations[1], record, 'North Dispatch', 'Fire Station');
+const publicDiscoveredLevel = context.expansionPlannerPublicOperation(discovered.operations[0], record, 'North Dispatch', 'Fire Station');
+assert.equal(publicDiscoveredLevel.discoveryPath, '/buildings/101/expand');
+assert.notEqual(publicDiscoveredLevel.fingerprint, publicLevel.fingerprint, 'The native discovery page must be bound into the operation fingerprint');
 expansionPlannerRuntime.queue = [publicLevel, publicExtension];
 context.expansionPlannerSetTarget(publicLevel.operationId, true);
 context.expansionPlannerSetTarget(publicExtension.operationId, true);
@@ -110,6 +146,9 @@ assert.equal(preparedLevel.href, 'https://www.missionchief.co.uk/buildings/101/e
 assert.equal(preparedLevel.method, 'GET');
 assert.equal(preparedLevel.body, null);
 assert.equal(preparedLevel.headers['X-CSRF-Token'], 'csrf-live');
+
+const preparedDiscoveredLevel = context.prepareExpansionPlannerSubmission(discovered.operations[0], nativeExpandPage);
+assert.equal(preparedDiscoveredLevel.headers['X-CSRF-Token'], 'csrf-expand', 'The token must come from the exact native page that exposed the purchase');
 
 const preparedAnchor = context.prepareExpansionPlannerSubmission(actions.operations[1], nativePage);
 assert.equal(preparedAnchor.href, 'https://www.missionchief.co.uk/buildings/101/extension/4');
@@ -143,7 +182,21 @@ await assert.rejects(context.submitExpansionPlannerOperation(preparedAnchor, pub
 
 const changedPricePage = parsed(`<meta name="csrf-token" content="x"><table id="ausbauten"><tr><td><b>Water Rescue Extension</b></td><td><a data-method="post" href="/buildings/101/extension/4">120,000 Credits</a></td></tr></table>`);
 assert.throws(() => context.expansionPlannerFindCurrentAction(changedPricePage, record, publicExtension), error => error?.expansionPlannerFatal === true && error.message.includes('unavailable or ambiguous'));
-assert.throws(() => context.expansionPlannerFindCurrentAction(nativePage, record, { ...publicLevel, actionSearch: '?level=4' }), error => error?.expansionPlannerFatal === true && error.message.includes('action or live Credit price changed'));
+assert.throws(() => context.expansionPlannerFindCurrentAction(nativePage, record, { ...publicLevel, actionSearch: '?level=4' }), error => error?.expansionPlannerFatal === true && error.message.includes('native action') && error.message.includes('changed'));
+assert.throws(() => context.expansionPlannerFindCurrentAction(nativePage, record, publicDiscoveredLevel), error => error?.expansionPlannerFatal === true && error.message.includes('unavailable or ambiguous'), 'A purchase discovered on /expand must not revalidate against the station detail page');
+
+const boundPageRequests = [];
+context.fetchExpansionPlannerBuilding = async () => record;
+context.fetchExpansionPlannerDocument = async input => {
+    const url = new URL(String(input), 'https://www.missionchief.co.uk/');
+    boundPageRequests.push(url.pathname);
+    return url.pathname.endsWith('/expand')
+        ? { doc: nativeExpandPage, url: url.href }
+        : { doc: detailWithExpandNavigation, url: url.href };
+};
+const preflightDiscovered = await context.preflightExpansionPlannerSelection([publicDiscoveredLevel]);
+assert.equal(preflightDiscovered.length, 1);
+assert.deepEqual(boundPageRequests.sort(), ['/buildings/101', '/buildings/101/expand'], 'Preflight must refetch both station state and the exact native discovery page');
 
 const afterLevel = context.normaliseExpansionPlannerRecord({ ...raw, level: 3 });
 let apiRecords = [record, afterLevel];
@@ -208,4 +261,4 @@ assert.equal(expansionPlannerRuntime.purchased, 2);
 assert.equal(expansionPlannerRuntime.creditsSpent, 120000);
 assert.equal(expansionPlannerRuntime.lastReport.outcome, 'successful');
 
-console.log('Issue #744 Expansion & Upgrade Planner runtime fixtures passed: native Credit-only POST and exact next-level GET parsing, ambiguity rejection, one-operation selection, CSRF preservation, verification and sequential execution are fail-closed.');
+console.log('Issue #744/#748 Expansion & Upgrade Planner runtime fixtures passed: native expand-page discovery, page-bound Credit-only parsing, ambiguity rejection, one-operation selection, CSRF preservation, verification and sequential execution are fail-closed.');

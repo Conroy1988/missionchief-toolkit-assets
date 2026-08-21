@@ -122,7 +122,7 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 752,
+    "issue": 753,
     "version": "10.15.0",
     "sourceBytes": 2687835,
     "sourceLines": 40138,

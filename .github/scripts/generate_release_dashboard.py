@@ -49,7 +49,7 @@ def sanitize_verified_ledger(data: dict) -> dict:
     sanitized.setdefault("pipelineVersion", 3)
     sanitized["validationEvidencePolicy"] = {
         "storage": "workflow-artifact",
-        "authority": "exact successful Toolkit Hotfix Gate run for the source commit",
+        "authority": "exact successful Validate Canonical Userscript run for the source commit",
         "publicMainChanged": False,
         "releaseDashboardChanged": False,
     }

@@ -108,6 +108,15 @@ jobs:
           python3 .github/scripts/test_path_aware_blocking.py
           python3 .github/scripts/test_validation_candidate_pipeline.py
           python3 .github/scripts/test_branch_write_inventory.py
+          python3 .github/scripts/test_development_package_workflow.py
+          python3 .github/scripts/test_automation_record_hygiene.py
+          python3 .github/scripts/test_release_announcement_state_pipeline.py
+          python3 .github/scripts/test_release_authority_pipeline.py
+          python3 .github/scripts/test_release_recovery_state_pipeline.py
+          python3 .github/scripts/test_shadow_branch_parity.py
+          python3 .github/scripts/test_shadow_sync_writer.py
+          python3 .github/scripts/test_update_manifest_pipeline.py
+          python3 .github/scripts/test_version_status_contract.py
 
       - name: Prepare immutable release-ready bundle
         if: steps.paths.outputs.releaseCandidate == 'true'

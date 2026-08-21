@@ -17,6 +17,9 @@ LEGACY = [
     ".github/workflows/github-pages.yml",
     ".github/workflows/release-planning.yml",
     ".github/workflows/publish-update-manifest.yml",
+    ".github/workflows/actions-security-audit.yml",
+    ".github/workflows/validate-development-package-workflow.yml",
+    ".github/workflows/discord-development-status.yml",
 ]
 
 def main() -> int:
@@ -43,7 +46,9 @@ def main() -> int:
         legacy = (ROOT / path).read_text(encoding="utf-8")
         on_block = legacy.split("\npermissions:", 1)[0]
         assert "\n  pull_request:" not in on_block, path
-        assert "workflow_dispatch:" in on_block or "schedule:" in on_block or "\n  push:" in on_block
+        assert "workflow_dispatch:" in on_block or "schedule:" in on_block or "\n  push:" in on_block or "\n  workflow_run:" in on_block
+    discord = (ROOT / ".github/workflows/discord-development-status.yml").read_text(encoding="utf-8")
+    assert "      - Toolkit Hotfix Gate" not in discord
     print("Hotfix PR gate contract passed: one path-aware runner, no parallel validation lanes and no legacy PR triggers.")
     return 0
 

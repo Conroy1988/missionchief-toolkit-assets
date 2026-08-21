@@ -87,6 +87,12 @@ const panel = {
     if (selector === ".mcms-drag-handle") return dragHandle;
     return null;
   },
+  getElementsByClassName(className) {
+    if (className === "mcms-workspace-maximize") return [maximizeButton];
+    if (className === "mcms-workspace-resize-handle") return [resizeHandle];
+    if (className === "mcms-drag-handle") return [dragHandle];
+    return [];
+  },
 };
 
 const bounds = { left: 12, right: 1500, top: 80, bottom: 980, maxHeight: 900 };
@@ -108,6 +114,7 @@ const sandbox = {
     documentElement: { style: { cursor: "" } },
     body: { style: { userSelect: "" } },
   },
+  commandExperienceElement(id) { return id === "panel" ? panel : null; },
   clamp(value, minimum, maximum, fallback) {
     const number = Number(value);
     return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;

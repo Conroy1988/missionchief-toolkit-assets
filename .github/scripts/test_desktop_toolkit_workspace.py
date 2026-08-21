@@ -28,11 +28,11 @@ def main() -> int:
         "--mcms-workspace-body-size:14px",
         "--mcms-workspace-meta-size:12px",
         'html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])',
-        "runtimeListen(resizeHandle, 'pointerdown', startPanelResize)",
-        "runtimeListen(resizeHandle, 'pointermove', movePanelResize)",
-        "runtimeListen(resizeHandle, 'pointerup', endPanelResize)",
-        "runtimeListen(resizeHandle, 'pointercancel', endPanelResize)",
-        "runtimeListen(resizeHandle, 'keydown', resizePanelFromKeyboard)",
+        "resizeHandle.addEventListener('pointerdown', startPanelResize)",
+        "resizeHandle.addEventListener('pointermove', movePanelResize)",
+        "resizeHandle.addEventListener('pointerup', endPanelResize)",
+        "resizeHandle.addEventListener('pointercancel', endPanelResize)",
+        "resizeHandle.addEventListener('keydown', resizePanelFromKeyboard)",
         "document.body.appendChild(panel)",
     )
     missing = [fragment for fragment in required if fragment not in SOURCE]
@@ -44,6 +44,7 @@ def main() -> int:
     assert SOURCE.count("function endPanelResize(") == 1
     assert SOURCE.count("function resizePanelFromKeyboard(") == 1
     assert SOURCE.count("function toggleDesktopWorkspaceMaximize(") == 1
+    assert "runtimeListen(resizeHandle" not in SOURCE, "panel-owned resize listeners must not consume global runtime-listener budget"
 
     resizing = section("    function startPanelResize(", "    function toggleDesktopWorkspaceMaximize(")
     assert "saveState()" not in resizing, "pointer movement must not write settings continuously"

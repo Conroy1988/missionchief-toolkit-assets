@@ -13573,7 +13573,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         desktopPanelObservedElements = nextElements;
     }
 
-    function currentDesktopWorkspaceBounds(panel = document.getElementById(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
+    function currentDesktopWorkspaceBounds(panel = commandExperienceElement(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
         const viewport = getViewportMetrics();
         let mapRect = null;
         try { mapRect = mapEl?.getBoundingClientRect?.() || null; } catch (err) {}
@@ -13582,7 +13582,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return resolveDesktopPanelBounds(mapRect, viewport, 12, obstructionRects);
     }
 
-    function applyDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
+    function applyDesktopPanelSizing(panel = commandExperienceElement(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
         if (!panel || activeDeviceLayout !== 'desktop' || isTouchLayoutActive()) return null;
         const viewport = getViewportMetrics();
         const bounds = currentDesktopWorkspaceBounds(panel, mapEl);
@@ -34880,11 +34880,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         return activeDeviceLayout === 'desktop' && !isTouchLayoutActive();
     }
 
-    function updateDesktopWorkspaceChrome(panel = document.getElementById(SCRIPT.panelId)) {
+    function updateDesktopWorkspaceChrome(panel = commandExperienceElement(SCRIPT.panelId)) {
         if (!panel) return;
         const desktop = desktopWorkspaceWindowActive();
-        const maximizeButton = panel.querySelector('.mcms-workspace-maximize');
-        const resizeHandle = panel.querySelector('.mcms-workspace-resize-handle');
+        const maximizeButton = panel.getElementsByClassName('mcms-workspace-maximize')[0] || null;
+        const resizeHandle = panel.getElementsByClassName('mcms-workspace-resize-handle')[0] || null;
         panel.classList.toggle('mcms-workspace-window', desktop);
         panel.classList.toggle('mcms-workspace-maximized', desktop && panelWorkspaceMaximized);
         if (maximizeButton) {
@@ -34898,7 +34898,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             resizeHandle.hidden = !desktop || panelWorkspaceMaximized;
             resizeHandle.setAttribute('aria-hidden', String(!desktop || panelWorkspaceMaximized));
         }
-        const dragHandle = panel.querySelector('.mcms-drag-handle');
+        const dragHandle = panel.getElementsByClassName('mcms-drag-handle')[0] || null;
         if (dragHandle && desktop) {
             dragHandle.title = panelWorkspaceMaximized
                 ? 'Restore the Toolkit Workspace before moving it'
@@ -34926,7 +34926,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!desktopWorkspaceWindowActive() || panelWorkspaceMaximized || dragState || panelResizeState) return;
         if (event.button !== undefined && event.button !== 0) return;
         if (event.isPrimary === false) return;
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         if (!panel?.classList.contains('mcms-open')) return;
         const handle = event.currentTarget;
         const rect = panel.getBoundingClientRect();
@@ -34954,7 +34954,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     function movePanelResize(event) {
         const resize = panelResizeState;
         if (!resize || (resize.pointerId !== undefined && event.pointerId !== undefined && event.pointerId !== resize.pointerId)) return;
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         if (!panel) return;
         const dx = Number(event.clientX) - resize.startX;
         const dy = Number(event.clientY) - resize.startY;
@@ -34976,7 +34976,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     function endPanelResize(event) {
         const resize = panelResizeState;
         if (!resize || (resize.pointerId !== undefined && event?.pointerId !== undefined && event.pointerId !== resize.pointerId)) return;
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         panelResizeState = null;
         try { resize.handle?.releasePointerCapture?.(resize.pointerId); } catch (err) {}
         document.documentElement.style.cursor = '';
@@ -35011,7 +35011,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             ArrowDown: [0, delta]
         }[event.key];
         if (!movement) return;
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         if (!panel?.classList.contains('mcms-open')) return;
         const rect = panel.getBoundingClientRect();
         const bounds = currentDesktopWorkspaceBounds(panel);
@@ -35034,7 +35034,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             showToast('Maximise is available in Desktop layout');
             return false;
         }
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = commandExperienceElement(SCRIPT.panelId);
         if (!panel?.classList.contains('mcms-open')) return false;
         if (!panelWorkspaceMaximized) {
             const rect = panel.getBoundingClientRect();
@@ -37329,13 +37329,13 @@ Credits only. Each station and native action will be fetched again, purchased on
             dragHandle.addEventListener('mousedown', startPanelDrag, true);
             dragHandle.addEventListener('touchstart', startPanelDrag, { capture: true, passive: false });
         }
-        const resizeHandle = panel.querySelector('.mcms-workspace-resize-handle');
+        const resizeHandle = panel.getElementsByClassName('mcms-workspace-resize-handle')[0] || null;
         if (resizeHandle) {
-            runtimeListen(resizeHandle, 'pointerdown', startPanelResize);
-            runtimeListen(resizeHandle, 'pointermove', movePanelResize);
-            runtimeListen(resizeHandle, 'pointerup', endPanelResize);
-            runtimeListen(resizeHandle, 'pointercancel', endPanelResize);
-            runtimeListen(resizeHandle, 'keydown', resizePanelFromKeyboard);
+            resizeHandle.addEventListener('pointerdown', startPanelResize);
+            resizeHandle.addEventListener('pointermove', movePanelResize);
+            resizeHandle.addEventListener('pointerup', endPanelResize);
+            resizeHandle.addEventListener('pointercancel', endPanelResize);
+            resizeHandle.addEventListener('keydown', resizePanelFromKeyboard);
         }
         ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
             panel.addEventListener(eventName, event => event.stopPropagation(), { passive: false });

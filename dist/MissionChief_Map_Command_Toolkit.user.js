@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.13.2
+// @version      10.13.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.13.2',
+        version: '10.13.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -527,13 +527,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.13.2",
-        title: "Mission-safe vehicle visibility",
+        version: "10.13.3",
+        title: "Mission-layer-safe vehicle toggle",
         highlights: Object.freeze([
-            "Keeps mission icons visible when MissionChief exposes the same live marker through both its mission and vehicle registries.",
-            "Gives positive mission identity priority and clears any stale vehicle class or attribute from an overlapping marker.",
-            "Retains complete native, custom and secondary vehicle coverage while preserving Personal Missions, Alliance Missions and both building filters.",
-            "Adds no observer, listener, timer, polling loop, selector or network request."
+            "Fixes live missions using camelCase or nested marker metadata disappearing and returning with the Vehicles shortcut.",
+            "Recognises every supported mission ID and owner shape before vehicle classification, then clears stale vehicle classes from those mission icons.",
+            "Keeps MissionChief’s shared vehicle layer mounted while shortcut 3 applies the complete mission-first vehicle mask, preventing registry overlap from unmounting missions.",
+            "Preserves native Personal Missions, Alliance Missions and My Buildings behaviour, keeps Alliance Buildings independent and adds no lifecycle resource."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -21804,7 +21804,11 @@ Each target will be rechecked, submitted through its current native building-edi
 
     function applyNativeVisibilityPreference(feature, desired, { persistMigration = true } = {}) {
         if (!nativeVisibilityDescriptor(feature)) return false;
-        const result = writeNativeVisibilityState(feature, desired);
+        // MissionChief can expose mission markers through its live vehicle registry. Keep
+        // that shared native layer mounted and let the Toolkit mission-first CSS mask
+        // express Vehicles OFF without physically removing any overlapping mission layer.
+        const nativeDesired = feature === 'vehicles' ? true : Boolean(desired);
+        const result = writeNativeVisibilityState(feature, nativeDesired);
         if (!result.handled || !result.verified) {
         nativeVisibilityBoundFeatures.delete(feature);
         nativeVisibilitySessionInitialised.delete(feature);
@@ -21823,11 +21827,21 @@ Each target will be rechecked, submitted through its current native building-edi
     function adoptNativeVisibilityFeature(feature, { persist = true, refresh = true } = {}) {
         const snapshot = readNativeVisibilityState(feature);
         if (!snapshot.available) return { handled: false, changed: false, migrated: false };
+        const adoptedValue = snapshot.value;
+        if (feature === 'vehicles' && snapshot.value === false) {
+        const restored = writeNativeVisibilityState(feature, true);
+        if (!restored.handled || !restored.verified) {
+            nativeVisibilityBoundFeatures.delete(feature);
+            nativeVisibilitySessionInitialised.delete(feature);
+            nativeVisibilityPendingFeatures.add(feature);
+            return { handled: false, changed: false, migrated: false };
+        }
+        }
         nativeVisibilityBoundFeatures.add(feature);
         nativeVisibilitySessionInitialised.add(feature);
         nativeVisibilityPendingFeatures.delete(feature);
-        const changed = state.visibility[feature] !== snapshot.value;
-        state.visibility[feature] = snapshot.value;
+        const changed = state.visibility[feature] !== adoptedValue;
+        state.visibility[feature] = adoptedValue;
         const migrated = markNativeVisibilityFeatureMigrated(feature);
         if (feature === 'buildings') releasePersonalBuildingVisibilityFallback();
         if (changed || migrated) {
@@ -21880,11 +21894,19 @@ Each target will be rechecked, submitted through its current native building-edi
             continue;
         }
         if (!nativeVisibilitySessionInitialised.has(feature)) {
+            if (feature === 'vehicles') {
+            const wasMigrated = nativeVisibilityFeatureMigrated(feature);
+            if (applyNativeVisibilityPreference(feature, state.visibility[feature], { persistMigration: false })) {
+                stateChanged ||= !wasMigrated && nativeVisibilityFeatureMigrated(feature);
+                continue;
+            }
+            }
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
             economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
             continue;
         }
+        if (feature === 'vehicles' && snapshot.value === true) continue;
         if (nativeVisibilityWriteDepth === 0 && state.visibility[feature] !== snapshot.value) {
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
@@ -22308,12 +22330,14 @@ Each target will be rechecked, submitted through its current native building-edi
         const allianceMissionIcons = new Set();
         const normalisedCurrentUserId = currentUserIdCached();
         for (const marker of getMissionMarkerLayers()) {
-        if (!marker || marker.mission_id === undefined || marker.mission_id === null) continue;
+        const missionId = missionIdFromMarker(marker);
+        if (missionId === null) continue;
         if (!marker._icon || marker._icon.nodeType !== 1) continue;
         missionMarkerIcons.add(marker._icon);
         if (normalisedCurrentUserId === null) continue;
-        if (marker.user_id === undefined || marker.user_id === null) continue;
-        if (String(marker.user_id) === normalisedCurrentUserId) personalMissionIcons.add(marker._icon);
+        const ownerId = missionOwnerId(marker, missionId);
+        if (ownerId === undefined || ownerId === null || ownerId === '') continue;
+        if (String(ownerId) === normalisedCurrentUserId) personalMissionIcons.add(marker._icon);
         else allianceMissionIcons.add(marker._icon);
         }
 
@@ -22371,7 +22395,7 @@ Each target will be rechecked, submitted through its current native building-edi
         const mapEl = getLargestLeafletMap();
         if (!mapEl) return;
 
-        const { personalMissionIcons, allianceMissionIcons } = getMissionIconsByOwnership();
+        const { missionMarkerIcons, personalMissionIcons, allianceMissionIcons } = getMissionIconsByOwnership();
         const vehicleMarkerIcons = getVehicleMarkerIcons();
         const personalBuildingMarkerIcons = getPersonalBuildingMarkerIcons();
 
@@ -22380,6 +22404,10 @@ Each target will be rechecked, submitted through its current native building-edi
             ? 'my-mission'
             : allianceMissionIcons.has(icon)
                 ? 'alliance-mission'
+                : missionMarkerIcons.has(icon)
+                    ? ['my-mission', 'alliance-mission'].includes(icon.dataset?.mcmsMarkerKind)
+                        ? icon.dataset.mcmsMarkerKind
+                        : 'unknown'
                 : vehicleMarkerIcons.has(icon)
                     ? 'vehicle'
                     : personalBuildingMarkerIcons.has(icon) || icon.getAttribute('data-mcms-personal-building-marker') === 'true'
@@ -37551,12 +37579,13 @@ Each target will be rechecked, submitted through its current native building-edi
         runtimeListen(document, 'pointerdown', () => { unlockPayoutAudio(); if (state.notifications.enabled) unlockNotificationAudio(); }, { once: true, capture: true });
         runtimeListen(document, 'click', event => {
             const nativeVisibilityFeature = handleNativeVisibilityControlEvent(event);
+            const nativeVisibilityWriteInProgress = nativeVisibilityWriteDepth > 0;
             if (handleCommandExperienceAction(event)) return;
             const contextMenu = commandExperienceElement(SCRIPT.contextMenuId);
             if (contextMenu && !contextMenu.contains(event.target)) closeContextCommandMenu();
             runtimeSetTimeout(() => {
                 refreshSuppression();
-                if (nativeVisibilityFeature && nativeVisibilityWriteDepth === 0) adoptNativeVisibilityFeature(nativeVisibilityFeature);
+                if (nativeVisibilityFeature && !nativeVisibilityWriteInProgress && nativeVisibilityWriteDepth === 0) adoptNativeVisibilityFeature(nativeVisibilityFeature);
             }, 0);
             if (suppressNextOutsideClick) {
                 event.preventDefault();

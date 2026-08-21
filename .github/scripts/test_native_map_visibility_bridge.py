@@ -17,7 +17,7 @@ metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", SOURCE)
 runtime = re.search(r"version:\s*'([^']+)'", SOURCE)
 assert metadata and runtime
 assert metadata.group(1) == runtime.group(1)
-assert version_tuple(metadata.group(1)) >= (10, 13, 2)
+assert version_tuple(metadata.group(1)) >= (10, 13, 3)
 
 for token in (
     "const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);",
@@ -48,7 +48,11 @@ for token in (
     "if (mutations.some(mutationTouchesNativeVisibilityControls)) scheduleNativeVisibilityReconcile(0);",
     "return feature === 'vehicles' || !nativeVisibilityBoundFeatures.has(feature);",
     "if (feature === 'vehicles') synchroniseVehicleMarkerClasses();",
+    "const nativeDesired = feature === 'vehicles' ? true : Boolean(desired);",
+    "if (feature === 'vehicles' && snapshot.value === true) continue;",
     "const { missionMarkerIcons, personalMissionIcons, allianceMissionIcons } = getMissionIconsByOwnership();",
+    "const missionId = missionIdFromMarker(marker);",
+    "const ownerId = missionOwnerId(marker, missionId);",
     "if (missionMarkerIcons.has(icon)) continue;",
     "vehicleMarkerIcons.delete(icon);",
     "return { missionMarkerIcons, personalMissionIcons, allianceMissionIcons };",

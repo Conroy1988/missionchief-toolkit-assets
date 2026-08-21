@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 754,
-    "version": "10.15.1",
-    "sourceBytes": 2703311,
-    "sourceLines": 40379,
-    "sourceSha256": "cb85fa0a82ad715b0e45b3d5068981d66fbda4c8d57c666fbaeada512a30888c",
+    "issue": 755,
+    "version": "10.15.2",
+    "sourceBytes": 2704836,
+    "sourceLines": 40419,
+    "sourceSha256": "c0851ac4331421352caa2442953c35adc5f7cc81dee8a24af875ca26c0e29d39",
     "templateBytes": 853272,
     "templateLines": 10025,
     "templateSha256": "dbbac0dc98327fe7cc96acfd36fbca905a70917d541160bc2c99e1c62f27dede",
     "canonicalCssSha256": "3c7384ef34aee0a5a3c337ce6e365279330098fa688ac58b06ddbd66053e1ec1",
-    "maxSourceBytes": 2708311,
-    "maxSourceLines": 40479,
+    "maxSourceBytes": 2709836,
+    "maxSourceLines": 40519,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 340872,
-      "sourceLines": 4951,
+      "sourceBytes": 342397,
+      "sourceLines": 4991,
       "templateBytes": 37735,
       "templateLines": 491
     },
-    "scope": "Expansion Planner full-width Desktop workspace, authoritative MissionChief vehicle visibility and stable responsive workspace sizing"
+    "scope": "Global MissionChief vehicle-setting discovery with nullable Dispatch Centre support, preserving the full-width Expansion Planner and stable responsive workspace sizing"
   }
 }

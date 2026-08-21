@@ -17,12 +17,14 @@ metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", SOURCE)
 runtime = re.search(r"version:\s*'([^']+)'", SOURCE)
 assert metadata and runtime
 assert metadata.group(1) == runtime.group(1)
-assert version_tuple(metadata.group(1)) >= (10, 15, 1)
+assert version_tuple(metadata.group(1)) >= (10, 15, 2)
 
 for token in (
     "const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);",
     "const NATIVE_VEHICLE_SETTINGS_API_PATH = '/api/settings';",
-    "const NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX = '/buildings/';",
+    "const NATIVE_VEHICLE_SETTINGS_PATH_PREFIX = '/settings';",
+    "const NATIVE_VEHICLE_SETTINGS_SEED_PATHS = Object.freeze(['/settings/index', '/settings']);",
+    "const NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT = 8;",
     "myMissions: Object.freeze({",
     "filterId: 'user_missions'",
     "allianceMissions: Object.freeze({",
@@ -53,13 +55,17 @@ for token in (
     "if (toolkitFreshInstallAtLoad || feature === 'vehicles') {",
     "async function fetchNativeVehicleSetting()",
     "typeof payload.show_vehicle !== 'boolean'",
-    "Number(payload.leitstelle_building_id)",
+    "function nativeVehicleSettingsPathAllowed(",
+    "function nativeVehicleSettingsControls(",
+    "function nativeVehicleSettingsCandidateUrls(",
     "async function fetchNativeVehicleSettingsDocument(",
-    "`${NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX}${buildingId}`",
+    "nativeVehicleSettingsCandidateUrls(settingsDocument, finalUrl.href)",
+    "MissionChief did not expose its global Show vehicles on map form.",
     "input[type=\"checkbox\"][name]",
     "token === 'show_vehicle' || token.endsWith('_show_vehicle')",
     "function prepareNativeVehicleSettingsSubmission(",
     "Boolean(checkbox.checked) !== expectedCurrent",
+    "source.search || source.hash",
     "const body = new FormData(form);",
     "body.get('authenticity_token')",
     "async function submitNativeVehicleSetting(",
@@ -74,7 +80,7 @@ for token in (
     "async function toggleNativeVehicleVisibility()",
     "const snapshot = await fetchNativeVehicleSetting();",
     "const desired = !snapshot.value;",
-    "const verified = await submitNativeVehicleSetting(desired, snapshot.value, snapshot.dispatchCenterId);",
+    "const verified = await submitNativeVehicleSetting(desired, snapshot.value);",
     "showToast('MissionChief vehicle setting unavailable · no change made');",
     "showToast(verified.value ? 'MissionChief vehicles on' : 'MissionChief vehicles off');",
     "if (feature === 'vehicles') {\n            void toggleNativeVehicleVisibility();",
@@ -102,6 +108,9 @@ assert "alliance_buildings" not in buildings_block.group("body")
 assert "document.getElementsByTagName('label')" not in SOURCE
 assert "data-mcms-show-vehicles" not in SOURCE
 assert "const nativeDesired = feature === 'vehicles' ? true : Boolean(desired);" not in SOURCE
+assert "NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX" not in SOURCE
+assert "Number(payload.leitstelle_building_id)" not in SOURCE
+assert "snapshot.dispatchCenterId" not in SOURCE
 assert "if (feature === 'vehicles' && snapshot.value === true) continue;" not in SOURCE
 assert "feature === 'vehicles' || !nativeVisibilityBoundFeatures.has(feature)" not in SOURCE
 assert "const visible = state.visibility.vehicles &&" not in SOURCE

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.15.1
+// @version      10.15.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.15.1',
+        version: '10.15.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.15.1",
-        title: "Planner Workspace & Native Vehicles",
+        version: "10.15.2",
+        title: "Native Vehicle Toggle Repair",
         highlights: Object.freeze([
-            "Makes the Expansion & Upgrade Planner span the complete Dispatch workspace instead of remaining trapped in one narrow command column.",
-            "Reflows its four actions, six planning fields and live station results across the available width while preserving every Credit and purchase safeguard.",
-            "Makes Button 3 toggle MissionChief’s own persisted Show vehicles on map setting directly without opening Settings.",
-            "Mirrors the game’s actual vehicle setting on fresh installs, upgrades and profile loads, removes the retired CSS mask and never creates a second vehicle state.",
-            "Keeps the calculated Desktop workspace width stable across tab and content changes while leaving Tablet, iOS, themes and the map toolbar unchanged."
+            "Fixes Button 3 stopping with “MissionChief vehicle setting unavailable” when /api/settings legitimately returns a null active Dispatch Centre.",
+            "Removes the incorrect Dispatch Centre building dependency from the global Show vehicles on map transaction.",
+            "Discovers MissionChief’s native Map and vehicles settings tab through a bounded set of same-origin /settings pages, then submits only its unique protected show_vehicle form.",
+            "Keeps /api/settings read-back authoritative and updates the live map only after MissionChief confirms the persisted value.",
+            "Preserves the v10.15.1 planner workspace, stable Desktop sizing, retired vehicle CSS mask and overlapping mission-marker protections."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1335,7 +1335,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);
     const NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS = 12000;
     const NATIVE_VEHICLE_SETTINGS_API_PATH = '/api/settings';
-    const NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX = '/buildings/';
+    const NATIVE_VEHICLE_SETTINGS_PATH_PREFIX = '/settings';
+    const NATIVE_VEHICLE_SETTINGS_SEED_PATHS = Object.freeze(['/settings/index', '/settings']);
+    const NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT = 8;
     const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']);
     const NATIVE_VISIBILITY_FILTERS = Object.freeze({
         myMissions: Object.freeze({
@@ -23036,6 +23038,34 @@ Credits only. Each station and native action will be fetched again, purchased on
         return url;
     }
 
+    function nativeVehicleSettingsPathAllowed(pathname) {
+        const normalisedPath = String(pathname || '').replace(/\/+$/u, '') || '/';
+        return normalisedPath === NATIVE_VEHICLE_SETTINGS_PATH_PREFIX || normalisedPath.startsWith(`${NATIVE_VEHICLE_SETTINGS_PATH_PREFIX}/`);
+    }
+
+    function nativeVehicleSettingsControls(doc) {
+        return Array.from(doc?.querySelectorAll?.('input[type="checkbox"][name]') || []).filter(control => {
+        const token = normaliseNativeVisibilityToken(control.name);
+        return token === 'show_vehicle' || token.endsWith('_show_vehicle');
+        });
+    }
+
+    function nativeVehicleSettingsCandidateUrls(doc = document, baseUrl = document.baseURI || pageWindow.location.href) {
+        const candidates = [];
+        const seen = new Set();
+        const add = pathOrUrl => {
+        try {
+            const url = nativeVehicleSameOriginUrl(pathOrUrl, baseUrl);
+            if (!nativeVehicleSettingsPathAllowed(url.pathname) || url.search || url.hash || seen.has(url.href)) return;
+            seen.add(url.href);
+            candidates.push(url.href);
+        } catch (err) {}
+        };
+        for (const path of NATIVE_VEHICLE_SETTINGS_SEED_PATHS) add(path);
+        for (const anchor of Array.from(doc?.querySelectorAll?.('a[href]') || [])) add(anchor.getAttribute?.('href') || anchor.href || '');
+        return candidates;
+    }
+
     async function fetchNativeVehicleSetting() {
         const url = nativeVehicleSameOriginUrl(NATIVE_VEHICLE_SETTINGS_API_PATH);
         const response = await runtimeFetch(url.href, {
@@ -23051,36 +23081,48 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (finalUrl.pathname !== NATIVE_VEHICLE_SETTINGS_API_PATH || finalUrl.search || finalUrl.hash) throw new Error('MissionChief returned an unexpected settings API destination.');
         const payload = await response.json();
         if (!payload || typeof payload.show_vehicle !== 'boolean') throw new Error('MissionChief did not return a boolean show_vehicle setting.');
-        const dispatchCenterId = Number(payload.leitstelle_building_id);
-        if (!Number.isSafeInteger(dispatchCenterId) || dispatchCenterId <= 0) throw new Error('MissionChief did not identify the active Dispatch Centre for its vehicle setting.');
-        return { available: true, value: payload.show_vehicle, dispatchCenterId, source: 'settings-api' };
+        return { available: true, value: payload.show_vehicle, source: 'settings-api' };
     }
 
-    async function fetchNativeVehicleSettingsDocument(dispatchCenterId) {
-        const buildingId = Number(dispatchCenterId);
-        if (!Number.isSafeInteger(buildingId) || buildingId <= 0) throw new Error('Blocked an invalid MissionChief Dispatch Centre ID.');
-        const expectedPath = `${NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX}${buildingId}`;
-        const url = nativeVehicleSameOriginUrl(expectedPath);
-        const response = await runtimeFetch(url.href, {
-        method: 'GET',
-        credentials: 'same-origin',
-        cache: 'no-store',
-        redirect: 'follow',
-        headers: { Accept: 'text/html,application/xhtml+xml' },
-        timeoutMs: NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS
-        });
-        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for its native settings page.`);
-        const finalUrl = nativeVehicleSameOriginUrl(response.url || url.href, url.href);
-        if (finalUrl.pathname.replace(/\/+$/u, '') !== expectedPath || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief returned an unexpected Dispatch Centre settings destination.');
-        const html = await response.text();
-        return { doc: new DOMParser().parseFromString(html, 'text/html'), url: finalUrl.href, dispatchCenterId: buildingId };
+    async function fetchNativeVehicleSettingsDocument() {
+        const queue = nativeVehicleSettingsCandidateUrls();
+        const visited = new Set();
+        let lastError = null;
+        while (queue.length && visited.size < NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT) {
+        const candidate = queue.shift();
+        if (!candidate || visited.has(candidate)) continue;
+        visited.add(candidate);
+        try {
+            const url = nativeVehicleSameOriginUrl(candidate);
+            const response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: { Accept: 'text/html,application/xhtml+xml' },
+            timeoutMs: NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS
+            });
+            if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
+            const finalUrl = nativeVehicleSameOriginUrl(response.url || url.href, url.href);
+            if (!nativeVehicleSettingsPathAllowed(finalUrl.pathname) || finalUrl.search || finalUrl.hash || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief returned an unexpected global settings destination.');
+            const html = await response.text();
+            const settingsDocument = new DOMParser().parseFromString(html, 'text/html');
+            if (nativeVehicleSettingsControls(settingsDocument).length) return { doc: settingsDocument, url: finalUrl.href };
+            const discoveredUrls = nativeVehicleSettingsCandidateUrls(settingsDocument, finalUrl.href);
+            for (let index = discoveredUrls.length - 1; index >= 0; index -= 1) {
+            const discovered = discoveredUrls[index];
+            if (!visited.has(discovered) && !queue.includes(discovered)) queue.unshift(discovered);
+            }
+        } catch (err) {
+            lastError = err;
+        }
+        }
+        if (lastError) throw lastError;
+        throw new Error('MissionChief did not expose its global Show vehicles on map form.');
     }
 
-    function prepareNativeVehicleSettingsSubmission(doc, sourceUrl, dispatchCenterId, desired, expectedCurrent = null) {
-        const controls = Array.from(doc?.querySelectorAll?.('input[type="checkbox"][name]') || []).filter(control => {
-        const token = normaliseNativeVisibilityToken(control.name);
-        return token === 'show_vehicle' || token.endsWith('_show_vehicle');
-        });
+    function prepareNativeVehicleSettingsSubmission(doc, sourceUrl, desired, expectedCurrent = null) {
+        const controls = nativeVehicleSettingsControls(doc);
         if (controls.length !== 1) throw new Error(`Expected one native show_vehicle checkbox; found ${controls.length}.`);
         const checkbox = controls[0];
         const settingName = String(checkbox.name || '');
@@ -23091,9 +23133,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const source = nativeVehicleSameOriginUrl(sourceUrl);
         const action = nativeVehicleSameOriginUrl(form.getAttribute?.('action') || source.href, source.href);
         const method = String(form.getAttribute?.('method') || 'get').trim().toUpperCase();
-        const buildingPath = `${NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX}${Number(dispatchCenterId)}`;
-        const actionPath = action.pathname.replace(/\/+$/u, '');
-        if (source.pathname.replace(/\/+$/u, '') !== buildingPath || (actionPath !== buildingPath && !actionPath.startsWith(`${buildingPath}/`)) || action.hash || method !== 'POST') throw new Error('The native show_vehicle form action or method changed unexpectedly.');
+        if (!nativeVehicleSettingsPathAllowed(source.pathname) || source.search || source.hash || !nativeVehicleSettingsPathAllowed(action.pathname) || action.search || action.hash || method !== 'POST') throw new Error('The native show_vehicle form action or method changed unexpectedly.');
         checkbox.checked = Boolean(desired);
         const body = new FormData(form);
         const settingValues = body.getAll(settingName).map(value => String(value));
@@ -23127,9 +23167,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         throw new Error('MissionChief did not return a verifiable show_vehicle setting after the native form submission.');
     }
 
-    async function submitNativeVehicleSetting(desired, expectedCurrent = null, dispatchCenterId = null) {
-        const settingsPage = await fetchNativeVehicleSettingsDocument(dispatchCenterId);
-        const prepared = prepareNativeVehicleSettingsSubmission(settingsPage.doc, settingsPage.url, settingsPage.dispatchCenterId, desired, expectedCurrent);
+    async function submitNativeVehicleSetting(desired, expectedCurrent = null) {
+        const settingsPage = await fetchNativeVehicleSettingsDocument();
+        const prepared = prepareNativeVehicleSettingsSubmission(settingsPage.doc, settingsPage.url, desired, expectedCurrent);
         let submissionError = null;
         try {
         const response = await runtimeFetch(prepared.action, {
@@ -34920,7 +34960,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         try {
             const snapshot = await fetchNativeVehicleSetting();
             const desired = !snapshot.value;
-            const verified = await submitNativeVehicleSetting(desired, snapshot.value, snapshot.dispatchCenterId);
+            const verified = await submitNativeVehicleSetting(desired, snapshot.value);
             applyNativeVehicleRuntimeSetting(verified.value);
             mirrorNativeVehicleSetting(verified.value);
             showToast(verified.value ? 'MissionChief vehicles on' : 'MissionChief vehicles off');

@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.15.2] - 2026-08-21
+
+### Native Vehicle Toggle Repair
+
+- Fixes Button 3 stopping with “MissionChief vehicle setting unavailable” when `/api/settings` legitimately returns a null active Dispatch Centre.
+- Removes the incorrect Dispatch Centre building dependency from the global `Show vehicles on map` transaction.
+- Discovers MissionChief’s native Map and vehicles settings tab through a bounded set of same-origin `/settings` pages, then submits only its unique protected `show_vehicle` form.
+- Keeps `/api/settings` read-back authoritative and updates the live map only after MissionChief confirms the persisted value.
+- Preserves the v10.15.1 planner workspace, stable Desktop sizing, retired vehicle CSS mask and overlapping mission-marker protections.
+
 ## [10.15.1] - 2026-08-21
 
 ### Planner Workspace & Native Vehicles

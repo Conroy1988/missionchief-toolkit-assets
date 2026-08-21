@@ -8,7 +8,7 @@ import vm from "node:vm";
 const source = fs.readFileSync("src/MissionChief_Map_Command_Toolkit.user.js", "utf8");
 
 function extractFunction(name) {
-  const pattern = new RegExp(`\\bfunction\\s+${name}\\s*\\(`, "u");
+  const pattern = new RegExp(`\\b(?:async\\s+)?function\\s+${name}\\s*\\(`, "u");
   const match = pattern.exec(source);
   assert.ok(match, `${name} is missing`);
   const start = match.index;
@@ -127,6 +127,7 @@ const root = {
   contains: control => controls.includes(control),
 };
 const document = {
+  baseURI: "https://www.missionchief.co.uk/",
   getElementById(id) {
     if (id === "map_filters") return root;
     return availableControls.find(control => control.id === id || control.value === id) || null;
@@ -142,6 +143,7 @@ let rootRefreshes = 0;
 let uiRefreshes = 0;
 let fallbackReleases = 0;
 let opacityRestores = 0;
+const toasts = [];
 const mapEvents = [];
 const mapLayers = new Set();
 const legacyLayers = {
@@ -156,14 +158,106 @@ const map = {
   fire: (event, payload) => mapEvents.push({ event, payload }),
 };
 
+let settingsApiValue = false;
+const settingsDispatchCenterId = 314;
+let settingsApiAvailable = true;
+let settingsFormAmbiguous = false;
+let settingsFormToken = "native-csrf-token";
+let settingsPostCount = 0;
+const settingsRequests = [];
+const nativeSettingsForm = {
+  getAttribute(name) {
+    if (name === "action") return `/buildings/${settingsDispatchCenterId}`;
+    if (name === "method") return "post";
+    return null;
+  },
+};
+const nativeSettingsCheckbox = {
+  name: "show_vehicle",
+  value: "1",
+  checked: false,
+  disabled: false,
+  closest: selector => selector === "form" ? nativeSettingsForm : null,
+};
+const duplicateSettingsCheckbox = { ...nativeSettingsCheckbox };
+const nativeSettingsDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'input[type="checkbox"][name]') {
+      return settingsFormAmbiguous ? [nativeSettingsCheckbox, duplicateSettingsCheckbox] : [nativeSettingsCheckbox];
+    }
+    return [];
+  },
+  querySelector(selector) {
+    if (selector === 'meta[name="csrf-token"]' && settingsFormToken) {
+      return { getAttribute: name => name === "content" ? settingsFormToken : null };
+    }
+    return null;
+  },
+};
+
+class NativeFormData {
+  constructor(form) {
+    assert.equal(form, nativeSettingsForm);
+    this.values = new Map([
+      ["authenticity_token", settingsFormToken ? [settingsFormToken] : []],
+      ["route_show", ["1"]],
+      ["show_vehicle", nativeSettingsCheckbox.checked ? ["0", "1"] : ["0"]],
+    ]);
+  }
+  get(name) { return this.getAll(name)[0] ?? null; }
+  getAll(name) { return [...(this.values.get(name) || [])]; }
+}
+
+class NativeDOMParser {
+  parseFromString(html, type) {
+    assert.equal(html, "<native-settings-page>");
+    assert.equal(type, "text/html");
+    return nativeSettingsDocument;
+  }
+}
+
+function nativeResponse({ ok = true, status = 200, url, json, text = "" }) {
+  return { ok, status, url, json: async () => json, text: async () => text };
+}
+
+async function runtimeFetch(urlValue, init = {}) {
+  const url = new URL(urlValue, document.baseURI);
+  settingsRequests.push({ url: url.href, method: String(init.method || "GET").toUpperCase(), init });
+  if (url.pathname === "/api/settings" && String(init.method || "GET").toUpperCase() === "GET") {
+    if (!settingsApiAvailable) return nativeResponse({ ok: false, status: 503, url: url.href, json: {} });
+    return nativeResponse({ url: url.href, json: { show_vehicle: settingsApiValue, leitstelle_building_id: settingsDispatchCenterId } });
+  }
+  if (url.pathname === `/buildings/${settingsDispatchCenterId}` && String(init.method || "GET").toUpperCase() === "GET") {
+    return nativeResponse({ url: url.href, text: "<native-settings-page>" });
+  }
+  if (url.pathname === `/buildings/${settingsDispatchCenterId}` && String(init.method || "GET").toUpperCase() === "POST") {
+    settingsPostCount += 1;
+    const values = init.body.getAll("show_vehicle");
+    settingsApiValue = values.at(-1) === "1";
+    return nativeResponse({ url: url.href, text: "<native-settings-page>" });
+  }
+  throw new Error(`Unexpected native settings request ${init.method || "GET"} ${url.href}`);
+}
+
+let nativeVehicleLoads = 0;
+const nativeVehicleRemovals = [];
+const nativeVehicleAnimationRemovals = [];
+let vehicleCacheInvalidations = 0;
+const sandboxConsole = Object.create(console);
+sandboxConsole.debug = () => {};
+
 const sandbox = {
-  console,
+  console: sandboxConsole,
   Event,
+  URL,
+  FormData: NativeFormData,
+  DOMParser: NativeDOMParser,
   document,
-  SCRIPT: { controlId: "mcms-control", panelId: "mcms-panel", commandExperienceModalId: "mcms-modal", commandPaletteId: "mcms-palette" },
+  SCRIPT: { name: "MissionChief Map Command Toolkit", controlId: "mcms-control", panelId: "mcms-panel", commandExperienceModalId: "mcms-modal", commandPaletteId: "mcms-palette" },
   NATIVE_VISIBILITY_FILTERS: descriptors,
   NATIVE_VISIBILITY_FEATURES: Object.freeze(["myMissions", "allianceMissions", "vehicles", "buildings"]),
   pageWindow: {
+    location: { origin: "https://www.missionchief.co.uk", href: "https://www.missionchief.co.uk/" },
     I18n: { t: key => ({ "map_filters.user_missions": "My missions", "map_filters.alliance_missions": "Shared by alliance", "map_filters.user_buildings": "My buildings", "common.vehicles": "Vehicles" })[key] || key },
     user_id: 7,
     mission_markers: [
@@ -178,6 +272,11 @@ const sandbox = {
       { _icon: camelCaseMissionIcon },
       { _icon: nestedAllianceMissionIcon },
     ],
+    mission_vehicles_per_vid: new Map(),
+    show_vehicle: false,
+    loadVehiclesOnTheMove() { nativeVehicleLoads += 1; },
+    vehicleArrive(marker) { marker.vehicle_marker_deleted = true; nativeVehicleRemovals.push(marker); },
+    deregisterVehicleAnim(index) { nativeVehicleAnimationRemovals.push(index); },
   },
   runtime: { destroyed: false },
   state: { visibility: { myMissions: true, allianceMissions: false, vehicles: true, buildings: true }, nativeVisibility: { migratedFeatures: [] }, economyMode: false },
@@ -187,6 +286,12 @@ const sandbox = {
   reconcileFeatureRefreshes() {},
   scheduleEconomyLayerSync() {},
   scheduleMarkerClassification() {},
+  scheduleNativeVisibilityReconcile() {},
+  showToast: message => { toasts.push(message); },
+  runtimeFetch,
+  runtimeDelay: async () => true,
+  invalidateMarkerRegistryCaches: scope => { if (scope === "vehicle") vehicleCacheInvalidations += 1; },
+  closePanel() {},
   synchronisePersonalBuildingVisibility: () => { fallbackReleases += 1; },
   restorePersonalBuildingLayerOpacity: () => { opacityRestores += 1; },
   findLeafletMapInstance: () => map,
@@ -201,6 +306,9 @@ const sandbox = {
 vm.createContext(sandbox);
 const declarations = `
 const MARKER_REGISTRY_CACHE_MS=350;
+const NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS=12000;
+const NATIVE_VEHICLE_SETTINGS_API_PATH='/api/settings';
+const NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX='/buildings/';
 const MARKER_CLASS_NAMES=['mcms-marker-mission','mcms-marker-my-mission','mcms-marker-alliance-mission','mcms-marker-building','mcms-marker-personal-building','mcms-marker-vehicle','mcms-marker-unknown'];
 const markerRegistryCache=new Map();
 const nativeVisibilityBoundFeatures=new Set();
@@ -210,6 +318,7 @@ const hiddenPersonalBuildingLayers=new Set();
 const personalBuildingLayerOpacity=new Map();
 let nativeVisibilityReconcileQueued=false;
 let nativeVisibilityWriteDepth=0;
+let nativeVehicleTogglePromise=null;
 let toolkitFreshInstallAtLoad=false;
 `;
 const functionNames = [
@@ -231,6 +340,14 @@ const functionNames = [
   "nativeVisibilityControlState",
   "nativeVisibilityServiceState",
   "readNativeVisibilityState",
+  "nativeVehicleSameOriginUrl",
+  "fetchNativeVehicleSetting",
+  "fetchNativeVehicleSettingsDocument",
+  "prepareNativeVehicleSettingsSubmission",
+  "verifyNativeVehicleSetting",
+  "submitNativeVehicleSetting",
+  "applyNativeVehicleRuntimeSetting",
+  "mirrorNativeVehicleSetting",
   "dispatchNativeVisibilityControl",
   "writeNativeVisibilityState",
   "releasePersonalBuildingVisibilityFallback",
@@ -250,12 +367,15 @@ const functionNames = [
   "markerTypeIsApplied",
   "applyMarkerType",
   "applyMapVisibilityToggleEffects",
+  "toggleNativeVehicleVisibility",
 ];
 vm.runInContext(declarations + functionNames.map(extractFunction).join("\n\n") + `
 this.__probe={
   findNativeVisibilityControl,nativeVisibilityFeatureForControl,writeNativeVisibilityState,
+  fetchNativeVehicleSetting,prepareNativeVehicleSettingsSubmission,submitNativeVehicleSetting,applyNativeVehicleRuntimeSetting,mirrorNativeVehicleSetting,
   applyNativeVisibilityPreference,adoptNativeVisibilityFeature,nativeVisibilityFallbackNeeded,
-  releasePersonalBuildingVisibilityFallback,reconcileNativeVisibilityBridge,applyMapVisibilityToggleEffects,
+  releasePersonalBuildingVisibilityFallback,reconcileNativeVisibilityBridge,applyMapVisibilityToggleEffects,toggleNativeVehicleVisibility,
+  synchroniseVehicleMarkerClasses,
   resetBridge(fresh=false){
     nativeVisibilityBoundFeatures.clear();nativeVisibilitySessionInitialised.clear();nativeVisibilityPendingFeatures.clear();
     hiddenPersonalBuildingLayers.clear();personalBuildingLayerOpacity.clear();nativeVisibilityReconcileQueued=false;
@@ -274,6 +394,8 @@ assert.equal(sandbox.__probe.nativeVisibilityFeatureForControl(controls[4]), "",
 let result = sandbox.__probe.writeNativeVisibilityState("myMissions", false);
 assert.deepEqual(JSON.parse(JSON.stringify(result)), { handled: true, verified: true, source: "native-control" });
 assert.equal(controls[0].checked, false);
+result = sandbox.__probe.writeNativeVisibilityState("vehicles", true);
+assert.deepEqual(JSON.parse(JSON.stringify(result)), { handled: false, verified: false, source: "native-settings-form" }, "vehicle writes must use the persisted native settings form");
 
 assert.equal(sandbox.__probe.applyNativeVisibilityPreference("allianceMissions", true), true);
 assert.equal(controls[1].checked, true);
@@ -302,12 +424,44 @@ const adopted = sandbox.__probe.adoptNativeVisibilityFeature("vehicles");
 assert.equal(adopted.handled, true);
 assert.equal(adopted.changed, true);
 assert.equal(sandbox.state.visibility.vehicles, false);
-assert.equal(controls[2].checked, true, "adopting native Vehicles OFF must remount the unsafe shared native layer");
+assert.equal(controls[2].checked, false, "adopting the game setting must not rewrite MissionChief Vehicles OFF");
 assert.equal(rootRefreshes, 1);
 assert.equal(uiRefreshes, 1);
-assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("vehicles"), true, "native vehicle binding must retain the complete-registry supplement");
-assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("buildings"), false, "the supplement must remain vehicle-only");
+assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("vehicles"), false, "Vehicles must never regain a Toolkit-owned CSS fallback");
+assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("buildings"), false);
 sandbox.__probe.applyMapVisibilityToggleEffects("vehicles");
+for (const icon of [nativeVehicleIcon, secondaryVehicleIcon]) {
+  assert.equal(icon.classList.contains("mcms-marker-vehicle"), false, "the native Vehicles setting unexpectedly invoked the retired marker mask");
+  assert.equal(icon.getAttribute("data-mcms-vehicle-marker"), null);
+}
+
+const savesBeforeNativeToggle = saveCount;
+settingsApiValue = false;
+nativeSettingsCheckbox.checked = false;
+assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), true);
+assert.equal(settingsApiValue, true, "Button 3 did not persist MissionChief show_vehicle ON");
+assert.equal(controls[2].checked, true, "Button 3 did not mirror MissionChief's verified Show vehicles on map state");
+assert.equal(sandbox.state.visibility.vehicles, true, "Toolkit UI did not mirror MissionChief Vehicles ON");
+assert.equal(saveCount, savesBeforeNativeToggle + 1);
+assert.equal(settingsPostCount, 1, "Button 3 did not submit exactly one native settings form");
+assert.equal(settingsRequests.find(request => request.method === "POST")?.url, `https://www.missionchief.co.uk/buildings/${settingsDispatchCenterId}`);
+assert.equal(settingsRequests.find(request => request.method === "POST")?.init.body.get("authenticity_token"), settingsFormToken, "native CSRF token was not preserved");
+assert.equal(nativeVehicleLoads, 1, "MissionChief's native vehicle reload was not requested after enabling");
+assert.equal(toasts.at(-1), "MissionChief vehicles on");
+assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), true);
+assert.equal(settingsApiValue, false, "Button 3 did not persist MissionChief show_vehicle OFF");
+assert.equal(controls[2].checked, false);
+assert.equal(sandbox.state.visibility.vehicles, false);
+assert.equal(settingsPostCount, 2, "Button 3 submitted an unexpected number of native settings forms");
+assert.deepEqual(nativeVehicleRemovals, sandbox.pageWindow.vehicle_markers.slice(0, 2), "MissionChief's native vehicle-removal routine did not receive every vehicle-only marker");
+assert.deepEqual(nativeVehicleAnimationRemovals, [0, 1], "MissionChief's native vehicle animations were not retired without touching overlapping mission identities");
+for (const marker of sandbox.pageWindow.mission_markers) assert.notEqual(marker.vehicle_marker_deleted, true, "native vehicle removal touched a mission identity that overlapped the vehicle registry");
+assert.equal(vehicleCacheInvalidations, 2);
+assert.equal(toasts.at(-1), "MissionChief vehicles off");
+
+// Vehicle classification remains available to Marker Focus, but it no longer owns
+// visibility and mission identities must still win overlapping game registries.
+sandbox.__probe.synchroniseVehicleMarkerClasses?.();
 for (const icon of [nativeVehicleIcon, secondaryVehicleIcon]) {
   assert.equal(icon.classList.contains("mcms-marker-vehicle"), true, "every vehicle population must be classified");
   assert.equal(icon.getAttribute("data-mcms-vehicle-marker"), "true");
@@ -330,23 +484,22 @@ const allianceBeforeFreshAdoption = controls[4].checked;
 const savesBeforeFreshAdoption = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
 assert.deepEqual(JSON.parse(JSON.stringify(sandbox.state.visibility)), { myMissions: false, allianceMissions: true, vehicles: false, buildings: false });
-assert.equal(controls[2].checked, true, "fresh adoption must preserve Vehicles OFF through CSS while remounting the native layer");
+assert.equal(controls[2].checked, false, "fresh adoption rewrote MissionChief's Vehicles setting");
 assert.equal(saveCount, savesBeforeFreshAdoption + 1, "fresh native visibility was not persisted once");
 assert.equal(controls[4].checked, allianceBeforeFreshAdoption, "fresh adoption changed alliance buildings");
 
-const savesBeforePinnedReconcile = saveCount;
+const savesBeforeStableReconcile = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
-assert.equal(sandbox.state.visibility.vehicles, false, "the pinned native vehicle layer overwrote Toolkit Vehicles OFF");
-assert.equal(controls[2].checked, true);
-assert.equal(saveCount, savesBeforePinnedReconcile, "stable pinned-layer reconciliation rewrote saved state");
+assert.equal(sandbox.state.visibility.vehicles, false);
+assert.equal(controls[2].checked, false);
+assert.equal(saveCount, savesBeforeStableReconcile, "stable native reconciliation rewrote saved state");
 
-sandbox.state.visibility.vehicles = true;
-controls[2].checked = false;
-const savesBeforeManualVehicleDisable = saveCount;
+controls[2].checked = true;
+const savesBeforeManualVehicleEnable = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
-assert.equal(sandbox.state.visibility.vehicles, false, "a deliberate native Vehicles OFF change was not adopted");
-assert.equal(controls[2].checked, true, "manual Vehicles OFF left the shared native layer unmounted");
-assert.equal(saveCount, savesBeforeManualVehicleDisable + 1, "manual Vehicles OFF was not persisted exactly once");
+assert.equal(sandbox.state.visibility.vehicles, true, "a deliberate MissionChief Vehicles ON change was not adopted");
+assert.equal(controls[2].checked, true);
+assert.equal(saveCount, savesBeforeManualVehicleEnable + 1, "manual MissionChief Vehicles change was not mirrored exactly once");
 
 sandbox.__probe.resetBridge(false);
 sandbox.state.visibility = { myMissions: true, allianceMissions: false, vehicles: true, buildings: true };
@@ -354,7 +507,8 @@ sandbox.state.visibility = { myMissions: true, allianceMissions: false, vehicles
 const allianceBeforeUpgrade = controls[4].checked;
 const savesBeforeUpgrade = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
-assert.deepEqual(controls.slice(0, 4).map(control => control.checked), [true, false, true, true]);
+assert.deepEqual(controls.slice(0, 4).map(control => control.checked), [true, false, false, true]);
+assert.equal(sandbox.state.visibility.vehicles, false, "upgrade migration overwrote MissionChief's persisted Vehicles setting with stale Toolkit state");
 assert.deepEqual(Array.from(sandbox.state.nativeVisibility.migratedFeatures), ["myMissions", "allianceMissions", "vehicles", "buildings"]);
 assert.equal(saveCount, savesBeforeUpgrade + 1, "upgraded Toolkit visibility was not migrated once");
 assert.equal(controls[4].checked, allianceBeforeUpgrade, "upgrade migration changed alliance buildings");
@@ -362,6 +516,24 @@ assert.equal(controls[4].checked, allianceBeforeUpgrade, "upgrade migration chan
 availableControls = controls.filter(control => control.value !== "show_vehicle");
 delete sandbox.pageWindow.show_vehicle;
 assert.equal(sandbox.__probe.writeNativeVisibilityState("vehicles", true).handled, false);
+const vehicleMirrorBeforeUnavailableToggle = sandbox.state.visibility.vehicles;
+settingsApiValue = vehicleMirrorBeforeUnavailableToggle;
+settingsFormAmbiguous = true;
+const postsBeforeAmbiguousForm = settingsPostCount;
+assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), false);
+assert.equal(settingsPostCount, postsBeforeAmbiguousForm, "an ambiguous native show_vehicle form was submitted");
+assert.equal(sandbox.state.visibility.vehicles, vehicleMirrorBeforeUnavailableToggle, "an ambiguous native form created a Toolkit-only vehicle state");
+settingsFormAmbiguous = false;
+nativeSettingsCheckbox.checked = !settingsApiValue;
+assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), false);
+assert.equal(settingsPostCount, postsBeforeAmbiguousForm, "a stale native show_vehicle form was submitted after the authoritative value changed");
+assert.equal(sandbox.state.visibility.vehicles, vehicleMirrorBeforeUnavailableToggle, "a stale native form created a Toolkit-only vehicle state");
+nativeSettingsCheckbox.checked = settingsApiValue;
+settingsApiAvailable = false;
+assert.equal(await sandbox.__probe.toggleNativeVehicleVisibility(), false);
+assert.equal(sandbox.state.visibility.vehicles, vehicleMirrorBeforeUnavailableToggle, "unavailable native setting created a Toolkit-only vehicle state");
+assert.equal(toasts.at(-1), "MissionChief vehicle setting unavailable · no change made");
+settingsApiAvailable = true;
 
 availableControls = [];
 sandbox.pageWindow.map_filters_service = {
@@ -375,4 +547,4 @@ assert.equal(result.verified, true);
 assert.equal(mapLayers.has(legacyLayers.user_missions), false);
 assert.equal(mapEvents.at(-1)?.event, "overlayremove", "legacy filter mutation was not exposed to MissionChief persistence listeners");
 
-console.log("Native map visibility bridge runtime passed: pinned vehicle layer, nested mission identities, complete vehicle masking, fresh/upgrade migration, own/alliance building isolation, bidirectional adoption and legacy fallback verified.");
+console.log("Native map visibility bridge runtime passed: persisted MissionChief show_vehicle form writes with API read-back, native live-map refresh, no vehicle CSS fallback, upgrade adoption, marker-focus classification, own/alliance building isolation and legacy filter fallback verified.");

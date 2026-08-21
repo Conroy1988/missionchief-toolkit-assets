@@ -39,6 +39,8 @@ def main() -> int:
         "Number(desktopPreferences.panelWidth) === 720",
         "width:min(68vw,clamp(720px,calc(1844px - 50vw),1040px),calc(100vw - 24px))",
         '${responsiveDesktopPanelWidth}',
+        "const css = `",
+        "if (style.textContent !== css) style.textContent = css;",
     ):
         assert token in personalisation, f"adaptive Desktop width is missing {token}"
 
@@ -47,11 +49,18 @@ def main() -> int:
         "resolveResponsiveDesktopPanelHeightCap",
         "desktopPreferences.panelHeight / 100",
         "responsiveHeightCap",
+        "resolveResponsiveDesktopPanelWidth(viewport, desktopPreferences, availableWidth)",
+        "panel.style.setProperty('width', `${savedWorkspaceWidth}px`, 'important');",
+        "panel.dataset.mcmsWorkspaceSize = `${savedWorkspaceWidth}:${desiredMaxHeight}:windowed`;",
+        "function resolveResponsiveDesktopPanelWidth(",
+        "viewportWidth * 0.68",
+        "1844 - (viewportWidth * 0.5)",
         "Number.POSITIVE_INFINITY",
     ):
         assert token in sizing, f"responsive Desktop height sizing is missing {token}"
     for forbidden in ("setInterval(", "MutationObserver", "ResizeObserver", "requestAnimationFrame(", "fetch("):
         assert forbidden not in sizing, f"responsive menu introduced background work through {forbidden}"
+    assert "panel.style.removeProperty('width');" not in sizing, "ordinary content changes can no longer release the fitted Desktop width"
 
     assert ".github/scripts/test_issue681_responsive_desktop_menu.py" in PREFLIGHT
     assert ".github/scripts/test_issue681_responsive_desktop_menu_runtime.mjs" in PREFLIGHT

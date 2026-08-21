@@ -30,11 +30,32 @@ function extractFunction(name) {
   throw new Error(`Unable to extract ${name}`);
 }
 
-const sandbox = { Math, Number };
+const sandbox = {
+  Math,
+  Number,
+  DESKTOP_WORKSPACE_MIN_WIDTH: 560,
+  DESKTOP_WORKSPACE_MAX_WIDTH: 1440,
+  clamp(value, minimum, maximum, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
+  },
+};
 vm.createContext(sandbox);
-vm.runInContext(`${extractFunction("resolveResponsiveDesktopPanelHeightCap")}\nthis.resolveCap = resolveResponsiveDesktopPanelHeightCap;`, sandbox);
+vm.runInContext(
+  `${extractFunction("resolveResponsiveDesktopPanelWidth")}\n${extractFunction("resolveResponsiveDesktopPanelHeightCap")}\nthis.resolveWidth = resolveResponsiveDesktopPanelWidth;\nthis.resolveCap = resolveResponsiveDesktopPanelHeightCap;`,
+  sandbox,
+);
+const resolveWidth = sandbox.resolveWidth;
 const resolveCap = sandbox.resolveCap;
 const defaults = { panelWidth: 720, panelHeight: 82 };
+
+assert.equal(resolveWidth({ width: 1688 }, defaults, 1664), 1000, "supplied screenshot did not receive one stable adaptive width");
+assert.equal(resolveWidth({ width: 1832 }, defaults, 1808), 928, "video viewport did not retain its computed workspace width");
+assert.equal(resolveWidth({ width: 1440 }, defaults, 1416), 979, "1440px Desktop width did not follow the adaptive curve");
+assert.equal(resolveWidth({ width: 1688 }, { ...defaults, panelWidth: 880 }, 1664), 880, "custom width was replaced by the adaptive default");
+assert.equal(resolveWidth({ width: 1688 }, { ...defaults, panelHeightPx: 640 }, 1664), 720, "resized window geometry was not respected");
+assert.equal(resolveWidth({ width: 2560 }, defaults, 2536), 720, "wide Desktop default changed unexpectedly");
+assert.equal(resolveWidth({ width: 1000 }, defaults, 640), 640, "workspace width escaped its visible bound");
 
 assert.equal(resolveCap({ width: 1688, height: 1266 }, defaults), 760, "supplied screenshot did not receive the compact height cap");
 assert.equal(resolveCap({ width: 1440, height: 900 }, defaults), 760, "1440×900 did not use the compact Desktop surface");
@@ -43,4 +64,4 @@ assert.equal(resolveCap({ width: 2560, height: 1440 }, defaults), Infinity, "wid
 assert.equal(resolveCap({ width: 1688, height: 1266 }, { panelWidth: 880, panelHeight: 82 }), Infinity, "custom Desktop width was overridden");
 assert.equal(resolveCap({ width: 1688, height: 1266 }, { panelWidth: 720, panelHeight: 96 }), Infinity, "custom Desktop height was overridden");
 
-console.log("Issue #681 responsive Desktop menu geometry regression passed.");
+console.log("Issue #681 responsive Desktop menu geometry regression passed: adaptive width remains fixed across content changes and height caps retain their established behaviour.");

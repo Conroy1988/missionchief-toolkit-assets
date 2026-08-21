@@ -12,8 +12,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             filter: grayscale(35%) brightness(.82) !important;}html[data-mcms-marker-focus="true"] .leaflet-marker-icon.mcms-marker-mission {
             opacity: 1 !important;
             filter: drop-shadow(0 0 5px rgba(255,75,75,.75)) brightness(1.12) !important;
-            z-index: 999 !important;}html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }html[data-mcms-show-vehicles="false"] .leaflet-marker-icon.mcms-marker-vehicle,
-        html[data-mcms-show-vehicles="false"] .leaflet-marker-icon[data-mcms-vehicle-marker="true"] { display: none !important; }html[data-mcms-show-buildings="false"] .leaflet-marker-icon.mcms-marker-personal-building,
+            z-index: 999 !important;}html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }html[data-mcms-show-buildings="false"] .leaflet-marker-icon.mcms-marker-personal-building,
         html[data-mcms-show-buildings="false"] .leaflet-marker-icon[data-mcms-personal-building-marker="true"] { display: none !important; }.leaflet-marker-icon.mcms-mission-focus {
             filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #ff5252) brightness(1.22) !important;
             z-index: 1000 !important;}.mcms-mission-lock-travel-overlay,
@@ -9962,6 +9961,33 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-iconbox { width:28px !important; height:28px !important; min-width:28px !important; font-size:13px !important; }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-pill { max-width:150px !important; padding:3px 7px !important; }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-row { grid-template-columns:minmax(0,1fr) minmax(150px,42%) !important; gap:11px !important; margin-bottom:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-layout {
+            display:grid !important;
+            grid-template-columns:minmax(0,1fr) !important;
+            gap:14px !important;
+            min-width:0 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-fields {
+            display:grid !important;
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+            gap:10px !important;
+            min-width:0 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-fields .mcms-row {
+            grid-template-columns:minmax(0,1fr) !important;
+            align-content:start !important;
+            gap:7px !important;
+            min-width:0 !important;
+            margin:0 !important;
+            padding:10px !important;
+            border:1px solid rgba(255,255,255,.09) !important;
+            border-radius:10px !important;
+            background:rgba(0,0,0,.13) !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-fields :is(.mcms-input,.mcms-select) { width:100% !important; min-width:0 !important; }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-selection { gap:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window :is(.mcms-expansion-planner-brief,.mcms-expansion-planner-results,.mcms-expansion-planner-safeguards) { min-width:0 !important; margin-top:0 !important; }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window :is(.mcms-recruitment-type input,.mcms-recruitment-station input) { width:18px !important; height:18px !important; }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-recruitment-station { min-height:54px !important; padding:10px !important; }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-recruitment-stations { max-height:360px !important; gap:7px !important; }
@@ -9971,6 +9997,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-command-layout { grid-template-columns:200px minmax(0,1fr) !important; }
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-command-card-wide { grid-column:1/-1 !important; }
+            html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-actions { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+            html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-fields { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+            html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-results .mcms-recruitment-stations { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-tab-panel[data-panel="settings"].mcms-active { display:grid !important; width:100% !important; height:100% !important; min-height:0 !important; overflow-y:auto !important; column-count:auto !important; column-width:auto !important; }
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-tab-panel[data-panel="settings"].mcms-active > .mcms-command-card { display:block !important; width:auto !important; margin:0 !important; }
         }
@@ -9982,6 +10011,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-tab-copy small { display:none !important; }
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:1fr !important; padding:10px !important; }
             html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-row { grid-template-columns:1fr !important; gap:6px !important; }
+            html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-expansion-planner-fields { grid-template-columns:1fr !important; }
         }
         @media (max-width:620px) { #mc-map-command-toolkit-command-experience { padding:0 !important; }#mc-map-command-toolkit-command-experience .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-actions button { flex:1 1 180px !important; }#mc-map-command-toolkit-command-experience footer { justify-content:stretch !important; }#mc-map-command-toolkit-command-experience footer button { flex:1 1 140px !important; } }
         @media (prefers-reduced-motion:reduce) {

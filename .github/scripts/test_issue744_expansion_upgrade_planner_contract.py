@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.1"
     assert "'expansionPlanner'" in source, "Expansion Planner analytics allow-list entry is missing"
     assert "expansion-upgrade-planner" in source_section(source, "    function commandPaletteActionEntries(", "    function commandPaletteMissionEntries(")
     assert "@connect      *" not in source, "Expansion Planner must not request wildcard userscript network access"
@@ -47,9 +47,27 @@ def main() -> int:
         "Credits only",
         "never uses a static cost table",
         "never retried automatically",
+        "mcms-expansion-planner-layout",
+        "mcms-expansion-planner-actions",
+        "mcms-expansion-planner-fields",
+        "mcms-expansion-planner-selection",
+        "mcms-expansion-planner-brief",
+        "mcms-expansion-planner-results",
+        "mcms-expansion-planner-safeguards",
         "data-expansion-planner",
     ):
         assert token in dispatch_panel, f"Expansion Planner panel is missing {token}"
+
+    card_wrapper = source_section(source, "    function wrapCommandSectionCards(", "    function upgradeCommandInterface(")
+    assert "'expansion-and-upgrade-planner'" in card_wrapper, "Expansion Planner must span the complete command-card grid"
+    desktop_workspace = source_section(source, "        /* Desktop Toolkit Workspace:", "        @media (max-width:620px)")
+    for layout_contract in (
+        ".mcms-expansion-planner-actions { grid-template-columns:repeat(4,minmax(0,1fr))",
+        ".mcms-expansion-planner-fields { grid-template-columns:repeat(3,minmax(0,1fr))",
+        ".mcms-expansion-planner-results .mcms-recruitment-stations { grid-template-columns:repeat(2,minmax(0,1fr))",
+        ".mcms-expansion-planner-fields { grid-template-columns:1fr !important; }",
+    ):
+        assert layout_contract in desktop_workspace, f"Expansion Planner responsive workspace is missing {layout_contract}"
 
     implementation = source_section(source, "    function expansionPlannerText(", "    function vehicleTargetInfo(")
     for contract in (
@@ -162,7 +180,7 @@ def main() -> int:
     assert "test_issue744_expansion_upgrade_planner_contract.py" in preflight
     assert "test_issue744_expansion_upgrade_planner_runtime.mjs" in preflight
 
-    print("Issue #744/#748/#750 Expansion & Upgrade Planner source contract passed: zero-indexed immediate-level routing, exact native expand-page discovery, page-bound Credit-only actions, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
+    print("Issue #744/#748/#750 Expansion & Upgrade Planner source contract passed: full-width responsive workspace layout, zero-indexed immediate-level routing, exact native expand-page discovery, page-bound Credit-only actions, exact-total confirmation, one operation per station, sequential writes and persistent fail-closed reporting are enforced.")
     return 0
 
 

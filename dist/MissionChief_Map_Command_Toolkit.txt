@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.15.0
+// @version      10.15.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.15.0',
+        version: '10.15.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.15.0",
-        title: "Resizable Desktop Toolkit Workspace",
+        version: "10.15.1",
+        title: "Planner Workspace & Native Vehicles",
         highlights: Object.freeze([
-            "Opens the Desktop Toolkit menu as a movable workspace that resizes from its bottom-right corner while the command toolbar stays attached to the map.",
-            "Remembers the chosen width, exact height and position, then safely clamps saved geometry back on-screen after viewport or browser-chrome changes.",
-            "Adds temporary maximise and restore controls that fill the safe desktop workspace without overwriting the saved windowed size or position.",
-            "Raises Desktop typography and control-size floors, then reflows command cards across one, two or three columns according to the workspace itself.",
-            "Keeps one shared Toolkit runtime and preserves every existing feature, setting and theme while Tablet and iOS layouts retain their established behaviour."
+            "Makes the Expansion & Upgrade Planner span the complete Dispatch workspace instead of remaining trapped in one narrow command column.",
+            "Reflows its four actions, six planning fields and live station results across the available width while preserving every Credit and purchase safeguard.",
+            "Makes Button 3 toggle MissionChief’s own persisted Show vehicles on map setting directly without opening Settings.",
+            "Mirrors the game’s actual vehicle setting on fresh installs, upgrades and profile loads, removes the retired CSS mask and never creates a second vehicle state.",
+            "Keeps the calculated Desktop workspace width stable across tab and content changes while leaving Tablet, iOS, themes and the map toolbar unchanged."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1333,6 +1333,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const STARTUP_MUTATION_DEBOUNCE_MS = 520;
     const BUILDING_VISIBILITY_RECHECK_MS = 4000;
     const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);
+    const NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS = 12000;
+    const NATIVE_VEHICLE_SETTINGS_API_PATH = '/api/settings';
+    const NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX = '/buildings/';
     const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']);
     const NATIVE_VISIBILITY_FILTERS = Object.freeze({
         myMissions: Object.freeze({
@@ -1628,6 +1631,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let nativeVisibilityReconcileQueued = false;
     let nativeVisibilityWriteDepth = 0;
     let nativeVisibilityBridgeInstalled = false;
+    let nativeVehicleTogglePromise = null;
     const hiddenPersonalBuildingLayers = new Set();
     const personalBuildingLayerOpacity = new Map();
     let enforcingPersonalBuildingVisibility = false;
@@ -2959,8 +2963,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             filter: grayscale(35%) brightness(.82) !important;}html[data-mcms-marker-focus="true"] .leaflet-marker-icon.mcms-marker-mission {
             opacity: 1 !important;
             filter: drop-shadow(0 0 5px rgba(255,75,75,.75)) brightness(1.12) !important;
-            z-index: 999 !important;}html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }html[data-mcms-show-vehicles="false"] .leaflet-marker-icon.mcms-marker-vehicle,
-        html[data-mcms-show-vehicles="false"] .leaflet-marker-icon[data-mcms-vehicle-marker="true"] { display: none !important; }html[data-mcms-show-buildings="false"] .leaflet-marker-icon.mcms-marker-personal-building,
+            z-index: 999 !important;}html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }html[data-mcms-show-buildings="false"] .leaflet-marker-icon.mcms-marker-personal-building,
         html[data-mcms-show-buildings="false"] .leaflet-marker-icon[data-mcms-personal-building-marker="true"] { display: none !important; }.leaflet-marker-icon.mcms-mission-focus {
             filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #ff5252) brightness(1.22) !important;
             z-index: 1000 !important;}.mcms-mission-lock-travel-overlay,
@@ -12909,6 +12912,33 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-iconbox { width:28px !important; height:28px !important; min-width:28px !important; font-size:13px !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-pill { max-width:150px !important; padding:3px 7px !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-row { grid-template-columns:minmax(0,1fr) minmax(150px,42%) !important; gap:11px !important; margin-bottom:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-layout {
+            display:grid !important;
+            grid-template-columns:minmax(0,1fr) !important;
+            gap:14px !important;
+            min-width:0 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-fields {
+            display:grid !important;
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+            gap:10px !important;
+            min-width:0 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-fields .mcms-row {
+            grid-template-columns:minmax(0,1fr) !important;
+            align-content:start !important;
+            gap:7px !important;
+            min-width:0 !important;
+            margin:0 !important;
+            padding:10px !important;
+            border:1px solid rgba(255,255,255,.09) !important;
+            border-radius:10px !important;
+            background:rgba(0,0,0,.13) !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-fields :is(.mcms-input,.mcms-select) { width:100% !important; min-width:0 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-selection { gap:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-expansion-planner-brief,.mcms-expansion-planner-results,.mcms-expansion-planner-safeguards) { min-width:0 !important; margin-top:0 !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-recruitment-type input,.mcms-recruitment-station input) { width:18px !important; height:18px !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-recruitment-station { min-height:54px !important; padding:10px !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-recruitment-stations { max-height:360px !important; gap:7px !important; }
@@ -12918,6 +12948,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-layout { grid-template-columns:200px minmax(0,1fr) !important; }
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-card-wide { grid-column:1/-1 !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-actions { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-fields { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-results .mcms-recruitment-stations { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel[data-panel="settings"].mcms-active { display:grid !important; width:100% !important; height:100% !important; min-height:0 !important; overflow-y:auto !important; column-count:auto !important; column-width:auto !important; }
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel[data-panel="settings"].mcms-active > .mcms-command-card { display:block !important; width:auto !important; margin:0 !important; }
         }
@@ -12929,6 +12962,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-copy small { display:none !important; }
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:1fr !important; padding:10px !important; }
             html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-row { grid-template-columns:1fr !important; gap:6px !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-expansion-planner-fields { grid-template-columns:1fr !important; }
         }
         @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-actions button { flex:1 1 180px !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
         @media (prefers-reduced-motion:reduce) {
@@ -13598,19 +13632,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             );
         const personalBounds = { ...bounds, maxHeight: desiredMaxHeight };
         const availableWidth = Math.max(1, bounds.right - bounds.left);
-        const savedWorkspaceWidth = Math.round(clamp(desktopPreferences.panelWidth, Math.min(DESKTOP_WORKSPACE_MIN_WIDTH, availableWidth), Math.min(DESKTOP_WORKSPACE_MAX_WIDTH, availableWidth), Math.min(720, availableWidth)));
-        const customWorkspaceWidth = Number(desktopPreferences.panelWidth) !== 720 || (Number.isFinite(savedPixelHeight) && savedPixelHeight > 0);
+        const savedWorkspaceWidth = resolveResponsiveDesktopPanelWidth(viewport, desktopPreferences, availableWidth);
         panel.style.setProperty('--mcms-desktop-panel-max-height', `${desiredMaxHeight}px`);
         panel.style.setProperty('--mcms-desktop-panel-height', `${desiredMaxHeight}px`);
+        panel.style.setProperty('--mcms-desktop-panel-width', `${savedWorkspaceWidth}px`);
+        panel.style.setProperty('width', `${savedWorkspaceWidth}px`, 'important');
         panel.style.setProperty('max-width', `${availableWidth}px`, 'important');
         panel.style.setProperty('max-height', `${desiredMaxHeight}px`, 'important');
-        if (customWorkspaceWidth) {
-            panel.style.setProperty('--mcms-desktop-panel-width', `${savedWorkspaceWidth}px`);
-            panel.style.setProperty('width', `${savedWorkspaceWidth}px`, 'important');
-        } else {
-            panel.style.removeProperty('--mcms-desktop-panel-width');
-            panel.style.removeProperty('width');
-        }
         panel.dataset.mcmsDesktopFit = `${bounds.left}:${bounds.top}:${bounds.right}:${bounds.bottom}:${desiredMaxHeight}`;
 
         if (panelWorkspaceMaximized) {
@@ -13630,7 +13658,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
 
         panel.style.setProperty('height', `${desiredMaxHeight}px`, 'important');
-        panel.dataset.mcmsWorkspaceSize = `${Math.round(panel.offsetWidth || desktopPreferences.panelWidth)}:${desiredMaxHeight}:windowed`;
+        panel.dataset.mcmsWorkspaceSize = `${savedWorkspaceWidth}:${desiredMaxHeight}:windowed`;
 
         if (!dragState && !panelResizeState && panel.classList.contains('mcms-open')) {
         let panelRect = null;
@@ -13652,6 +13680,24 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         }
         return personalBounds;
+    }
+
+    function resolveResponsiveDesktopPanelWidth(viewport, preferences, availableWidth) {
+        const viewportWidth = Math.max(1, Number(viewport?.width) || 1);
+        const widthCap = Math.max(1, Number(availableWidth) || Math.max(1, viewportWidth - 24));
+        const minimum = Math.min(DESKTOP_WORKSPACE_MIN_WIDTH, widthCap);
+        const maximum = Math.min(DESKTOP_WORKSPACE_MAX_WIDTH, widthCap);
+        const saved = clamp(preferences?.panelWidth, minimum, maximum, Math.min(720, maximum));
+        const savedPixelHeight = Number(preferences?.panelHeightPx);
+        const usesDefaultGeometry = Number(preferences?.panelWidth) === 720
+            && (!Number.isFinite(savedPixelHeight) || savedPixelHeight <= 0);
+        if (!usesDefaultGeometry || viewportWidth < 1200 || viewportWidth >= 2240) return Math.round(saved);
+        const adaptive = Math.min(
+            viewportWidth * 0.68,
+            Math.max(720, Math.min(1040, 1844 - (viewportWidth * 0.5))),
+            Math.max(1, viewportWidth - 24)
+        );
+        return Math.round(clamp(adaptive, minimum, maximum, saved));
     }
 
     function resolveResponsiveDesktopPanelHeightCap(viewport, preferences) {
@@ -13746,7 +13792,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const responsiveDesktopPanelWidth = Number(desktopPreferences.panelWidth) === 720
             ? `@media (min-width:1200px) and (max-width:2239px){html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId}{width:min(68vw,clamp(720px,calc(1844px - 50vw),1040px),calc(100vw - 24px))!important}}`
             : '';
-        style.textContent = `
+        const css = `
         html:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId}{width:min(${panelWidth},calc(100vw - 24px))!important}
         ${responsiveDesktopPanelWidth}
         .mcms-layout-hidden{display:none!important}.mcms-layout-group-hidden{display:none!important}
@@ -13850,6 +13896,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:${theme.accent};--mcms-palette-accent-rgb:${themeColourRgb(theme.accent)}}
         @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}}
         `;
+        if (style.textContent !== css) style.textContent = css;
     }
 
     function mapControlLayoutKey(element) {
@@ -14188,7 +14235,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-mobile-orientation', tabletViewport.orientation);
         setAttributeIfChanged(root, 'data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
         setAttributeIfChanged(root, 'data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
-        setAttributeIfChanged(root, 'data-mcms-show-vehicles', String(Boolean(state.visibility.vehicles)));
         setAttributeIfChanged(root, 'data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
         applyPersonalisationStyle();
         applyLayoutBuilderControl();
@@ -22616,6 +22662,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         const vehicleSet = new Set(vehicleLayers);
         const buildingSet = new Set(buildingLayers);
         const personalBuildingIds = getPersonalBuildingIds();
+        const nativeVehicleSnapshot = readNativeVisibilityState('vehicles');
+        const vehiclesAllowedByNativeSetting = nativeVehicleSnapshot.available ? nativeVehicleSnapshot.value : true;
 
         economyLayerEnforcement = true;
         try {
@@ -22623,7 +22671,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (!vehicleSet.has(layer)) economyHiddenVehicleLayers.delete(layer);
         }
         for (const layer of vehicleLayers) {
-            const visible = state.visibility.vehicles && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
+            const visible = vehiclesAllowedByNativeSetting && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
             setEconomyLayerPresence(map, layer, visible, economyHiddenVehicleLayers);
         }
 
@@ -22661,11 +22709,13 @@ Credits only. Each station and native action will be fetched again, purchased on
         const vehicleSet = new Set(getVehicleMarkerLayers().filter(Boolean));
         const buildingSet = new Set(getBuildingMarkerLayers().filter(Boolean));
         const personalBuildingIds = getPersonalBuildingIds();
+        const nativeVehicleSnapshot = readNativeVisibilityState('vehicles');
+        const vehiclesAllowedByNativeSetting = nativeVehicleSnapshot.available ? nativeVehicleSnapshot.value : true;
         economyLayerEnforcement = true;
         try {
         for (const layer of Array.from(economyHiddenVehicleLayers)) {
             economyHiddenVehicleLayers.delete(layer);
-            if (!vehicleSet.has(layer)) continue;
+            if (!vehiclesAllowedByNativeSetting || !vehicleSet.has(layer)) continue;
             const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
             if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
         }
@@ -22980,6 +23030,181 @@ Credits only. Each station and native action will be fetched again, purchased on
         return { available: false, value: null, source: 'fallback' };
     }
 
+    function nativeVehicleSameOriginUrl(pathOrUrl, baseUrl = document.baseURI || pageWindow.location.href) {
+        const url = new URL(pathOrUrl, baseUrl);
+        if (url.origin !== pageWindow.location.origin) throw new Error('Blocked an unexpected external MissionChief vehicle-setting URL.');
+        return url;
+    }
+
+    async function fetchNativeVehicleSetting() {
+        const url = nativeVehicleSameOriginUrl(NATIVE_VEHICLE_SETTINGS_API_PATH);
+        const response = await runtimeFetch(url.href, {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        redirect: 'follow',
+        headers: { Accept: 'application/json' },
+        timeoutMs: NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for its settings API.`);
+        const finalUrl = nativeVehicleSameOriginUrl(response.url || url.href, url.href);
+        if (finalUrl.pathname !== NATIVE_VEHICLE_SETTINGS_API_PATH || finalUrl.search || finalUrl.hash) throw new Error('MissionChief returned an unexpected settings API destination.');
+        const payload = await response.json();
+        if (!payload || typeof payload.show_vehicle !== 'boolean') throw new Error('MissionChief did not return a boolean show_vehicle setting.');
+        const dispatchCenterId = Number(payload.leitstelle_building_id);
+        if (!Number.isSafeInteger(dispatchCenterId) || dispatchCenterId <= 0) throw new Error('MissionChief did not identify the active Dispatch Centre for its vehicle setting.');
+        return { available: true, value: payload.show_vehicle, dispatchCenterId, source: 'settings-api' };
+    }
+
+    async function fetchNativeVehicleSettingsDocument(dispatchCenterId) {
+        const buildingId = Number(dispatchCenterId);
+        if (!Number.isSafeInteger(buildingId) || buildingId <= 0) throw new Error('Blocked an invalid MissionChief Dispatch Centre ID.');
+        const expectedPath = `${NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX}${buildingId}`;
+        const url = nativeVehicleSameOriginUrl(expectedPath);
+        const response = await runtimeFetch(url.href, {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        redirect: 'follow',
+        headers: { Accept: 'text/html,application/xhtml+xml' },
+        timeoutMs: NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for its native settings page.`);
+        const finalUrl = nativeVehicleSameOriginUrl(response.url || url.href, url.href);
+        if (finalUrl.pathname.replace(/\/+$/u, '') !== expectedPath || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief returned an unexpected Dispatch Centre settings destination.');
+        const html = await response.text();
+        return { doc: new DOMParser().parseFromString(html, 'text/html'), url: finalUrl.href, dispatchCenterId: buildingId };
+    }
+
+    function prepareNativeVehicleSettingsSubmission(doc, sourceUrl, dispatchCenterId, desired, expectedCurrent = null) {
+        const controls = Array.from(doc?.querySelectorAll?.('input[type="checkbox"][name]') || []).filter(control => {
+        const token = normaliseNativeVisibilityToken(control.name);
+        return token === 'show_vehicle' || token.endsWith('_show_vehicle');
+        });
+        if (controls.length !== 1) throw new Error(`Expected one native show_vehicle checkbox; found ${controls.length}.`);
+        const checkbox = controls[0];
+        const settingName = String(checkbox.name || '');
+        if (checkbox.disabled) throw new Error('The native show_vehicle checkbox is disabled.');
+        if (typeof expectedCurrent === 'boolean' && Boolean(checkbox.checked) !== expectedCurrent) throw new Error('MissionChief changed show_vehicle while Button 3 was preparing its native form.');
+        const form = checkbox.closest?.('form');
+        if (!form) throw new Error('The native show_vehicle form is unavailable.');
+        const source = nativeVehicleSameOriginUrl(sourceUrl);
+        const action = nativeVehicleSameOriginUrl(form.getAttribute?.('action') || source.href, source.href);
+        const method = String(form.getAttribute?.('method') || 'get').trim().toUpperCase();
+        const buildingPath = `${NATIVE_VEHICLE_SETTINGS_BUILDING_PATH_PREFIX}${Number(dispatchCenterId)}`;
+        const actionPath = action.pathname.replace(/\/+$/u, '');
+        if (source.pathname.replace(/\/+$/u, '') !== buildingPath || (actionPath !== buildingPath && !actionPath.startsWith(`${buildingPath}/`)) || action.hash || method !== 'POST') throw new Error('The native show_vehicle form action or method changed unexpectedly.');
+        checkbox.checked = Boolean(desired);
+        const body = new FormData(form);
+        const settingValues = body.getAll(settingName).map(value => String(value));
+        const checkedValue = String(checkbox.value || 'on');
+        if (desired ? !settingValues.includes(checkedValue) : settingValues.includes(checkedValue) || settingValues.length === 0) throw new Error('The native form did not encode the requested show_vehicle value safely.');
+        const formToken = String(body.get('authenticity_token') || '');
+        const metaToken = String(doc?.querySelector?.('meta[name="csrf-token"]')?.getAttribute?.('content') || '');
+        if (!formToken && !metaToken) throw new Error('The native show_vehicle form did not expose a CSRF token.');
+        const headers = { Accept: 'text/html,application/xhtml+xml' };
+        if (!formToken) headers['X-CSRF-Token'] = metaToken;
+        return { action: action.href, method, body, headers };
+    }
+
+    async function verifyNativeVehicleSetting(desired) {
+        let lastSnapshot = null;
+        const attempt = async delay => {
+        if (delay && !await runtimeDelay(delay)) return null;
+        try { return await fetchNativeVehicleSetting(); }
+        catch (err) { return null; }
+        };
+        const first = await attempt(0);
+        if (first?.value === Boolean(desired)) return first;
+        if (first) lastSnapshot = first;
+        const second = await attempt(220);
+        if (second?.value === Boolean(desired)) return second;
+        if (second) lastSnapshot = second;
+        const third = await attempt(650);
+        if (third?.value === Boolean(desired)) return third;
+        if (third) lastSnapshot = third;
+        if (lastSnapshot) throw new Error(`MissionChief kept show_vehicle ${lastSnapshot.value ? 'on' : 'off'} after the native form submission.`);
+        throw new Error('MissionChief did not return a verifiable show_vehicle setting after the native form submission.');
+    }
+
+    async function submitNativeVehicleSetting(desired, expectedCurrent = null, dispatchCenterId = null) {
+        const settingsPage = await fetchNativeVehicleSettingsDocument(dispatchCenterId);
+        const prepared = prepareNativeVehicleSettingsSubmission(settingsPage.doc, settingsPage.url, settingsPage.dispatchCenterId, desired, expectedCurrent);
+        let submissionError = null;
+        try {
+        const response = await runtimeFetch(prepared.action, {
+            method: prepared.method,
+            credentials: 'same-origin',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: prepared.headers,
+            body: prepared.body,
+            timeoutMs: NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS
+        });
+        if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} after the native vehicle-setting submission.`);
+        const finalUrl = nativeVehicleSameOriginUrl(response.url || prepared.action, prepared.action);
+        if (/\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief redirected the native vehicle-setting submission to sign-in.');
+        } catch (err) {
+        submissionError = err;
+        }
+        try { return await verifyNativeVehicleSetting(desired); }
+        catch (verificationError) {
+        if (submissionError) throw submissionError;
+        throw verificationError;
+        }
+    }
+
+    function applyNativeVehicleRuntimeSetting(desired) {
+        const wanted = Boolean(desired);
+        try { pageWindow.show_vehicle = wanted; } catch (err) {}
+        const liveControl = findNativeVisibilityControl('vehicles');
+        if (liveControl?.matches?.('input[type="checkbox"]')) liveControl.checked = wanted;
+        if (wanted) {
+        try { pageWindow.loadVehiclesOnTheMove?.call(pageWindow); } catch (err) {}
+        } else {
+        const activeMarkers = [];
+        const seen = new Set();
+        const missionMarkers = new Set(getMissionMarkerLayers().filter(Boolean));
+        const missionMarkerIcons = new Set(Array.from(missionMarkers).map(marker => marker?._icon || marker?.element).filter(Boolean));
+        const isMissionMarker = marker => missionMarkers.has(marker) || missionMarkerIcons.has(marker?._icon || marker?.element);
+        const indexedMarkers = Array.isArray(pageWindow.vehicle_markers) ? pageWindow.vehicle_markers : [];
+        indexedMarkers.forEach((marker, index) => {
+            if (!marker || seen.has(marker) || isMissionMarker(marker)) return;
+            seen.add(marker);
+            activeMarkers.push({ marker, index });
+        });
+        for (const marker of normaliseRegistryValues(pageWindow.mission_vehicles_per_vid)) {
+            if (!marker || seen.has(marker) || isMissionMarker(marker)) continue;
+            seen.add(marker);
+            activeMarkers.push({ marker, index: -1 });
+        }
+        for (const { marker, index } of activeMarkers) {
+            if (marker.vehicle_marker_deleted) continue;
+            try { pageWindow.vehicleArrive?.call(pageWindow, marker); } catch (err) {}
+            if (index >= 0) {
+            try { pageWindow.deregisterVehicleAnim?.call(pageWindow, index); } catch (err) {}
+            }
+        }
+        }
+        invalidateMarkerRegistryCaches('vehicle');
+        scheduleMarkerClassification();
+    }
+
+    function mirrorNativeVehicleSetting(value) {
+        const wanted = Boolean(value);
+        nativeVisibilityBoundFeatures.add('vehicles');
+        nativeVisibilitySessionInitialised.add('vehicles');
+        nativeVisibilityPendingFeatures.delete('vehicles');
+        const changed = state.visibility.vehicles !== wanted;
+        state.visibility.vehicles = wanted;
+        const migrated = markNativeVisibilityFeatureMigrated('vehicles');
+        if (changed || migrated) saveState();
+        applyRootAttributes();
+        updateUI();
+        if (state.economyMode) scheduleEconomyLayerSync(0);
+        reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
+    }
+
     function dispatchNativeVisibilityControl(control, desired) {
         if (!control || control.disabled || control.getAttribute?.('aria-disabled') === 'true') return false;
         const current = nativeVisibilityControlState(control);
@@ -23004,6 +23229,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function writeNativeVisibilityState(feature, desired) {
         const wanted = Boolean(desired);
+        if (feature === 'vehicles') return { handled: false, verified: false, source: 'native-settings-form' };
         const control = findNativeVisibilityControl(feature);
         if (control && dispatchNativeVisibilityControl(control, wanted)) {
         return { handled: true, verified: true, source: 'native-control' };
@@ -23053,19 +23279,15 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function nativeVisibilityFallbackNeeded(feature) {
-        // The MissionChief vehicle control can cover only one of the live vehicle marker
-        // populations. Keep classifying the complete registry as a CSS supplement even
-        // when the native control is bound; other features can fully hand off to native.
-        return feature === 'vehicles' || !nativeVisibilityBoundFeatures.has(feature);
+        // Button 3 mirrors the persisted MissionChief Show vehicles on map setting. It must
+        // never fall back to a second Toolkit-owned vehicle mask when that control is absent.
+        if (feature === 'vehicles') return false;
+        return !nativeVisibilityBoundFeatures.has(feature);
     }
 
     function applyNativeVisibilityPreference(feature, desired, { persistMigration = true } = {}) {
         if (!nativeVisibilityDescriptor(feature)) return false;
-        // MissionChief can expose mission markers through its live vehicle registry. Keep
-        // that shared native layer mounted and let the Toolkit mission-first CSS mask
-        // express Vehicles OFF without physically removing any overlapping mission layer.
-        const nativeDesired = feature === 'vehicles' ? true : Boolean(desired);
-        const result = writeNativeVisibilityState(feature, nativeDesired);
+        const result = writeNativeVisibilityState(feature, Boolean(desired));
         if (!result.handled || !result.verified) {
         nativeVisibilityBoundFeatures.delete(feature);
         nativeVisibilitySessionInitialised.delete(feature);
@@ -23084,21 +23306,11 @@ Credits only. Each station and native action will be fetched again, purchased on
     function adoptNativeVisibilityFeature(feature, { persist = true, refresh = true } = {}) {
         const snapshot = readNativeVisibilityState(feature);
         if (!snapshot.available) return { handled: false, changed: false, migrated: false };
-        const adoptedValue = snapshot.value;
-        if (feature === 'vehicles' && snapshot.value === false) {
-        const restored = writeNativeVisibilityState(feature, true);
-        if (!restored.handled || !restored.verified) {
-            nativeVisibilityBoundFeatures.delete(feature);
-            nativeVisibilitySessionInitialised.delete(feature);
-            nativeVisibilityPendingFeatures.add(feature);
-            return { handled: false, changed: false, migrated: false };
-        }
-        }
         nativeVisibilityBoundFeatures.add(feature);
         nativeVisibilitySessionInitialised.add(feature);
         nativeVisibilityPendingFeatures.delete(feature);
-        const changed = state.visibility[feature] !== adoptedValue;
-        state.visibility[feature] = adoptedValue;
+        const changed = state.visibility[feature] !== snapshot.value;
+        state.visibility[feature] = snapshot.value;
         const migrated = markNativeVisibilityFeatureMigrated(feature);
         if (feature === 'buildings') releasePersonalBuildingVisibilityFallback();
         if (changed || migrated) {
@@ -23124,7 +23336,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             const wasBound = nativeVisibilityBoundFeatures.delete(feature);
             nativeVisibilitySessionInitialised.delete(feature);
             if (wasBound && !state.visibility[feature]) {
-            if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
             if (feature === 'buildings') synchronisePersonalBuildingVisibility();
             if (feature === 'myMissions' || feature === 'allianceMissions') scheduleMarkerClassification();
             }
@@ -23138,7 +23349,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             continue;
         }
         if (!nativeVisibilityFeatureMigrated(feature)) {
-            if (toolkitFreshInstallAtLoad) {
+            if (toolkitFreshInstallAtLoad || feature === 'vehicles') {
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
             economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
@@ -23151,19 +23362,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             continue;
         }
         if (!nativeVisibilitySessionInitialised.has(feature)) {
-            if (feature === 'vehicles') {
-            const wasMigrated = nativeVisibilityFeatureMigrated(feature);
-            if (applyNativeVisibilityPreference(feature, state.visibility[feature], { persistMigration: false })) {
-                stateChanged ||= !wasMigrated && nativeVisibilityFeatureMigrated(feature);
-                continue;
-            }
-            }
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
             economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
             continue;
         }
-        if (feature === 'vehicles' && snapshot.value === true) continue;
         if (nativeVisibilityWriteDepth === 0 && state.visibility[feature] !== snapshot.value) {
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
@@ -28505,7 +28708,11 @@ Credits only. Each station and native action will be fetched again, purchased on
                 markerFocus: state.markerFocus,
                 missionPulse: state.missionPulse,
                 roadPriority: state.roadPriority,
-                visibility: state.visibility,
+                visibility: {
+                    allianceMissions: state.visibility.allianceMissions,
+                    myMissions: state.visibility.myMissions,
+                    buildings: state.visibility.buildings,
+                },
                 allianceCredits: state.allianceCredits,
                 missionAge: state.missionAge,
                 unitCommitment: state.unitCommitment,
@@ -28561,6 +28768,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (missionSpawnLifecycleNeeded()) primeMissionSpawnDetector();
         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
         else stopAutoLoadAllVehicles();
+        // The MissionChief setting remains authoritative across Toolkit profile loads.
+        adoptNativeVisibilityFeature('vehicles', { persist: false, refresh: false });
         applyRootAttributes();
         applyMapFullscreenState();
         renderQuickPlaces();
@@ -28568,8 +28777,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         renderProfiles();
         renderScreenPins();
         updateUI();
-        for (const feature of NATIVE_VISIBILITY_FEATURES) applyNativeVisibilityPreference(feature, state.visibility[feature]);
-        if (nativeVisibilityFallbackNeeded('vehicles')) synchroniseVehicleMarkerClasses();
+        for (const feature of NATIVE_VISIBILITY_FEATURES) {
+        if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, state.visibility[feature]);
+        }
         if (nativeVisibilityFallbackNeeded('buildings')) synchronisePersonalBuildingVisibility();
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
     }
@@ -28582,7 +28792,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         state.markerFocus = Boolean(settings.markerFocus);
         state.missionPulse = Boolean(settings.missionPulse);
         state.roadPriority = Boolean(settings.roadPriority);
-        state.visibility = { ...state.visibility, ...(settings.visibility || {}) };
+        const profileVisibility = { ...(settings.visibility || {}) };
+        delete profileVisibility.vehicles;
+        state.visibility = { ...state.visibility, ...profileVisibility };
         state.allianceCredits = Boolean(settings.allianceCredits);
         state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(settings.allianceCreditMinimum)) ? Number(settings.allianceCreditMinimum) : state.allianceCreditMinimum;
         state.missionAge = Boolean(settings.missionAge);
@@ -34697,15 +34909,35 @@ Credits only. Each station and native action will be fetched again, purchased on
         else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
         else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
         else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
-        else if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
         else if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
         else return false;
         return true;
     }
+    async function toggleNativeVehicleVisibility() {
+        if (nativeVehicleTogglePromise) return nativeVehicleTogglePromise;
+        const togglePromise = (async () => {
+        showToast('Updating MissionChief vehicle setting…');
+        try {
+            const snapshot = await fetchNativeVehicleSetting();
+            const desired = !snapshot.value;
+            const verified = await submitNativeVehicleSetting(desired, snapshot.value, snapshot.dispatchCenterId);
+            applyNativeVehicleRuntimeSetting(verified.value);
+            mirrorNativeVehicleSetting(verified.value);
+            showToast(verified.value ? 'MissionChief vehicles on' : 'MissionChief vehicles off');
+            return true;
+        } catch (err) {
+            console.debug(`[${SCRIPT.name}] MissionChief vehicle-setting toggle stopped safely.`, err);
+            showToast('MissionChief vehicle setting unavailable · no change made');
+            return false;
+        }
+        })();
+        nativeVehicleTogglePromise = togglePromise;
+        try { return await togglePromise; }
+        finally { if (nativeVehicleTogglePromise === togglePromise) nativeVehicleTogglePromise = null; }
+    }
     function applyMapVisibilityToggleEffects(feature) {
         const visibilityFeature = nativeVisibilityDescriptor(feature);
         const nativeHandled = visibilityFeature ? applyNativeVisibilityPreference(feature, state.visibility[feature]) : false;
-        if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
         if (feature === 'buildings' && !nativeHandled) synchronisePersonalBuildingVisibility();
         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
         if (feature === 'missionAge') {
@@ -34753,6 +34985,11 @@ Credits only. Each station and native action will be fetched again, purchased on
     function handleInterfaceShellToggle(feature) {
         if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else if (feature === 'quickWheel') state.quickWheel.enabled = !state.quickWheel.enabled; else return false; return true; }
     function toggleFeature(feature) {
+        if (feature === 'vehicles') {
+            void toggleNativeVehicleVisibility();
+            if (state.cleanMode) closePanel();
+            return;
+        }
         handleMapVisibilityToggle(feature);
         handleMissionWindowToggle(feature);
         handlePayoutAudioToggle(feature);
@@ -35572,7 +35809,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
         toggle('personal-missions', 'Personal Missions', state.visibility.myMissions, 'myMissions', 'mine visibility markers');
         toggle('alliance-missions', 'Alliance Missions', state.visibility.allianceMissions, 'allianceMissions', 'shared visibility markers');
-        toggle('vehicles', 'Vehicle Markers', state.visibility.vehicles, 'vehicles', 'units visibility');
+        toggle('vehicles', 'MissionChief Vehicles', state.visibility.vehicles, 'vehicles', 'show vehicles on map game setting units visibility');
         toggle('buildings', 'Building Markers', state.visibility.buildings, 'buildings', 'stations visibility');
         toggle('stuck', 'Stuck Mission Detection', state.stuckDetector.enabled, 'stuckDetector', 'stuck vehicles stalled incidents labels');
         toggle('major-feed', 'Major Incident Feed', state.majorIncidentFeed.enabled, 'majorIncidentFeed', 'ticker news wire');
@@ -36605,7 +36842,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     <span class="mcms-control-group-label">Visibility</span>
                     ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
                     ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
-                    ${makeFloatButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3', 'Vehicles', 'Units')}
+                    ${makeFloatButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3', 'Vehicles', 'Units')}
                     ${makeFloatButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4', 'Buildings', 'Bldgs')}
                 </div>
                 <div class="mcms-control-group" data-control-group="intelligence" aria-label="Intelligence controls">
@@ -36718,7 +36955,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 const headingId = `mcms-card-${section.dataset.panel}-${slug}`;
                 node.id = headingId;
                 card.setAttribute('aria-labelledby', headingId);
-                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'station-icon-copier', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
+                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'station-icon-copier', 'expansion-and-upgrade-planner', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
                     card.classList.add('mcms-command-card-wide');
                 }
                 fragment.appendChild(card);
@@ -36944,7 +37181,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <div class="mcms-grid-2">
                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
-                    ${makeToggleButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3')}
+                    ${makeToggleButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3')}
                     ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
@@ -37035,28 +37272,32 @@ Credits only. Each station and native action will be fetched again, purchased on
                     <p>The source image is downloaded once into memory and checked as PNG or JPEG up to MissionChief's 200×200 limit. Each selected target is freshly rechecked, submitted through its exact current native building-edit form, and pixel-compared with the source before the next station starts. Dispatch assignment, building type, size, name and coordinates are verified unchanged. A submitted but unverified upload stops the complete run and is never retried automatically.</p>
                 </details>
                 <div class="mcms-section-label">Expansion &amp; Upgrade Planner</div>
-                <div class="mcms-grid-2">
-                    <button class="mcms-small-btn" type="button" data-action="load-expansion-planner">Load Stations</button>
-                    <button class="mcms-small-btn" type="button" data-action="scan-expansion-planner">Scan Upgrades</button>
-                    <button class="mcms-small-btn" type="button" data-action="apply-expansion-planner">Purchase Selected</button>
-                    <button class="mcms-small-btn" type="button" data-action="stop-expansion-planner">Stop</button>
+                <div class="mcms-expansion-planner-layout">
+                    <div class="mcms-grid-2 mcms-expansion-planner-actions">
+                        <button class="mcms-small-btn" type="button" data-action="load-expansion-planner">Load Stations</button>
+                        <button class="mcms-small-btn" type="button" data-action="scan-expansion-planner">Scan Upgrades</button>
+                        <button class="mcms-small-btn" type="button" data-action="apply-expansion-planner">Purchase Selected</button>
+                        <button class="mcms-small-btn" type="button" data-action="stop-expansion-planner">Stop</button>
+                    </div>
+                    <div class="mcms-expansion-planner-fields">
+                        <div class="mcms-row"><span class="mcms-row-label">Dispatch Centre</span><select class="mcms-select" data-setting="expansion-planner-centre"><option value="">Load stations first</option></select></div>
+                        <div class="mcms-row"><span class="mcms-row-label">Building Type</span><select class="mcms-select" data-setting="expansion-planner-building-type"><option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">Load stations first</option></select></div>
+                        <div class="mcms-row"><span class="mcms-row-label">Upgrade Type</span><select class="mcms-select" data-setting="expansion-planner-operation"><option value="all">Levels, bays &amp; extensions</option><option value="level">Levels &amp; bays only</option><option value="extension">Extensions only</option></select></div>
+                        <div class="mcms-row"><span class="mcms-row-label">Hard Credit Budget</span><input class="mcms-input" type="number" min="1" max="${EXPANSION_PLANNER_MAX_BUDGET}" step="1" inputmode="numeric" placeholder="Required before purchase" data-setting="expansion-planner-budget"></div>
+                        <div class="mcms-row"><span class="mcms-row-label">Maximum stations scanned</span><input class="mcms-input" type="number" min="1" max="${EXPANSION_PLANNER_SCAN_STATION_LIMIT}" step="1" inputmode="numeric" data-setting="expansion-planner-max-stations"></div>
+                        <div class="mcms-row"><span class="mcms-row-label">Delay between purchases</span><select class="mcms-select" data-setting="expansion-planner-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
+                    </div>
+                    <div class="mcms-grid-2 mcms-expansion-planner-selection">
+                        <button class="mcms-small-btn" type="button" data-action="select-all-expansion-planner">Select One Per Station</button>
+                        <button class="mcms-small-btn" type="button" data-action="clear-expansion-planner">Clear Selection</button>
+                    </div>
+                    <div class="mcms-status mcms-expansion-planner-brief"><strong>Credits only:</strong> the planner never uses a static cost table. It discovers each current native Credit action from the freshly fetched station page, rejects Coin and ambiguous controls, requires one exact operation per station and blocks Purchase until the selected total is within your hard budget.</div>
+                    <div class="mcms-expansion-planner-results" data-expansion-planner></div>
+                    <details class="mcms-alliance-course-guide mcms-expansion-planner-safeguards">
+                        <summary>Purchase safeguards</summary>
+                        <p>Manual start only. The selected stations, action paths and prices are revalidated before the exact-total confirmation and once again before each sequential purchase. Any changed scope, pending construction, changed price, unclear response or failed post-purchase verification stops the complete run. A submitted action is never retried automatically, and the result report remains until dismissed.</p>
+                    </details>
                 </div>
-                <div class="mcms-row"><span class="mcms-row-label">Dispatch Centre</span><select class="mcms-select" data-setting="expansion-planner-centre"><option value="">Load stations first</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Building Type</span><select class="mcms-select" data-setting="expansion-planner-building-type"><option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">Load stations first</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Upgrade Type</span><select class="mcms-select" data-setting="expansion-planner-operation"><option value="all">Levels, bays &amp; extensions</option><option value="level">Levels &amp; bays only</option><option value="extension">Extensions only</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Hard Credit Budget</span><input class="mcms-input" type="number" min="1" max="${EXPANSION_PLANNER_MAX_BUDGET}" step="1" inputmode="numeric" placeholder="Required before purchase" data-setting="expansion-planner-budget"></div>
-                <div class="mcms-row"><span class="mcms-row-label">Maximum stations scanned</span><input class="mcms-input" type="number" min="1" max="${EXPANSION_PLANNER_SCAN_STATION_LIMIT}" step="1" inputmode="numeric" data-setting="expansion-planner-max-stations"></div>
-                <div class="mcms-row"><span class="mcms-row-label">Delay between purchases</span><select class="mcms-select" data-setting="expansion-planner-delay"><option value="1000">1 second</option><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="3000">3 seconds</option><option value="5000">5 seconds</option></select></div>
-                <div class="mcms-grid-2">
-                    <button class="mcms-small-btn" type="button" data-action="select-all-expansion-planner">Select One Per Station</button>
-                    <button class="mcms-small-btn" type="button" data-action="clear-expansion-planner">Clear Selection</button>
-                </div>
-                <div class="mcms-status"><strong>Credits only:</strong> the planner never uses a static cost table. It discovers each current native Credit action from the freshly fetched station page, rejects Coin and ambiguous controls, requires one exact operation per station and blocks Purchase until the selected total is within your hard budget.</div>
-                <div data-expansion-planner></div>
-                <details class="mcms-alliance-course-guide">
-                    <summary>Purchase safeguards</summary>
-                    <p>Manual start only. The selected stations, action paths and prices are revalidated before the exact-total confirmation and once again before each sequential purchase. Any changed scope, pending construction, changed price, unclear response or failed post-purchase verification stops the complete run. A submitted action is never retried automatically, and the result report remains until dismissed.</p>
-                </details>
             </section>
             <section class="mcms-tab-panel" data-panel="resources">
                 <div class="mcms-section-label">Resource Gap Finder</div>
@@ -39313,7 +39554,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             markerRegistryCache.clear();
             removeOldInstances();
             const root = document.documentElement;
-            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mcms-missionchief-reskin', 'data-mcms-dock-auto-hide', 'data-mcms-auto-hide-axis', 'data-mcms-auto-hide-revealed', 'data-mcms-safe-mode', 'data-mcms-panel-open', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mcms-missionchief-reskin', 'data-mcms-dock-auto-hide', 'data-mcms-auto-hide-axis', 'data-mcms-auto-hide-revealed', 'data-mcms-safe-mode', 'data-mcms-panel-open', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
         });
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

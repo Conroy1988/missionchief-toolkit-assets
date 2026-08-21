@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.1"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.15.0"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.15.1"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Opens the Desktop Toolkit menu as a movable workspace that resizes from its bottom-right corner while the command toolbar stays attached to the map.",
+            "Makes the Expansion & Upgrade Planner span the complete Dispatch workspace instead of remaining trapped in one narrow command column.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

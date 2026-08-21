@@ -1,6 +1,6 @@
 # Desktop Toolkit Workspace
 
-Toolkit v10.15.0 turns the Desktop menu into a movable, resizable workspace while retaining the existing map-attached command toolbar and the Toolkit's single shared runtime.
+Toolkit v10.15.0 introduced the movable, resizable Desktop menu workspace while retaining the existing map-attached command toolbar and the Toolkit's single shared runtime. Toolkit v10.15.1 extends that responsive treatment to the complete Expansion & Upgrade Planner and keeps one calculated window width locked across ordinary tab and content changes.
 
 ## Use the workspace
 

@@ -99,6 +99,8 @@ def main() -> int:
         assert f"runtimeRegisterTask('{task}'" in functions[task_registration_name], f"Missing boot task {task}"
     for attribute in fixtures["cleanupRootAttributes"]:
         assert attribute in functions["boot"], f"Missing cleanup attribute {attribute}"
+    for attribute in fixtures.get("retiredRootAttributes", []):
+        assert attribute not in source, f"Retired root attribute remains in source: {attribute}"
 
     replacements = {
         "__FIXTURES__": json.dumps(fixtures, ensure_ascii=False),

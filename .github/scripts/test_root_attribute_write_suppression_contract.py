@@ -31,7 +31,7 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 30
+    assert apply_root.count("setAttributeIfChanged(root,") == 29
     assert "data-mcms-critical-view" not in apply_root
     assert "root.setAttribute(" not in apply_root
     assert apply_root.index("setAttributeIfChanged(root, 'data-mcms-economy'") < apply_root.index("activeDeviceLayout = resolveDeviceLayout()")
@@ -85,10 +85,10 @@ const expected = {{
     "data-mcms-tablet-active": "false", "data-mcms-mobile-mode": "auto", "data-mcms-mobile-active": "false",
     "data-mcms-tablet-orientation": "landscape", "data-mcms-mobile-orientation": "landscape",
     "data-mcms-show-alliance-missions": "true", "data-mcms-show-my-missions": "false",
-    "data-mcms-show-vehicles": "true", "data-mcms-show-buildings": "false"
+    "data-mcms-show-buildings": "false"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 30, "first call writes every missing attribute");
+assert.equal(root.calls.length, 29, "first call writes every missing attribute");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
 root.clearCalls();

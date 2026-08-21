@@ -319,6 +319,7 @@
           "details": [
             "Coverage rings",
             "Quick jumps and landmarks",
+            "Button 3 submits the active Dispatch Centre's native Show vehicles on map form, verifies the persisted API value and uses the game's map refresh with no Toolkit-owned vehicle mask",
             "Alliance Buildings performance guard"
           ],
           "visual": "rings",
@@ -388,6 +389,8 @@
           "name": "Expansion & Upgrade Planner",
           "summary": "Plans current station level, bay and extension purchases from fresh native Credit controls within an explicit hard budget.",
           "details": [
+            "Full-width responsive Desktop planning workspace",
+            "Four-action toolbar, adaptive field grid and expanded results",
             "One Dispatch Centre or ALL DISPATCH CENTRES scope",
             "Exact native building type or ALL BUILDING TYPES filtering",
             "Current level, bay and extension Credit actions only",
@@ -510,6 +513,7 @@
           "summary": "Moves, resizes and temporarily maximises the complete Desktop menu without detaching the map command toolbar.",
           "details": [
             "Saved width, exact height and position",
+            "Stable fitted width across tab and content changes",
             "Safe off-screen geometry recovery",
             "Readable one-, two- and three-column reflow",
             "Pointer and keyboard resize controls",
@@ -842,7 +846,7 @@
     },
     {
       "key": "3",
-      "action": "Toggle Vehicles"
+      "action": "Toggle MissionChief Vehicles"
     },
     {
       "key": "4",

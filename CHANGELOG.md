@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.15.1] - 2026-08-21
+
+### Planner Workspace & Native Vehicles
+
+- Makes the Expansion & Upgrade Planner span the complete Dispatch workspace instead of remaining trapped in one narrow command column.
+- Reflows its four actions, six planning fields and live station results across the available width while preserving every Credit and purchase safeguard.
+- Makes Button 3 toggle MissionChief’s own persisted Show vehicles on map setting directly without opening Settings.
+- Mirrors the game’s actual vehicle setting on fresh installs, upgrades and profile loads, removes the retired CSS mask and never creates a second vehicle state.
+- Keeps the calculated Desktop workspace width stable across tab and content changes while leaving Tablet, iOS, themes and the map toolbar unchanged.
+
 ## [10.15.0] - 2026-08-21
 
 ### Resizable Desktop Toolkit Workspace

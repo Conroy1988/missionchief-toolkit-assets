@@ -67,11 +67,13 @@
     "data-mcms-mobile-orientation",
     "data-mcms-show-alliance-missions",
     "data-mcms-show-my-missions",
-    "data-mcms-show-vehicles",
     "data-mcms-show-buildings",
     "data-mcms-help-open",
     "data-mcms-command-palette-open",
     "data-mcms-command-experience-open"
+  ],
+  "retiredRootAttributes": [
+    "data-mcms-show-vehicles"
   ],
   "cleanupCaches": [
     "missionSnapshotCache",

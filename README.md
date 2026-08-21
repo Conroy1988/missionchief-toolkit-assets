@@ -244,7 +244,8 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 <details>
 <summary><strong>Map command and places</strong></summary>
 
-- Buttons 1–4 mirror MissionChief’s native My Missions, Alliance Missions, Vehicles and My Buildings filters without opening the filter menu
+- Buttons 1, 2 and 4 mirror MissionChief’s native My Missions, Alliance Missions and My Buildings filters without opening the filter menu
+- Button 3 reads MissionChief’s persisted **Show vehicles on map** value, submits the exact native form from the active Dispatch Centre’s Settings tab in the background, verifies the result through the game’s settings API and asks MissionChief’s own map routines to refresh; the Toolkit owns no separate vehicle mask
 - MissionChief’s separate Alliance Buildings toggle remains independent and untouched
 - Quick Places and Smart Bookmark Labels
 - Coverage rings
@@ -313,7 +314,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 | Key | Action |
 |---|---|
 | <kbd>1</kbd> · <kbd>2</kbd> | Toggle My Missions · Toggle Alliance Missions |
-| <kbd>3</kbd> · <kbd>4</kbd> | Toggle Vehicles · Toggle My Buildings |
+| <kbd>3</kbd> · <kbd>4</kbd> | Toggle MissionChief Vehicles · Toggle My Buildings |
 | <kbd>5</kbd> · <kbd>6</kbd> | Toggle Alliance Credits · Toggle Mission Age |
 | <kbd>V</kbd> · <kbd>B</kbd> | Vehicle Code Status · Operational Pressure Board |
 | <kbd>K</kbd> | Toolkit Command Palette |

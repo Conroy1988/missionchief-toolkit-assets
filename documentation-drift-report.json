@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "10.14.0",
+  "userscriptVersion": "10.15.1",
   "versionState": "source-transition",
   "documentedThemes": [
     "Map Command",
@@ -29,7 +29,7 @@
     },
     {
       "key": "3",
-      "action": "Toggle Vehicles"
+      "action": "Toggle MissionChief Vehicles"
     },
     {
       "key": "4",
@@ -56,10 +56,10 @@
       "action": "Open Toolkit Command Palette"
     }
   ],
-  "featureCount": 35,
+  "featureCount": 36,
   "publicDocumentCount": 2,
   "failures": [],
   "warnings": [
-    "Validated guarded source transition 10.14.0 is ahead of dashboard version 10.3.2."
+    "Validated guarded source transition 10.15.1 is ahead of dashboard version 10.3.2."
   ]
 }

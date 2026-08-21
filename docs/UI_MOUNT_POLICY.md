@@ -11,4 +11,4 @@ Every new or materially changed external-page UI surface must:
 5. publish a structured mount receipt and expose a visible waiting or error state instead of failing silently;
 6. avoid mocked installer and lifecycle substitutes in the blocking integration test.
 
-The required Runtime lane installs a pinned, script-disabled DOM runtime and runs `.github/scripts/test_ui_mount_integration.mjs`. The aggregate Toolkit Hotfix Gate cannot pass if the production installer fails any registered scenario.
+The single-runner Toolkit Hotfix Gate installs a pinned, script-disabled DOM runtime and runs `.github/scripts/test_ui_mount_integration.mjs` whenever Runtime validation is selected. The gate cannot pass if the production installer fails any registered scenario.

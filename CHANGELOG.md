@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.15.3] - 2026-08-21
+
+### Live Regression Hotfix
+
+- Keeps Personnel (Desired) synchronized and saved on every valid input so UI refreshes cannot restore an older 1,000 value.
+- Restores MissionChief’s native PUT or PATCH personnel submission with CSRF and AJAX headers, then tolerates bounded stale API reads without repeating a write.
+- Fixes Button 3 by targeting only `show_vehicle`, excluding the separate `mobile_show_vehicle` value and supporting query-based Map and vehicles tabs.
+- Restores the saved Desktop workspace width immediately after every main-page switch instead of collapsing to the legacy 720-pixel fallback.
+- Preserves the full-width Expansion & Upgrade Planner layout, Credit-only safeguards, Tablet and iOS behaviour and all supported themes.
+- Replaces the parallel pull-request validation fan-out with one path-aware runner while exhaustive audits remain available through scheduled or manual workflows.
+
 ## [10.15.2] - 2026-08-21
 
 ### Native Vehicle Toggle Repair

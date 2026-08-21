@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 755,
-    "version": "10.15.2",
-    "sourceBytes": 2704836,
-    "sourceLines": 40419,
-    "sourceSha256": "c0851ac4331421352caa2442953c35adc5f7cc81dee8a24af875ca26c0e29d39",
+    "issue": 756,
+    "version": "10.15.3",
+    "sourceBytes": 2706768,
+    "sourceLines": 40455,
+    "sourceSha256": "b79974c63e01b5a95a5b9a2b5b0e52e5a9f03340a7dd94d1c46af15398cc24f2",
     "templateBytes": 853272,
     "templateLines": 10025,
     "templateSha256": "dbbac0dc98327fe7cc96acfd36fbca905a70917d541160bc2c99e1c62f27dede",
     "canonicalCssSha256": "3c7384ef34aee0a5a3c337ce6e365279330098fa688ac58b06ddbd66053e1ec1",
-    "maxSourceBytes": 2709836,
-    "maxSourceLines": 40519,
+    "maxSourceBytes": 2711768,
+    "maxSourceLines": 40555,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 342397,
-      "sourceLines": 4991,
+      "sourceBytes": 344329,
+      "sourceLines": 5027,
       "templateBytes": 37735,
       "templateLines": 491
     },
-    "scope": "Global MissionChief vehicle-setting discovery with nullable Dispatch Centre support, preserving the full-width Expansion Planner and stable responsive workspace sizing"
+    "scope": "Live Dispatch Recruitment persistence and native submission repair, exact desktop vehicle-setting targeting, stable Desktop tab sizing and a single-runner PR gate"
   }
 }

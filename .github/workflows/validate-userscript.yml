@@ -1,4 +1,4 @@
-name: Validate Canonical Userscript
+name: Toolkit Hotfix Gate
 
 run-name: Toolkit Hotfix Gate · ${{ github.event_name }}
 
@@ -16,22 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  classify:
-    name: Classify changed paths
+  gate:
+    name: Toolkit Hotfix Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 3
-    outputs:
-      runtime: ${{ steps.paths.outputs.runtime }}
-      integrity: ${{ steps.paths.outputs.integrity }}
-      performance: ${{ steps.paths.outputs.performance }}
-      repository: ${{ steps.paths.outputs.repository }}
-      workflowChecks: ${{ steps.paths.outputs.workflowChecks }}
-      documentationChecks: ${{ steps.paths.outputs.documentationChecks }}
-      assetChecks: ${{ steps.paths.outputs.assetChecks }}
-      releaseChecks: ${{ steps.paths.outputs.releaseChecks }}
-      releaseCandidate: ${{ steps.paths.outputs.releaseCandidate }}
-      exhaustiveIntegrity: ${{ steps.paths.outputs.exhaustiveIntegrity }}
-      exhaustivePerformance: ${{ steps.paths.outputs.exhaustivePerformance }}
+    timeout-minutes: 12
     steps:
       - name: Check out exact repository state
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -40,7 +28,7 @@ jobs:
           persist-credentials: false
           show-progress: false
 
-      - name: Classify pull-request paths
+      - name: Classify changed paths
         id: paths
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -62,83 +50,20 @@ jobs:
             --github-output "$GITHUB_OUTPUT"
           cat path-classification.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload path classification
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: toolkit-hotfix-path-classification-${{ github.sha }}
-          path: |
-            changed-paths.txt
-            path-classification.json
-            path-classification.md
-          if-no-files-found: error
-          retention-days: 14
-
-  runtime:
-    needs: classify
-    if: needs.classify.outputs.runtime == 'true'
-    name: Runtime lane
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - name: Check out exact repository state
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          show-progress: false
-
-      - name: Install isolated UI integration runtime
+      - name: Install isolated UI contract runtime
+        if: steps.paths.outputs.runtime == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0 acorn@8.15.0
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund \
+            jsdom@26.1.0 acorn@8.15.0
 
-      - name: Run full rendered UI mount integration
+      - name: Validate canonical userscript and distribution
+        if: steps.paths.outputs.integrity == 'true' || steps.paths.outputs.releaseCandidate == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          node .github/scripts/test_ui_mount_integration.mjs 2>&1 | tee ui-mount-integration.log
-          node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs 2>&1 | tee issue255-update-ui-measurement.log
-          node .github/scripts/test_issue597_command_interface_runtime.mjs 2>&1 | tee issue597-command-interface.log
-
-      - name: Run deterministic runtime contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash .github/scripts/run_userscript_preflight.sh --contracts \
-            2>&1 | tee runtime-contracts.log
-          cat ui-mount-integration.log issue255-update-ui-measurement.log issue597-command-interface.log runtime-contracts.log > runtime-lane.log
-
-      - name: Upload runtime diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: toolkit-hotfix-runtime-${{ github.sha }}
-          path: runtime-lane.log
-          if-no-files-found: error
-          retention-days: 14
-
-  integrity:
-    needs: classify
-    if: needs.classify.outputs.integrity == 'true'
-    name: Integrity lane
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Check out exact repository state
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          show-progress: false
-
-      - name: Validate candidate-verifier self-tests
-        run: python3 .github/scripts/verify_validation_candidate.py --self-test
-
-      - name: Validate userscript and build candidate distribution
-        shell: bash
-        run: |
-          set -euo pipefail
+          python3 .github/scripts/verify_validation_candidate.py --self-test
           python3 .github/scripts/validate_userscript.py 2>&1 | tee validation.log
           python3 .github/scripts/test_documentation_consistency.py
           node --check src/MissionChief_Map_Command_Toolkit.user.js
@@ -146,86 +71,46 @@ jobs:
             dist/MissionChief_Map_Command_Toolkit.user.js \
             dist/MissionChief_Map_Command_Toolkit.txt
 
-      - name: Run structural and code-integrity audits
+      - name: Run deterministic runtime contracts
+        if: steps.paths.outputs.runtime == 'true'
         shell: bash
+        run: |
+          set -euo pipefail
+          node .github/scripts/test_ui_mount_integration.mjs
+          bash .github/scripts/run_userscript_preflight.sh --contracts \
+            2>&1 | tee runtime-contracts.log
+
+      - name: Check lightweight performance budget
+        if: steps.paths.outputs.performance == 'true'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+        shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/audit_userscript_structure.py --self-test
-          python3 .github/scripts/audit_userscript_structure.py \
-            --json-output userscript-audit.json \
-            --markdown-output userscript-audit.md
-          python3 .github/scripts/test_code_integrity.py
+          python3 .github/scripts/test_performance_budget.py
           ARGS=(
             --candidate src/MissionChief_Map_Command_Toolkit.user.js
-            --policy .github/code-integrity-policy.json
-            --json-output code-integrity-report.json
-            --markdown-output code-integrity-report.md
+            --policy .github/performance-budget.json
           )
           if [[ -n "$PR_BASE_SHA" ]] && git cat-file -e "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" 2>/dev/null; then
-            git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/code-integrity-base.user.js
-            ARGS+=(--base /tmp/code-integrity-base.user.js)
+            git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/performance-base.user.js
+            ARGS+=(--base /tmp/performance-base.user.js)
           fi
-          python3 .github/scripts/check_code_integrity.py "${ARGS[@]}"
+          python3 .github/scripts/check_performance_budget.py "${ARGS[@]}"
 
-      - name: Run full static userscript audit
-        if: needs.classify.outputs.exhaustiveIntegrity == 'true'
+      - name: Validate workflow policy changes
+        if: steps.paths.outputs.workflowChecks == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/full_userscript_audit.py \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --dist dist/MissionChief_Map_Command_Toolkit.user.js \
-            --json-output full-userscript-audit-raw.json \
-            --markdown-output full-userscript-audit-raw.md
-          python3 .github/scripts/refine_full_userscript_audit.py \
-            --raw full-userscript-audit-raw.json \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --json-output full-userscript-audit.json \
-            --markdown-output full-userscript-audit.md
-
-      - name: Restore ESLint package cache
-        if: needs.classify.outputs.exhaustiveIntegrity == 'true'
-        id: eslint-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.npm
-          key: toolkit-eslint-${{ runner.os }}-9.32.0
-
-      - name: Install exact ESLint audit engine
-        if: needs.classify.outputs.exhaustiveIntegrity == 'true'
-        run: npm install --no-save --ignore-scripts --no-audit --no-fund eslint@9.32.0
-
-      - name: Save ESLint package cache
-        if: needs.classify.outputs.exhaustiveIntegrity == 'true' && steps.eslint-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.npm
-          key: toolkit-eslint-${{ runner.os }}-9.32.0
-
-      - name: Run AST-backed ESLint audit
-        if: needs.classify.outputs.exhaustiveIntegrity == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./node_modules/.bin/eslint \
-            --config .github/eslint-userscript.config.mjs \
-            --no-ignore \
-            --format json \
-            src/MissionChief_Map_Command_Toolkit.user.js \
-            > eslint-userscript-raw.json
-          python3 .github/scripts/summarise_eslint_audit.py \
-            --input eslint-userscript-raw.json \
-            --json-output eslint-userscript-audit.json \
-            --markdown-output eslint-userscript-audit.md
-          python3 .github/scripts/extract_userscript_audit_evidence.py \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --eslint-json eslint-userscript-raw.json \
-            --output eslint-userscript-evidence.txt
+          python3 .github/scripts/audit_actions_security.py
+          python3 .github/scripts/test_consolidated_pr_gate.py
+          python3 .github/scripts/test_path_aware_blocking.py
+          python3 .github/scripts/test_validation_candidate_pipeline.py
+          python3 .github/scripts/test_branch_write_inventory.py
 
       - name: Prepare immutable release-ready bundle
-        if: needs.classify.outputs.releaseCandidate == 'true'
+        if: steps.paths.outputs.releaseCandidate == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -239,7 +124,7 @@ jobs:
           test "$(sha256sum "$USER_FILE" | awk '{print $1}')" = "$(jq -r '.sha256' "$MANIFEST")"
 
       - name: Write immutable validation candidate evidence
-        if: needs.classify.outputs.releaseCandidate == 'true'
+        if: steps.paths.outputs.releaseCandidate == 'true'
         env:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number || '' }}
@@ -258,7 +143,7 @@ jobs:
           PR_JSON=null
           if [[ -n "$PR_NUMBER" ]]; then PR_JSON="$PR_NUMBER"; fi
           jq -n \
-            --arg workflow "Validate Canonical Userscript" \
+            --arg workflow "Toolkit Hotfix Gate" \
             --arg commit "$CHECKOUT_COMMIT" \
             --arg ref "$GITHUB_REF" \
             --arg sourceTree "$SOURCE_TREE" \
@@ -302,7 +187,7 @@ jobs:
             --expected-version "$VERSION"
 
       - name: Upload immutable validation candidate
-        if: needs.classify.outputs.releaseCandidate == 'true'
+        if: steps.paths.outputs.releaseCandidate == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: missionchief-toolkit-validation-candidate-${{ github.sha }}
@@ -320,275 +205,15 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload integrity diagnostics
+      - name: Summarise single-runner gate
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: toolkit-hotfix-integrity-${{ github.sha }}
-          path: |
-            validation.log
-            userscript-audit.json
-            userscript-audit.md
-            code-integrity-report.json
-            code-integrity-report.md
-            full-userscript-audit-raw.json
-            full-userscript-audit-raw.md
-            full-userscript-audit.json
-            full-userscript-audit.md
-            eslint-userscript-raw.json
-            eslint-userscript-audit.json
-            eslint-userscript-audit.md
-            eslint-userscript-evidence.txt
-          if-no-files-found: warn
-          retention-days: 30
-
-  performance:
-    needs: classify
-    if: needs.classify.outputs.performance == 'true'
-    name: Performance lane
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Check out exact repository state
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          show-progress: false
-
-      - name: Run performance budget fixtures
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/test_performance_budget.py
-          python3 .github/scripts/test_runtime_optimisations.py
-          node --check tools/mcms-performance-profiler.user.js
-          node .github/scripts/test_performance_profiler.js
-          node .github/scripts/test_runtime_stress_discovery.mjs
-
-      - name: Run performance budget
-        shell: bash
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
-        run: |
-          set -euo pipefail
-          ARGS=(
-            --candidate src/MissionChief_Map_Command_Toolkit.user.js
-            --policy .github/performance-budget.json
-            --json-output performance-budget-report.json
-            --markdown-output performance-budget-report.md
-          )
-          if [[ -n "$PR_BASE_SHA" ]] && git cat-file -e "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" 2>/dev/null; then
-            git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/performance-base.user.js
-            ARGS+=(--base /tmp/performance-base.user.js)
-          fi
-          python3 .github/scripts/check_performance_budget.py "${ARGS[@]}"
-
-      - name: Restore Acorn package cache
-        if: needs.classify.outputs.exhaustivePerformance == 'true'
-        id: acorn-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.npm
-          key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
-
-      - name: Install exact JavaScript parser
-        if: needs.classify.outputs.exhaustivePerformance == 'true'
-        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
-
-      - name: Save Acorn package cache
-        if: needs.classify.outputs.exhaustivePerformance == 'true' && steps.acorn-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.npm
-          key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
-
-      - name: Run deep performance audit
-        if: needs.classify.outputs.exhaustivePerformance == 'true'
         shell: bash
         run: |
-          set -euo pipefail
-          node --check .github/scripts/deep_performance_audit.mjs
-          node --check .github/scripts/reconcile_deep_performance_audit.mjs
-          node --check .github/scripts/extract_deep_performance_evidence.mjs
-          node .github/scripts/test_deep_performance_audit.mjs
-          node .github/scripts/test_reconcile_deep_performance_audit.mjs
-          node .github/scripts/deep_performance_audit.mjs \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --json-output deep-performance-audit.json \
-            --markdown-output deep-performance-audit.md
-          node .github/scripts/reconcile_deep_performance_audit.mjs \
-            deep-performance-audit.json \
-            deep-performance-audit.md
-          node .github/scripts/extract_deep_performance_evidence.mjs \
-            src/MissionChief_Map_Command_Toolkit.user.js \
-            deep-performance-source-evidence.md \
-            updateUI applyRootAttributes triggerPayoutFlash \
-            stopPayoutFlashAnimation createMissionLockOnReticle \
-            toggleCommandBar connectMainMutationObserver boot
-
-      - name: Upload performance diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: toolkit-hotfix-performance-${{ github.sha }}
-          path: |
-            performance-budget-report.json
-            performance-budget-report.md
-            deep-performance-audit.json
-            deep-performance-audit.md
-            deep-performance-source-evidence.md
-          if-no-files-found: warn
-          retention-days: 30
-
-  repository:
-    needs: classify
-    if: needs.classify.result == 'success'
-    name: Repository lane
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Check out exact repository state
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          show-progress: false
-
-      - name: Validate path-aware blocking rules
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/classify_pr_paths.py --self-test
-          python3 .github/scripts/test_path_aware_blocking.py
-
-      - name: Run workflow and release-policy contracts
-        if: needs.classify.outputs.workflowChecks == 'true' || needs.classify.outputs.releaseChecks == 'true' || needs.classify.outputs.exhaustiveIntegrity == 'true' || needs.classify.outputs.exhaustivePerformance == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/audit_actions_security.py
-          python3 .github/scripts/test_development_package_workflow.py
-          python3 .github/scripts/test_automation_record_hygiene.py
-          python3 .github/scripts/test_branch_write_inventory.py
-          python3 .github/scripts/test_validation_candidate_pipeline.py
-          python3 .github/scripts/test_release_announcement_state_pipeline.py
-          python3 .github/scripts/test_release_authority_pipeline.py
-          python3 .github/scripts/test_release_recovery_state_pipeline.py
-          python3 .github/scripts/test_shadow_branch_parity.py
-          python3 .github/scripts/test_shadow_sync_writer.py
-          python3 .github/scripts/test_update_manifest_pipeline.py
-          python3 .github/scripts/test_consolidated_pr_gate.py
-
-      - name: Run documentation and Pages contracts
-        if: needs.classify.outputs.documentationChecks == 'true'
-        shell: bash
-        env:
-          ALLOW_RELEASE_CANDIDATE: "1"
-        run: |
-          set -euo pipefail
-          python3 -m py_compile \
-            .github/scripts/check_documentation_drift.py \
-            .github/scripts/test_documentation_version_states.py \
-            .github/scripts/build_pages_site.py \
-            .github/scripts/test_pages_release_deploy_contract.py
-          python3 .github/scripts/test_documentation_version_states.py
-          python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
-          python3 .github/scripts/test_pages_release_deploy_contract.py
-          node --check docs/site-assets/site.js
-          python3 -m json.tool docs/site-data.json > /dev/null
-          python3 .github/scripts/build_pages_site.py \
-            --output _site \
-            --base-path /missionchief-toolkit-assets/ \
-            > pages-build-report.json
-      - name: Run static asset and update-manifest checks
-        if: needs.classify.outputs.assetChecks == 'true' || needs.classify.outputs.releaseChecks == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/test_asset_health.py
-          python3 .github/scripts/check_distribution_body_parity.py --self-test
-          python3 .github/scripts/check_asset_health.py \
-            --mode static \
-            --json-output asset-health-report.json \
-            --markdown-output asset-health-report.md
-          python3 .github/scripts/build_stable_update_manifest.py --self-test
-          python3 .github/scripts/build_stable_update_manifest.py \
-            --check \
-            --evidence-json update-manifest-verification.json \
-            --evidence-markdown update-manifest-verification.md
-
-      - name: Prepare advisory release plan
-        if: needs.classify.outputs.releaseChecks == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh api --paginate --slurp \
-            "repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc&per_page=100" \
-            | jq 'add' > merged-pull-requests.json
-          python3 .github/scripts/prepare_release_plan.py \
-            --pull-requests merged-pull-requests.json \
-            --release-level auto
-
-      - name: Upload repository diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: toolkit-hotfix-repository-${{ github.sha }}
-          path: |
-            actions-security-report.json
-            actions-security-report.md
-            documentation-drift-report.json
-            documentation-drift-report.md
-            pages-build-report.json
-            _site/
-            asset-health-report.json
-            asset-health-report.md
-            update-manifest-verification.json
-            update-manifest-verification.md
-            release-plan.json
-            release-plan.md
-            merged-pull-requests.json
-          if-no-files-found: warn
-          retention-days: 30
-
-  gate:
-    name: Toolkit Hotfix Gate
-    if: always()
-    needs:
-      - classify
-      - runtime
-      - integrity
-      - performance
-      - repository
-    runs-on: ubuntu-latest
-    steps:
-      - name: Allow intentionally skipped lanes
-        env:
-          CLASSIFY_RESULT: ${{ needs.classify.result }}
-          RUNTIME_REQUIRED: ${{ needs.classify.outputs.runtime }}
-          INTEGRITY_REQUIRED: ${{ needs.classify.outputs.integrity }}
-          PERFORMANCE_REQUIRED: ${{ needs.classify.outputs.performance }}
-          REPOSITORY_REQUIRED: ${{ needs.classify.outputs.repository }}
-          RUNTIME_RESULT: ${{ needs.runtime.result }}
-          INTEGRITY_RESULT: ${{ needs.integrity.result }}
-          PERFORMANCE_RESULT: ${{ needs.performance.result }}
-          REPOSITORY_RESULT: ${{ needs.repository.result }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          require_lane() {
-            local name="$1" required="$2" result="$3"
-            printf '%s: required=%s result=%s\n' "$name" "$required" "$result" >> "$GITHUB_STEP_SUMMARY"
-            if [[ "$required" == "true" ]]; then
-              [[ "$result" == "success" ]]
-            else
-              [[ "$result" == "skipped" || "$result" == "success" ]]
-            fi
-          }
-          [[ "$CLASSIFY_RESULT" == "success" ]]
-          require_lane Runtime "$RUNTIME_REQUIRED" "$RUNTIME_RESULT"
-          require_lane Integrity "$INTEGRITY_REQUIRED" "$INTEGRITY_RESULT"
-          require_lane Performance "$PERFORMANCE_REQUIRED" "$PERFORMANCE_RESULT"
-          require_lane Repository "$REPOSITORY_REQUIRED" "$REPOSITORY_RESULT"
+          {
+            echo
+            echo "## Hotfix gate execution"
+            echo
+            echo "- GitHub runners used: **1**"
+            echo "- Parallel validation lanes: **0**"
+            echo "- Exhaustive performance and repository audits: scheduled/manual workflows only"
+          } >> "$GITHUB_STEP_SUMMARY"

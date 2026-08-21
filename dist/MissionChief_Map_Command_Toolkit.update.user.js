@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.15.2
+// @version      10.15.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.15.2',
+        version: '10.15.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.15.2",
-        title: "Native Vehicle Toggle Repair",
+        version: "10.15.3",
+        title: "Live Regression Hotfix",
         highlights: Object.freeze([
-            "Fixes Button 3 stopping with “MissionChief vehicle setting unavailable” when /api/settings legitimately returns a null active Dispatch Centre.",
-            "Removes the incorrect Dispatch Centre building dependency from the global Show vehicles on map transaction.",
-            "Discovers MissionChief’s native Map and vehicles settings tab through a bounded set of same-origin /settings pages, then submits only its unique protected show_vehicle form.",
-            "Keeps /api/settings read-back authoritative and updates the live map only after MissionChief confirms the persisted value.",
-            "Preserves the v10.15.1 planner workspace, stable Desktop sizing, retired vehicle CSS mask and overlapping mission-marker protections."
+            "Keeps Personnel (Desired) synchronized and saved on every valid input so UI refreshes cannot restore an older 1,000 value.",
+            "Restores MissionChief’s native PUT or PATCH personnel submission with CSRF and AJAX headers, then tolerates bounded stale API reads without repeating a write.",
+            "Fixes Button 3 by targeting only show_vehicle, excluding the separate mobile_show_vehicle value and supporting query-based Map and vehicles tabs.",
+            "Restores the saved Desktop workspace width immediately after every main-page switch instead of collapsing to the legacy 720-pixel fallback.",
+            "Preserves the full-width Expansion & Upgrade Planner layout, Credit-only safeguards, Tablet and iOS behaviour and all supported themes.",
+            "Replaces the parallel pull-request validation fan-out with one path-aware runner while exhaustive audits remain available through scheduled or manual workflows."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1337,7 +1338,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const NATIVE_VEHICLE_SETTINGS_API_PATH = '/api/settings';
     const NATIVE_VEHICLE_SETTINGS_PATH_PREFIX = '/settings';
     const NATIVE_VEHICLE_SETTINGS_SEED_PATHS = Object.freeze(['/settings/index', '/settings']);
-    const NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT = 8;
+    const NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT = 12;
     const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']);
     const NATIVE_VISIBILITY_FILTERS = Object.freeze({
         myMissions: Object.freeze({
@@ -18896,13 +18897,21 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         return record;
     }
 
-    async function verifyDispatchRecruitmentMutation(item, expectedDispatchId, label) {
-        const settled = await runtimeDelay(250);
-        if (!settled) throw dispatchRecruitmentSafetyStop(`${label} was submitted, but the Toolkit stopped before its assignment could be verified.`);
-        let record;
-        try { record = await fetchDispatchRecruitmentBuilding(item.buildingId); }
-        catch (err) { throw dispatchRecruitmentSafetyStop(`${label} was submitted, but authoritative Dispatch Centre verification failed. No further stations were changed.`); }
-        return dispatchRecruitmentAssertStationScope(record, item, expectedDispatchId, true);
+    async function verifyDispatchRecruitmentMutation(item, expectedDispatchId, label, expected = () => true) {
+        let lastRecord = null;
+        for (const delay of [250, 500, 1000]) {
+            const settled = await runtimeDelay(delay);
+            if (!settled) throw dispatchRecruitmentSafetyStop(`${label} was submitted, but the Toolkit stopped before its assignment could be verified.`);
+            try {
+                lastRecord = dispatchRecruitmentAssertStationScope(await fetchDispatchRecruitmentBuilding(item.buildingId), item, expectedDispatchId, true);
+            } catch (err) {
+                if (err?.dispatchRecruitmentFatal) throw err;
+                if (delay === 1000) throw dispatchRecruitmentSafetyStop(`${label} was submitted, but authoritative Dispatch Centre verification failed. No further stations were changed.`);
+                continue;
+            }
+            if (expected(lastRecord)) return lastRecord;
+        }
+        return lastRecord;
     }
 
     function dispatchRecruitmentBoolean(value) {
@@ -18946,25 +18955,34 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         if (declaredBuildingId && declaredBuildingId !== item.buildingId) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form belongs to another station');
         const input = form.querySelector('input[name="building[personal_count_target]"]');
         const token = form.querySelector('input[name="authenticity_token"]')?.value;
-        const methodOverride = form.querySelector('input[name="_method"]')?.value;
+        const methodOverride = String(form.querySelector('input[name="_method"]')?.value || '').toLowerCase();
         const submit = form.querySelector('input[type="submit"][name], button[type="submit"][name]');
         const unexpectedBuildingFields = Array.from(form.elements || [])
             .filter(control => !control.disabled && /^building\[/u.test(String(control.name || '')) && control.name !== 'building[personal_count_target]')
             .map(control => String(control.name));
         if (unexpectedBuildingFields.length) throw dispatchRecruitmentSafetyStop('the native Personnel (Desired) form exposed additional building fields. No request was sent.');
         if (!input || input.disabled || input.type !== 'number') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) number input is unavailable');
-        if (!token || String(methodOverride || '').toLowerCase() !== 'patch') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) authenticity or PATCH guard is unavailable');
+        if (!token || !['put', 'patch'].includes(methodOverride)) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) authenticity or update-method guard is unavailable');
         if (submit?.name !== 'commit') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) Save action is unavailable');
         const action = new URL(form.getAttribute('action'), document.baseURI || pageWindow.location.href);
         const params = new URLSearchParams();
         const utf8 = form.querySelector('input[type="hidden"][name="utf8"]');
         if (utf8 && !utf8.disabled) params.set('utf8', utf8.value || '✓');
         params.set('authenticity_token', token);
-        params.set('_method', 'patch');
+        params.set('_method', methodOverride);
         params.set('building[personal_count_target]', String(personnelDesired));
         params.set('commit', submit.value || dispatchRecruitmentText(submit.textContent));
         dispatchRecruitmentGuardMutation(action.href, params.toString());
-        return { action: action.href, body: params.toString() };
+        return {
+            action: action.href,
+            body: params.toString(),
+            headers: {
+                Accept: 'text/html,application/xhtml+xml',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-CSRF-Token': token,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        };
     }
 
     async function prepareDispatchRecruitmentHiring(item, currentPhase, desiredPhase) {
@@ -19046,7 +19064,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             || guardedAction.searchParams.get('personal_count_target_only') !== '1'
             || parameterNames.some(name => !allowedNames.has(name))
             || new Set(parameterNames).size !== parameterNames.length
-            || String(bodyParams.get('_method') || '').toLowerCase() !== 'patch'
+            || !['put', 'patch'].includes(String(bodyParams.get('_method') || '').toLowerCase())
             || !bodyParams.get('authenticity_token')
             || !/^\d+$/u.test(String(bodyParams.get('building[personal_count_target]') || ''))
             || !bodyParams.get('commit')) {
@@ -19059,10 +19077,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 credentials: 'same-origin',
                 cache: 'no-store',
                 redirect: 'follow',
-                headers: {
-                    Accept: 'text/html,application/xhtml+xml',
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: prepared.headers,
                 body: prepared.body,
                 timeoutMs: DISPATCH_RECRUITMENT_REQUEST_TIMEOUT_MS
             });
@@ -19097,7 +19112,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             }
             if (personnelSubmission) {
                 personnelChanged = await submitDispatchRecruitmentPersonnel(personnelSubmission);
-                verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Personnel (Desired)');
+                verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Personnel (Desired)', record => Number(record?.personal_count_target) === plan.personnelDesired);
                 if (Number(verified.personal_count_target) !== plan.personnelDesired) throw dispatchRecruitmentSafetyStop('MissionChief did not verify the requested Personnel (Desired). No further stations were changed.');
             }
         }
@@ -19112,12 +19127,12 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             if (hiringSubmission) {
                 try {
                     hiringChanged = await applyDispatchRecruitmentHiring(item, hiringSubmission);
-                    verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Hiring Phase');
+                    verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Hiring Phase', record => dispatchRecruitmentRecordPhase(record) === plan.hiringPhase);
                     if (dispatchRecruitmentRecordPhase(verified) !== plan.hiringPhase) throw dispatchRecruitmentSafetyStop('MissionChief did not verify the requested Hiring Phase. No further stations were changed.');
                 } catch (err) {
                     if (!err?.dispatchRecruitmentSafeSkip) throw err;
                     if (err.dispatchRecruitmentMutationSubmitted) {
-                        verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Hiring Phase restoration');
+                        verified = await verifyDispatchRecruitmentMutation(item, expectedDispatchId, 'Hiring Phase restoration', record => dispatchRecruitmentRecordPhase(record) === currentPhase);
                         if (dispatchRecruitmentRecordPhase(verified) !== currentPhase) throw dispatchRecruitmentSafetyStop('MissionChief did not verify the restored Hiring Phase. No further stations were changed.');
                     }
                     safeIssues.push(`Hiring Phase: ${err.message}`);
@@ -23045,8 +23060,8 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function nativeVehicleSettingsControls(doc) {
         return Array.from(doc?.querySelectorAll?.('input[type="checkbox"][name]') || []).filter(control => {
-        const token = normaliseNativeVisibilityToken(control.name);
-        return token === 'show_vehicle' || token.endsWith('_show_vehicle');
+        const settingName = String(control.name || '').trim().toLowerCase();
+        return settingName === 'show_vehicle' || /(?:\[|\.)show_vehicle\]?$/u.test(settingName);
         });
     }
 
@@ -23056,7 +23071,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const add = pathOrUrl => {
         try {
             const url = nativeVehicleSameOriginUrl(pathOrUrl, baseUrl);
-            if (!nativeVehicleSettingsPathAllowed(url.pathname) || url.search || url.hash || seen.has(url.href)) return;
+            if (!nativeVehicleSettingsPathAllowed(url.pathname) || url.hash || seen.has(url.href)) return;
             seen.add(url.href);
             candidates.push(url.href);
         } catch (err) {}
@@ -23104,7 +23119,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             });
             if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
             const finalUrl = nativeVehicleSameOriginUrl(response.url || url.href, url.href);
-            if (!nativeVehicleSettingsPathAllowed(finalUrl.pathname) || finalUrl.search || finalUrl.hash || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief returned an unexpected global settings destination.');
+            if (!nativeVehicleSettingsPathAllowed(finalUrl.pathname) || finalUrl.hash || /\/users\/sign_in\/?$/u.test(finalUrl.pathname)) throw new Error('MissionChief returned an unexpected global settings destination.');
             const html = await response.text();
             const settingsDocument = new DOMParser().parseFromString(html, 'text/html');
             if (nativeVehicleSettingsControls(settingsDocument).length) return { doc: settingsDocument, url: finalUrl.href };
@@ -23133,7 +23148,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const source = nativeVehicleSameOriginUrl(sourceUrl);
         const action = nativeVehicleSameOriginUrl(form.getAttribute?.('action') || source.href, source.href);
         const method = String(form.getAttribute?.('method') || 'get').trim().toUpperCase();
-        if (!nativeVehicleSettingsPathAllowed(source.pathname) || source.search || source.hash || !nativeVehicleSettingsPathAllowed(action.pathname) || action.search || action.hash || method !== 'POST') throw new Error('The native show_vehicle form action or method changed unexpectedly.');
+        if (!nativeVehicleSettingsPathAllowed(source.pathname) || source.hash || !nativeVehicleSettingsPathAllowed(action.pathname) || action.hash || method !== 'POST') throw new Error('The native show_vehicle form action or method changed unexpectedly.');
         checkbox.checked = Boolean(desired);
         const body = new FormData(form);
         const settingValues = body.getAll(settingName).map(value => String(value));
@@ -23142,8 +23157,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         const formToken = String(body.get('authenticity_token') || '');
         const metaToken = String(doc?.querySelector?.('meta[name="csrf-token"]')?.getAttribute?.('content') || '');
         if (!formToken && !metaToken) throw new Error('The native show_vehicle form did not expose a CSRF token.');
-        const headers = { Accept: 'text/html,application/xhtml+xml' };
-        if (!formToken) headers['X-CSRF-Token'] = metaToken;
+        const headers = {
+            Accept: 'text/html,application/xhtml+xml',
+            'X-CSRF-Token': formToken || metaToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        };
         return { action: action.href, method, body, headers };
     }
 
@@ -35344,7 +35362,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!panel) return;
         if (mobileModeActive) { applyTabletPanelPosition(); return; }
         if (tabletModeActive) applyTabletPanelPosition({ sizeOnly: true });
-        else clearTabletPanelSizing(panel);
+        else {
+            clearTabletPanelSizing(panel);
+            applyDesktopPanelSizing(panel);
+        }
         panel.style.setProperty('position', 'fixed', 'important');
         panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
         panel.style.setProperty('top', `${Math.round(top)}px`, 'important');
@@ -37600,6 +37621,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         });
         panel.addEventListener('change', event => handleSettingChange(event.target));
         panel.addEventListener('input', event => {
+            if (event.target?.matches?.('[data-setting="dispatch-recruitment-personnel"]')) {
+                captureDispatchRecruitmentPersonnelDraft(event.target);
+                return;
+            }
             if (!event.target?.matches?.('[data-command-search]')) return;
             commandSearchQuery = String(event.target.value || '').trimStart();
             commandInterfaceApplySearch(panel);
@@ -37934,6 +37959,18 @@ Credits only. Each station and native action will be fetched again, purchased on
         positionPanelOverlay(true);
         showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
         return true; }
+    function captureDispatchRecruitmentPersonnelDraft(target) {
+        if (!target?.matches?.('[data-setting="dispatch-recruitment-personnel"]')) return false;
+        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise) return false;
+        const value = String(target.value || '').trim();
+        if (value && (!/^\d+$/u.test(value) || Number(value) > DISPATCH_RECRUITMENT_PERSONNEL_MAX)) return false;
+        const normalised = value ? String(Number(value)) : '';
+        if (state.dispatchRecruitment.personnelDesired === normalised) return true;
+        state.dispatchRecruitment.personnelDesired = normalised;
+        resetDispatchRecruitmentResults();
+        saveState();
+        return true;
+    }
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
@@ -38073,9 +38110,8 @@ Credits only. Each station and native action will be fetched again, purchased on
                 showToast(`Personnel (Desired) must be 0–${DISPATCH_RECRUITMENT_PERSONNEL_MAX}`);
                 return;
             }
-            state.dispatchRecruitment.personnelDesired = value ? String(Number(value)) : '';
-            resetDispatchRecruitmentResults();
-            saveState(); updateUI();
+            captureDispatchRecruitmentPersonnelDraft(target);
+            updateUI();
             return;
         }
         if (setting === 'dispatch-recruitment-delay') {

@@ -9,6 +9,28 @@ import { JSDOM } from 'jsdom';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
+function extractFunction(name) {
+    const marker = `    function ${name}(`;
+    const start = source.indexOf(marker);
+    assert.ok(start >= 0, `${name} is missing`);
+    const brace = source.indexOf('{', start);
+    let depth = 0;
+    let quote = '';
+    let escaped = false;
+    for (let index = brace; index < source.length; index += 1) {
+        const char = source[index];
+        if (quote) {
+            if (escaped) escaped = false;
+            else if (char === '\\') escaped = true;
+            else if (char === quote) quote = '';
+            continue;
+        }
+        if (char === "'" || char === '"' || char === '`') { quote = char; continue; }
+        if (char === '{') depth += 1;
+        if (char === '}' && --depth === 0) return source.slice(start, index + 1);
+    }
+    throw new Error(`Unable to extract ${name}`);
+}
 const start = source.indexOf('    const DISPATCH_RECRUITMENT_PHASE_META');
 const end = source.indexOf('    function vehicleTargetInfo(', start);
 assert.ok(start >= 0 && end > start, 'Issue #706 Dispatch Recruitment helpers are missing');
@@ -43,6 +65,7 @@ const dispatchRecruitmentRuntime = {
     errors: 0,
     log: [],
 };
+let saveStateCalls = 0;
 const context = vm.createContext({
     console,
     Date,
@@ -87,12 +110,13 @@ const context = vm.createContext({
         return true;
     },
     showToast: () => {},
-    saveState: () => {},
+    saveState: () => { saveStateCalls += 1; },
     toolkitAnalyticsRecordFeature: () => {},
     runtimeDelay: async () => true,
     runtimeFetch: async () => { throw new Error('runtimeFetch mock was not installed'); },
 });
 vm.runInContext(source.slice(start, end), context, { filename: 'issue706-dispatch-recruitment.js' });
+vm.runInContext(extractFunction('captureDispatchRecruitmentPersonnelDraft'), context, { filename: 'issue706-dispatch-recruitment-draft.js' });
 
 const parsed = html => new shell.window.DOMParser().parseFromString(html, 'text/html');
 
@@ -255,6 +279,12 @@ dispatchRecruitmentRuntime.scannedDispatchId = '77';
 dispatchRecruitmentRuntime.scannedTypeId = 'all-types';
 dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
+context.state.dispatchRecruitment.personnelDesired = '1000';
+const savedBeforeDraft = saveStateCalls;
+assert.equal(context.captureDispatchRecruitmentPersonnelDraft({ value: '400', matches: selector => selector === '[data-setting="dispatch-recruitment-personnel"]' }), true);
+assert.equal(context.state.dispatchRecruitment.personnelDesired, '400', 'Personnel (Desired) draft reverted before change/blur');
+assert.equal(saveStateCalls, savedBeforeDraft + 1, 'Personnel (Desired) draft was not persisted synchronously');
+context.state.dispatchRecruitment.personnelDesired = '5';
 shell.window.document.body.innerHTML = `
     <div id="panel">
         <select data-setting="dispatch-recruitment-centre"></select>
@@ -418,7 +448,7 @@ dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 const personnelFormHtml = `
     <form class="simple_form building_form" building_id="101" id="building_form_101" action="/buildings/101?personal_count_target_only=1" method="post">
         <input name="utf8" type="hidden" value="✓">
-        <input type="hidden" name="_method" value="patch">
+        <input type="hidden" name="_method" value="put">
         <input type="hidden" name="authenticity_token" value="csrf-token">
         <input type="number" step="1" value="2" name="building[personal_count_target]" id="building_personal_count_target">
         <input type="submit" name="commit" value="Save">
@@ -427,10 +457,12 @@ const personnelFormHtml = `
 const prepared = context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml), scan.queue[0], 400);
 const preparedBody = new URLSearchParams(prepared.body);
 assert.equal(prepared.action, 'https://www.missionchief.co.uk/buildings/101?personal_count_target_only=1');
-assert.equal(preparedBody.get('_method'), 'patch');
+assert.equal(preparedBody.get('_method'), 'put');
 assert.equal(preparedBody.get('authenticity_token'), 'csrf-token');
 assert.equal(preparedBody.get('building[personal_count_target]'), '400');
 assert.equal(preparedBody.get('commit'), 'Save');
+assert.equal(prepared.headers['X-CSRF-Token'], 'csrf-token');
+assert.equal(prepared.headers['X-Requested-With'], 'XMLHttpRequest');
 assert.deepEqual(Array.from(preparedBody.keys()).sort(), ['_method', 'authenticity_token', 'building[personal_count_target]', 'commit', 'utf8'].sort());
 assert.equal(Array.from(preparedBody.keys()).some(name => /leitstelle/iu.test(name)), false, 'Personnel payloads must never contain a Dispatch Centre assignment field');
 
@@ -477,11 +509,11 @@ const baseline = {
 const personnelVerified = { ...baseline, personal_count_target: 400 };
 const verified = { ...personnelVerified, hiring_phase: 3 };
 const requests = [];
-let apiRecords = [baseline, personnelVerified, verified];
+let apiRecords = [baseline, baseline, personnelVerified, verified];
 const response = (url, body = '') => ({ ok: true, status: 200, url, text: async () => body });
 context.runtimeFetch = async (input, init = {}) => {
     const url = new URL(String(input));
-    requests.push({ method: init.method || 'GET', path: `${url.pathname}${url.search}`, body: init.body || '' });
+    requests.push({ method: init.method || 'GET', path: `${url.pathname}${url.search}`, body: init.body || '', headers: init.headers || {} });
     if (url.pathname === '/api/buildings/101') {
         const record = apiRecords.shift();
         return { ...response(url.href), json: async () => record };
@@ -501,12 +533,15 @@ assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), [
     'GET /buildings/101/personalCountTarget',
     'POST /buildings/101?personal_count_target_only=1',
     'GET /api/buildings/101',
+    'GET /api/buildings/101',
     'GET /buildings/101/hire',
     'GET /buildings/101/hire_do/3',
     'GET /api/buildings/101',
 ]);
 const submitted = new URLSearchParams(requests.find(item => item.method === 'POST').body);
 assert.equal(submitted.get('building[personal_count_target]'), '400');
+assert.equal(requests.find(item => item.method === 'POST').headers['X-CSRF-Token'], 'csrf-token');
+assert.equal(requests.find(item => item.method === 'POST').headers['X-Requested-With'], 'XMLHttpRequest');
 
 requests.length = 0;
 apiRecords = [baseline];

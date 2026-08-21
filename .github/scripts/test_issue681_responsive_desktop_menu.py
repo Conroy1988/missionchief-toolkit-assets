@@ -62,6 +62,9 @@ def main() -> int:
         assert forbidden not in sizing, f"responsive menu introduced background work through {forbidden}"
     assert "panel.style.removeProperty('width');" not in sizing, "ordinary content changes can no longer release the fitted Desktop width"
 
+    positioning = section("    function setPanelCssPosition(", "    function clampPanelPosition(")
+    assert "clearTabletPanelSizing(panel);\n            applyDesktopPanelSizing(panel);" in positioning, "Desktop tab changes must restore sizing after clearing touch-layout geometry"
+
     assert ".github/scripts/test_issue681_responsive_desktop_menu.py" in PREFLIGHT
     assert ".github/scripts/test_issue681_responsive_desktop_menu_runtime.mjs" in PREFLIGHT
     print("Issue #681 responsive Desktop menu static contract passed.")

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.14.3
+// @version      10.15.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.14.3',
+        version: '10.15.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.14.3",
-        title: "Immediate level-target hotfix",
+        version: "10.15.0",
+        title: "Resizable Desktop Toolkit Workspace",
         highlights: Object.freeze([
-            "Fixes new Fire Stations skipping the 10,000-Credit Level 1 action and offering the cumulative 60,000-Credit Level 2 target instead.",
-            "Matches MissionChief's zero-indexed direct-level query: the immediate next displayed level uses the station's current authoritative API level as the route value.",
-            "Rejects every later cumulative target even when MissionChief exposes several Credit expansion controls on the native Expand page.",
-            "Keeps the exact discovery page, live price, single-query route, CSRF protection and hard budget bound through every revalidation.",
-            "Still proves an exact one-level authoritative API increase after purchase before any later station can be processed."
+            "Opens the Desktop Toolkit menu as a movable workspace that resizes from its bottom-right corner while the command toolbar stays attached to the map.",
+            "Remembers the chosen width, exact height and position, then safely clamps saved geometry back on-screen after viewport or browser-chrome changes.",
+            "Adds temporary maximise and restore controls that fill the safe desktop workspace without overwriting the saved windowed size or position.",
+            "Raises Desktop typography and control-size floors, then reflows command cards across one, two or three columns according to the workspace itself.",
+            "Keeps one shared Toolkit runtime and preserves every existing feature, setting and theme while Tablet and iOS layouts retain their established behaviour."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1510,6 +1510,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     });
     const DEFAULT_QUICK_WHEEL_ACTIONS = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings', 'pressureBoard', 'fullscreen']);
     const LAYOUT_DEVICE_KEYS = Object.freeze(['desktop', 'tablet', 'mobile']);
+    const DESKTOP_WORKSPACE_MIN_WIDTH = 560;
+    const DESKTOP_WORKSPACE_MAX_WIDTH = 1440;
+    const DESKTOP_WORKSPACE_MIN_HEIGHT = 420;
     const LAYOUT_CONTROL_GROUPS = Object.freeze({
         visibility: Object.freeze({ label: 'Visibility', controls: Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']) }),
         intelligence: Object.freeze({ label: 'Intelligence', controls: Object.freeze(['allianceCredits', 'missionAge', 'transportWatcher', 'unitCommitment', 'stuckDetector']) }),
@@ -1615,6 +1618,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let coverageTimer = null;
     let fitTimer = null;
     let dragState = null;
+    let panelResizeState = null;
+    let panelWorkspaceMaximized = false;
+    let panelWorkspaceRestoreGeometry = null;
     let suppressNextOutsideClick = false;
     const nativeVisibilityBoundFeatures = new Set();
     const nativeVisibilitySessionInitialised = new Set();
@@ -2025,7 +2031,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         hiddenControls: [],
         panelPosition: null,
         panelWidth: device === 'desktop' ? 720 : device === 'tablet' ? 700 : 100,
-        panelHeight: device === 'mobile' ? 88 : 82
+        panelHeight: device === 'mobile' ? 88 : 82,
+        panelHeightPx: null
         };
     }
 
@@ -2069,8 +2076,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             panelPosition: source.panelPosition && Number.isFinite(Number(source.panelPosition.left)) && Number.isFinite(Number(source.panelPosition.top))
                 ? { left: Number(source.panelPosition.left), top: Number(source.panelPosition.top) }
                 : null,
-            panelWidth: device === 'mobile' ? 100 : Math.round(clamp(source.panelWidth, device === 'tablet' ? 560 : 560, device === 'tablet' ? 900 : 960, base.panelWidth)),
-            panelHeight: Math.round(clamp(source.panelHeight, device === 'mobile' ? 72 : 60, 96, base.panelHeight))
+            panelWidth: device === 'mobile' ? 100 : Math.round(clamp(source.panelWidth, 560, device === 'tablet' ? 900 : DESKTOP_WORKSPACE_MAX_WIDTH, base.panelWidth)),
+            panelHeight: Math.round(clamp(source.panelHeight, device === 'mobile' ? 72 : 60, 96, base.panelHeight)),
+            panelHeightPx: device === 'desktop' && source.panelHeightPx !== null && source.panelHeightPx !== '' && Number.isFinite(Number(source.panelHeightPx))
+                ? Math.round(clamp(source.panelHeightPx, 320, 2160, 640))
+                : null
         };
         }
         return { schema: 1, layouts };
@@ -11819,7 +11829,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             flex:0 0 auto !important;
             gap:6px !important;
         }
-        html[data-mcms-ui-theme] body #${SCRIPT.panelId} :is(.mcms-search-button,.mcms-help-button,.mcms-close) {
+        html[data-mcms-ui-theme] body #${SCRIPT.panelId} :is(.mcms-search-button,.mcms-help-button,.mcms-workspace-maximize,.mcms-close) {
             display:grid !important;
             place-items:center !important;
             flex:0 0 36px !important;
@@ -12762,6 +12772,164 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} .mcms-tab-panel { gap:4px !important; padding:5px !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-row-label,.mcms-label,.mcms-status) { font-size:8px !important; line-height:1.25 !important; }
         html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-input,.mcms-select,.mcms-small-btn) { min-height:28px !important; font-size:9px !important; }
+
+        /* Desktop Toolkit Workspace: one body-level window, directly resizable without
+           cloning the menu runtime or changing the persistent map command toolbar. */
+        html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId}.mcms-workspace-window {
+            --mcms-workspace-body-size:14px;
+            --mcms-workspace-meta-size:12px;
+            --mcms-workspace-control-size:13px;
+            --mcms-workspace-control-height:38px;
+            container-name:mcms-toolkit-workspace;
+            container-type:inline-size;
+            min-width:min(560px,calc(100vw - 24px)) !important;
+            min-height:min(420px,var(--mcms-desktop-panel-max-height,calc(100vh - 24px))) !important;
+            height:var(--mcms-desktop-panel-height,auto) !important;
+            overflow:hidden !important;
+            resize:none !important;
+            isolation:isolate !important;
+            font-size:var(--mcms-workspace-body-size) !important;
+            line-height:1.4 !important;
+        }
+        html[data-mcms-device-layout="desktop"][data-mcms-density="spacious"] body #${SCRIPT.panelId}.mcms-workspace-window {
+            --mcms-workspace-body-size:15px;
+            --mcms-workspace-meta-size:13px;
+            --mcms-workspace-control-size:14px;
+            --mcms-workspace-control-height:44px;
+        }
+        html[data-mcms-device-layout="desktop"][data-mcms-density="compact"] body #${SCRIPT.panelId}.mcms-workspace-window {
+            --mcms-workspace-body-size:13px;
+            --mcms-workspace-meta-size:11.5px;
+            --mcms-workspace-control-size:12.5px;
+            --mcms-workspace-control-height:35px;
+        }
+        html[data-mcms-device-layout="desktop"][data-mcms-density="command"] body #${SCRIPT.panelId}.mcms-workspace-window {
+            --mcms-workspace-body-size:12.5px;
+            --mcms-workspace-meta-size:11.5px;
+            --mcms-workspace-control-size:12px;
+            --mcms-workspace-control-height:33px;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window.mcms-dragging,
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window.mcms-resizing { transition:none !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window.mcms-resizing { cursor:nwse-resize !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window.mcms-workspace-maximized {
+            border-radius:10px !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window.mcms-workspace-maximized .mcms-drag-handle {
+            cursor:default !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle {
+            appearance:none !important;
+            position:absolute !important;
+            z-index:80 !important;
+            right:0 !important;
+            bottom:0 !important;
+            display:grid !important;
+            place-items:end !important;
+            width:34px !important;
+            height:34px !important;
+            padding:0 5px 5px 0 !important;
+            border:0 !important;
+            border-radius:0 !important;
+            background:transparent !important;
+            box-shadow:none !important;
+            color:rgba(255,255,255,.64) !important;
+            cursor:nwse-resize !important;
+            touch-action:none !important;
+            user-select:none !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle span,
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle::before,
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle::after {
+            content:"" !important;
+            position:absolute !important;
+            right:6px !important;
+            bottom:6px !important;
+            width:13px !important;
+            height:2px !important;
+            border-radius:2px !important;
+            background:currentColor !important;
+            color:rgba(255,255,255,.64) !important;
+            transform:rotate(-45deg) !important;
+            transform-origin:right center !important;
+            pointer-events:none !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle::before { width:8px !important; bottom:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle::after { width:18px !important; bottom:2px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle:hover { color:#8ed8ff !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-workspace-resize-handle:focus-visible { outline:2px solid #8ed8ff !important; outline-offset:-4px !important; }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} :is(.mcms-workspace-maximize,.mcms-workspace-resize-handle),
+        #${SCRIPT.panelId} :is(.mcms-workspace-maximize,.mcms-workspace-resize-handle)[hidden] { display:none !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window > .mcms-footer { padding-right:42px !important; }
+
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-header { min-height:72px !important; padding:11px 14px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-title { font-size:19px !important; line-height:1.15 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-subtitle { font-size:12.5px !important; line-height:1.25 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-search-button,.mcms-help-button,.mcms-workspace-maximize,.mcms-close) {
+            flex-basis:38px !important;
+            width:38px !important;
+            min-width:38px !important;
+            height:38px !important;
+            min-height:38px !important;
+            font-size:18px !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-search input { height:40px !important; font-size:14px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-layout { grid-template-columns:180px minmax(0,1fr) !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tabs { grid-template-rows:repeat(8,minmax(58px,auto)) !important; gap:7px !important; padding:11px 9px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-btn { grid-template-columns:34px minmax(0,1fr) !important; min-height:58px !important; gap:9px !important; padding:7px 9px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-icon { width:34px !important; height:34px !important; font-size:17px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-copy strong { font-size:13px !important; line-height:1.2 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-copy small { font-size:11.5px !important; line-height:1.3 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:14px !important; padding:14px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-card { padding:14px !important; font-size:var(--mcms-workspace-body-size) !important; line-height:1.45 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-card > .mcms-section-label { margin-bottom:11px !important; padding-bottom:9px !important; font-size:12.5px !important; line-height:1.3 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-label,.mcms-row-label,.mcms-status,.mcms-bookmark-name,.mcms-profile-main strong,.mcms-ui-theme-copy strong,.mcms-discord-title,.mcms-sweep-head,.mcms-sweep-title,.mcms-ops-entry-title,.mcms-sweep-report-summary,.mcms-alliance-course-guide,.mcms-recruitment-filter-head,.mcms-recruitment-type,.mcms-recruitment-station strong,.mcms-recruitment-findings,.mcms-icon-source strong,.mcms-alliance-text,.mcms-empty-state) {
+            font-size:var(--mcms-workspace-body-size) !important;
+            line-height:1.4 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-pill,.mcms-profile-main span,.mcms-ui-theme-copy small,.mcms-discord-date,.mcms-discord-result,.mcms-discord-stat span,.mcms-discord-breakdown b,.mcms-discord-line,.mcms-discord-foot,.mcms-discord-mini-stats span,.mcms-discord-mini-stats b,.mcms-finance-vault-summary span,.mcms-finance-vault-summary small,.mcms-sweep-state,.mcms-sweep-stat span,.mcms-sweep-meta,.mcms-sweep-report-grid span,.mcms-sweep-report-meta,.mcms-ops-stat-label,.mcms-ops-entry-meta,.mcms-alliance-course-guide summary,.mcms-recruitment-filter-head b,.mcms-recruitment-type b,.mcms-recruitment-station small,.mcms-recruitment-station > b,.mcms-icon-source small,.mcms-icon-default) {
+            font-size:var(--mcms-workspace-meta-size) !important;
+            line-height:1.4 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-sweep-log { font:700 var(--mcms-workspace-meta-size)/1.45 system-ui,-apple-system,"Segoe UI",sans-serif !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-discord-stat strong,.mcms-finance-vault-summary b,.mcms-sweep-stat b,.mcms-sweep-count,.mcms-ops-stat-value,.mcms-ops-entry-value,.mcms-sweep-report-grid b) { font-size:14px !important; line-height:1.2 !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-input,.mcms-select,.mcms-small-btn,.mcms-position-btn,.mcms-bookmark-btn,.mcms-pin-btn) {
+            min-height:var(--mcms-workspace-control-height) !important;
+            height:auto !important;
+            padding:7px 9px !important;
+            font-size:var(--mcms-workspace-control-size) !important;
+            line-height:1.3 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-theme-btn,.mcms-toggle-btn,.mcms-place-main) {
+            grid-template-columns:28px minmax(0,1fr) !important;
+            min-height:54px !important;
+            gap:9px !important;
+            padding:9px !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-iconbox { width:28px !important; height:28px !important; min-width:28px !important; font-size:13px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-pill { max-width:150px !important; padding:3px 7px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-row { grid-template-columns:minmax(0,1fr) minmax(150px,42%) !important; gap:11px !important; margin-bottom:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-recruitment-type input,.mcms-recruitment-station input) { width:18px !important; height:18px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-recruitment-station { min-height:54px !important; padding:10px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-recruitment-stations { max-height:360px !important; gap:7px !important; }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window > .mcms-footer { min-height:42px !important; font-size:11.5px !important; line-height:1.35 !important; }
+
+        @container mcms-toolkit-workspace (min-width:1100px) {
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-layout { grid-template-columns:200px minmax(0,1fr) !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-card-wide { grid-column:1/-1 !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel[data-panel="settings"].mcms-active { display:grid !important; width:100% !important; height:100% !important; min-height:0 !important; overflow-y:auto !important; column-count:auto !important; column-width:auto !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel[data-panel="settings"].mcms-active > .mcms-command-card { display:block !important; width:auto !important; margin:0 !important; }
+        }
+        @container mcms-toolkit-workspace (max-width:760px) {
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-command-layout { grid-template-columns:136px minmax(0,1fr) !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tabs { padding:8px 6px !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-btn { grid-template-columns:30px minmax(0,1fr) !important; min-height:50px !important; padding:6px !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-icon { width:30px !important; height:30px !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-copy small { display:none !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-tab-panel.mcms-active { grid-template-columns:1fr !important; padding:10px !important; }
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-row { grid-template-columns:1fr !important; gap:6px !important; }
+        }
         @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-actions button { flex:1 1 180px !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
         @media (prefers-reduced-motion:reduce) {
             .mcms-doctor-running span { animation:none !important; }
@@ -13347,10 +13515,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
 
     function clearDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId)) {
         if (panel) {
-        panel.style.removeProperty('--mcms-desktop-panel-max-height');
-        panel.style.removeProperty('max-height');
-        delete panel.dataset.mcmsDesktopFit;
+            panel.style.removeProperty('--mcms-desktop-panel-max-height');
+            panel.style.removeProperty('--mcms-desktop-panel-width');
+            panel.style.removeProperty('--mcms-desktop-panel-height');
+            panel.style.removeProperty('width');
+            panel.style.removeProperty('height');
+            panel.style.removeProperty('max-width');
+            panel.style.removeProperty('max-height');
+            delete panel.dataset.mcmsDesktopFit;
+            delete panel.dataset.mcmsWorkspaceSize;
+            panel.classList.remove('mcms-workspace-maximized', 'mcms-resizing');
         }
+        panelResizeState = null;
+        panelWorkspaceMaximized = false;
+        panelWorkspaceRestoreGeometry = null;
         stopDesktopPanelWorkspaceObservation();
     }
 
@@ -13369,7 +13547,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel) return;
             applyDesktopPanelSizing(panel, mapEl);
-            if (!dragState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
+            if (!dragState && !panelResizeState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
         }));
         }
 
@@ -13395,27 +13573,66 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         desktopPanelObservedElements = nextElements;
     }
 
-    function applyDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
-        if (!panel || activeDeviceLayout !== 'desktop' || isTouchLayoutActive()) return null;
+    function currentDesktopWorkspaceBounds(panel = document.getElementById(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
         const viewport = getViewportMetrics();
         let mapRect = null;
         try { mapRect = mapEl?.getBoundingClientRect?.() || null; } catch (err) {}
         const obstructionRects = collectDesktopWorkspaceObstructions(viewport, mapEl, panel)
         .map(item => item.rect);
-        const bounds = resolveDesktopPanelBounds(mapRect, viewport, 12, obstructionRects);
+        return resolveDesktopPanelBounds(mapRect, viewport, 12, obstructionRects);
+    }
+
+    function applyDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
+        if (!panel || activeDeviceLayout !== 'desktop' || isTouchLayoutActive()) return null;
+        const viewport = getViewportMetrics();
+        const bounds = currentDesktopWorkspaceBounds(panel, mapEl);
         const desktopPreferences = activeLayoutPreferences('desktop');
         const responsiveHeightCap = resolveResponsiveDesktopPanelHeightCap(viewport, desktopPreferences);
-        const desiredMaxHeight = Math.min(
-            bounds.maxHeight,
-            Math.max(320, Math.round(bounds.maxHeight * (desktopPreferences.panelHeight / 100))),
-            responsiveHeightCap
-        );
+        const savedPixelHeight = Number(desktopPreferences.panelHeightPx);
+        const desiredMaxHeight = Number.isFinite(savedPixelHeight) && savedPixelHeight > 0
+            ? Math.min(bounds.maxHeight, Math.max(Math.min(DESKTOP_WORKSPACE_MIN_HEIGHT, bounds.maxHeight), Math.round(savedPixelHeight)))
+            : Math.min(
+                bounds.maxHeight,
+                Math.max(320, Math.round(bounds.maxHeight * (desktopPreferences.panelHeight / 100))),
+                responsiveHeightCap
+            );
         const personalBounds = { ...bounds, maxHeight: desiredMaxHeight };
+        const availableWidth = Math.max(1, bounds.right - bounds.left);
+        const savedWorkspaceWidth = Math.round(clamp(desktopPreferences.panelWidth, Math.min(DESKTOP_WORKSPACE_MIN_WIDTH, availableWidth), Math.min(DESKTOP_WORKSPACE_MAX_WIDTH, availableWidth), Math.min(720, availableWidth)));
+        const customWorkspaceWidth = Number(desktopPreferences.panelWidth) !== 720 || (Number.isFinite(savedPixelHeight) && savedPixelHeight > 0);
         panel.style.setProperty('--mcms-desktop-panel-max-height', `${desiredMaxHeight}px`);
+        panel.style.setProperty('--mcms-desktop-panel-height', `${desiredMaxHeight}px`);
+        panel.style.setProperty('max-width', `${availableWidth}px`, 'important');
         panel.style.setProperty('max-height', `${desiredMaxHeight}px`, 'important');
+        if (customWorkspaceWidth) {
+            panel.style.setProperty('--mcms-desktop-panel-width', `${savedWorkspaceWidth}px`);
+            panel.style.setProperty('width', `${savedWorkspaceWidth}px`, 'important');
+        } else {
+            panel.style.removeProperty('--mcms-desktop-panel-width');
+            panel.style.removeProperty('width');
+        }
         panel.dataset.mcmsDesktopFit = `${bounds.left}:${bounds.top}:${bounds.right}:${bounds.bottom}:${desiredMaxHeight}`;
 
-        if (!dragState && panel.classList.contains('mcms-open')) {
+        if (panelWorkspaceMaximized) {
+            const maximizedWidth = Math.max(1, bounds.right - bounds.left);
+            panel.style.setProperty('--mcms-desktop-panel-width', `${maximizedWidth}px`);
+            panel.style.setProperty('--mcms-desktop-panel-height', `${bounds.maxHeight}px`);
+            panel.style.setProperty('width', `${maximizedWidth}px`, 'important');
+            panel.style.setProperty('height', `${bounds.maxHeight}px`, 'important');
+            panel.style.setProperty('max-width', `${maximizedWidth}px`, 'important');
+            panel.style.setProperty('max-height', `${bounds.maxHeight}px`, 'important');
+            panel.style.setProperty('left', `${bounds.left}px`, 'important');
+            panel.style.setProperty('top', `${bounds.top}px`, 'important');
+            panel.style.setProperty('right', 'auto', 'important');
+            panel.style.setProperty('bottom', 'auto', 'important');
+            panel.dataset.mcmsWorkspaceSize = `${maximizedWidth}:${bounds.maxHeight}:maximized`;
+            return { ...bounds, maxHeight: bounds.maxHeight };
+        }
+
+        panel.style.setProperty('height', `${desiredMaxHeight}px`, 'important');
+        panel.dataset.mcmsWorkspaceSize = `${Math.round(panel.offsetWidth || desktopPreferences.panelWidth)}:${desiredMaxHeight}:windowed`;
+
+        if (!dragState && !panelResizeState && panel.classList.contains('mcms-open')) {
         let panelRect = null;
         try { panelRect = panel.getBoundingClientRect?.() || null; } catch (err) {}
         if (panelRect) {
@@ -13440,7 +13657,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
     function resolveResponsiveDesktopPanelHeightCap(viewport, preferences) {
         const width = Math.max(1, Number(viewport?.width) || 1);
         const height = Math.max(1, Number(viewport?.height) || 1);
-        const usesDefaultGeometry = Number(preferences?.panelWidth) === 720 && Number(preferences?.panelHeight) === 82;
+        const usesDefaultGeometry = Number(preferences?.panelWidth) === 720
+            && Number(preferences?.panelHeight) === 82
+            && (!Number.isFinite(Number(preferences?.panelHeightPx)) || Number(preferences?.panelHeightPx) <= 0);
         if (!usesDefaultGeometry || width < 1360 || width >= 2240 || height < 900) return Number.POSITIVE_INFINITY;
         return Math.max(620, Math.min(760, Math.floor(height - 64)));
     }
@@ -13700,6 +13919,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         ? 'Mobile Mode uses a fixed responsive panel'
         : 'Hold and drag this header to move the menu';
         updateCommandInterfaceHeader(panel);
+        updateDesktopWorkspaceChrome(panel);
     }
 
     function clearTabletDockSizing(control = document.getElementById(SCRIPT.controlId)) {
@@ -28743,9 +28963,12 @@ Credits only. Each station and native action will be fetched again, purchased on
         return `<section class="mcms-personal-section" draggable="true" data-layout-drag-type="group" data-layout-value="${groupKey}"><strong>${escapeHtml(group.label)} <button type="button" data-layout-move-group="${groupKey}" data-direction="-1" aria-label="Move group up">↑</button> <button type="button" data-layout-move-group="${groupKey}" data-direction="1" aria-label="Move group down">↓</button></strong><div class="mcms-layout-list">${controls}</div></section>`;
         }).join('');
         const deviceOptions = LAYOUT_DEVICE_KEYS.map(key => `<option value="${key}"${device === key ? ' selected' : ''}>${key === 'mobile' ? 'iOS Mobile' : key[0].toUpperCase() + key.slice(1)}</option>`).join('');
-        const widthField = device === 'mobile' ? '' : `<label class="mcms-personal-field"><span>Menu width · ${preferences.panelWidth}px</span><input type="range" min="560" max="${device === 'tablet' ? 900 : 960}" step="20" value="${preferences.panelWidth}" data-layout-panel-width></label>`;
+        const widthField = device === 'mobile' ? '' : `<label class="mcms-personal-field"><span>${device === 'desktop' ? 'Workspace' : 'Menu'} width · ${preferences.panelWidth}px</span><input type="range" min="560" max="${device === 'tablet' ? 900 : DESKTOP_WORKSPACE_MAX_WIDTH}" step="20" value="${preferences.panelWidth}" data-layout-panel-width></label>`;
+        const heightLabel = device === 'desktop' && Number(preferences.panelHeightPx) > 0
+            ? `Workspace height · ${preferences.panelHeightPx}px resized`
+            : `Menu height · ${preferences.panelHeight}%`;
         return `<div class="mcms-personal-pane" data-personal-pane="layout">
-        <div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Editing device</span><select data-personal-layout-device>${deviceOptions}</select></label><label class="mcms-personal-field"><span>Dock position</span><select data-layout-position>${positionOptions}</select></label>${widthField}<label class="mcms-personal-field"><span>Menu height · ${preferences.panelHeight}%</span><input type="range" min="${device === 'mobile' ? 72 : 60}" max="96" step="2" value="${preferences.panelHeight}" data-layout-panel-height></label></div>
+        <div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Editing device</span><select data-personal-layout-device>${deviceOptions}</select></label><label class="mcms-personal-field"><span>Dock position</span><select data-layout-position>${positionOptions}</select></label>${widthField}<label class="mcms-personal-field"><span>${heightLabel}</span><input type="range" min="${device === 'mobile' ? 72 : 60}" max="96" step="2" value="${preferences.panelHeight}" data-layout-panel-height></label></div>
         <div class="mcms-command-note">Drag groups or controls to reorder them. The arrow buttons provide the same control on touch and keyboard. Hidden controls remain available in Settings and the Command Palette.</div>
         ${groups}<button type="button" data-personal-action="layout-reset">Restore ${device === 'mobile' ? 'iOS Mobile' : device[0].toUpperCase() + device.slice(1)} defaults</button></div>`;
     }
@@ -28912,8 +29135,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (target.matches('[data-personal-layout-device]')) { renderPersonalisationStudio(overlay, tab, target.value); return; }
         const preferences = state.layoutBuilder.layouts[device];
         if (target.matches('[data-layout-position]')) { preferences.position = POSITIONS[target.value] ? target.value : 'bl'; if (device === activeDeviceLayout) state.position = preferences.position; saveAndApplyPersonalisation(); return; }
-        if (target.matches('[data-layout-panel-width]')) { preferences.panelWidth = Math.round(clamp(target.value, 560, device === 'tablet' ? 900 : 960, preferences.panelWidth)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
-        if (target.matches('[data-layout-panel-height]')) { preferences.panelHeight = Math.round(clamp(target.value, device === 'mobile' ? 72 : 60, 96, preferences.panelHeight)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (target.matches('[data-layout-panel-width]')) { preferences.panelWidth = Math.round(clamp(target.value, 560, device === 'tablet' ? 900 : DESKTOP_WORKSPACE_MAX_WIDTH, preferences.panelWidth)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
+        if (target.matches('[data-layout-panel-height]')) { preferences.panelHeight = Math.round(clamp(target.value, device === 'mobile' ? 72 : 60, 96, preferences.panelHeight)); if (device === 'desktop') preferences.panelHeightPx = null; saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
         if (target.matches('[data-layout-control-visible]')) { const key = target.dataset.layoutControlVisible; preferences.hiddenControls = target.checked ? preferences.hiddenControls.filter(item => item !== key) : [...new Set([...preferences.hiddenControls, key])]; saveAndApplyPersonalisation(); return; }
         if (target.matches('[data-theme-studio-base]')) { applyUiTheme(target.value, false); return; }
         const themeSetting = target.dataset.themeStudioSetting;
@@ -34395,6 +34618,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         autoHideDockRevealed = false;
         settingsPanelActivated = false;
         dragState = null;
+        panelResizeState = null;
+        panelWorkspaceMaximized = false;
+        panelWorkspaceRestoreGeometry = null;
         contextCommandTarget = null;
         commandPaletteEntries = [];
         commandPaletteResults = [];
@@ -34646,9 +34872,196 @@ Credits only. Each station and native action will be fetched again, purchased on
             }
             if (!panel) return;
             const rect = mapEl.getBoundingClientRect();
-            panel.classList.toggle('mcms-map-small', rect.height < 560 || rect.width < 650);
+            panel.classList.toggle('mcms-map-small', isTouchLayoutActive() && (rect.height < 560 || rect.width < 650));
         }, 60);
     }
+
+    function desktopWorkspaceWindowActive() {
+        return activeDeviceLayout === 'desktop' && !isTouchLayoutActive();
+    }
+
+    function updateDesktopWorkspaceChrome(panel = document.getElementById(SCRIPT.panelId)) {
+        if (!panel) return;
+        const desktop = desktopWorkspaceWindowActive();
+        const maximizeButton = panel.querySelector('.mcms-workspace-maximize');
+        const resizeHandle = panel.querySelector('.mcms-workspace-resize-handle');
+        panel.classList.toggle('mcms-workspace-window', desktop);
+        panel.classList.toggle('mcms-workspace-maximized', desktop && panelWorkspaceMaximized);
+        if (maximizeButton) {
+            maximizeButton.hidden = !desktop;
+            maximizeButton.textContent = panelWorkspaceMaximized ? '❐' : '□';
+            maximizeButton.title = panelWorkspaceMaximized ? 'Restore Toolkit Workspace' : 'Maximise Toolkit Workspace';
+            maximizeButton.setAttribute('aria-label', maximizeButton.title);
+            maximizeButton.setAttribute('aria-pressed', String(Boolean(panelWorkspaceMaximized)));
+        }
+        if (resizeHandle) {
+            resizeHandle.hidden = !desktop || panelWorkspaceMaximized;
+            resizeHandle.setAttribute('aria-hidden', String(!desktop || panelWorkspaceMaximized));
+        }
+        const dragHandle = panel.querySelector('.mcms-drag-handle');
+        if (dragHandle && desktop) {
+            dragHandle.title = panelWorkspaceMaximized
+                ? 'Restore the Toolkit Workspace before moving it'
+                : 'Hold left-click and drag this title bar to move the Toolkit Workspace';
+        }
+    }
+
+    function applyDesktopWorkspaceDimensions(panel, width, height, bounds, mode = 'windowed') {
+        if (!panel || !bounds) return null;
+        const availableWidth = Math.max(1, bounds.right - bounds.left);
+        const availableHeight = Math.max(1, bounds.bottom - bounds.top);
+        const safeWidth = Math.round(clamp(width, Math.min(DESKTOP_WORKSPACE_MIN_WIDTH, availableWidth), Math.min(DESKTOP_WORKSPACE_MAX_WIDTH, availableWidth), Math.min(720, availableWidth)));
+        const safeHeight = Math.round(clamp(height, Math.min(DESKTOP_WORKSPACE_MIN_HEIGHT, availableHeight), availableHeight, Math.min(640, availableHeight)));
+        panel.style.setProperty('--mcms-desktop-panel-width', `${safeWidth}px`);
+        panel.style.setProperty('--mcms-desktop-panel-height', `${safeHeight}px`);
+        panel.style.setProperty('width', `${safeWidth}px`, 'important');
+        panel.style.setProperty('height', `${safeHeight}px`, 'important');
+        panel.style.setProperty('max-width', `${availableWidth}px`, 'important');
+        panel.style.setProperty('max-height', `${availableHeight}px`, 'important');
+        panel.dataset.mcmsWorkspaceSize = `${safeWidth}:${safeHeight}:${mode}`;
+        return { width: safeWidth, height: safeHeight };
+    }
+
+    function startPanelResize(event) {
+        if (!desktopWorkspaceWindowActive() || panelWorkspaceMaximized || dragState || panelResizeState) return;
+        if (event.button !== undefined && event.button !== 0) return;
+        if (event.isPrimary === false) return;
+        const panel = document.getElementById(SCRIPT.panelId);
+        if (!panel?.classList.contains('mcms-open')) return;
+        const handle = event.currentTarget;
+        const rect = panel.getBoundingClientRect();
+        const bounds = currentDesktopWorkspaceBounds(panel);
+        panelResizeState = {
+            pointerId: event.pointerId,
+            handle,
+            bounds,
+            startX: event.clientX,
+            startY: event.clientY,
+            startLeft: rect.left,
+            startTop: rect.top,
+            startWidth: rect.width || panel.offsetWidth || activeLayoutPreferences('desktop').panelWidth,
+            startHeight: rect.height || panel.offsetHeight || Math.min(640, bounds.maxHeight),
+            moved: false
+        };
+        try { handle?.setPointerCapture?.(event.pointerId); } catch (err) {}
+        panel.classList.add('mcms-resizing');
+        document.documentElement.style.cursor = 'nwse-resize';
+        document.body.style.userSelect = 'none';
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    function movePanelResize(event) {
+        const resize = panelResizeState;
+        if (!resize || (resize.pointerId !== undefined && event.pointerId !== undefined && event.pointerId !== resize.pointerId)) return;
+        const panel = document.getElementById(SCRIPT.panelId);
+        if (!panel) return;
+        const dx = Number(event.clientX) - resize.startX;
+        const dy = Number(event.clientY) - resize.startY;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) resize.moved = true;
+        const availableWidth = Math.max(1, resize.bounds.right - resize.startLeft);
+        const availableHeight = Math.max(1, resize.bounds.bottom - resize.startTop);
+        const localBounds = {
+            ...resize.bounds,
+            left: resize.startLeft,
+            top: resize.startTop,
+            right: resize.startLeft + availableWidth,
+            bottom: resize.startTop + availableHeight
+        };
+        applyDesktopWorkspaceDimensions(panel, resize.startWidth + dx, resize.startHeight + dy, localBounds, 'resizing');
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    function endPanelResize(event) {
+        const resize = panelResizeState;
+        if (!resize || (resize.pointerId !== undefined && event?.pointerId !== undefined && event.pointerId !== resize.pointerId)) return;
+        const panel = document.getElementById(SCRIPT.panelId);
+        panelResizeState = null;
+        try { resize.handle?.releasePointerCapture?.(resize.pointerId); } catch (err) {}
+        document.documentElement.style.cursor = '';
+        document.body.style.userSelect = '';
+        if (panel) {
+            panel.classList.remove('mcms-resizing');
+            const rect = panel.getBoundingClientRect();
+            const bounds = currentDesktopWorkspaceBounds(panel);
+            const size = applyDesktopWorkspaceDimensions(panel, rect.width, rect.height, bounds);
+            const point = clampDesktopPanelPoint(rect.left, rect.top, size?.width || rect.width, size?.height || rect.height, bounds);
+            setPanelCssPosition(point.left, point.top);
+            const preferences = activeLayoutPreferences('desktop');
+            preferences.panelWidth = Math.round(size?.width || rect.width);
+            preferences.panelHeightPx = Math.round(size?.height || rect.height);
+            preferences.panelPosition = { left: point.left, top: point.top };
+            state.panelPosition = { left: point.left, top: point.top };
+            saveAndApplyPersonalisation(resize.moved ? 'Toolkit Workspace size saved' : 'Toolkit Workspace ready');
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
+    function resizePanelFromKeyboard(event) {
+        if (!desktopWorkspaceWindowActive() || panelWorkspaceMaximized) return;
+        const delta = event.shiftKey ? 80 : 24;
+        const movement = {
+            ArrowLeft: [-delta, 0],
+            ArrowRight: [delta, 0],
+            ArrowUp: [0, -delta],
+            ArrowDown: [0, delta]
+        }[event.key];
+        if (!movement) return;
+        const panel = document.getElementById(SCRIPT.panelId);
+        if (!panel?.classList.contains('mcms-open')) return;
+        const rect = panel.getBoundingClientRect();
+        const bounds = currentDesktopWorkspaceBounds(panel);
+        const localBounds = { ...bounds, left: rect.left, top: rect.top };
+        const size = applyDesktopWorkspaceDimensions(panel, rect.width + movement[0], rect.height + movement[1], localBounds, 'keyboard');
+        const point = clampDesktopPanelPoint(rect.left, rect.top, size.width, size.height, bounds);
+        setPanelCssPosition(point.left, point.top);
+        const preferences = activeLayoutPreferences('desktop');
+        preferences.panelWidth = size.width;
+        preferences.panelHeightPx = size.height;
+        preferences.panelPosition = { left: point.left, top: point.top };
+        state.panelPosition = { left: point.left, top: point.top };
+        saveAndApplyPersonalisation('Toolkit Workspace size saved');
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    function toggleDesktopWorkspaceMaximize() {
+        if (!desktopWorkspaceWindowActive()) {
+            showToast('Maximise is available in Desktop layout');
+            return false;
+        }
+        const panel = document.getElementById(SCRIPT.panelId);
+        if (!panel?.classList.contains('mcms-open')) return false;
+        if (!panelWorkspaceMaximized) {
+            const rect = panel.getBoundingClientRect();
+            panelWorkspaceRestoreGeometry = { left: rect.left, top: rect.top };
+            panelWorkspaceMaximized = true;
+            applyDesktopPanelSizing(panel);
+            showToast('Toolkit Workspace maximised');
+        } else {
+            const restore = panelWorkspaceRestoreGeometry;
+            panelWorkspaceMaximized = false;
+            panelWorkspaceRestoreGeometry = null;
+            panel.style.removeProperty('--mcms-desktop-panel-width');
+            panel.style.removeProperty('width');
+            panel.style.removeProperty('height');
+            panel.style.removeProperty('max-width');
+            panel.style.removeProperty('max-height');
+            applyPersonalisationStyle();
+            applyDesktopPanelSizing(panel);
+            const fallback = activeLayoutPreferences('desktop').panelPosition || state.panelPosition || getDefaultPanelPosition();
+            const point = clampPanelPosition(restore?.left ?? fallback.left, restore?.top ?? fallback.top);
+            setPanelCssPosition(point.left, point.top);
+            showToast('Toolkit Workspace restored');
+        }
+        updateDesktopWorkspaceChrome(panel);
+        return true;
+    }
+
     function setPanelCssPosition(left, top) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
@@ -34684,6 +35097,15 @@ Credits only. Each station and native action will be fetched again, purchased on
         const panel = document.getElementById(SCRIPT.panelId);
         const margin = 12;
         if (!control || !panel) return { left: margin, top: margin };
+        if (desktopWorkspaceWindowActive()) {
+            const bounds = currentDesktopWorkspaceBounds(panel);
+            const panelWidth = Math.min(panel.offsetWidth || activeLayoutPreferences('desktop').panelWidth || 720, Math.max(1, bounds.right - bounds.left));
+            const panelHeight = Math.min(panel.offsetHeight || Math.min(640, bounds.maxHeight), bounds.maxHeight);
+            return {
+                left: Math.round(bounds.left + Math.max(0, ((bounds.right - bounds.left) - panelWidth) / 2)),
+                top: Math.round(bounds.top + Math.max(0, (bounds.maxHeight - panelHeight) / 2))
+            };
+        }
         const controlRect = control.getBoundingClientRect();
         const panelWidth = panel.offsetWidth || 318;
         const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
@@ -34695,9 +35117,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         };
     }
     function positionPanelOverlay(useSavedPosition = true) {
-        if (dragState) return;
+        if (dragState || panelResizeState) return;
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel || !panel.classList.contains('mcms-open')) return;
+        if (desktopWorkspaceWindowActive() && panelWorkspaceMaximized) {
+            applyDesktopPanelSizing(panel);
+            updateDesktopWorkspaceChrome(panel);
+            return;
+        }
         const savedPosition = activeLayoutPreferences().panelPosition || state.panelPosition;
         if (mobileModeActive) { applyTabletPanelPosition(); return; }
         if (tabletModeActive) {
@@ -34734,6 +35161,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function nudgePanel(dx, dy) {
         if (mobileModeActive) { showToast('Mobile Mode uses a fixed responsive panel'); return; }
+        if (panelWorkspaceMaximized) { showToast('Restore the Toolkit Workspace before moving it'); return; }
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
         const rect = panel.getBoundingClientRect();
@@ -34747,6 +35175,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function startPanelDrag(event) {
         if (mobileModeActive) return;
+        if (panelResizeState || panelWorkspaceMaximized) return;
         const isMouse = event.type === 'mousedown';
         const isTouch = event.type === 'touchstart';
         if (isMouse && event.button !== 0) return;
@@ -34832,6 +35261,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         refreshTabletModeUi(panel);
         panel.classList.add('mcms-open');
         panel.setAttribute('aria-hidden', 'false');
+        updateDesktopWorkspaceChrome(panel);
         const menuButton = document.querySelector(`#${SCRIPT.controlId} .mcms-menu-btn`);
         menuButton?.setAttribute('aria-expanded', 'true');
         fitControlToMap();
@@ -34839,6 +35269,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function closePanel({ restoreFocus = false } = {}) {
+        if (panelResizeState) endPanelResize(null);
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
         panel.classList.remove('mcms-open');
@@ -36463,6 +36894,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     <div class="mcms-header-actions">
                         <button class="mcms-search-button" type="button" data-action="toggle-command-search" title="Search the current command section" aria-label="Search the current command section" aria-expanded="false">⌕</button>
                         <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+                        <button class="mcms-workspace-maximize" type="button" data-action="toggle-workspace-maximize" title="Maximise Toolkit Workspace" aria-label="Maximise Toolkit Workspace" aria-pressed="false">□</button>
                         <button class="mcms-close" type="button" title="Close" aria-label="Close Map Command Toolkit">×</button>
                     </div>
                 </div>
@@ -36825,6 +37257,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <span>Unified command interface · Desktop, Tablet and iOS · all themes share one operational layout.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
+            <button class="mcms-workspace-resize-handle" type="button" title="Drag to resize · Arrow keys resize · Shift changes size faster" aria-label="Resize Toolkit Workspace with pointer or arrow keys" aria-hidden="false"><span></span></button>
         `;
         upgradeCommandInterface(panel);
         const tabList = panel.querySelector('.mcms-tabs');
@@ -36896,10 +37329,19 @@ Credits only. Each station and native action will be fetched again, purchased on
             dragHandle.addEventListener('mousedown', startPanelDrag, true);
             dragHandle.addEventListener('touchstart', startPanelDrag, { capture: true, passive: false });
         }
-        ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
+        const resizeHandle = panel.querySelector('.mcms-workspace-resize-handle');
+        if (resizeHandle) {
+            runtimeListen(resizeHandle, 'pointerdown', startPanelResize);
+            runtimeListen(resizeHandle, 'pointermove', movePanelResize);
+            runtimeListen(resizeHandle, 'pointerup', endPanelResize);
+            runtimeListen(resizeHandle, 'pointercancel', endPanelResize);
+            runtimeListen(resizeHandle, 'keydown', resizePanelFromKeyboard);
+        }
+        ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
             panel.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
         });
         document.body.appendChild(panel);
+        updateDesktopWorkspaceChrome(panel);
         const importInput = panel.querySelector('[data-import-config-file]');
         if (importInput) {
             importInput.addEventListener('change', () => {
@@ -37019,6 +37461,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (action === 'panel-right') { nudgePanel(24, 0); return; }
         if (action === 'panel-up') { nudgePanel(0, -24); return; }
         if (action === 'panel-down') { nudgePanel(0, 24); return; }
+        if (action === 'toggle-workspace-maximize') { toggleDesktopWorkspaceMaximize(); return; }
         if (action === 'toggle-command-search') { setCommandSearchOpen(!commandSearchOpen); return; }
         if (action === 'clear-command-search') {
             commandSearchQuery = '';
@@ -38724,7 +39167,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             scheduleVisualViewportStabilisation('window-resize');
             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
-            if (dragState) return;
+            if (dragState || panelResizeState) return;
             refreshSuppression();
             fitControlToMap();
             schedulePanelPosition(true, 40);
@@ -38744,7 +39187,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
         } catch (err) {}
         runtimeListen(pageWindow, 'focus', () => {
-            scheduleVisualViewportStabilisation('window-focus'); if (dragState) return;
+            scheduleVisualViewportStabilisation('window-focus'); if (dragState || panelResizeState) return;
             scheduleNativeVisibilityReconcile(0);
             refreshSuppression();
             fitControlToMap();
@@ -38796,6 +39239,9 @@ Credits only. Each station and native action will be fetched again, purchased on
             document.removeEventListener('touchmove', movePanelDrag, true);
             document.removeEventListener('touchend', endPanelDrag, true);
             document.removeEventListener('touchcancel', endPanelDrag, true);
+            panelResizeState = null;
+            panelWorkspaceMaximized = false;
+            panelWorkspaceRestoreGeometry = null;
             document.documentElement.style.cursor = '';
             if (document.body) document.body.style.userSelect = '';
             mapInteractionMoving = false;

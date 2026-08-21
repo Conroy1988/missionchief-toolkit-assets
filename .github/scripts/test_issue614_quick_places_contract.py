@@ -19,7 +19,7 @@ def main() -> int:
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
     assert metadata and runtime
-    assert metadata.group(1) == runtime.group(1) == "10.14.3"
+    assert metadata.group(1) == runtime.group(1) == "10.15.0"
 
     quick_places = section(source, "    const QUICK_PLACES = [", "    const SMART_BOOKMARK_LABEL_MAX")
     expected = [

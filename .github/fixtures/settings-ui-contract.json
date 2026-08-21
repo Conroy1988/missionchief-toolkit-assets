@@ -86,6 +86,7 @@
     "test-payout-flash",
     "toggle-command-search",
     "toggle-safe-mode",
+    "toggle-workspace-maximize",
     "toolkit-doctor"
   ],
   "dynamicActions": [

@@ -15,8 +15,8 @@ def require(token: str) -> None:
 
 
 for token in (
-    "// @version      10.13.3",
-    "version: '10.13.3'",
+    "// @version      10.14.0",
+    "version: '10.14.0'",
     "https://tkb-gaming.scot/api/toolkit-analytics.php",
     "runtimeFetch(TOOLKIT_ANALYTICS_ENDPOINT",
     "globalPrivacyControl",

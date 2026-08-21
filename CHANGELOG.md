@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.14.0] - 2026-08-21
+
+### Expansion & Upgrade Planner
+
+- Adds an on-demand Dispatch planner for current station level, bay and extension purchases priced in Credits.
+- Builds every preview from freshly fetched native MissionChief controls — no static costs, inferred endpoints or Coin actions.
+- Revalidates the exact selected scope, actions and total before confirmation, then executes one verified purchase at a time within a hard credit budget.
+- Stops the complete run after any ambiguous submission, never retries a purchase automatically and retains a dismissible result report.
+
 ## [10.13.3] - 2026-08-21
 
 ### Mission-layer-safe vehicle toggle

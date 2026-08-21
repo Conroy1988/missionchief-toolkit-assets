@@ -65,6 +65,7 @@ const context = vm.createContext({
     state: { dispatchRecruitment: { dispatchId: '77', buildingTypeId: 'all-types', hiringPhase: '3', personnelDesired: '5', delayMs: 1500 } },
     dispatchRecruitmentRuntime,
     stationIconCopierRuntime: { running: false, scanPromise: null, catalogPromise: null },
+    expansionPlannerRuntime: { running: false, preparing: false, scanPromise: null, catalogPromise: null },
     DISPATCH_RECRUITMENT_ALL_CENTRES: 'all',
     DISPATCH_RECRUITMENT_ALL_TYPES: 'all-types',
     DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS: Object.freeze(['0', '1', '2', '3', 'automatic']),

@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 740,
-    "version": "10.13.3",
-    "sourceBytes": 2568500,
-    "sourceLines": 38574,
-    "sourceSha256": "c51c2b02b8bb038cf7f9604aa358e9021f8491bfc020636a67d6c845750f9e2b",
+    "issue": 744,
+    "version": "10.14.0",
+    "sourceBytes": 2644553,
+    "sourceLines": 39527,
+    "sourceSha256": "90545a77a96d638f2ed63d3b05ce4ef4f9edd9edab58477a3015dd5e5a879561",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
     "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2571000,
-    "maxSourceLines": 38620,
+    "maxSourceBytes": 2649553,
+    "maxSourceLines": 39627,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 206061,
-      "sourceLines": 3146,
+      "sourceBytes": 282114,
+      "sourceLines": 4099,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #740 mission-layer-safe vehicle toggle across direct, camelCase and nested live marker records"
+    "scope": "Issue #744 fail-closed Expansion & Upgrade Planner using current native Credit controls, hard budgets and sequential post-write verification"
   }
 }

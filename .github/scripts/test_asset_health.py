@@ -168,6 +168,26 @@ def test_integrity_installer_uses_filename_route() -> None:
     assert install_endpoint["urlSource"]["jsonPointer"] == "/distribution/integrityInstallUrl"
 
 
+def test_userscript_size_limit_matches_performance_budget() -> None:
+    policy = json.loads(
+        (REPOSITORY_ROOT / ".github/asset-health-policy.json").read_text(encoding="utf-8")
+    )
+    performance = json.loads(
+        (REPOSITORY_ROOT / ".github/performance-budget.json").read_text(encoding="utf-8")
+    )
+    expected_maximum = performance["absoluteLimits"]["bytes"]
+    endpoints = {
+        item["id"]: item
+        for item in policy["explicitEndpoints"]
+        if item.get("kind") == "userscript"
+    }
+
+    assert set(endpoints) == {"tkb-install-userscript", "tkb-update-userscript"}
+    for endpoint in endpoints.values():
+        assert endpoint["maxBytes"] == expected_maximum, endpoint
+        assert endpoint["minBytes"] < endpoint["maxBytes"], endpoint
+
+
 def test_tkb_requests_match_production_curl_client() -> None:
     observed: dict[str, list[str]] = {}
 
@@ -422,6 +442,7 @@ def main() -> None:
     tests = [
         test_first_party_live_requests_are_cache_busted,
         test_integrity_installer_uses_filename_route,
+        test_userscript_size_limit_matches_performance_budget,
         test_tkb_requests_match_production_curl_client,
         test_live_success_and_optional_warning,
         test_wrong_release_hash_fails,

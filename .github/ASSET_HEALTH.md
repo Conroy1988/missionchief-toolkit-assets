@@ -44,6 +44,8 @@ Thresholds, content types, monitored hosts and explicit endpoints are controlled
 
 Change the policy only when the asset contract genuinely changes. Do not weaken a failing check merely to make CI green; first confirm whether the public path, release hash, file type or endpoint is wrong.
 
+The maximum size accepted from the first-party install and update userscript routes is deliberately aligned with `.github/performance-budget.json -> absoluteLimits.bytes`. Exact version and SHA-256 comparisons still require both routes to match the verified release byte for byte; the shared maximum remains a runaway-size guard rather than an independently drifting release limit.
+
 ## Canonical repository audio contract
 
 The canonical payout-audio inventory is declared in `.github/asset-compatibility-aliases.json`. Its `aliases` collection is intentionally empty because historical root paths are no longer supported.

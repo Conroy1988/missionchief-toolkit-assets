@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.14.2
+// @version      10.14.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.14.2',
+        version: '10.14.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.14.2",
-        title: "Native expansion-page discovery hotfix",
+        version: "10.14.3",
+        title: "Immediate level-target hotfix",
         highlights: Object.freeze([
-            "Fixes Expansion & Upgrade Planner scans still showing no Fire Station level or vehicle-bay upgrades after v10.14.1.",
-            "Follows only the exact same-origin native /buildings/<id>/expand link exposed by each station, then reads the direct live Credit purchase control from that page.",
-            "Binds the discovery page into the immutable operation fingerprint and refetches both station state and that exact page before confirmation, immediately before purchase and during verification.",
-            "Shows bounded discovery, Credit-control, price, route and method diagnostics so unsupported live markup no longer collapses into an unexplained zero-result scan.",
-            "Keeps exact next-level queries, native CSRF protection, hard budgets, one operation per station, sequential execution and authoritative post-purchase verification."
+            "Fixes new Fire Stations skipping the 10,000-Credit Level 1 action and offering the cumulative 60,000-Credit Level 2 target instead.",
+            "Matches MissionChief's zero-indexed direct-level query: the immediate next displayed level uses the station's current authoritative API level as the route value.",
+            "Rejects every later cumulative target even when MissionChief exposes several Credit expansion controls on the native Expand page.",
+            "Keeps the exact discovery page, live price, single-query route, CSRF protection and hard budget bound through every revalidation.",
+            "Still proves an exact one-level authoritative API increase after purchase before any later station can be processed."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -20157,6 +20157,12 @@ Each target will be rechecked, submitted through its current native building-edi
         return matches.size === 1 ? Array.from(matches.values())[0] : null;
     }
 
+    function expansionPlannerImmediateRouteLevel(record) {
+        // MissionChief's direct-level target is zero-indexed: displayed Level N uses ?level=N-1.
+        // Therefore the immediate next displayed level uses the current authoritative API level.
+        return String(Math.max(0, Math.round(Number(record?.level) || 0)));
+    }
+
     function expansionPlannerMutationReference(rawUrl, buildingId, kind, record) {
         let url;
         try { url = new URL(rawUrl || '', `${pageWindow.location.origin}/buildings/${buildingId}`); }
@@ -20171,7 +20177,7 @@ Each target will be rechecked, submitted through its current native building-edi
             if (suffix === 'small_expand') {
                 if (url.search) return null;
             } else if (suffix === 'expand_do/credits') {
-                const expectedLevel = String(Math.max(0, Number(record?.level) || 0) + 1);
+                const expectedLevel = expansionPlannerImmediateRouteLevel(record);
                 const entries = Array.from(url.searchParams.entries());
                 if (entries.length !== 1 || entries[0][0] !== 'level' || entries[0][1] !== expectedLevel) return null;
                 requestMethod = 'get';

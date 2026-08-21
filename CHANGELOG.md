@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.14.3] - 2026-08-21
+
+### Immediate level-target hotfix
+
+- Fixes new Fire Stations skipping the 10,000-Credit Level 1 action and offering the cumulative 60,000-Credit Level 2 target instead.
+- Matches MissionChief's zero-indexed direct-level query: the immediate next displayed level uses the station's current authoritative API level as the route value.
+- Rejects every later cumulative target even when MissionChief exposes several Credit expansion controls on the native Expand page.
+- Keeps the exact discovery page, live price, single-query route, CSRF protection and hard budget bound through every revalidation.
+- Still proves an exact one-level authoritative API increase after purchase before any later station can be processed.
+
 ## [10.14.2] - 2026-08-21
 
 ### Native expansion-page discovery hotfix

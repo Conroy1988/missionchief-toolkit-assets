@@ -34,7 +34,7 @@ const context = vm.createContext({
     console, Date, Set, Map, Array, Number, String, Object, Promise, Error, URL, URLSearchParams, Math, JSON,
     FormData: shell.window.FormData, DOMParser: shell.window.DOMParser, document: shell.window.document,
     pageWindow: { location: shell.window.location, confirm: () => true }, runtime: { destroyed: false },
-    SCRIPT: { panelId: 'panel', version: '10.14.0', expansionPlannerReportState: 'upgrade-report' },
+    SCRIPT: { panelId: 'panel', version: '10.14.1', expansionPlannerReportState: 'upgrade-report' },
     state: { expansionPlanner: { dispatchId: '10', buildingTypeId: 'all-types', operationKind: 'all', creditBudget: '500000', maxStations: 100, delayMs: 1500 } },
     expansionPlannerRuntime,
     dispatchRecruitmentRuntime: { running: false, scanPromise: null, catalogPromise: null },
@@ -69,7 +69,13 @@ assert.equal(record.level, 2);
 
 const parsed = html => new shell.window.DOMParser().parseFromString(html, 'text/html');
 const nativePage = parsed(`<!doctype html><html><head><meta name="csrf-token" content="csrf-live"></head><body>
-<div class="alert"><a data-method="post" href="/buildings/101/expand">Upgrade — 20,000 Credits</a><a data-method="post" href="/buildings/101/coins_expand">10 Coins</a></div>
+<div class="alert">
+<a href="/buildings/101/expand_do/credits?level=3">Upgrade — 20,000 Credits</a>
+<a href="/buildings/101/expand_do/coins?level=3">Upgrade — 10 Coins</a>
+<a href="/buildings/101/expand_do/credits?level=4">Wrong level — 20,000 Credits</a>
+<a href="/buildings/101/expand_do/credits?level=3&amp;confirm=1">Extra query — 20,000 Credits</a>
+<a data-method="post" href="/buildings/101/expand_do/credits?level=3">Wrong method — 20,000 Credits</a>
+</div>
 <table id="ausbauten"><tbody><tr><td><b>Water Rescue Extension</b></td><td>
 <a data-method="post" href="/buildings/101/extension/4">100.000 Credits</a>
 <a data-method="post" href="/buildings/101/extension/4/coins">15 Coins</a>
@@ -78,9 +84,9 @@ const nativePage = parsed(`<!doctype html><html><head><meta name="csrf-token" co
 </td></tr></tbody></table></body></html>`);
 const actions = context.parseExpansionPlannerActions(nativePage, record, 'all');
 assert.equal(actions.ambiguous, 0);
-assert.deepEqual(Array.from(actions.operations, operation => [operation.kind, operation.label, operation.priceCredits, operation.actionPath]), [
-    ['level', 'Upgrade', 20000, '/buildings/101/expand'],
-    ['extension', 'Water Rescue Extension', 100000, '/buildings/101/extension/4'],
+assert.deepEqual(Array.from(actions.operations, operation => [operation.kind, operation.label, operation.priceCredits, operation.requestMethod, operation.actionPath, operation.actionSearch]), [
+    ['level', 'Upgrade', 20000, 'get', '/buildings/101/expand_do/credits', '?level=3'],
+    ['extension', 'Water Rescue Extension', 100000, 'post', '/buildings/101/extension/4', ''],
 ]);
 assert.equal(actions.operations.some(operation => /coin/iu.test(operation.actionPath)), false, 'Coin actions must never enter the queue');
 
@@ -99,8 +105,15 @@ context.expansionPlannerSetTarget(publicLevel.operationId, true);
 context.expansionPlannerSetTarget(publicExtension.operationId, true);
 assert.deepEqual(Array.from(expansionPlannerRuntime.selectedOperationIds), [publicExtension.operationId], 'Only one approved operation may remain selected for a station');
 
+const preparedLevel = context.prepareExpansionPlannerSubmission(actions.operations[0], nativePage);
+assert.equal(preparedLevel.href, 'https://www.missionchief.co.uk/buildings/101/expand_do/credits?level=3');
+assert.equal(preparedLevel.method, 'GET');
+assert.equal(preparedLevel.body, null);
+assert.equal(preparedLevel.headers['X-CSRF-Token'], 'csrf-live');
+
 const preparedAnchor = context.prepareExpansionPlannerSubmission(actions.operations[1], nativePage);
 assert.equal(preparedAnchor.href, 'https://www.missionchief.co.uk/buildings/101/extension/4');
+assert.equal(preparedAnchor.method, 'POST');
 assert.equal(preparedAnchor.body.get('_method'), 'post');
 assert.equal(preparedAnchor.body.get('authenticity_token'), 'csrf-live');
 
@@ -114,22 +127,41 @@ assert.equal(preparedForm.body.get('buy'), 'credits');
 
 const requests = [];
 context.runtimeFetch = async (input, init = {}) => { requests.push({ url: String(input), init }); return { ok: true, status: 200, url: 'https://www.missionchief.co.uk/buildings/101' }; };
+await context.submitExpansionPlannerOperation(preparedLevel, publicLevel);
 await context.submitExpansionPlannerOperation(preparedAnchor, publicExtension);
-assert.equal(requests.length, 1);
-assert.equal(requests[0].init.method, 'POST');
+assert.equal(requests.length, 2);
+assert.equal(requests[0].url, 'https://www.missionchief.co.uk/buildings/101/expand_do/credits?level=3');
+assert.equal(requests[0].init.method, 'GET');
+assert.equal(requests[0].init.body, null);
 assert.equal(requests[0].init.credentials, 'same-origin');
+assert.equal(requests[1].init.method, 'POST');
+await assert.rejects(context.submitExpansionPlannerOperation({ ...preparedLevel, href: `${preparedLevel.href}&confirm=1` }, publicLevel), error => error?.expansionPlannerFatal === true && error.message.includes('unexpected purchase URL or method'));
+assert.equal(requests.length, 2, 'A query-bearing route outside the exact native action must be rejected before fetch');
 
 context.runtimeFetch = async () => ({ ok: true, status: 200, url: 'https://evil.example/' });
 await assert.rejects(context.submitExpansionPlannerOperation(preparedAnchor, publicExtension), error => error?.expansionPlannerFatal === true && error.message.includes('outside the authenticated'));
 
 const changedPricePage = parsed(`<meta name="csrf-token" content="x"><table id="ausbauten"><tr><td><b>Water Rescue Extension</b></td><td><a data-method="post" href="/buildings/101/extension/4">120,000 Credits</a></td></tr></table>`);
 assert.throws(() => context.expansionPlannerFindCurrentAction(changedPricePage, record, publicExtension), error => error?.expansionPlannerFatal === true && error.message.includes('unavailable or ambiguous'));
+assert.throws(() => context.expansionPlannerFindCurrentAction(nativePage, record, { ...publicLevel, actionSearch: '?level=4' }), error => error?.expansionPlannerFatal === true && error.message.includes('action or live Credit price changed'));
+
+const afterLevel = context.normaliseExpansionPlannerRecord({ ...raw, level: 3 });
+let apiRecords = [record, afterLevel];
+let pages = [nativePage, parsed('<meta name="csrf-token" content="x"><a href="/buildings/101/expand_do/credits?level=4">Upgrade — 30,000 Credits</a>')];
+let submitted = 0;
+context.fetchExpansionPlannerBuilding = async () => apiRecords.shift();
+context.fetchExpansionPlannerDocument = async () => ({ doc: pages.shift() });
+context.submitExpansionPlannerOperation = async () => { submitted += 1; };
+const appliedLevel = await context.applyExpansionPlannerOperation(publicLevel, 500000);
+assert.equal(submitted, 1);
+assert.equal(appliedLevel.record.level, 3);
+assert.match(appliedLevel.detail, /20,000 Credits verified/u);
 
 const beforeExtension = record;
 const afterExtension = context.normaliseExpansionPlannerRecord({ ...raw, extensions: [{ caption: 'Water Rescue Extension', type_id: 4, enabled: false, available: false, available_at: '2026-08-22T10:00:00Z' }] });
-let apiRecords = [beforeExtension, afterExtension];
-let pages = [nativePage, parsed('<table id="ausbauten"><tr><td><b>Water Rescue Extension</b></td><td><span data-end-time="123">Building</span></td></tr></table>')];
-let submitted = 0;
+apiRecords = [beforeExtension, afterExtension];
+pages = [nativePage, parsed('<table id="ausbauten"><tr><td><b>Water Rescue Extension</b></td><td><span data-end-time="123">Building</span></td></tr></table>')];
+submitted = 0;
 context.fetchExpansionPlannerBuilding = async () => apiRecords.shift();
 context.fetchExpansionPlannerDocument = async () => ({ doc: pages.shift() });
 context.submitExpansionPlannerOperation = async () => { submitted += 1; };
@@ -150,7 +182,7 @@ await assert.rejects(context.applyExpansionPlannerOperation(publicExtension, 500
 assert.equal(submitted, 0, 'Stop during the final pre-purchase read must prevent the mutation request');
 expansionPlannerRuntime.stopRequested = false;
 
-const runOne = { ...publicLevel, buildingId: '101', operationId: '101:one', fingerprint: 'one', actionPath: '/buildings/101/expand', priceCredits: 20000 };
+const runOne = { ...publicLevel, buildingId: '101', operationId: '101:one', fingerprint: 'one', priceCredits: 20000 };
 const runTwo = { ...publicExtension, buildingId: '102', name: 'West Fire', operationId: '102:two', fingerprint: 'two', actionPath: '/buildings/102/extension/4', priceCredits: 100000 };
 expansionPlannerRuntime.queue = [runOne, runTwo];
 expansionPlannerRuntime.selectedOperationIds = new Set([runOne.operationId, runTwo.operationId]);
@@ -176,4 +208,4 @@ assert.equal(expansionPlannerRuntime.purchased, 2);
 assert.equal(expansionPlannerRuntime.creditsSpent, 120000);
 assert.equal(expansionPlannerRuntime.lastReport.outcome, 'successful');
 
-console.log('Issue #744 Expansion & Upgrade Planner runtime fixtures passed: native Credit-only parsing, ambiguity rejection, one-operation selection, CSRF preservation, verification and sequential execution are fail-closed.');
+console.log('Issue #744 Expansion & Upgrade Planner runtime fixtures passed: native Credit-only POST and exact next-level GET parsing, ambiguity rejection, one-operation selection, CSRF preservation, verification and sequential execution are fail-closed.');

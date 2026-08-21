@@ -8,7 +8,7 @@ import vm from "node:vm";
 const source = fs.readFileSync(new URL("../../src/MissionChief_Map_Command_Toolkit.user.js", import.meta.url), "utf8");
 const metadataVersion = source.match(/^\/\/\s*@version\s+([^\s]+)/mu)?.[1];
 const runtimeVersion = source.match(/\bversion:\s*'([^']+)'/u)?.[1];
-assert.equal(metadataVersion, "10.14.0");
+assert.equal(metadataVersion, "10.14.1");
 assert.equal(runtimeVersion, metadataVersion);
 
 const releaseStart = source.indexOf("    const RELEASE_BRIEFING = Object.freeze(");
@@ -48,8 +48,8 @@ vm.runInContext(
 const { RELEASE_BRIEFING, updateBriefingBody, openToolkitReleaseNotes, openUpdateBriefing } = sandbox.__api;
 const body = updateBriefingBody();
 assert.match(body, /NOW INSTALLED/u);
-assert.match(body, /v10\.14\.0/u);
-assert.match(body, /Expansion &amp; Upgrade Planner/u);
+assert.match(body, /v10\.14\.1/u);
+assert.match(body, /Native level-upgrade route hotfix/u);
 for (const highlight of RELEASE_BRIEFING.highlights) assert.ok(body.includes(sandbox.escapeHtml(highlight)), highlight);
 for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alliance Chat", "Unit Locator &amp; Follow", "Session Cleanup</b>"]) {
   assert.ok(!body.includes(stale), stale);
@@ -57,8 +57,8 @@ for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alli
 
 assert.equal(openUpdateBriefing(), true);
 assert.equal(modal.kind, "Update Briefing");
-assert.equal(modal.title, "What’s New & Feature Beacon · v10.14.0");
-assert.equal(modal.subtitle, "Expansion & Upgrade Planner");
+assert.equal(modal.title, "What’s New & Feature Beacon · v10.14.1");
+assert.equal(modal.subtitle, "Native level-upgrade route hotfix");
 assert.equal(modal.body, body);
 
 sandbox.state.updateBriefing.enabled = false;
@@ -70,7 +70,7 @@ assert.ok(modal);
 
 openToolkitReleaseNotes();
 assert.deepEqual(opened[0].args, [
-  "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.14.0",
+  "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.14.1",
   "_blank",
   "noopener,noreferrer",
 ]);

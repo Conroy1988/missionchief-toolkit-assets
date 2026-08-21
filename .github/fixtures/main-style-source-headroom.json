@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 744,
-    "version": "10.14.0",
-    "sourceBytes": 2644553,
-    "sourceLines": 39527,
-    "sourceSha256": "90545a77a96d638f2ed63d3b05ce4ef4f9edd9edab58477a3015dd5e5a879561",
+    "issue": 746,
+    "version": "10.14.1",
+    "sourceBytes": 2646131,
+    "sourceLines": 39544,
+    "sourceSha256": "f7d2b34206134ed074c95a244a2b3a411149204e83c8b7925068cdbe990c7707",
     "templateBytes": 835267,
     "templateLines": 9837,
     "templateSha256": "d2e9e9a257400ad493c09d4da1e2af153fef6a6bfa672cc3095bfce50bf8c417",
     "canonicalCssSha256": "2eaaad223379def5e51032ea664cb1528fa44772fb200f4887fdf19ebf5299ce",
-    "maxSourceBytes": 2649553,
-    "maxSourceLines": 39627,
+    "maxSourceBytes": 2651131,
+    "maxSourceLines": 39644,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 282114,
-      "sourceLines": 4099,
+      "sourceBytes": 283692,
+      "sourceLines": 4116,
       "templateBytes": 19730,
       "templateLines": 303
     },
-    "scope": "Issue #744 fail-closed Expansion & Upgrade Planner using current native Credit controls, hard budgets and sequential post-write verification"
+    "scope": "Issue #746 exact native level and vehicle-bay Credit GET route discovery with bounded query and method revalidation"
   }
 }

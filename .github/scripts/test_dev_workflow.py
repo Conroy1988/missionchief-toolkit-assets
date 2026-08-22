@@ -40,9 +40,14 @@ def main() -> int:
         "tools/dev_fast_check.py",
         "tools/ensure_dev_dependencies.py",
         "tools/promote_candidate.py",
+        "tools/candidate_gate.py",
         "tools/build_canary.py",
         "tools/publish_canary.py",
         "tools/canary-loader.user.js",
+        ".github/fixtures/current-toolkit-candidate.json",
+        ".github/scripts/sync_candidate_fingerprint.py",
+        ".github/scripts/test_candidate_fingerprint.py",
+        ".github/scripts/test_candidate_gate.py",
     ]
     for relative in required:
         assert (ROOT / relative).is_file(), f"Development lane file missing: {relative}"
@@ -50,6 +55,9 @@ def main() -> int:
     entrypoint = (ROOT / "toolkit").read_text(encoding="utf-8")
     require(entrypoint, ["tools/dev_server.py", "tools/ensure_dev_dependencies.py", "tools/dev_fast_check.py", "tools/promote_candidate.py", "tools/build_canary.py", "tools/publish_canary.py"], "toolkit entrypoint")
     assert "git push" not in entrypoint, "Entrypoint must delegate guarded publication"
+    promotion_entrypoint = entrypoint.split("  promote)", 1)[1].split("    ;;")[0]
+    assert "tools/promote_candidate.py" in promotion_entrypoint
+    assert "ensure_dev_dependencies.py" not in promotion_entrypoint, "Cheap promotion checks must run before dependency installation"
 
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     assert matrix["schemaVersion"] == 1
@@ -136,7 +144,19 @@ def main() -> int:
         assert not any(fnmatch.fnmatchcase("canary", pattern) for pattern in patterns), f"Canary would trigger {workflow.name}: {patterns}"
 
     promotion = (ROOT / "tools" / "promote_candidate.py").read_text(encoding="utf-8")
-    require(promotion, ["validate_userscript.py", "run_userscript_preflight.sh", "promotion-evidence.json"], "promotion command")
+    require(
+        promotion,
+        [
+            "sync_candidate_fingerprint.py",
+            "tools/candidate_gate.py",
+            '"--all"',
+            "promotion-evidence.json",
+            "shared-candidate-gate-v2",
+            "documentationConsistency",
+            "performanceBudget",
+        ],
+        "promotion command",
+    )
     assert "git push" not in promotion and "gh pr" not in promotion, "Local promotion must finish before GitHub publication"
 
     print("Local-first development workflow contract passed.")

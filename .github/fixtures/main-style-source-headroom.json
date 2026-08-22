@@ -123,10 +123,6 @@
   },
   "v10Candidate": {
     "issue": 758,
-    "version": "10.16.0",
-    "sourceBytes": 2746962,
-    "sourceLines": 41069,
-    "sourceSha256": "f609e11db118f3872ee23530e522fcc3371fa9f096f2999ff0eca096ff332b33",
     "templateBytes": 860592,
     "templateLines": 10061,
     "templateSha256": "bc648a4d60a4c17e8a17c2314e15ad731a838e4ba21415b609b69c2784061b49",

@@ -114,12 +114,15 @@ Before mutation, publication runs the pinned dependency bootstrap and the curren
 `./toolkit promote` is run once after local and canary acceptance. It:
 
 1. requires a non-default feature branch;
-2. rebuilds canonical distribution variants;
-3. checks JavaScript syntax and byte parity;
-4. runs the complete retained preflight once;
-5. records ignored local evidence at `.dev/promotion-evidence.json`.
+2. generates the one authoritative version, size, line-count and SHA-256 fingerprint;
+3. runs fingerprint, documentation and JavaScript syntax checks first;
+4. checks the lightweight performance budget against the branch merge base;
+5. rebuilds and validates canonical distribution variants and byte parity;
+6. provisions pinned runtime dependencies only after the cheap checks pass;
+7. runs the same runtime, development and workflow-policy stages used by CI;
+8. records ignored local evidence at `.dev/promotion-evidence.json`.
 
-Only then is the exact worktree committed and opened as one pull request. The consolidated PR workflow uses one runner, repeats the independent final gate, retains one immutable release candidate and allows the existing exact-tree release automation to continue.
+The ordered stage catalog lives in `tools/candidate_gate.py`; local promotion and the consolidated workflow call that same catalog instead of maintaining separate command lists. Only then is the exact worktree committed and opened as one pull request. The consolidated PR workflow uses one runner, repeats the independent final gate, retains one immutable release candidate and allows the existing exact-tree release automation to continue.
 
 Development-only paths are explicitly classified. A Dev Lab or canary-tooling PR runs the development contracts but does not become a product release candidate. Canonical userscript changes run both retained product validation and the three-viewport Dev Lab proof.
 

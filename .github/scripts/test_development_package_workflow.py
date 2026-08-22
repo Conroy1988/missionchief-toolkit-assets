@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "apply-development-package.yml"
 VALIDATOR = ROOT / ".github" / "workflows" / "validate-development-package-workflow.yml"
 HOTFIX_GATE = ROOT / ".github" / "workflows" / "validate-userscript.yml"
+CANDIDATE_GATE = ROOT / "tools" / "candidate_gate.py"
 SECURITY_POLICY = ROOT / ".github" / "actions-security-policy.json"
 DOC = ROOT / "docs" / "DEVELOPMENT_PACKAGE_WORKFLOW.md"
 WORKFLOW_PATH = ".github/workflows/apply-development-package.yml"
@@ -119,7 +120,9 @@ def main() -> int:
         require(validator, marker)
     forbid(validator.split("\npermissions:", 1)[0], "pull_request:")
     hotfix_gate = HOTFIX_GATE.read_text(encoding="utf-8")
-    require(hotfix_gate, "python3 .github/scripts/test_development_package_workflow.py")
+    candidate_gate = CANDIDATE_GATE.read_text(encoding="utf-8")
+    require(hotfix_gate, "python3 tools/candidate_gate.py --stage workflow")
+    require(candidate_gate, "test_development_package_workflow.py")
 
     policy = json.loads(SECURITY_POLICY.read_text(encoding="utf-8"))
     allowed = policy.get("allowedWritePermissions", {}).get(WORKFLOW_PATH)

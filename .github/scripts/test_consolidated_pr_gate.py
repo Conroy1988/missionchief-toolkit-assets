@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 GATE = ROOT / ".github/workflows/validate-userscript.yml"
+CANDIDATE_GATE = ROOT / "tools/candidate_gate.py"
 LEGACY = [
     ".github/workflows/full-userscript-audit.yml",
     ".github/workflows/code-integrity-audit.yml",
@@ -35,16 +36,49 @@ def main() -> int:
         "name: Toolkit Hotfix Gate",
         "missionchief-toolkit-validation-candidate-${{ github.sha }}",
         "Write immutable validation candidate evidence",
+        "Run fail-fast candidate checks",
+        "Validate canonical userscript and distribution",
+        "Install isolated UI contract runtime",
         "Run deterministic runtime contracts",
         "Prove local development loop",
         "Summarise single-runner gate",
         "GitHub runners used: **1**",
         "Parallel validation lanes: **0**",
-        "--json-output /tmp/performance-budget-report.json",
-        "--markdown-output /tmp/performance-budget-report.md",
+        "tools/candidate_gate.py --stage static",
+        "tools/candidate_gate.py --stage performance --report-dir /tmp",
+        "tools/candidate_gate.py --stage integrity",
+        "tools/candidate_gate.py --stage dependencies",
+        "tools/candidate_gate.py --stage runtime",
+        "tools/candidate_gate.py --stage development",
+        "tools/candidate_gate.py --stage workflow",
     ]:
         assert marker in text, marker
     assert text.count("runs-on: ubuntu-latest") == 1
+    ordered = [
+        "--stage static",
+        "--stage performance",
+        "--stage integrity",
+        "--stage dependencies",
+        "--stage runtime",
+        "--stage development",
+        "--stage workflow",
+    ]
+    assert [text.index(marker) for marker in ordered] == sorted(text.index(marker) for marker in ordered)
+    for duplicated in (
+        ".github/scripts/validate_userscript.py",
+        ".github/scripts/test_documentation_consistency.py",
+        ".github/scripts/check_performance_budget.py",
+        ".github/scripts/run_userscript_preflight.sh",
+    ):
+        assert duplicated not in text, f"workflow duplicates shared candidate gate command: {duplicated}"
+    candidate_gate = CANDIDATE_GATE.read_text(encoding="utf-8")
+    for marker in (
+        "test_documentation_consistency.py",
+        "test_performance_budget.py",
+        "check_performance_budget.py",
+        "run_userscript_preflight.sh",
+    ):
+        assert marker in candidate_gate, marker
     for retired_lane in ("name: Runtime lane", "name: Integrity lane", "name: Performance lane", "name: Repository lane"):
         assert retired_lane not in text, retired_lane
     assert "cancel-in-progress: true" in text

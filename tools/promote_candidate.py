@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -29,31 +30,78 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def promotion_base() -> str:
+    for branch in ("origin/main", "main"):
+        exists = subprocess.run(
+            ["git", "rev-parse", "--verify", branch],
+            cwd=ROOT,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if exists.returncode == 0:
+            return output("git", "merge-base", "HEAD", branch)
+    raise SystemExit("Promotion requires a local main or origin/main performance base")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--skip-full", action="store_true", help="Build only; reserved for local tooling tests")
+    parser.add_argument(
+        "--skip-full",
+        action="store_true",
+        help="Run static and integrity stages only; reserved for local tooling tests",
+    )
     args = parser.parse_args()
     branch = output("git", "branch", "--show-current")
     if not branch or branch in {"main", "master"}:
         raise SystemExit("Promotion requires a non-default feature branch")
 
     started = time.monotonic()
+    base = promotion_base()
+    run(["python3", ".github/scripts/sync_candidate_fingerprint.py"])
     if args.skip_full:
-        run(["python3", ".github/scripts/validate_userscript.py"])
-        run(["node", "--check", str(SOURCE.relative_to(ROOT))])
-        run(["cmp", "--silent", "dist/MissionChief_Map_Command_Toolkit.user.js", "dist/MissionChief_Map_Command_Toolkit.txt"])
+        stages = ["static", "integrity"]
+        run([
+            "python3",
+            "tools/candidate_gate.py",
+            "--stage",
+            "static",
+            "--stage",
+            "integrity",
+            "--base-ref",
+            base,
+        ])
     else:
-        run(["bash", ".github/scripts/run_userscript_preflight.sh", "--all"])
+        stages = [
+            "static",
+            "performance",
+            "integrity",
+            "dependencies",
+            "runtime",
+            "development",
+            "workflow",
+        ]
+        run(["python3", "tools/candidate_gate.py", "--all", "--base-ref", base])
 
     changed = output("git", "status", "--short").splitlines()
     evidence = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "state": "locally-validated",
         "branch": branch,
         "head": output("git", "rev-parse", "HEAD"),
+        "base": base,
         "sourceSha256": sha256(SOURCE),
         "changedPaths": [line[3:] for line in changed if len(line) > 3 and not line[3:].startswith(".dev/")],
         "fullPreflight": not args.skip_full,
+        "ciEquivalent": not args.skip_full,
+        "validationContract": "shared-candidate-gate-v2",
+        "stages": stages,
+        "documentationConsistency": True,
+        "performanceBudget": not args.skip_full,
+        "publicationTools": {
+            "gitAvailable": shutil.which("git") is not None,
+            "githubCliAvailable": shutil.which("gh") is not None,
+        },
         "seconds": round(time.monotonic() - started, 3),
         "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }

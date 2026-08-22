@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 r=Path(__file__).resolve().parents[2]
 v=(r/".github/workflows/validate-userscript.yml").read_text()
+c=(r/"tools/candidate_gate.py").read_text()
 a=(r/".github/workflows/auto-release-after-validation.yml").read_text()
 p=(r/".github/workflows/release-toolkit.yml").read_text()
 o=(r/".github/workflows/owner-release-command.yml").read_text()
@@ -58,6 +59,7 @@ for retired in ("Verify Greasy Fork mirror", "MissionChief_Map_Command_Toolkit.g
     assert retired not in p, retired
 assert 'GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}' in p
 assert "name: Toolkit Hotfix Gate" in v
-assert "test_consolidated_pr_gate.py" in v
-assert "test_path_aware_blocking.py" in v
+assert "tools/candidate_gate.py --stage workflow" in v
+assert "test_consolidated_pr_gate.py" in c
+assert "test_path_aware_blocking.py" in c
 print("Release Pipeline v4 exact-candidate attribution and complete telemetry contract passed.")

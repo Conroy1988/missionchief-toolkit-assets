@@ -20,6 +20,8 @@ No observer, scheduler, network, state, storage or lifecycle code is changed.
 - SHA-256 of the canonical CSS content;
 - SHA-256 of the exact candidate stylesheet template.
 
+The current whole-userscript version, byte count, line count and SHA-256 live only in `.github/fixtures/current-toolkit-candidate.json`. Local promotion regenerates that fingerprint once; stylesheet and runtime contracts consume it instead of copying source identity values into separate fixtures.
+
 `test_main_style_source_headroom.py` is executed by canonical validation and the shared userscript preflight. It rejects returned removable formatting, altered CSS source, inconsistent line arithmetic, a recovery below 500 lines or version drift.
 
 Source-line validation uses the same convention as `deep_performance_audit.mjs`: a terminal newline does not create an additional empty source line. This keeps the permanent contract aligned with the repository's established 31,171-line candidate measurement.

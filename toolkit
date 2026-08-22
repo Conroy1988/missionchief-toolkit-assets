@@ -15,7 +15,6 @@ case "$COMMAND" in
     exec python3 tools/dev_fast_check.py "$@"
     ;;
   promote)
-    python3 tools/ensure_dev_dependencies.py
     exec python3 tools/promote_candidate.py "$@"
     ;;
   canary-build)
@@ -33,7 +32,7 @@ MissionChief Toolkit local development commands
   ./toolkit check --all      Run the complete retained preflight
   ./toolkit canary-build     Build a hash-verified opt-in canary bundle
   ./toolkit canary-publish   Atomically publish canary without Actions
-  ./toolkit promote          Build and fully validate one PR candidate
+  ./toolkit promote          Run the CI-equivalent PR candidate gate
 USAGE
     ;;
   *)

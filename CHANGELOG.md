@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.4] - 2026-08-22
+
+### Emergency Toolkit UI Restoration
+
+- Keeps the working Toolkit runtime and launcher alive until an updated bundle has fully evaluated and is ready to take ownership.
+- Mounts the replacement command launcher immediately during a same-page update instead of waiting for an idle browser window.
+- Adds independent recovery checks for the launcher, stylesheet and clean-mode exit after startup.
+- Keeps Dispatch Recruitment mismatch classification out of the global UI render path while preserving mismatch-first scan selection.
+- Adds an exact same-page production upgrade regression, including an interrupted replacement, for the main launcher, panel, stylesheet and runtime lifecycle.
+
 ## [10.16.3] - 2026-08-22
 
 ### Dispatch Recruitment Mismatch Selection

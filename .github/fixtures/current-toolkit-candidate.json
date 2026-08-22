@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "source": {
-    "bytes": 2750698,
-    "lines": 41133,
+    "bytes": 2752837,
+    "lines": 41176,
     "path": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "sha256": "ebe94f403c6d35e19ed00ec2d9e474e139903e794bc3c4fce20481ce9a2f230a",
-    "version": "10.16.3"
+    "sha256": "a8221cb1968e4444a8d09cb8e5329d3d325e265bacc0f7c0bae70517ccd07702",
+    "version": "10.16.4"
   }
 }

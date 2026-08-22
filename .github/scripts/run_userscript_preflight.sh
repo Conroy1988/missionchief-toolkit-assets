@@ -25,6 +25,7 @@ node .github/scripts/test_issue698_ios_transport_request_timeout_runtime.mjs
 node .github/scripts/test_issue701_ios_patient_timer_parity_runtime.mjs
 node .github/scripts/test_issue704_alliance_courses_runtime.mjs
 node .github/scripts/test_issue706_dispatch_recruitment_runtime.mjs
+node .github/scripts/test_issue766_ui_bootstrap_runtime.mjs
 node .github/scripts/test_issue728_station_icon_copier_runtime.mjs
 node .github/scripts/test_issue730_station_icon_cors_runtime.mjs
 node .github/scripts/test_issue744_expansion_upgrade_planner_runtime.mjs

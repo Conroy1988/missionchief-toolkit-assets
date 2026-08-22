@@ -46,6 +46,7 @@ STAGE_COMMANDS: dict[str, tuple[tuple[str, ...], ...]] = {
     ),
     "runtime": (
         ("node", ".github/scripts/test_ui_mount_integration.mjs"),
+        ("node", ".github/scripts/test_issue766_ui_bootstrap_runtime.mjs"),
         ("bash", ".github/scripts/run_userscript_preflight.sh", "--contracts"),
     ),
     "development": (

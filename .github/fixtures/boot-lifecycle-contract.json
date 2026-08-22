@@ -1,6 +1,6 @@
 {
   "runtimeKey": "__MC_MAP_COMMAND_TOOLKIT_RUNTIME__",
-  "replacementReason": "replaced by a newer toolkit runtime",
+  "replacementReason": "replaced by a fully evaluated toolkit runtime",
   "startupIdleTimeoutMs": 1200,
   "boot": {
     "initialDelayMs": 250,

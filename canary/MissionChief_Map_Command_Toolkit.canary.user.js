@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit — CANARY
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit/canary
-// @version      10.16.7.20260822190421
-// @description  Maintainer canary 20260822T190421Z-8bddff0559; never distributed to stable users.
+// @version      10.16.7.20260822190526
+// @description  Maintainer canary 20260822T190526Z-cec656258d; never distributed to stable users.
 // @author       Conroy1988
 // @license      MIT
 // @homepageURL  https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/
@@ -406,7 +406,7 @@ try {
     'use strict';
     MCMS_FIRST_BYTE.mark('application-entered');
     const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-    const MCMS_CANARY_BUILD = Object.freeze({"buildId":"20260822T190421Z-8bddff0559","buildVersion":"10.16.7.20260822190421","createdAt":"2026-08-22T19:04:21Z","sourceCommit":"8bddff05591ab47acc277472c71d73fb8a527a6a","stableVersion":"10.16.7"});
+    const MCMS_CANARY_BUILD = Object.freeze({"buildId":"20260822T190526Z-cec656258d","buildVersion":"10.16.7.20260822190526","createdAt":"2026-08-22T19:05:26Z","sourceCommit":"cec656258dd5e9ba9eacc05a0b43d0765e3db6ef","stableVersion":"10.16.7"});
     pageWindow.__MCMS_CANARY_RUNTIME__ = MCMS_CANARY_BUILD;
     document.documentElement?.setAttribute('data-mcms-canary-runtime', MCMS_CANARY_BUILD.buildId);
     const ALLIANCE_BUILDINGS_PATH_PATTERN = /\/(?:verband\/(?:gebauede|gebaeude|gebäude)|alliance(?:\/|_)(?:buildings|buildings_list))(?:\/|$)/iu;
@@ -826,7 +826,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit — CANARY',
-        version: '10.16.7.20260822190421',
+        version: '10.16.7.20260822190526',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',

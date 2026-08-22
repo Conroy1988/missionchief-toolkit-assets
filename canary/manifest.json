@@ -1,19 +1,19 @@
 {
-  "buildId": "20260822T190421Z-8bddff0559",
-  "buildVersion": "10.16.7.20260822190421",
+  "buildId": "20260822T190526Z-cec656258d",
+  "buildVersion": "10.16.7.20260822190526",
   "bundle": {
     "bytes": 2769769,
     "path": "canary/MissionChief_Map_Command_Toolkit.canary.user.js",
-    "sha256": "17e59a5e78b412eddd749e76e74a3bc84b9b038f7c4bb8fdb7b3238c3fe14e6e",
+    "sha256": "667bd277f1091e0602315e209a78f3afd7d5f83dd7a6054b644b873a3e9dde94",
     "url": "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/canary/canary/MissionChief_Map_Command_Toolkit.canary.user.js"
   },
   "channel": "canary",
-  "createdAt": "2026-08-22T19:04:21Z",
+  "createdAt": "2026-08-22T19:05:26Z",
   "minimumLoaderVersion": 1,
   "schemaVersion": 1,
   "source": {
     "bytes": 2769147,
-    "commit": "8bddff05591ab47acc277472c71d73fb8a527a6a",
+    "commit": "cec656258dd5e9ba9eacc05a0b43d0765e3db6ef",
     "repository": "Conroy1988/missionchief-toolkit-assets",
     "sha256": "80eff9fc7a9f945141855da172189893d439a1bea336d6f9f79d634b28a23130"
   },

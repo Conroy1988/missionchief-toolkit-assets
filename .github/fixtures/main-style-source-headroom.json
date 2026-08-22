@@ -123,10 +123,10 @@
   },
   "v10Candidate": {
     "issue": 760,
-    "templateBytes": 862823,
-    "templateLines": 10092,
-    "templateSha256": "2405e8a51121264996f28416338bd65549b42487b4e7300c62a769adb56fc8de",
-    "canonicalCssSha256": "94d65750c875c6d2d69851942165477214c66618931a0db41a38ea5ccc2028e1",
+    "templateBytes": 861514,
+    "templateLines": 10077,
+    "templateSha256": "ad47d7f9b019809ace54f120f1a04cf1f956376845287fe3cdcdfa7e071ff99f",
+    "canonicalCssSha256": "4998107c7c4913561493e8058609315a245462db24c4a64056ba2e6d502eaede",
     "maxSourceBytes": 2776757,
     "maxSourceLines": 41653,
     "minTemplateBytes": 500000,
@@ -134,10 +134,10 @@
     "approvedGrowth": {
       "sourceBytes": 409318,
       "sourceLines": 6125,
-      "templateBytes": 47286,
-      "templateLines": 558
+      "templateBytes": 45977,
+      "templateLines": 543
     },
-    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery and v10.16.8 measured performance, responsive-layout and text-containment hardening",
-    "incident": "v10.16.8-performance-responsive-layout-audit"
+    "scope": "Issue #760 plus v10.16.7 first-byte recovery, v10.16.8 performance/layout hardening and v10.16.9 native three-station building filters",
+    "incident": "v10.16.9-native-building-filter-popup"
   }
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [10.16.9] - 2026-08-22
+
+### Native Three-Station Building Filters
+
+- Replaces the Buildings toggle with a small popup for Ambulance Stations, Fire Stations and Police Stations.
+- Activates MissionChief's exact native building-filter checkboxes so the game's own layers and saved filter state remain authoritative.
+- Removes the old building catalogue fetch, marker scans, ownership/type selector, custom layer enforcement and recurring building-visibility task.
+- Prevents legacy saved Buildings state and Economy Mode from hiding or restoring building layers outside MissionChief's native filter service.
+- Keeps the popup open for multi-selection and supports the dock, settings panel, Quick Wheel, command palette, shortcut, right-click and click-away flows.
+- Clamps and scrolls the popup within Desktop, Tablet and iOS viewports while wrapping every label and state badge safely.
+- Adds isolated native-control contracts and a mounted iOS regression proving multi-selection without panel closure, overflow or runtime errors.
+
 ## [10.16.8] - 2026-08-22
 
 ### Performance and Responsive Layout Hardening

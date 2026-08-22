@@ -36,6 +36,13 @@ async function scenario(device, tab, focus = "") {
   window.TextDecoder = globalThis.TextDecoder;
   Object.defineProperty(window, "crypto", { configurable: true, value: webcrypto });
   window.eval(frameRuntime);
+  const mapFilters = window.document.createElement("ul");
+  mapFilters.id = "map_filters";
+  mapFilters.innerHTML = `
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="dev_filter_22" value="22" checked> Ambulance Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="dev_filter_2" value="2"> Fire Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="dev_filter_6" value="6" checked> Police Station</label></li>`;
+  window.document.body.appendChild(mapFilters);
   const panel = await window.__MCMS_DEV_LAB_API__.boot({ sourceText: source });
   const report = await waitFor(() => window.__MCMS_DEV_LAB_LAST_REPORT__);
   assert.ok(panel.isConnected, `${device}: panel is detached`);
@@ -63,16 +70,28 @@ async function scenario(device, tab, focus = "") {
     assert.equal(saved.dispatchRecruitment.personnelDesired, "275", `${device}: Personnel (Desired) was not persisted after the full delegated UI flow`);
   }
   if (tab === "map") {
-    const launcher = panel.querySelector('[data-action="toggle-building-selector"]');
-    assert.ok(launcher, `${device}: building selector launcher missing`);
+    const launcher = panel.querySelector('[data-toggle="buildings"]');
+    assert.ok(launcher, `${device}: native station-filter launcher missing`);
     launcher.click();
-    const selector = await waitFor(() => {
-      const element = panel.querySelector("[data-building-visibility-selector]");
+    const popup = await waitFor(() => {
+      const element = window.document.querySelector("#mc-map-command-toolkit-building-quick-filter");
       return element && !element.hidden ? element : null;
     });
-    await waitFor(() => selector.querySelectorAll("[data-building-type-row]").length >= 3);
-    assert.ok(selector.querySelector('[data-action="building-type-only"]'), `${device}: building Only action missing`);
-    assert.ok(selector.querySelector('[data-building-scope="both"].mcms-on'), `${device}: combined building scope missing`);
+    assert.equal(popup.querySelectorAll("[data-native-building-filter]").length, 3, `${device}: popup did not contain exactly three station filters`);
+    assert.deepEqual(
+      Array.from(popup.querySelectorAll(".mcms-native-building-copy strong"), element => element.textContent.trim()),
+      ["Ambulance Stations", "Fire Stations", "Police Stations"],
+      `${device}: station filters changed order or label`,
+    );
+    popup.querySelector('[data-native-building-filter="fire"]').click();
+    await waitFor(() => window.document.querySelector("#dev_filter_2").checked);
+    assert.equal(popup.hidden, false, `${device}: native filter click closed the popup before multi-selection`);
+    assert.ok(panel.classList.contains("mcms-open"), `${device}: native filter click closed the settings panel`);
+    popup.querySelector('[data-native-building-filter="ambulance"]').click();
+    await waitFor(() => !window.document.querySelector("#dev_filter_22").checked);
+    assert.equal(popup.hidden, false, `${device}: second native filter click closed the popup`);
+    popup.querySelector("[data-native-building-close]").click();
+    assert.equal(popup.hidden, true, `${device}: popup close control failed`);
   }
   window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.destroy?.("Dev Lab test complete");
   window.__MCMS_DEV_LAB_OBSERVER__?.disconnect?.();
@@ -82,4 +101,4 @@ async function scenario(device, tab, focus = "") {
 await scenario("desktop", "dispatch", "expansion-and-upgrade-planner");
 await scenario("tablet", "dispatch", "dispatch-recruitment");
 await scenario("ios", "map");
-console.log("Dev Lab mounted canonical source across Desktop, Tablet and iOS; page cycling retained width and produced no horizontal overflow or runtime errors.");
+console.log("Dev Lab mounted canonical source across Desktop, Tablet and iOS; native station filters supported multi-selection while page cycling retained width and produced no horizontal overflow or runtime errors.");

@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
+import { JSDOM } from "jsdom";
 
 const source = fs.readFileSync("src/MissionChief_Map_Command_Toolkit.user.js", "utf8");
 
@@ -34,157 +35,113 @@ function extractFunction(name) {
       else if (char === quote) quote = "";
       continue;
     }
-    if (char === "'" || char === '"') { quote = char; continue; }
+    if (char === "'" || char === '"' || char === "`") { quote = char; continue; }
     if (char === "{") depth += 1;
     if (char === "}" && --depth === 0) return source.slice(start, index + 1);
   }
   throw new Error(`Unable to extract ${name}`);
 }
 
-function marker(id, userId, typeId) {
-  return {
-    id,
-    record: { id, user_id: userId, building_type: typeId },
-    options: { opacity: 1 },
-    opacity: 1,
-    setOpacity(value) { this.opacity = value; this.options.opacity = value; },
-  };
+const dom = new JSDOM(`<!doctype html><html><body>
+  <ul id="map_filters">
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_22" value="22" checked> Ambulance Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_2" value="2"> Fire Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_6" value="6" checked> Police Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_99" value="99"> Coastguard Station</label></li>
+    <li class="filter_list__element"><label><input type="checkbox" id="user_buildings" value="user_buildings" checked> My buildings</label></li>
+  </ul>
+  <div id="mcms-control"><label class="building-filter"><input type="checkbox" id="fake_fire" value="fire_station"> Fire Station</label></div>
+</body></html>`, { url: "https://www.missionchief.co.uk/", pretendToBeVisual: true });
+
+const { window } = dom;
+const changeCounts = new Map();
+for (const input of window.document.querySelectorAll("#map_filters input")) {
+  input.addEventListener("change", () => changeCounts.set(input.id, (changeCounts.get(input.id) || 0) + 1));
 }
 
-function target(name, child) {
-  return {
-    name,
-    isTarget: true,
-    children: new Set([child]),
-    addLayer(layer) { this.children.add(layer); },
-    hasLayer(layer) { return this.children.has(layer); },
-  };
-}
+const descriptors = Object.freeze({
+  ambulance: Object.freeze({ label: "Ambulance Stations", icon: "✚", labels: Object.freeze(["Ambulance Station", "Ambulance Stations"]), tokens: Object.freeze(["ambulance_station", "ambulance_stations"]) }),
+  fire: Object.freeze({ label: "Fire Stations", icon: "◆", labels: Object.freeze(["Fire Station", "Fire Stations"]), tokens: Object.freeze(["fire_station", "fire_stations"]) }),
+  police: Object.freeze({ label: "Police Stations", icon: "★", labels: Object.freeze(["Police Station", "Police Stations"]), tokens: Object.freeze(["police_station", "police_stations"]) }),
+});
 
-const ownFire = marker("own-fire", 7, 1);
-const ownPolice = marker("own-police", 7, 6);
-const allianceFire = marker("alliance-fire", 99, 1);
-const alliancePolice = marker("alliance-police", 99, 6);
-const ownFireTarget = target("own-fire", ownFire);
-const ownPoliceTarget = target("own-police", ownPolice);
-const allianceFireTarget = target("alliance-fire", allianceFire);
-const alliancePoliceTarget = target("alliance-police", alliancePolice);
-for (const [layer, nativeTarget] of [
-  [ownFire, ownFireTarget],
-  [ownPolice, ownPoliceTarget],
-  [allianceFire, allianceFireTarget],
-  [alliancePolice, alliancePoliceTarget],
-]) layer.target = nativeTarget;
-
-const map = {
-  layers: new Set(),
-  hasLayer(layer) { return this.layers.has(layer); },
-  addLayer(layer) {
-    this.layers.add(layer);
-    if (layer.isTarget) for (const child of layer.children) this.layers.add(child);
-  },
-  removeLayer(layer) {
-    this.layers.delete(layer);
-    if (layer.isTarget) for (const child of layer.children) this.layers.delete(child);
-  },
-};
-
-for (const nativeTarget of [ownFireTarget, ownPoliceTarget, allianceFireTarget]) map.addLayer(nativeTarget);
-
-const layers = [ownFire, ownPolice, allianceFire, alliancePolice];
-const nativeEntries = layers.map(layer => ({
-  target: layer.target,
-  layer,
-  record: layer.record,
-  typeId: String(layer.record.building_type),
-  scope: layer.record.user_id === 7 ? "own" : "alliance",
-}));
-
+const toasts = [];
+const analytics = [];
+const invalidations = [];
+let renders = 0;
+let positions = 0;
 const sandbox = {
-  state: {
-    visibility: { buildings: true },
-    buildingVisibility: { scope: "own", mode: "selected", selectedTypeIds: ["1"] },
-  },
-  currentUserIdCached: () => "7",
-  getBuildingRecordForLayer: layer => layer?.record || null,
-  isAllianceBuildingLayer: (layer, record) => String(record?.user_id ?? layer?.record?.user_id) !== "7",
-  getBuildingMarkerLayers: () => layers,
-  buildingVisibilityNativeTargetEntries: () => nativeEntries,
-  resolveNativeBuildingFilterTarget: layer => layer?.target || null,
-  attachAllianceBuildingToNativeFilterTarget: (layer, nativeTarget) => nativeTarget?.addLayer?.(layer),
-  nativeBuildingFilterTargetIsVisible: (leafletMap, nativeTarget) => leafletMap.hasLayer(nativeTarget),
-  findLeafletMapInstance: () => map,
+  console,
+  Event: window.Event,
+  document: window.document,
+  pageWindow: window,
+  SCRIPT: { controlId: "mcms-control", panelId: "mcms-panel", commandExperienceModalId: "mcms-modal", commandPaletteId: "mcms-palette" },
+  NATIVE_BUILDING_QUICK_FILTERS: descriptors,
+  nativeVisibilityWriteDepth: 0,
+  showToast: message => toasts.push(message),
+  renderNativeBuildingQuickFilterPopover: () => { renders += 1; },
+  positionNativeBuildingQuickFilterPopover: () => { positions += 1; },
+  invalidateMarkerRegistryCaches: scope => invalidations.push(scope),
+  toolkitAnalyticsRecordFeature: (...args) => analytics.push(args),
+  escapeHtml: value => String(value).replace(/[&<>'"]/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]),
 };
+
+const functionNames = [
+  "normaliseNativeVisibilityToken",
+  "normaliseNativeVisibilityLabel",
+  "nativeVisibilityElementById",
+  "nativeVisibilityControlRoots",
+  "nativeVisibilityControlBelongsToToolkit",
+  "nativeVisibilityControlTokens",
+  "nativeVisibilityControlLabel",
+  "nativeVisibilityInteractiveControls",
+  "nativeVisibilityControlState",
+  "dispatchNativeVisibilityControl",
+  "nativeBuildingQuickFilterDescriptor",
+  "nativeBuildingQuickFilterControlMatches",
+  "findNativeBuildingQuickFilterControl",
+  "nativeBuildingQuickFilterSnapshot",
+  "nativeBuildingQuickFilterMarkup",
+  "activateNativeBuildingQuickFilter",
+];
 
 vm.createContext(sandbox);
-const declarations = `
-const hiddenBuildingVisibilityLayers = new Set();
-const buildingVisibilityLayerOpacity = new Map();
-const buildingVisibilityManagedTargets = new Map();
-let enforcingBuildingVisibility = false;
-`;
-const functions = [
-  "buildingVisibilityTypeId",
-  "buildingVisibilityOwnerScope",
-  "buildingVisibilityLayerAllowed",
-  "nativeBuildingVisibilityDesired",
-  "setBuildingVisibilityTarget",
-  "hideBuildingVisibilityLayer",
-  "restoreBuildingVisibilityLayer",
-  "synchroniseBuildingVisibilitySelector",
-  "buildingVisibilityFilterIsCustom",
-  "releaseBuildingVisibilitySelector",
-];
-vm.runInContext(`${declarations}\n${functions.map(extractFunction).join("\n")}\nglobalThis.__probe = { ${functions.join(",")}, hiddenBuildingVisibilityLayers, buildingVisibilityManagedTargets };`, sandbox);
-
+vm.runInContext(`${functionNames.map(extractFunction).join("\n\n")}
+globalThis.__probe = { ${functionNames.join(",")} };`, sandbox, { filename: "native-building-quick-filter.js" });
 const probe = sandbox.__probe;
-assert.equal(probe.buildingVisibilityTypeId(ownFire, ownFire.record), "1");
-assert.equal(probe.buildingVisibilityOwnerScope(ownFire, ownFire.record), "own");
-assert.equal(probe.buildingVisibilityOwnerScope(allianceFire, allianceFire.record), "alliance");
-assert.equal(probe.buildingVisibilityLayerAllowed(ownFire, ownFire.record), true);
-assert.equal(probe.buildingVisibilityLayerAllowed(ownPolice, ownPolice.record), false);
-assert.equal(probe.buildingVisibilityLayerAllowed(allianceFire, allianceFire.record), false);
-assert.equal(probe.nativeBuildingVisibilityDesired(), true);
-assert.equal(probe.buildingVisibilityFilterIsCustom(), true);
 
-probe.synchroniseBuildingVisibilitySelector(map);
-assert.equal(map.hasLayer(ownFireTarget), true);
-assert.equal(map.hasLayer(ownFire), true);
-assert.equal(map.hasLayer(ownPoliceTarget), false);
-assert.equal(map.hasLayer(ownPolice), false);
-assert.equal(map.hasLayer(allianceFireTarget), false);
-assert.equal(map.hasLayer(allianceFire), false);
-assert.equal(map.hasLayer(alliancePoliceTarget), false);
-assert.equal(ownPolice.opacity, 0);
-assert.equal(allianceFire.opacity, 0);
-assert.equal(probe.hiddenBuildingVisibilityLayers.size, 3);
+assert.equal(probe.findNativeBuildingQuickFilterControl("ambulance")?.id, "filter_22");
+assert.equal(probe.findNativeBuildingQuickFilterControl("fire")?.id, "filter_2", "Toolkit-owned lookalike must be ignored");
+assert.equal(probe.findNativeBuildingQuickFilterControl("police")?.id, "filter_6");
+assert.equal(probe.findNativeBuildingQuickFilterControl("coastguard"), null);
+assert.deepEqual(JSON.parse(JSON.stringify(probe.nativeBuildingQuickFilterSnapshot("ambulance"))), {
+  available: true,
+  enabled: true,
+  control: {},
+}, "snapshot must report native checked state");
 
-sandbox.state.buildingVisibility.scope = "both";
-probe.synchroniseBuildingVisibilitySelector(map);
-assert.equal(map.hasLayer(allianceFireTarget), true, "selected alliance type should be restored when Both is chosen");
-assert.equal(map.hasLayer(allianceFire), true);
-assert.equal(allianceFire.opacity, 1);
-assert.equal(map.hasLayer(ownPolice), false, "unselected type must stay hidden across ownership scopes");
+const markup = probe.nativeBuildingQuickFilterMarkup();
+assert.equal((markup.match(/data-native-building-filter=/gu) || []).length, 3, "popup must expose exactly three service filters");
+for (const label of ["Ambulance Stations", "Fire Stations", "Police Stations"]) assert.ok(markup.includes(label), `${label} missing`);
+assert.ok(!markup.includes("Coastguard"));
+assert.ok(!markup.includes("My buildings"));
 
-sandbox.state.visibility.buildings = false;
-assert.equal(probe.nativeBuildingVisibilityDesired(), false);
-probe.synchroniseBuildingVisibilitySelector(map);
-assert.equal(layers.some(layer => map.hasLayer(layer)), false, "master off must hide every building");
+assert.equal(probe.activateNativeBuildingQuickFilter("fire"), true);
+assert.equal(window.document.querySelector("#filter_2").checked, true);
+assert.equal(changeCounts.get("filter_2"), 1, "MissionChief's native change event must run once");
+assert.equal(probe.activateNativeBuildingQuickFilter("fire"), true);
+assert.equal(window.document.querySelector("#filter_2").checked, false);
+assert.equal(changeCounts.get("filter_2"), 2);
+assert.equal(probe.activateNativeBuildingQuickFilter("unknown"), false);
 
-sandbox.state.visibility.buildings = true;
-sandbox.state.buildingVisibility = { scope: "alliance", mode: "all", selectedTypeIds: [] };
-assert.equal(probe.nativeBuildingVisibilityDesired(), false, "Alliance-only mode must not be mistaken for native My Buildings off");
-probe.synchroniseBuildingVisibilitySelector(map);
-assert.equal(map.hasLayer(ownFire), false);
-assert.equal(map.hasLayer(allianceFire), true);
-assert.equal(map.hasLayer(alliancePoliceTarget), true, "a target originally off may be enabled while managed");
-assert.equal(map.hasLayer(alliancePolice), true);
+assert.deepEqual(invalidations, ["building", "building"]);
+assert.deepEqual(analytics, [
+  ["buildingVisibility", "native_building_filter"],
+  ["buildingVisibility", "native_building_filter"],
+]);
+assert.equal(renders, 3);
+assert.equal(positions, 2);
+assert.equal(toasts.at(-1), "Station filter unavailable · use MissionChief Filters");
 
-probe.releaseBuildingVisibilitySelector(map);
-assert.equal(map.hasLayer(ownFireTarget), true, "teardown restores originally visible targets");
-assert.equal(map.hasLayer(ownPoliceTarget), true);
-assert.equal(map.hasLayer(allianceFireTarget), true);
-assert.equal(map.hasLayer(alliancePoliceTarget), false, "teardown restores originally hidden targets");
-assert.equal(probe.buildingVisibilityManagedTargets.size, 0);
-
-console.log("Building Visibility Selector runtime passed: type, ownership, master toggle, native targets, fallback layers and teardown restoration.");
+dom.window.close();
+console.log("Native Building quick-filter runtime passed: exact three-service discovery, Toolkit exclusion, native checkbox events, state verification and no custom layer path.");

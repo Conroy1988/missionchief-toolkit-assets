@@ -123,7 +123,6 @@ const sandbox = {
   markVehicleIcon() { count("vehicle-icon"); },
   refreshVehicleFollowBinding() { count("follow-refresh"); },
   markPersonalBuildingLayerIfOwned: () => false,
-  synchroniseBuildingVisibilitySelector() { count("building-visibility-sync"); },
   hidePersonalBuildingLayer() { count("hide-building"); },
   suppressLeakedAllianceBuildingLayer() { count("alliance-building"); },
   stopVehicleFollow() { count("stop-follow"); },

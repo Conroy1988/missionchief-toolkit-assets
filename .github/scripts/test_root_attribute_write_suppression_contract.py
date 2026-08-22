@@ -31,7 +31,9 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 31
+    assert apply_root.count("setAttributeIfChanged(root,") == 28
+    for legacy_attribute in ("data-mcms-show-buildings", "data-mcms-building-scope", "data-mcms-building-mode"):
+        assert f"root?.removeAttribute('{legacy_attribute}')" in apply_root
     assert "data-mcms-critical-view" not in apply_root
     assert "root.setAttribute(" not in apply_root
     assert apply_root.index("setAttributeIfChanged(root, 'data-mcms-economy'") < apply_root.index("activeDeviceLayout = resolveDeviceLayout()")
@@ -40,12 +42,16 @@ def main() -> int:
     harness = f'''"use strict";
 const assert = require("node:assert/strict");
 class FakeRoot {{
-    constructor() {{ this.attributes = new Map(); this.calls = []; }}
+    constructor() {{ this.attributes = new Map(); this.calls = []; this.removals = []; }}
     getAttribute(name) {{ return this.attributes.has(String(name)) ? this.attributes.get(String(name)) : null; }}
     setAttribute(name, value) {{ const key = String(name); const text = String(value); this.calls.push([key, text]); this.attributes.set(key, text); }}
-    clearCalls() {{ this.calls.length = 0; }}
+    removeAttribute(name) {{ const key = String(name); if (this.attributes.has(key)) {{ this.removals.push(key); this.attributes.delete(key); }} }}
+    clearCalls() {{ this.calls.length = 0; this.removals.length = 0; }}
 }}
 const root = new FakeRoot();
+root.attributes.set("data-mcms-show-buildings", "false");
+root.attributes.set("data-mcms-building-scope", "both");
+root.attributes.set("data-mcms-building-mode", "all");
 const document = {{ documentElement: root, querySelector() {{ return null; }} }};
 const SCRIPT = {{ panelId: "mc-map-command-toolkit-panel" }};
 let activeDeviceLayout = "desktop";
@@ -85,26 +91,28 @@ const expected = {{
     "data-mcms-alliance-buildings-map": "enabled", "data-mcms-device-layout": "desktop", "data-mcms-tablet-mode": "auto",
     "data-mcms-tablet-active": "false", "data-mcms-mobile-mode": "auto", "data-mcms-mobile-active": "false",
     "data-mcms-tablet-orientation": "landscape", "data-mcms-mobile-orientation": "landscape",
-    "data-mcms-show-alliance-missions": "true", "data-mcms-show-my-missions": "false",
-    "data-mcms-show-buildings": "false", "data-mcms-building-scope": "both", "data-mcms-building-mode": "all"
+    "data-mcms-show-alliance-missions": "true", "data-mcms-show-my-missions": "false"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 31, "first call writes every missing attribute");
+assert.equal(root.calls.length, 28, "first call writes every current missing attribute");
+assert.deepEqual(root.removals, ["data-mcms-show-buildings", "data-mcms-building-scope", "data-mcms-building-mode"], "first call removes legacy building visibility attributes");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
 root.clearCalls();
 applyRootAttributes();
 assert.equal(root.calls.length, 0, "unchanged repeat performs zero attribute mutations");
+assert.equal(root.removals.length, 0, "unchanged repeat performs zero legacy removals");
 assert.deepEqual(calculations, {{ layout: 2, tablet: 2, mobile: 2, viewport: 2 }}, "calculations still run on every call");
 state.cleanMode = true;
 root.clearCalls();
 applyRootAttributes();
 assert.deepEqual(root.calls, [["data-mcms-clean", "true"]], "one changed state writes only its attribute");
 root.attributes.set("data-mc-map-skin", "externally-broken");
-root.attributes.delete("data-mcms-show-buildings");
+root.attributes.set("data-mcms-show-buildings", "false");
 root.clearCalls();
 applyRootAttributes();
-assert.deepEqual(root.calls, [["data-mc-map-skin", "nightshift"], ["data-mcms-show-buildings", "false"]], "external changes are repaired");
+assert.deepEqual(root.calls, [["data-mc-map-skin", "nightshift"]], "external current-state changes are repaired");
+assert.deepEqual(root.removals, ["data-mcms-show-buildings"], "external legacy building state is removed");
 nextLayout = "tablet";
 orientation = "portrait";
 root.clearCalls();

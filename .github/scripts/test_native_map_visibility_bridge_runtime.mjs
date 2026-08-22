@@ -45,7 +45,6 @@ const descriptors = Object.freeze({
   myMissions: Object.freeze({ filterId: "user_missions", aliases: Object.freeze(["user_missions", "my_missions", "personal_missions"]), labels: Object.freeze(["My missions", "Personal missions"]), i18n: Object.freeze(["map_filters.user_missions"]) }),
   allianceMissions: Object.freeze({ filterId: "alliance_missions", aliases: Object.freeze(["alliance_missions", "shared_missions"]), labels: Object.freeze(["Alliance missions", "Shared by alliance"]), i18n: Object.freeze(["map_filters.alliance_missions"]) }),
   vehicles: Object.freeze({ filterId: "", aliases: Object.freeze(["vehicles", "vehicle_markers", "show_vehicle", "show_vehicles"]), labels: Object.freeze(["Vehicles", "Show vehicles", "Show vehicles on map"]), i18n: Object.freeze(["common.vehicles"]) }),
-  buildings: Object.freeze({ filterId: "user_buildings", aliases: Object.freeze(["user_buildings", "my_buildings", "personal_buildings", "own_buildings"]), labels: Object.freeze(["My buildings", "Personal buildings", "Own buildings"]), i18n: Object.freeze(["map_filters.user_buildings"]) }),
 });
 
 function makeControl(value, label, checked) {
@@ -141,8 +140,6 @@ for (const control of controls) control.ownerDocument = { defaultView: { Event }
 let saveCount = 0;
 let rootRefreshes = 0;
 let uiRefreshes = 0;
-let fallbackReleases = 0;
-let opacityRestores = 0;
 const toasts = [];
 const mapEvents = [];
 const mapLayers = new Set();
@@ -278,10 +275,10 @@ const sandbox = {
   document,
   SCRIPT: { name: "MissionChief Map Command Toolkit", controlId: "mcms-control", panelId: "mcms-panel", commandExperienceModalId: "mcms-modal", commandPaletteId: "mcms-palette" },
   NATIVE_VISIBILITY_FILTERS: descriptors,
-  NATIVE_VISIBILITY_FEATURES: Object.freeze(["myMissions", "allianceMissions", "vehicles", "buildings"]),
+  NATIVE_VISIBILITY_FEATURES: Object.freeze(["myMissions", "allianceMissions", "vehicles"]),
   pageWindow: {
     location: { origin: "https://www.missionchief.co.uk", href: "https://www.missionchief.co.uk/" },
-    I18n: { t: key => ({ "map_filters.user_missions": "My missions", "map_filters.alliance_missions": "Shared by alliance", "map_filters.user_buildings": "My buildings", "common.vehicles": "Vehicles" })[key] || key },
+    I18n: { t: key => ({ "map_filters.user_missions": "My missions", "map_filters.alliance_missions": "Shared by alliance", "common.vehicles": "Vehicles" })[key] || key },
     user_id: 7,
     mission_markers: [
       { mission_id: 740, user_id: 7, _icon: overlappingMissionIcon },
@@ -315,8 +312,6 @@ const sandbox = {
   runtimeDelay: async () => true,
   invalidateMarkerRegistryCaches: scope => { if (scope === "vehicle") vehicleCacheInvalidations += 1; },
   closePanel() {},
-  synchronisePersonalBuildingVisibility: () => { fallbackReleases += 1; },
-  restorePersonalBuildingLayerOpacity: () => { opacityRestores += 1; },
   findLeafletMapInstance: () => map,
   currentUserIdCached: () => "7",
   missionIdFromMarker: marker => {
@@ -339,8 +334,6 @@ const markerRegistryCache=new Map();
 const nativeVisibilityBoundFeatures=new Set();
 const nativeVisibilitySessionInitialised=new Set();
 const nativeVisibilityPendingFeatures=new Set();
-const hiddenPersonalBuildingLayers=new Set();
-const personalBuildingLayerOpacity=new Map();
 let nativeVisibilityReconcileQueued=false;
 let nativeVisibilityWriteDepth=0;
 let nativeVehicleTogglePromise=null;
@@ -378,7 +371,6 @@ const functionNames = [
   "mirrorNativeVehicleSetting",
   "dispatchNativeVisibilityControl",
   "writeNativeVisibilityState",
-  "releasePersonalBuildingVisibilityFallback",
   "nativeVisibilityFeatureMigrated",
   "markNativeVisibilityFeatureMigrated",
   "nativeVisibilityFallbackNeeded",
@@ -402,21 +394,21 @@ this.__probe={
   findNativeVisibilityControl,nativeVisibilityFeatureForControl,writeNativeVisibilityState,
   fetchNativeVehicleSetting,prepareNativeVehicleSettingsSubmission,submitNativeVehicleSetting,applyNativeVehicleRuntimeSetting,mirrorNativeVehicleSetting,
   applyNativeVisibilityPreference,adoptNativeVisibilityFeature,nativeVisibilityFallbackNeeded,
-  releasePersonalBuildingVisibilityFallback,reconcileNativeVisibilityBridge,applyMapVisibilityToggleEffects,toggleNativeVehicleVisibility,
+  reconcileNativeVisibilityBridge,applyMapVisibilityToggleEffects,toggleNativeVehicleVisibility,
   synchroniseVehicleMarkerClasses,
   resetBridge(fresh=false){
     nativeVisibilityBoundFeatures.clear();nativeVisibilitySessionInitialised.clear();nativeVisibilityPendingFeatures.clear();
-    hiddenPersonalBuildingLayers.clear();personalBuildingLayerOpacity.clear();nativeVisibilityReconcileQueued=false;
+    nativeVisibilityReconcileQueued=false;
     toolkitFreshInstallAtLoad=fresh;state.nativeVisibility.migratedFeatures=[];
-  },
-  hideBuildingForFallback(layer,opacity=1){hiddenPersonalBuildingLayers.add(layer);personalBuildingLayerOpacity.set(layer,opacity);}
+  }
 };
 `, sandbox, { filename: "native-map-visibility-bridge.js" });
 
 assert.equal(sandbox.__probe.findNativeVisibilityControl("myMissions").value, "user_missions");
 assert.equal(sandbox.__probe.findNativeVisibilityControl("allianceMissions").value, "alliance_missions");
 assert.equal(sandbox.__probe.findNativeVisibilityControl("vehicles").value, "show_vehicle");
-assert.equal(sandbox.__probe.findNativeVisibilityControl("buildings").value, "user_buildings");
+assert.equal(sandbox.__probe.findNativeVisibilityControl("buildings"), null, "generic bridge must not own the broad My buildings filter");
+assert.equal(sandbox.__probe.nativeVisibilityFeatureForControl(controls[3]), "", "own buildings must remain outside the generic bridge");
 assert.equal(sandbox.__probe.nativeVisibilityFeatureForControl(controls[4]), "", "alliance buildings must remain independent");
 
 let result = sandbox.__probe.writeNativeVisibilityState("myMissions", false);
@@ -431,21 +423,6 @@ assert.equal(sandbox.state.visibility.allianceMissions, false, "native write mus
 assert.ok(sandbox.state.nativeVisibility.migratedFeatures.includes("allianceMissions"));
 assert.equal(saveCount, 1);
 assert.equal(sandbox.__probe.nativeVisibilityFallbackNeeded("allianceMissions"), false);
-
-controls[4].checked = true;
-assert.equal(sandbox.__probe.applyNativeVisibilityPreference("buildings", false), true);
-assert.equal(controls[3].checked, false);
-assert.equal(controls[4].checked, true, "own-buildings write touched alliance buildings");
-assert.equal(fallbackReleases, 0);
-
-const fallbackLayer = { id: "fallback-building" };
-sandbox.state.visibility.buildings = true;
-sandbox.__probe.hideBuildingForFallback(fallbackLayer, 0.4);
-sandbox.__probe.releasePersonalBuildingVisibilityFallback();
-assert.equal(fallbackReleases, 1, "visible fallback buildings were not handed back to the map");
-sandbox.state.visibility.buildings = false;
-sandbox.__probe.releasePersonalBuildingVisibilityFallback();
-assert.equal(opacityRestores, 1, "hidden fallback building opacity was not released to the native filter");
 
 controls[2].checked = false;
 const adopted = sandbox.__probe.adoptNativeVisibilityFeature("vehicles");
@@ -515,9 +492,10 @@ sandbox.state.visibility = { myMissions: true, allianceMissions: true, vehicles:
 const allianceBeforeFreshAdoption = controls[4].checked;
 const savesBeforeFreshAdoption = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
-assert.deepEqual(JSON.parse(JSON.stringify(sandbox.state.visibility)), { myMissions: false, allianceMissions: true, vehicles: false, buildings: false });
+assert.deepEqual(JSON.parse(JSON.stringify(sandbox.state.visibility)), { myMissions: false, allianceMissions: true, vehicles: false, buildings: true });
 assert.equal(controls[2].checked, false, "fresh adoption rewrote MissionChief's Vehicles setting");
 assert.equal(saveCount, savesBeforeFreshAdoption + 1, "fresh native visibility was not persisted once");
+assert.equal(controls[3].checked, false, "fresh adoption changed the broad My buildings filter");
 assert.equal(controls[4].checked, allianceBeforeFreshAdoption, "fresh adoption changed alliance buildings");
 
 const savesBeforeStableReconcile = saveCount;
@@ -539,10 +517,11 @@ sandbox.state.visibility = { myMissions: true, allianceMissions: false, vehicles
 const allianceBeforeUpgrade = controls[4].checked;
 const savesBeforeUpgrade = saveCount;
 sandbox.__probe.reconcileNativeVisibilityBridge();
-assert.deepEqual(controls.slice(0, 4).map(control => control.checked), [true, false, false, true]);
+assert.deepEqual(controls.slice(0, 4).map(control => control.checked), [true, false, false, false]);
 assert.equal(sandbox.state.visibility.vehicles, false, "upgrade migration overwrote MissionChief's persisted Vehicles setting with stale Toolkit state");
-assert.deepEqual(Array.from(sandbox.state.nativeVisibility.migratedFeatures), ["myMissions", "allianceMissions", "vehicles", "buildings"]);
+assert.deepEqual(Array.from(sandbox.state.nativeVisibility.migratedFeatures), ["myMissions", "allianceMissions", "vehicles"]);
 assert.equal(saveCount, savesBeforeUpgrade + 1, "upgraded Toolkit visibility was not migrated once");
+assert.equal(controls[3].checked, false, "upgrade migration changed the broad My buildings filter");
 assert.equal(controls[4].checked, allianceBeforeUpgrade, "upgrade migration changed alliance buildings");
 
 availableControls = controls.filter(control => control.value !== "show_vehicle");
@@ -584,4 +563,4 @@ assert.equal(result.verified, true);
 assert.equal(mapLayers.has(legacyLayers.user_missions), false);
 assert.equal(mapEvents.at(-1)?.event, "overlayremove", "legacy filter mutation was not exposed to MissionChief persistence listeners");
 
-console.log("Native map visibility bridge runtime passed: nullable Dispatch Centre settings, bounded global Map and vehicles form discovery, persisted show_vehicle writes with API read-back, native live-map refresh, no vehicle CSS fallback, upgrade adoption, marker-focus classification, own/alliance building isolation and legacy filter fallback verified.");
+console.log("Native map visibility bridge runtime passed: bounded Map and vehicles form discovery, persisted show_vehicle writes with API read-back, native live-map refresh, no vehicle CSS fallback, upgrade adoption, marker-focus classification, and complete building-filter isolation verified.");

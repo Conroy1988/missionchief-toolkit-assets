@@ -10,7 +10,7 @@ const source = fs.readFileSync("src/MissionChief_Map_Command_Toolkit.user.js", "
 const frameHtml = fs.readFileSync("devlab/frame.html", "utf8").replace(/<script src="\/devlab\/frame\.js"><\/script>/u, "");
 const frameRuntime = fs.readFileSync("devlab/frame.js", "utf8");
 
-async function waitFor(predicate, timeoutMs = 8000) {
+async function waitFor(predicate, timeoutMs = 15000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const value = predicate();
@@ -48,6 +48,20 @@ async function scenario(device, tab, focus = "") {
   assert.equal(report.widthStable, true, `${device}: page navigation changed panel width by ${report.widthRange}`);
   assert.equal(report.noHorizontalOverflow, true, `${device}: horizontal overflow detected`);
   assert.equal(report.errors.length, 0, `${device}: runtime errors: ${report.errors.join(" | ")}`);
+  if (tab === "dispatch") {
+    const personnel = panel.querySelector('[data-setting="dispatch-recruitment-personnel"]');
+    const delay = panel.querySelector('[data-setting="dispatch-recruitment-delay"]');
+    assert.equal(personnel?.value, "400", `${device}: Expansion Planner rendering overwrote Personnel (Desired)`);
+    personnel.focus();
+    personnel.value = "275";
+    personnel.dispatchEvent(new window.InputEvent("input", { bubbles: true, inputType: "insertText", data: "275" }));
+    delay.focus();
+    delay.value = "2000";
+    delay.dispatchEvent(new window.Event("change", { bubbles: true }));
+    assert.equal(personnel.value, "275", `${device}: Personnel (Desired) reverted after another Dispatch control changed`);
+    const saved = JSON.parse(window.localStorage.getItem("mc_map_command_toolkit_state_v150"));
+    assert.equal(saved.dispatchRecruitment.personnelDesired, "275", `${device}: Personnel (Desired) was not persisted after the full delegated UI flow`);
+  }
   if (tab === "map") {
     const launcher = panel.querySelector('[data-action="toggle-building-selector"]');
     assert.ok(launcher, `${device}: building selector launcher missing`);

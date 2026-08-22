@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
+
+COMMAND="${1:-help}"
+if [[ $# -gt 0 ]]; then shift; fi
+
+case "$COMMAND" in
+  dev|lab)
+    exec python3 tools/dev_server.py "$@"
+    ;;
+  check)
+    python3 tools/ensure_dev_dependencies.py
+    exec python3 tools/dev_fast_check.py "$@"
+    ;;
+  promote)
+    python3 tools/ensure_dev_dependencies.py
+    exec python3 tools/promote_candidate.py "$@"
+    ;;
+  canary-build)
+    exec python3 tools/build_canary.py "$@"
+    ;;
+  canary-publish)
+    exec python3 tools/publish_canary.py "$@"
+    ;;
+  help|-h|--help)
+    cat <<'USAGE'
+MissionChief Toolkit local development commands
+
+  ./toolkit dev --open       Start the visual Dev Lab at localhost:4173
+  ./toolkit check            Run change-aware focused validation
+  ./toolkit check --all      Run the complete retained preflight
+  ./toolkit canary-build     Build a hash-verified opt-in canary bundle
+  ./toolkit canary-publish   Atomically publish canary without Actions
+  ./toolkit promote          Build and fully validate one PR candidate
+USAGE
+    ;;
+  *)
+    echo "Unknown Toolkit command: $COMMAND" >&2
+    exit 2
+    ;;
+esac

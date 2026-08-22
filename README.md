@@ -182,6 +182,16 @@ The safest ambitious interface is one that can explain itself, step back cleanly
 
 ---
 
+## Local-first development
+
+Toolkit development now happens before GitHub: the canonical userscript mounts directly in a live-reloading MissionChief Dev Lab across Desktop, Tablet and iOS; change-aware checks select only the affected feature contracts; and an opt-in, SHA-256-verified maintainer canary handles the small set of tests that require a signed-in game account.
+
+GitHub receives only a locally accepted candidate. Promotion runs the complete suite once, produces one atomic pull request and retains the existing single-runner, exact-tree public release safeguards. The canary transport uses a protected non-production branch, triggers zero Actions workflows and cannot publish to stable users or the TKB release endpoints.
+
+**[Open the complete local development workflow →](docs/DEVELOPMENT_WORKFLOW.md)**
+
+---
+
 <p align="center">
   <img src="docs/media/readme-v3-release-integrity.svg" width="100%" alt="Unoccupied secure Toolkit release laboratory showing canonical source, validation, publication and recovery as one verified delivery chain">
 </p>

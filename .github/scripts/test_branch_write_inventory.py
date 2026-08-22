@@ -88,6 +88,7 @@ def main() -> int:
     external_entries = inventory.get("externalRepositoryMainPushSources") or []
     review_entries = inventory.get("reviewBranchWriters") or []
     shadow_entries = inventory.get("shadowBranchWriters") or []
+    canary_entry = inventory.get("developmentCanaryWriter") or {}
     maintenance_entries = inventory.get("branchMaintenanceWriters") or []
 
     direct = workflow_set(direct_entries)
@@ -232,7 +233,7 @@ def main() -> int:
             "Branch moved after audit",
             "Open pull request protects branch",
             "recoverable from a closed PR nor contained in main",
-            "main release-state distribution automation/releases automation/development-packages automation/branch-cleanup",
+            "main release-state distribution canary automation/releases automation/development-packages automation/branch-cleanup",
             "--method DELETE",
         ],
         maintenance_entry["workflow"],
@@ -399,6 +400,43 @@ def main() -> int:
     shadow_workflow = ROOT / str(shadow_entries[0].get("workflow") or "")
     if not shadow_workflow.is_file() or relative(shadow_workflow) in discovered_main:
         fail("Shadow synchronization writer is missing or can mutate public main")
+
+    expected_canary = {
+        "tool": "tools/publish_canary.py",
+        "source": "locally validated canonical source",
+        "target": "canary",
+        "credential": "maintainer Git credential",
+        "contents": [
+            "canary/manifest.json",
+            "canary/MissionChief_Map_Command_Toolkit.canary.user.js",
+        ],
+        "githubActionsRunsExpected": 0,
+        "mainMutationAllowed": False,
+        "stableDistributionMutationAllowed": False,
+        "forcePushAllowed": False,
+    }
+    if canary_entry != expected_canary:
+        fail("Maintainer canary writer inventory changed")
+    canary_tool = ROOT / str(canary_entry["tool"])
+    if not canary_tool.is_file():
+        fail("Maintainer canary writer is missing")
+    canary_text = canary_tool.read_text(encoding="utf-8")
+    require(
+        canary_text,
+        [
+            'CANARY_REF = "refs/heads/canary"',
+            '"githubActionsExpected": 0',
+            '"push", "--quiet", "origin", f"HEAD:{CANARY_REF}"',
+        ],
+        "Maintainer canary writer",
+    )
+    forbid(
+        canary_text,
+        ["--force", "refs/heads/main", "workflow_dispatch", "actions/runs"],
+        "Maintainer canary writer",
+    )
+    if "Maintainer canary branch" not in document or "zero Actions runs" not in document:
+        fail("Human inventory omits the maintainer canary boundary")
 
     for claim in [
         "no workflow can commit directly to public `main`",

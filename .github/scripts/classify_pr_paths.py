@@ -22,6 +22,7 @@ BOOL_KEYS = (
     "releaseCandidate",
     "exhaustiveIntegrity",
     "exhaustivePerformance",
+    "developmentChecks",
 )
 
 
@@ -77,6 +78,7 @@ def classify(paths: Iterable[str], policy: dict, *, full: bool = False) -> dict:
     critical = bool(result["matchedGroups"]["criticalInfrastructure"])
     unknown = bool(result["unknownPaths"])
     workflow = bool(result["matchedGroups"]["workflowPolicy"])
+    development = bool(result["matchedGroups"]["development"])
 
     result["runtime"] = (
         product
@@ -99,6 +101,7 @@ def classify(paths: Iterable[str], policy: dict, *, full: bool = False) -> dict:
         or bool(result["matchedGroups"]["performanceExhaustive"])
     )
     result["workflowChecks"] = workflow or critical or unknown
+    result["developmentChecks"] = product or development or critical or unknown
     result["documentationChecks"] = (
         product
         or bool(result["matchedGroups"]["documentation"])
@@ -164,6 +167,7 @@ def self_test(policy: dict) -> None:
     assert source["documentationChecks"]
     assert source["assetChecks"]
     assert source["releaseChecks"]
+    assert source["developmentChecks"]
     assert not source["exhaustiveIntegrity"]
     assert not source["exhaustivePerformance"]
 
@@ -173,6 +177,17 @@ def self_test(policy: dict) -> None:
     assert not docs["integrity"]
     assert not docs["performance"]
     assert not docs["releaseCandidate"]
+    assert not docs["developmentChecks"]
+
+    development = classify(
+        ["devlab/frame.js", "tools/build_canary.py"],
+        policy,
+    )
+    assert development["repository"] and development["developmentChecks"]
+    assert not development["runtime"]
+    assert not development["integrity"]
+    assert not development["performance"]
+    assert not development["releaseCandidate"]
 
     assets = classify(["themes/godfather/manifest.json"], policy)
     assert assets["repository"] and assets["assetChecks"]

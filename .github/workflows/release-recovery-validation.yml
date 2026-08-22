@@ -1,22 +1,6 @@
 name: Validate Release Recovery
 
 on:
-  pull_request:
-    paths:
-      - ".github/scripts/download_verified_release_bundle.sh"
-      - ".github/scripts/backup_release_to_private_repo.sh"
-      - ".github/scripts/prepare_rollback_candidate.py"
-      - ".github/scripts/release_recovery_state.py"
-      - ".github/scripts/release_state_branch.py"
-      - ".github/scripts/test_release_recovery_state_pipeline.py"
-      - ".github/branch-write-inventory.json"
-      - ".github/shadow-branch-policy.json"
-      - ".github/workflows/release-recovery.yml"
-      - ".github/workflows/prepare-release-rollback.yml"
-      - ".github/workflows/release-recovery-validation.yml"
-      - "docs/BRANCH_PROTECTION_MIGRATION.md"
-      - "docs/BRANCH_WRITE_INVENTORY.md"
-      - "docs/RELEASE_RECOVERY.md"
   workflow_dispatch:
 
 permissions:

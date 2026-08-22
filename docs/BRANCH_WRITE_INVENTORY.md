@@ -1,6 +1,6 @@
 # Protected-branch write inventory
 
-**Reviewed:** 3 August 2026
+**Reviewed:** 22 August 2026
 **Issue:** #41 — TKB-only release-state cutover and strict `main` protection
 
 ## Current conclusion
@@ -89,7 +89,13 @@ The exact artifact-only workflows are `validate-userscript.yml`, `release-toolki
 
 `execute-audited-branch-cleanup.yml` is the only branch-maintenance writer. It accepts an owner-pushed command only on the transient `automation/branch-cleanup` branch and requires an exact audited SHA for every requested ref.
 
-Before any deletion, the workflow verifies the complete command without mutation, rejects `main` and every operational branch, rejects branches with an open pull request, and requires each candidate to be recoverable from a closed pull request or already contained in `main`. It then rechecks every SHA immediately before deletion, verifies every removal, and deletes the transient command branch last. It cannot force-push or mutate source, release-state, distribution or automation authority.
+Before any deletion, the workflow verifies the complete command without mutation, rejects `main` and every operational branch—including the maintainer `canary` transport—rejects branches with an open pull request, and requires each candidate to be recoverable from a closed pull request or already contained in `main`. It then rechecks every SHA immediately before deletion, verifies every removal, and deletes the transient command branch last. It cannot force-push or mutate source, release-state, distribution, canary or automation authority.
+
+## Maintainer canary branch
+
+`tools/publish_canary.py` is the only declared writer for `canary`. It builds locally from canonical source, creates one normal fast-forward commit containing only the canary manifest and userscript bundle, pushes without force and verifies the exact remote head. The branch matches no GitHub Actions workflow trigger, has no production authority and cannot mutate `main`, `release-state`, GitHub Releases or the TKB stable distribution.
+
+The canary loader verifies its exact repository origin, manifest schema, byte limit, SHA-256 and bundle length before replacing a running stable Toolkit. A failed network or integrity check retains stable Toolkit or uses only a previously hash-verified local cache. The complete boundary is documented in `docs/DEVELOPMENT_WORKFLOW.md`.
 
 ## Distribution branch rehearsal
 
@@ -109,6 +115,7 @@ The read-only `verify-shadow-branch-parity.yml` still validates both branch role
 | Artifact-only evidence | Six read-only workflows | Workflow artifacts |
 | Review-branch writers | Development-package and rollback workflows | Owner PR branches only |
 | Distribution rehearsal | `sync-shadow-branches.yml` | `distribution` only |
+| Maintainer canary | `tools/publish_canary.py` | `canary` only; zero Actions runs |
 | Audited branch maintenance | `execute-audited-branch-cleanup.yml` | Proven obsolete non-operational refs only |
 | External backup | `backup_release_to_private_repo.sh` | Private repository `main` |
 

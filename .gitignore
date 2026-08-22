@@ -4,3 +4,10 @@ __pycache__/
 
 # Local JavaScript dependency trees
 node_modules/
+
+# Disposable local development and canary output
+.dev/
+actions-security-report.json
+actions-security-report.md
+code-integrity-report.json
+code-integrity-report.md

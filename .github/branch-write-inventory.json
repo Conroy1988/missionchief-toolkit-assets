@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-08-03",
-  "reviewedMainCommit": "94c25e574d24ad7b758e1fc5c448bcfe89b61c28",
+  "reviewedAt": "2026-08-22",
+  "reviewedMainCommit": "f5c0f6df509ecc6d9de0722ea639c7fe55824aad",
   "strictProtectionEnabled": false,
   "directMainWriters": [],
   "indirectMainWriteOrchestrators": [
@@ -165,6 +165,20 @@
       "replacementIdentity": "narrowly scoped GitHub App"
     }
   ],
+  "developmentCanaryWriter": {
+    "tool": "tools/publish_canary.py",
+    "source": "locally validated canonical source",
+    "target": "canary",
+    "credential": "maintainer Git credential",
+    "contents": [
+      "canary/manifest.json",
+      "canary/MissionChief_Map_Command_Toolkit.canary.user.js"
+    ],
+    "githubActionsRunsExpected": 0,
+    "mainMutationAllowed": false,
+    "stableDistributionMutationAllowed": false,
+    "forcePushAllowed": false
+  },
   "branchMaintenanceWriters": [
     {
       "workflow": ".github/workflows/execute-audited-branch-cleanup.yml",

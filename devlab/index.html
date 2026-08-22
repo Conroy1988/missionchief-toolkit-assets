@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MissionChief Toolkit Dev Lab</title>
+  <link rel="stylesheet" href="/devlab/lab.css">
+</head>
+<body>
+  <main class="lab-shell">
+    <header class="lab-header">
+      <div>
+        <span class="eyebrow">LOCAL DEVELOPMENT ENVIRONMENT</span>
+        <h1>MissionChief Toolkit Dev Lab</h1>
+        <p>Live canonical-source rendering without a commit, pull request or GitHub Actions run.</p>
+      </div>
+      <div class="build-state" data-build-state="loading">
+        <span class="pulse" aria-hidden="true"></span>
+        <span data-build-label>Loading source…</span>
+      </div>
+    </header>
+
+    <section class="lab-controls" aria-label="Preview controls">
+      <fieldset>
+        <legend>Viewport</legend>
+        <div class="segmented" data-device-controls>
+          <button type="button" data-device="desktop" aria-pressed="true">Desktop</button>
+          <button type="button" data-device="tablet" aria-pressed="false">Tablet</button>
+          <button type="button" data-device="ios" aria-pressed="false">iOS</button>
+          <button type="button" data-device="matrix" aria-pressed="false">Matrix</button>
+        </div>
+      </fieldset>
+
+      <label>Toolkit page
+        <select data-tab>
+          <option value="map">Map</option>
+          <option value="missions">Missions</option>
+          <option value="alliance">Alliance Admin</option>
+          <option value="dispatch" selected>Dispatch</option>
+          <option value="finance">Finance</option>
+          <option value="locations">Locations</option>
+          <option value="appearance">Appearance</option>
+          <option value="settings">Settings</option>
+        </select>
+      </label>
+
+      <label>Focus
+        <select data-focus>
+          <option value="">Whole page</option>
+          <option value="dispatch-recruitment">Dispatch Recruitment</option>
+          <option value="expansion-and-upgrade-planner">Expansion &amp; Upgrade Planner</option>
+          <option value="station-icon-copier">Station Icon Copier</option>
+          <option value="alliance-courses">Alliance Courses</option>
+        </select>
+      </label>
+
+      <label>Theme
+        <select data-theme>
+          <option value="mapCommand">Map Command</option>
+          <option value="umbrella">Umbrella</option>
+          <option value="jamesBond">007 Intelligence</option>
+          <option value="cyberpunk">Cyberpunk</option>
+          <option value="fallout4">Fallout</option>
+          <option value="godfather">Godfather</option>
+          <option value="hyrule">Hyrule</option>
+          <option value="factorio">Factorio</option>
+        </select>
+      </label>
+
+      <button class="reload-button" type="button" data-reload>Reload preview</button>
+    </section>
+
+    <section class="health-strip" aria-live="polite">
+      <span data-health="mount" data-state="waiting">Mount waiting</span>
+      <span data-health="width" data-state="waiting">Width waiting</span>
+      <span data-health="overflow" data-state="waiting">Overflow waiting</span>
+      <span data-health="runtime" data-state="waiting">Runtime waiting</span>
+      <strong data-health-summary>Starting preview…</strong>
+    </section>
+
+    <section class="preview-stage" data-preview-stage data-device="desktop" aria-label="Toolkit preview">
+      <div class="preview-grid" data-preview-grid></div>
+    </section>
+
+    <footer>
+      <span>Local source watcher active</span>
+      <span>No stable distribution writes</span>
+      <span>No GitHub Actions required</span>
+    </footer>
+  </main>
+  <script type="module" src="/devlab/lab.js"></script>
+</body>
+</html>

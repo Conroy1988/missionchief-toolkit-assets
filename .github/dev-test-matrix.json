@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "description": "Change-aware local development tests. Unknown canonical-source edits fail closed to the retained runtime suite.",
+  "always": [
+    ["node", "--check", "src/MissionChief_Map_Command_Toolkit.user.js"],
+    ["python3", ".github/scripts/test_dev_workflow.py"]
+  ],
+  "features": {
+    "workflow-policy": {
+      "paths": [".github/workflows/**", ".github/path-aware-validation.json", ".github/branch-write-inventory.json", ".github/dev-test-matrix.json", ".github/scripts/classify_pr_paths.py", ".github/scripts/test_branch_write_inventory.py", ".github/scripts/test_path_aware_blocking.py", ".github/scripts/test_consolidated_pr_gate.py"],
+      "anchors": [],
+      "tests": [
+        ["python3", ".github/scripts/audit_actions_security.py"],
+        ["python3", ".github/scripts/test_branch_write_inventory.py"],
+        ["python3", ".github/scripts/test_path_aware_blocking.py"],
+        ["python3", ".github/scripts/test_consolidated_pr_gate.py"]
+      ]
+    },
+    "dev-lab": {
+      "paths": ["devlab/**", "tools/dev_server.py", "tools/ensure_dev_dependencies.py"],
+      "anchors": [],
+      "tests": [
+        ["node", ".github/scripts/test_dev_lab_runtime.mjs"]
+      ]
+    },
+    "canary": {
+      "paths": ["tools/build_canary.py", "tools/publish_canary.py", "tools/canary-loader.user.js"],
+      "anchors": [],
+      "tests": [
+        ["python3", ".github/scripts/test_canary_workflow.py"],
+        ["node", ".github/scripts/test_canary_loader_runtime.mjs"]
+      ]
+    },
+    "dispatch-recruitment": {
+      "paths": ["docs/issue-706-dispatch-recruitment.md", ".github/scripts/test_issue706_dispatch_recruitment_*"],
+      "anchors": ["dispatchRecruitment", "DispatchRecruitment", "DISPATCH_RECRUITMENT", "personnelDesired", "show_vehicle"],
+      "tests": [
+        ["python3", ".github/scripts/test_issue706_dispatch_recruitment_contract.py"],
+        ["node", ".github/scripts/test_issue706_dispatch_recruitment_runtime.mjs"]
+      ]
+    },
+    "expansion-planner": {
+      "paths": ["docs/issue-744-expansion-upgrade-planner.md", ".github/scripts/test_issue744_expansion_upgrade_planner_*"],
+      "anchors": ["expansionPlanner", "ExpansionPlanner", "EXPANSION_PLANNER", "mcms-command-card-wide"],
+      "tests": [
+        ["python3", ".github/scripts/test_issue744_expansion_upgrade_planner_contract.py"],
+        ["node", ".github/scripts/test_issue744_expansion_upgrade_planner_runtime.mjs"]
+      ]
+    },
+    "native-visibility": {
+      "paths": [".github/scripts/test_native_map_visibility_bridge*"],
+      "anchors": ["nativeVisibility", "NativeVisibility", "NATIVE_VISIBILITY", "show_vehicle", "mobile_show_vehicle"],
+      "tests": [
+        ["python3", ".github/scripts/test_native_map_visibility_bridge.py"],
+        ["node", ".github/scripts/test_native_map_visibility_bridge_runtime.mjs"]
+      ]
+    },
+    "desktop-workspace": {
+      "paths": ["docs/desktop-toolkit-workspace.md", ".github/scripts/test_desktop_toolkit_workspace*", ".github/scripts/test_issue6*desktop*"],
+      "anchors": ["desktopPanel", "DesktopPanel", "panelWorkspace", "desktop workspace", "mcms-command-layout", "mcms-command-card-wide"],
+      "tests": [
+        ["python3", ".github/scripts/test_desktop_panel_layout_contract.py"],
+        ["python3", ".github/scripts/test_desktop_toolkit_workspace.py"],
+        ["node", ".github/scripts/test_desktop_toolkit_workspace_runtime.mjs"],
+        ["python3", ".github/scripts/test_issue681_responsive_desktop_menu.py"],
+        ["node", ".github/scripts/test_issue681_responsive_desktop_menu_runtime.mjs"]
+      ]
+    },
+    "transport-sweep": {
+      "paths": [".github/scripts/test_transport_sweep_*", ".github/scripts/test_issue5*transport*", ".github/scripts/test_issue6*transport*", ".github/scripts/test_issue7*transport*"],
+      "anchors": ["transportSweep", "TransportSweep", "TRANSPORT_SWEEP", "patientTransport"],
+      "tests": [
+        ["python3", ".github/scripts/test_transport_sweep_native_contract.py"],
+        ["node", ".github/scripts/test_transport_sweep_runtime.js"]
+      ]
+    },
+    "finance": {
+      "paths": ["financial-intelligence/**", ".github/scripts/test_financial_*"],
+      "anchors": ["financialVault", "FinancialVault", "FINANCE_", "discordReport", "payoutFlash"],
+      "tests": [
+        ["python3", ".github/scripts/test_financial_ledger_contract.py"],
+        ["python3", ".github/scripts/test_financial_overview_contract.py"],
+        ["python3", ".github/scripts/test_financial_discord_complexity_contract.py"]
+      ]
+    },
+    "command-shell": {
+      "paths": [".github/scripts/test_issue638_command_shell_route_*", ".github/scripts/test_section_navigation_contract.py"],
+      "anchors": ["createControl", "createPanel", "commandInterface", "toolkitCommandShell", "COMMAND_SECTION_"],
+      "tests": [
+        ["python3", ".github/scripts/test_issue638_command_shell_route_contract.py"],
+        ["node", ".github/scripts/test_issue638_command_shell_route_runtime.mjs"],
+        ["python3", ".github/scripts/test_section_navigation_contract.py"],
+        ["node", ".github/scripts/test_ui_mount_integration.mjs"]
+      ]
+    }
+  },
+  "sourceFallback": [
+    ["bash", ".github/scripts/run_userscript_preflight.sh", "--contracts"]
+  ]
+}

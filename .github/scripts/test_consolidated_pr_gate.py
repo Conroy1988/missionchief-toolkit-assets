@@ -33,6 +33,7 @@ def main() -> int:
         "missionchief-toolkit-validation-candidate-${{ github.sha }}",
         "Write immutable validation candidate evidence",
         "Run deterministic runtime contracts",
+        "Prove local development loop",
         "Summarise single-runner gate",
         "GitHub runners used: **1**",
         "Parallel validation lanes: **0**",

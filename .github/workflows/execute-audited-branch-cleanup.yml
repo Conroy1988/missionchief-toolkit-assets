@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          protected=' main release-state distribution automation/releases automation/development-packages automation/branch-cleanup '
+          protected=' main release-state distribution canary automation/releases automation/development-packages automation/branch-cleanup '
           : > "$RUNNER_TEMP/validated-branches.tsv"
 
           while IFS=$'\t' read -r branch expected_sha; do

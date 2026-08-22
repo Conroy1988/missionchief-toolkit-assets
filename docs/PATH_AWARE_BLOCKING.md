@@ -10,6 +10,7 @@ Pipeline v5.3 keeps one required **Toolkit Hotfix Gate** and one GitHub runner, 
 - **Performance-tooling changes** run the lightweight Performance budget on the same runner. Deep AST analysis remains in the dedicated scheduled/manual audit.
 - **Documentation-only changes** do not create or promote a userscript candidate.
 - **Asset and theme changes** run asset-health checks without pretending that an unchanged userscript version is a new release candidate.
+- **Local development and canary-tooling changes** run the Dev Lab and canary integrity contracts without producing or promoting a stable userscript candidate. Product changes also run the same three-viewport canonical-source mount as an independent final UI proof.
 - **Repository, release and workflow changes** activate their relevant policy checks.
 - **Unknown paths fail closed** by requiring every lane, exhaustive audits and a release candidate until the policy explicitly classifies them.
 

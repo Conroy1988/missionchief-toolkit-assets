@@ -64,4 +64,10 @@ node .github/scripts/test_issue622_command_experience_runtime.mjs
 node .github/scripts/test_issue624_operational_map_flow_runtime.mjs
 node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
 node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
+if [[ "$MODE" == "--all" ]]; then
+  python3 .github/scripts/test_dev_workflow.py
+  python3 .github/scripts/test_canary_workflow.py
+  node .github/scripts/test_canary_loader_runtime.mjs
+  node .github/scripts/test_dev_lab_runtime.mjs
+fi
 echo "[preflight] Complete"

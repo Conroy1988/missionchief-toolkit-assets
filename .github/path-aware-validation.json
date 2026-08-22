@@ -56,6 +56,25 @@
       ".github/scripts/test_reconcile_deep_performance_audit.mjs",
       "docs/audits/deep-performance-audit-*.md"
     ],
+    "development": [
+      "toolkit",
+      "devlab/**",
+      "tools/dev_server.py",
+      "tools/dev_fast_check.py",
+      "tools/ensure_dev_dependencies.py",
+      "tools/promote_candidate.py",
+      "tools/build_canary.py",
+      "tools/publish_canary.py",
+      "tools/canary-loader.user.js",
+      ".github/dev-test-matrix.json",
+      ".github/scripts/test_dev_*.py",
+      ".github/scripts/test_dev_*.js",
+      ".github/scripts/test_dev_*.mjs",
+      ".github/scripts/test_canary_*.py",
+      ".github/scripts/test_canary_*.js",
+      ".github/scripts/test_canary_*.mjs",
+      "docs/DEVELOPMENT_WORKFLOW.md"
+    ],
     "documentation": [
       "README.md",
       "CHANGELOG.md",

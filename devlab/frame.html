@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Toolkit fixture</title>
+  <link rel="stylesheet" href="/devlab/fixture.css">
+</head>
+<body>
+  <header id="navbar-main" class="game-header">
+    <strong>MissionChief</strong>
+    <span id="credits">50,000,000 Credits</span>
+    <nav><button>Buildings</button><button>Alliance</button><button>Missions</button></nav>
+  </header>
+  <div id="map_outer">
+    <div id="map" class="leaflet-container" data-leaflet-map="main" aria-label="MissionChief map">
+      <div class="leaflet-map-pane">
+        <div class="leaflet-tile-pane"></div>
+        <div class="leaflet-marker-pane" data-fixture-markers></div>
+      </div>
+    </div>
+  </div>
+  <aside id="missions" class="mission-list" aria-label="Missions">
+    <article class="missionSideBarEntry" mission_id="1001"><strong>Warehouse Fire</strong><small>25,000 Credits</small></article>
+    <article class="missionSideBarEntry" mission_id="1002"><strong>Road Traffic Collision</strong><small>8,500 Credits</small></article>
+  </aside>
+  <div id="radio_messages_important"></div>
+  <script src="/devlab/frame.js"></script>
+</body>
+</html>

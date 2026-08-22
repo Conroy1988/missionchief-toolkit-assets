@@ -51,7 +51,7 @@ jobs:
           cat path-classification.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install isolated UI contract runtime
-        if: steps.paths.outputs.runtime == 'true'
+        if: steps.paths.outputs.runtime == 'true' || steps.paths.outputs.developmentChecks == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -79,6 +79,16 @@ jobs:
           node .github/scripts/test_ui_mount_integration.mjs
           bash .github/scripts/run_userscript_preflight.sh --contracts \
             2>&1 | tee runtime-contracts.log
+
+      - name: Prove local development loop
+        if: steps.paths.outputs.developmentChecks == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_dev_workflow.py
+          python3 .github/scripts/test_canary_workflow.py
+          node .github/scripts/test_canary_loader_runtime.mjs
+          node .github/scripts/test_dev_lab_runtime.mjs
 
       - name: Check lightweight performance budget
         if: steps.paths.outputs.performance == 'true'

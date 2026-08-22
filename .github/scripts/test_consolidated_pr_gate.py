@@ -20,6 +20,9 @@ LEGACY = [
     ".github/workflows/actions-security-audit.yml",
     ".github/workflows/validate-development-package-workflow.yml",
     ".github/workflows/discord-development-status.yml",
+    ".github/workflows/verify-shadow-branch-parity.yml",
+    ".github/workflows/release-recovery-validation.yml",
+    ".github/workflows/reconcile-release-announcement-state.yml",
 ]
 
 def main() -> int:

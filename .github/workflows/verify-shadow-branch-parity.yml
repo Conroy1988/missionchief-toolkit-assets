@@ -4,13 +4,6 @@ on:
   schedule:
     - cron: "41 5 * * *"
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/verify-shadow-branch-parity.yml"
-      - ".github/scripts/verify_shadow_branch_parity.py"
-      - ".github/branch-write-inventory.json"
-      - "docs/BRANCH_PROTECTION_MIGRATION.md"
-      - "docs/BRANCH_WRITE_INVENTORY.md"
 
 permissions:
   contents: read

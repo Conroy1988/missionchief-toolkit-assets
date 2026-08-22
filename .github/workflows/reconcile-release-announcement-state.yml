@@ -7,15 +7,6 @@ on:
     types:
       - completed
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/release-toolkit.yml"
-      - ".github/workflows/reconcile-release-announcement-state.yml"
-      - "status/release-dashboard.json"
-      - ".github/actions-security-policy.json"
-      - ".github/branch-write-inventory.json"
-      - "docs/BRANCH_PROTECTION_MIGRATION.md"
-      - "docs/BRANCH_WRITE_INVENTORY.md"
 
 permissions:
   contents: read
@@ -28,7 +19,6 @@ jobs:
   verify:
     name: Verify release announcement state
     if: >-
-      github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest

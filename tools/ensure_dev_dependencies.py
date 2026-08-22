@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED = {"jsdom": "26.1.0", "acorn": "8.15.0"}
+REQUIRED = {"jsdom": "26.1.0", "acorn": "8.15.0", "playwright-core": "1.55.0"}
 
 
 def installed() -> bool:

@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.16.7] - 2026-08-22
+
+### First-Byte UI Recovery and Direct Updates
+
+- Starts an independent first-byte recovery control before the 2.75 MB application evaluates and retries safely when document-start has no HTML root yet.
+- Keeps recovery visible through synchronous application failure, corrupted hidden-state settings and a missing or CSS-hidden primary launcher.
+- Adds explicit startup phases from first byte through runtime, state, boot and mounted UI so a failed launch can no longer be mistaken for a healthy release.
+- Restores Clean Mode, the command bar and auto-hide state from the recovery control without deleting map profiles, bookmarks or operational history.
+- Requires the TKB update and metadata routes to return direct same-origin JavaScript responses instead of GitHub attachment redirects.
+- Adds fatal-bootstrap, persisted Clean Mode, direct-response and real Chromium document-start regression coverage.
+
 ## [10.16.6] - 2026-08-22
 
 ### Known-Good Toolkit UI Restoration

@@ -203,7 +203,7 @@ def test_tkb_requests_match_production_curl_client() -> None:
         return asset_health.subprocess.CompletedProcess(
             command,
             0,
-            stdout=f"200\t{command[-1]}".encode(),
+            stdout=f"200\t{command[-1]}\t0".encode(),
             stderr=b"",
         )
 
@@ -225,7 +225,65 @@ def test_tkb_requests_match_production_curl_client() -> None:
     assert final_query["audit"].isdigit()
     assert status == 200
     assert headers["content-type"] == "text/javascript"
+    assert headers["x-asset-health-redirect-count"] == "0"
     assert body == b"abc"
+
+
+def test_distribution_endpoints_require_direct_inline_javascript() -> None:
+    policy = json.loads(
+        (REPOSITORY_ROOT / ".github/asset-health-policy.json").read_text(encoding="utf-8")
+    )
+    endpoints = {entry["id"]: entry for entry in policy["explicitEndpoints"]}
+    assert set(endpoints) == {"tkb-install-userscript", "tkb-update-userscript", "tkb-metadata"}
+    for endpoint in endpoints.values():
+        assert endpoint["directResponse"] is True, endpoint
+        assert endpoint["contentDispositionPrefix"] == "inline;", endpoint
+        assert set(endpoint["contentTypes"]) == {"application/javascript", "text/javascript"}, endpoint
+    assert policy["crossEndpointComparisons"] == [
+        {
+            "code": "distribution-body-mismatch",
+            "description": "The direct TKB install and update routes must serve the same executable userscript body.",
+            "field": "bodySha256",
+            "left": "tkb-install-userscript",
+            "right": "tkb-update-userscript",
+        }
+    ]
+
+
+def test_direct_response_rejects_redirected_attachment() -> None:
+    payload = b"// ==UserScript==\n// @version 1.2.3\n// ==/UserScript==\nconsole.log('redirected');\n"
+    endpoint = asset_health.Endpoint(
+        id="direct-userscript",
+        url="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
+        kind="userscript",
+        source="explicit",
+        direct_response=True,
+        allowed_content_types=("text/javascript", "application/javascript"),
+        content_disposition_prefix="inline;",
+    )
+    redirected = (
+        200,
+        {
+            "content-type": "application/octet-stream",
+            "content-disposition": 'attachment; filename="MissionChief_Map_Command_Toolkit.update.user.js"',
+            "content-length": str(len(payload)),
+            "x-asset-health-redirect-count": "3",
+        },
+        payload,
+        "https://release-assets.githubusercontent.com/github-production-release-asset/toolkit.user.js",
+    )
+    with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+        asset_health, "full_get", return_value=redirected
+    ):
+        _, findings = asset_health.validate_remote_endpoint(
+            endpoint,
+            Path(tmp),
+            {"network": {}, "scriptContentTypes": ["text/javascript"]},
+            None,
+            None,
+        )
+    codes = {finding.code for finding in findings}
+    assert {"distribution-redirect", "content-type", "content-disposition"} <= codes, findings
 
 
 def test_live_success_and_optional_warning() -> None:
@@ -444,6 +502,8 @@ def main() -> None:
         test_integrity_installer_uses_filename_route,
         test_userscript_size_limit_matches_performance_budget,
         test_tkb_requests_match_production_curl_client,
+        test_distribution_endpoints_require_direct_inline_javascript,
+        test_direct_response_rejects_redirected_attachment,
         test_live_success_and_optional_warning,
         test_wrong_release_hash_fails,
         test_missing_stable_raw_path_fails_static,

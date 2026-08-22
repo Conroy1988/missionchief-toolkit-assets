@@ -20,5 +20,9 @@ meta=re.search(r'(?m)^//\s*@version\s+([^\s]+)\s*$',text).group(1)
 runtime=re.search(r"version:\s*'([^']+)',",text).group(1)
 assert meta==runtime
 assert tuple(int(part) for part in meta.split('.')[:3]) >= (7,0,0)
-assert text.rstrip().endswith('})();')
+first_byte=text.index('const MCMS_FIRST_BYTE = (() => {')
+application=text.index('try {\n(function () {')
+assert first_byte < application < declarations[0].start()
+assert text.rstrip().endswith('}')
+assert "} catch (error) {\n    MCMS_FIRST_BYTE.fail(error, 'application');" in text[-800:]
 print('v7 preboot hydration contract passed.')

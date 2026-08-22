@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.6"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.7"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.16.6"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.16.7"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Auto-selects only stations whose scanned Hiring Phase or Personnel (Desired) differs from the configured plan; exact matches remain visible and unchecked.",
+            "Starts an independent first-byte recovery control before the 2.75 MB application evaluates and retries safely when document-start has no HTML root yet.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

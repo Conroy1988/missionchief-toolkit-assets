@@ -1,6 +1,14 @@
 {
   "compatibilityAliasManifest": ".github/asset-compatibility-aliases.json",
-  "crossEndpointComparisons": [],
+  "crossEndpointComparisons": [
+    {
+      "code": "distribution-body-mismatch",
+      "description": "The direct TKB install and update routes must serve the same executable userscript body.",
+      "field": "bodySha256",
+      "left": "tkb-install-userscript",
+      "right": "tkb-update-userscript"
+    }
+  ],
   "excludedDirectories": [
     ".git",
     "__pycache__",
@@ -19,6 +27,12 @@
     {
       "compareLatestReleaseHash": true,
       "compareLatestReleaseVersion": true,
+      "contentDispositionPrefix": "inline;",
+      "contentTypes": [
+        "application/javascript",
+        "text/javascript"
+      ],
+      "directResponse": true,
       "id": "tkb-install-userscript",
       "kind": "userscript",
       "maxBytes": 3000000,
@@ -32,6 +46,12 @@
     {
       "compareLatestReleaseHash": true,
       "compareLatestReleaseVersion": true,
+      "contentDispositionPrefix": "inline;",
+      "contentTypes": [
+        "application/javascript",
+        "text/javascript"
+      ],
+      "directResponse": true,
       "id": "tkb-update-userscript",
       "kind": "userscript",
       "maxBytes": 3000000,
@@ -44,6 +64,12 @@
     },
     {
       "compareLatestReleaseVersion": true,
+      "contentDispositionPrefix": "inline;",
+      "contentTypes": [
+        "application/javascript",
+        "text/javascript"
+      ],
+      "directResponse": true,
       "id": "tkb-metadata",
       "kind": "metadata",
       "maxBytes": 50000,

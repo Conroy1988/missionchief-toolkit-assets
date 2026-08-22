@@ -114,7 +114,7 @@ def main() -> int:
     assert not server.allowed_request_path("/node_modules/jsdom/package.json")
 
     dependencies = load_module("mcms_dev_dependencies", ROOT / "tools" / "ensure_dev_dependencies.py")
-    assert dependencies.REQUIRED == {"jsdom": "26.1.0", "acorn": "8.15.0"}
+    assert dependencies.REQUIRED == {"jsdom": "26.1.0", "acorn": "8.15.0", "playwright-core": "1.55.0"}
     assert dependencies.installed(), "Pinned local development dependencies are unavailable"
 
     lab = (ROOT / "devlab" / "lab.js").read_text(encoding="utf-8")

@@ -59,6 +59,9 @@ class Endpoint:
     allowed_warning_statuses: tuple[int, ...] = ()
     min_bytes: int | None = None
     max_bytes: int | None = None
+    direct_response: bool = False
+    allowed_content_types: tuple[str, ...] = ()
+    content_disposition_prefix: str | None = None
 
     def merge(self, other: "Endpoint") -> "Endpoint":
         return Endpoint(
@@ -73,6 +76,9 @@ class Endpoint:
             allowed_warning_statuses=tuple(sorted(set(self.allowed_warning_statuses) | set(other.allowed_warning_statuses))),
             min_bytes=other.min_bytes if other.min_bytes is not None else self.min_bytes,
             max_bytes=other.max_bytes if other.max_bytes is not None else self.max_bytes,
+            direct_response=self.direct_response or other.direct_response,
+            allowed_content_types=other.allowed_content_types or self.allowed_content_types,
+            content_disposition_prefix=other.content_disposition_prefix or self.content_disposition_prefix,
         )
 
 
@@ -258,6 +264,13 @@ def resolve_explicit_endpoints(root: Path, policy: dict[str, Any]) -> list[Endpo
                 allowed_warning_statuses=tuple(int(value) for value in entry.get("allowedWarningStatuses", [])),
                 min_bytes=int(entry["minBytes"]) if entry.get("minBytes") is not None else None,
                 max_bytes=int(entry["maxBytes"]) if entry.get("maxBytes") is not None else None,
+                direct_response=bool(entry.get("directResponse", False)),
+                allowed_content_types=tuple(str(value).lower() for value in entry.get("contentTypes", [])),
+                content_disposition_prefix=(
+                    str(entry["contentDispositionPrefix"])
+                    if entry.get("contentDispositionPrefix") is not None
+                    else None
+                ),
             )
         )
     return endpoints
@@ -424,7 +437,7 @@ def curl_request_once(
             "--output",
             str(body_path),
             "--write-out",
-            "%{http_code}\t%{url_effective}",
+            "%{http_code}\t%{url_effective}\t%{num_redirects}",
         ]
         if method == "HEAD":
             command.append("--head")
@@ -445,11 +458,15 @@ def curl_request_once(
             detail = result.stderr.decode("utf-8", errors="replace").strip()
             raise urllib.error.URLError(f"curl exited {result.returncode}: {detail or 'request failed'}")
 
-        status_text, separator, final_url = result.stdout.decode("utf-8", errors="replace").partition("\t")
-        if not separator or not status_text.isdigit() or not final_url:
+        output_parts = result.stdout.decode("utf-8", errors="replace").split("\t")
+        if len(output_parts) != 3:
             raise AssetHealthError("curl did not return a valid HTTP status and effective URL")
+        status_text, final_url, redirects_text = output_parts
+        if not status_text.isdigit() or not final_url or not redirects_text.isdigit():
+            raise AssetHealthError("curl did not return a valid HTTP status, effective URL and redirect count")
         status = int(status_text)
         headers = parse_curl_headers(headers_path.read_bytes())
+        headers["x-asset-health-redirect-count"] = redirects_text
         body = b"" if method == "HEAD" else body_path.read_bytes()
         if range_prefix is not None:
             body = body[:range_prefix]
@@ -579,6 +596,9 @@ def validate_remote_endpoint(endpoint: Endpoint, root: Path, policy: dict[str, A
         return record, findings
 
     content_type = content_type_base(headers.get("content-type"))
+    content_disposition = headers.get("content-disposition", "")
+    redirect_count_raw = headers.get("x-asset-health-redirect-count", "0")
+    redirect_count = int(redirect_count_raw) if redirect_count_raw.isdigit() else 0
     content_length_raw = headers.get("content-length")
     content_length = int(content_length_raw) if content_length_raw and content_length_raw.isdigit() else None
     record.update(
@@ -587,6 +607,8 @@ def validate_remote_endpoint(endpoint: Endpoint, root: Path, policy: dict[str, A
             "finalUrl": final_url,
             "contentType": content_type,
             "contentLength": content_length,
+            "contentDisposition": content_disposition,
+            "redirectCount": redirect_count,
             "prefixBytesRead": len(body),
         }
     )
@@ -595,13 +617,40 @@ def validate_remote_endpoint(endpoint: Endpoint, root: Path, policy: dict[str, A
         findings.append(finding)
         return record, findings
 
-    allowed_types = expected_types(endpoint.kind, extension, policy)
+    if endpoint.direct_response:
+        requested = urllib.parse.urlparse(endpoint.url)
+        effective = urllib.parse.urlparse(final_url)
+        requested_target = (requested.scheme.lower(), requested.hostname, requested.port, requested.path)
+        effective_target = (effective.scheme.lower(), effective.hostname, effective.port, effective.path)
+        if redirect_count > 0 or requested_target != effective_target:
+            findings.append(
+                Finding(
+                    "failure" if endpoint.required else "warning",
+                    "distribution-redirect",
+                    f"Endpoint must return a direct response; observed {redirect_count} redirect(s) to {final_url}",
+                    endpoint.url,
+                )
+            )
+
+    allowed_types = set(endpoint.allowed_content_types) or expected_types(endpoint.kind, extension, policy)
     if allowed_types and content_type not in allowed_types:
         findings.append(
             Finding(
                 "failure" if endpoint.required else "warning",
                 "content-type",
                 f"Content-Type {content_type or '(missing)'} is not allowed; expected one of {sorted(allowed_types)}",
+                endpoint.url,
+            )
+        )
+
+    if endpoint.content_disposition_prefix and not content_disposition.lower().startswith(
+        endpoint.content_disposition_prefix.lower()
+    ):
+        findings.append(
+            Finding(
+                "failure" if endpoint.required else "warning",
+                "content-disposition",
+                f"Content-Disposition {content_disposition or '(missing)'} does not start with {endpoint.content_disposition_prefix!r}",
                 endpoint.url,
             )
         )

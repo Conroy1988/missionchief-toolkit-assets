@@ -87,6 +87,7 @@ const context = vm.createContext({
     commandExperienceElement: id => shell.window.document.querySelector(`#${id}`),
     state: { dispatchRecruitment: { dispatchId: '77', buildingTypeId: 'all-types', hiringPhase: '3', personnelDesired: '5', delayMs: 1500 } },
     dispatchRecruitmentRuntime,
+    allianceCourseRuntime: { running: false, scanPromise: null },
     stationIconCopierRuntime: { running: false, scanPromise: null, catalogPromise: null },
     expansionPlannerRuntime: { running: false, preparing: false, scanPromise: null, catalogPromise: null },
     DISPATCH_RECRUITMENT_ALL_CENTRES: 'all',
@@ -110,6 +111,8 @@ const context = vm.createContext({
         return true;
     },
     showToast: () => {},
+    updateUI: () => {},
+    handleDeviceLayoutSettingChange: () => false,
     saveState: () => { saveStateCalls += 1; },
     toolkitAnalyticsRecordFeature: () => {},
     runtimeDelay: async () => true,
@@ -117,6 +120,7 @@ const context = vm.createContext({
 });
 vm.runInContext(source.slice(start, end), context, { filename: 'issue706-dispatch-recruitment.js' });
 vm.runInContext(extractFunction('captureDispatchRecruitmentPersonnelDraft'), context, { filename: 'issue706-dispatch-recruitment-draft.js' });
+vm.runInContext(extractFunction('handleSettingChange'), context, { filename: 'issue706-dispatch-recruitment-settings.js' });
 
 const parsed = html => new shell.window.DOMParser().parseFromString(html, 'text/html');
 
@@ -281,9 +285,18 @@ dispatchRecruitmentRuntime.selectedBuildingIds = new Set(['101', '102']);
 dispatchRecruitmentRuntime.selectedTypeIds = new Set(['2', '6']);
 context.state.dispatchRecruitment.personnelDesired = '1000';
 const savedBeforeDraft = saveStateCalls;
+dispatchRecruitmentRuntime.scanPromise = Promise.resolve([]);
 assert.equal(context.captureDispatchRecruitmentPersonnelDraft({ value: '400', matches: selector => selector === '[data-setting="dispatch-recruitment-personnel"]' }), true);
-assert.equal(context.state.dispatchRecruitment.personnelDesired, '400', 'Personnel (Desired) draft reverted before change/blur');
-assert.equal(saveStateCalls, savedBeforeDraft + 1, 'Personnel (Desired) draft was not persisted synchronously');
+assert.equal(context.state.dispatchRecruitment.personnelDesired, '400', 'Personnel (Desired) draft reverted while a station scan was active');
+assert.equal(saveStateCalls, savedBeforeDraft + 1, 'Personnel (Desired) draft was not persisted synchronously during a station scan');
+context.handleSettingChange({
+    dataset: { setting: 'dispatch-recruitment-personnel' },
+    value: '450',
+    matches: selector => selector === '[data-setting="dispatch-recruitment-personnel"]',
+});
+assert.equal(context.state.dispatchRecruitment.personnelDesired, '450', 'The delegated change path blocked a local Personnel (Desired) update during a station scan');
+assert.equal(saveStateCalls, savedBeforeDraft + 2, 'The delegated change path did not persist Personnel (Desired) during a station scan');
+dispatchRecruitmentRuntime.scanPromise = null;
 context.state.dispatchRecruitment.personnelDesired = '5';
 shell.window.document.body.innerHTML = `
     <div id="panel">
@@ -312,6 +325,16 @@ assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').
 assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Other centres/u);
 assert.match(shell.window.document.querySelector('[data-dispatch-recruitment]').textContent, /Other Centre Fire/u);
 assert.equal(shell.window.document.querySelector('[data-action="apply-dispatch-recruitment"]').disabled, false);
+dispatchRecruitmentRuntime.scanPromise = Promise.resolve([]);
+context.renderDispatchRecruitmentPanel();
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-centre"]').disabled, true, 'Dispatch scope must stay locked while a station scan is active');
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-building-type"]').disabled, true, 'Building-type scope must stay locked while a station scan is active');
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-hiring-phase"]').disabled, false, 'Hiring Phase must remain editable during a station scan');
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-personnel"]').disabled, false, 'Personnel (Desired) must remain editable during a station scan');
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-delay"]').disabled, false, 'Delay must remain editable during a station scan');
+assert.equal(shell.window.document.querySelector('[data-action="apply-dispatch-recruitment"]').disabled, true, 'Apply must stay locked while a station scan is active');
+dispatchRecruitmentRuntime.scanPromise = null;
+context.renderDispatchRecruitmentPanel();
 assert.equal(context.setDispatchRecruitmentBuildingTypeScope('6'), true);
 assert.equal(context.state.dispatchRecruitment.buildingTypeId, '6');
 assert.equal(dispatchRecruitmentRuntime.queue.length, 0, 'Changing building type must invalidate the complete station queue');
@@ -454,6 +477,18 @@ const personnelFormHtml = `
         <input type="submit" name="commit" value="Save">
     </form>
 `;
+const personnelFormWithoutQueryOrEmbeddedToken = `
+    <form class="simple_form building_form" building_id="101" id="building_form_101" action="/buildings/101" method="post">
+        <input name="utf8" type="hidden" value="✓">
+        <input type="hidden" name="_method" value="put">
+        <input type="number" step="1" value="2" name="building[personal_count_target]" id="building_personal_count_target">
+        <input type="submit" name="commit" value="Save">
+    </form>
+`;
+const csrfMeta = shell.window.document.createElement('meta');
+csrfMeta.setAttribute('name', 'csrf-token');
+csrfMeta.setAttribute('content', 'page-csrf-token');
+shell.window.document.head.appendChild(csrfMeta);
 const prepared = context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml), scan.queue[0], 400);
 const preparedBody = new URLSearchParams(prepared.body);
 assert.equal(prepared.action, 'https://www.missionchief.co.uk/buildings/101?personal_count_target_only=1');
@@ -465,6 +500,18 @@ assert.equal(prepared.headers['X-CSRF-Token'], 'csrf-token');
 assert.equal(prepared.headers['X-Requested-With'], 'XMLHttpRequest');
 assert.deepEqual(Array.from(preparedBody.keys()).sort(), ['_method', 'authenticity_token', 'building[personal_count_target]', 'commit', 'utf8'].sort());
 assert.equal(Array.from(preparedBody.keys()).some(name => /leitstelle/iu.test(name)), false, 'Personnel payloads must never contain a Dispatch Centre assignment field');
+
+const preparedNativePartial = context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormWithoutQueryOrEmbeddedToken), scan.queue[0], 400);
+const preparedNativePartialBody = new URLSearchParams(preparedNativePartial.body);
+assert.equal(preparedNativePartial.action, 'https://www.missionchief.co.uk/buildings/101?personal_count_target_only=1', 'The native personnel-only flag must be restored when the AJAX partial omits it from its form action');
+assert.equal(preparedNativePartialBody.get('authenticity_token'), 'page-csrf-token', 'The current page CSRF meta token must protect a native partial that omits an embedded token');
+assert.equal(preparedNativePartial.headers['X-CSRF-Token'], 'page-csrf-token');
+
+assert.throws(
+    () => context.prepareDispatchRecruitmentPersonnelSubmission(parsed(`${personnelFormHtml}${personnelFormHtml}`), scan.queue[0], 400),
+    error => error?.dispatchRecruitmentSafeSkip === true && /ambiguous/u.test(error.message),
+    'Multiple matching Personnel (Desired) forms must fail closed'
+);
 
 assert.throws(
     () => context.prepareDispatchRecruitmentPersonnelSubmission(parsed(personnelFormHtml.replace('personal_count_target_only=1', 'coins=1')), scan.queue[0], 5),
@@ -518,7 +565,7 @@ context.runtimeFetch = async (input, init = {}) => {
         const record = apiRecords.shift();
         return { ...response(url.href), json: async () => record };
     }
-    if (url.pathname === '/buildings/101/personalCountTarget') return response(url.href, personnelFormHtml);
+    if (url.pathname === '/buildings/101/personalCountTarget') return response(url.href, personnelFormWithoutQueryOrEmbeddedToken);
     if (url.pathname === '/buildings/101/hire') return response(url.href, '<a href="/buildings/101/hire_do/3">Hire for 3 days</a>');
     if (url.pathname === '/buildings/101/hire_do/3') return response(url.href, '<p>Recruitment started</p>');
     if (url.pathname === '/buildings/101' && url.searchParams.get('personal_count_target_only') === '1') return response(url.href, '<p>Saved</p>');
@@ -540,7 +587,7 @@ assert.deepEqual(requests.map(item => `${item.method} ${item.path}`), [
 ]);
 const submitted = new URLSearchParams(requests.find(item => item.method === 'POST').body);
 assert.equal(submitted.get('building[personal_count_target]'), '400');
-assert.equal(requests.find(item => item.method === 'POST').headers['X-CSRF-Token'], 'csrf-token');
+assert.equal(requests.find(item => item.method === 'POST').headers['X-CSRF-Token'], 'page-csrf-token');
 assert.equal(requests.find(item => item.method === 'POST').headers['X-Requested-With'], 'XMLHttpRequest');
 
 requests.length = 0;

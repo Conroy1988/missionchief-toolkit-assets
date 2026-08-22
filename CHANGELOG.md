@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.1] - 2026-08-22
+
+### Dispatch Recruitment Restoration
+
+- Keeps Personnel (Desired), Hiring Phase and station delay editable and persisted while Dispatch Centre catalogues or station matrices are loading.
+- Accepts MissionChief's exact personnel edit form whether its action already includes the personnel-only flag or leaves that flag for the native AJAX caller.
+- Uses the form's authenticity token when embedded and otherwise falls back to the current page's native Rails CSRF token.
+- Normalises only the exact same-origin station update route, while continuing to reject ambiguous forms, extra building fields, assignment controls and external actions.
+- Adds end-to-end regression coverage for the live partial shape and for changing Personnel (Desired) during an active scan without restoring an older value.
+
 ## [10.16.0] - 2026-08-22
 
 ### Building Visibility Selector

@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.1"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -130,6 +130,10 @@ def main() -> int:
         assert immutability_guard in implementation, f"Missing Dispatch Centre immutability guard: {immutability_guard}"
     personnel = source_section(implementation, "    function prepareDispatchRecruitmentPersonnelSubmission(", "    async function prepareDispatchRecruitmentHiring(")
     assert "for (const hidden of form.querySelectorAll" not in personnel, "Personnel submission must not forward arbitrary hidden form fields"
+    assert "const supportedQuery = !keys.length ||" in personnel
+    assert "action.searchParams.set('personal_count_target_only', '1')" in personnel
+    assert "document.getElementsByTagName('meta')" in personnel
+    assert "matchingForms.length !== 1" in personnel
     assert "['put', 'patch'].includes(methodOverride)" in personnel
     assert "'X-CSRF-Token': token" in personnel
     assert "'X-Requested-With': 'XMLHttpRequest'" in personnel
@@ -156,6 +160,10 @@ def main() -> int:
     personnel_draft = source_section(source, "    function captureDispatchRecruitmentPersonnelDraft(", "    function handleSettingChange(")
     assert "state.dispatchRecruitment.personnelDesired = normalised" in personnel_draft
     assert "saveState()" in personnel_draft
+    assert "dispatchRecruitmentRuntime.scanPromise" not in personnel_draft
+    assert "dispatchRecruitmentRuntime.catalogPromise" not in personnel_draft
+    assert "const planLocked = runtimeState.running" in implementation
+    assert "updateUiSetProperty(control, 'disabled', planLocked)" in implementation
     assert "[data-setting^=\"dispatch-recruitment-\"]" in implementation
     assert GUIDE.exists(), "Issue #706 operator guide is missing"
     preflight = PREFLIGHT.read_text(encoding="utf-8")

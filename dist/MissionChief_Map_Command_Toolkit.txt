@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.6
+// @version      10.16.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -48,8 +48,363 @@ Software, and to permit persons to whom the Software is furnished to do so.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 */
 
+const MCMS_FIRST_BYTE = (() => {
+    'use strict';
+    const VERSION = '10.16.7';
+    const EVENT_NAME = 'mcms:first-byte-recover';
+    const STATUS_ID = 'mcms-first-byte-status';
+    const RECOVERY_ID = 'mcms-first-byte-recovery';
+    const DETAILS_ID = 'mcms-first-byte-recovery-details';
+    const INSTALL_URL = 'https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js';
+    const PRIMARY_CONTROL_ID = 'mc-map-command-toolkit-control';
+    const CLEAN_EXIT_ID = 'mcms-clean-exit';
+    const STARTUP_GRACE_MS = 3200;
+    const CHECK_INTERVAL_MS = 2400;
+    let phase = 'first-byte-entered';
+    let failure = '';
+    let recoveryRequested = false;
+    let checkTimer = null;
+    let intervalTimer = null;
+
+    function safeDocumentElement() {
+        try { return document.documentElement || null; } catch (error) { return null; }
+    }
+
+    function safeBody() {
+        try { return document.body || null; } catch (error) { return null; }
+    }
+
+    function elementById(id) {
+        try { return document.getElementById(id); } catch (error) { return null; }
+    }
+
+    function appendTarget() {
+        return safeBody() || safeDocumentElement();
+    }
+
+    function important(element, property, value) {
+        try { element.style.setProperty(property, value, 'important'); } catch (error) {}
+    }
+
+    function statusNode() {
+        let node = elementById(STATUS_ID);
+        const parent = appendTarget();
+        if (!node && parent) {
+            try {
+                node = document.createElement('meta');
+                node.id = STATUS_ID;
+                node.setAttribute('name', 'mcms-toolkit-startup');
+                parent.appendChild(node);
+            } catch (error) { node = null; }
+        }
+        return node;
+    }
+
+    function publishStatus() {
+        const root = safeDocumentElement();
+        const node = statusNode();
+        for (const target of [root, node]) {
+            if (!target) continue;
+            try {
+                target.setAttribute('data-mcms-first-byte-version', VERSION);
+                target.setAttribute('data-mcms-first-byte-phase', phase);
+                target.setAttribute('data-mcms-first-byte-recovery-requested', String(recoveryRequested));
+                if (failure) target.setAttribute('data-mcms-first-byte-failure', failure);
+                else target.removeAttribute('data-mcms-first-byte-failure');
+            } catch (error) {}
+        }
+        const recovery = elementById(RECOVERY_ID);
+        if (recovery) {
+            try {
+                recovery.setAttribute('data-mcms-startup-phase', phase);
+                recovery.title = `MissionChief Toolkit v${VERSION} startup phase: ${phase}`;
+            } catch (error) {}
+        }
+    }
+
+    function mark(nextPhase) {
+        phase = String(nextPhase || phase).slice(0, 80);
+        publishStatus();
+        if (phase === 'ui-mounted') removeRecoveryUi();
+        return phase;
+    }
+
+    function fail(error, label = 'application') {
+        const message = String(error?.message || error || 'unknown error').replace(/\s+/gu, ' ').trim();
+        failure = `${String(label || 'application').slice(0, 36)}:${message.slice(0, 120)}`;
+        mark('application-failed');
+        ensureRecoveryUi(true);
+        return failure;
+    }
+
+    function visible(element) {
+        if (!element || element.isConnected === false) return false;
+        try {
+            const style = window.getComputedStyle?.(element);
+            const rect = element.getBoundingClientRect?.();
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
+            if (String(style?.opacity || '').trim() && Number(style.opacity) === 0) return false;
+            if (style?.pointerEvents === 'none') return false;
+            if (!rect) return true;
+            const viewportWidth = Math.max(1, Number(window.innerWidth) || Number(document.documentElement?.clientWidth) || 1);
+            const viewportHeight = Math.max(1, Number(window.innerHeight) || Number(document.documentElement?.clientHeight) || 1);
+            return rect.width > 1
+                && rect.height > 1
+                && rect.right > 0
+                && rect.bottom > 0
+                && rect.left < viewportWidth
+                && rect.top < viewportHeight;
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function primaryUiHealthy() {
+        const control = elementById(PRIMARY_CONTROL_ID);
+        const menu = control?.querySelector?.('.mcms-menu-btn') || control;
+        return visible(menu) || visible(elementById(CLEAN_EXIT_ID));
+    }
+
+    function canonicalMapPresent() {
+        try {
+            const map = elementById('map');
+            if (!map || map.isConnected === false) return false;
+            const outer = elementById('map_outer');
+            const canonical = outer?.contains?.(map)
+                || map.classList?.contains?.('leaflet-container')
+                || map.getAttribute?.('data-leaflet-map') === 'main';
+            if (!canonical) return false;
+            const rect = map.getBoundingClientRect?.();
+            return !rect || (rect.width > 40 && rect.height > 40);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function topLevelMissionChiefPage() {
+        try {
+            if (window.top !== window) return false;
+            return /(^|\.)((?:missionchief\.(?:co\.uk|com))|leitstellenspiel\.de|meldkamerspel\.com)$/iu.test(String(location.hostname || ''));
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function removeRecoveryUi() {
+        try { elementById(RECOVERY_ID)?.remove?.(); } catch (error) {}
+        try { elementById(DETAILS_ID)?.remove?.(); } catch (error) {}
+    }
+
+    function revealExistingControl() {
+        const control = elementById(PRIMARY_CONTROL_ID);
+        if (!control) return false;
+        try {
+            control.removeAttribute('hidden');
+            important(control, 'display', 'block');
+            important(control, 'visibility', 'visible');
+            important(control, 'opacity', '1');
+            important(control, 'pointer-events', 'auto');
+            const menu = control.querySelector?.('.mcms-menu-btn');
+            if (menu) {
+                important(menu, 'display', 'inline-flex');
+                important(menu, 'visibility', 'visible');
+                important(menu, 'opacity', '1');
+                important(menu, 'pointer-events', 'auto');
+            }
+        } catch (error) {}
+        return true;
+    }
+
+    function dispatchRecoveryRequest() {
+        recoveryRequested = true;
+        mark('recovery-requested');
+        const root = safeDocumentElement();
+        try {
+            root?.removeAttribute?.('data-mcms-clean');
+            root?.setAttribute?.('data-mcms-command-bar-open', 'true');
+            root?.setAttribute?.('data-mcms-auto-hide-revealed', 'true');
+        } catch (error) {}
+        revealExistingControl();
+        try {
+            const event = typeof CustomEvent === 'function'
+                ? new CustomEvent(EVENT_NAME, { detail: { version: VERSION, reason: 'first-byte recovery control' } })
+                : document.createEvent('Event');
+            if (!event.type) event.initEvent(EVENT_NAME, true, false);
+            document.dispatchEvent(event);
+        } catch (error) {}
+        window.setTimeout?.(() => {
+            const control = elementById(PRIMARY_CONTROL_ID);
+            const menu = control?.querySelector?.('.mcms-menu-btn');
+            if (visible(menu)) {
+                try { menu.click(); } catch (error) {}
+                mark('recovery-applied');
+                return;
+            }
+            ensureRecoveryDetails();
+        }, 180);
+    }
+
+    function ensureRecoveryDetails() {
+        const parent = appendTarget();
+        if (!parent) return null;
+        let panel = elementById(DETAILS_ID);
+        if (panel) return panel;
+        try {
+            panel = document.createElement('section');
+            panel.id = DETAILS_ID;
+            panel.setAttribute('role', 'alert');
+            panel.setAttribute('aria-live', 'assertive');
+            important(panel, 'all', 'initial');
+            important(panel, 'box-sizing', 'border-box');
+            important(panel, 'position', 'fixed');
+            important(panel, 'right', 'max(14px, env(safe-area-inset-right))');
+            important(panel, 'bottom', 'max(72px, calc(env(safe-area-inset-bottom) + 72px))');
+            important(panel, 'z-index', '2147483647');
+            important(panel, 'display', 'grid');
+            important(panel, 'gap', '9px');
+            important(panel, 'width', 'min(330px, calc(100vw - 28px))');
+            important(panel, 'padding', '14px');
+            important(panel, 'border', '2px solid #ffcf66');
+            important(panel, 'border-radius', '12px');
+            important(panel, 'background', '#101820');
+            important(panel, 'color', '#ffffff');
+            important(panel, 'box-shadow', '0 14px 38px rgba(0,0,0,.68)');
+            important(panel, 'font', '700 13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif');
+            const title = document.createElement('strong');
+            title.textContent = 'Toolkit startup did not complete';
+            important(title, 'font', '900 15px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif');
+            const copy = document.createElement('span');
+            copy.textContent = `v${VERSION} reached ${phase}. Retry the interface, or repair the installed userscript from the verified TKB channel.`;
+            const actions = document.createElement('span');
+            important(actions, 'display', 'flex');
+            important(actions, 'gap', '8px');
+            important(actions, 'flex-wrap', 'wrap');
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.textContent = 'Retry UI';
+            retry.addEventListener('click', dispatchRecoveryRequest);
+            const repair = document.createElement('a');
+            repair.href = INSTALL_URL;
+            repair.textContent = 'Repair Toolkit';
+            for (const action of [retry, repair]) {
+                important(action, 'box-sizing', 'border-box');
+                important(action, 'display', 'inline-flex');
+                important(action, 'align-items', 'center');
+                important(action, 'justify-content', 'center');
+                important(action, 'min-height', '38px');
+                important(action, 'padding', '0 12px');
+                important(action, 'border', '1px solid #86d7ff');
+                important(action, 'border-radius', '8px');
+                important(action, 'background', '#12374a');
+                important(action, 'color', '#ffffff');
+                important(action, 'font', '900 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif');
+                important(action, 'text-decoration', 'none');
+                important(action, 'cursor', 'pointer');
+            }
+            actions.append(retry, repair);
+            panel.append(title, copy, actions);
+            parent.appendChild(panel);
+        } catch (error) { panel = null; }
+        return panel;
+    }
+
+    function ensureRecoveryUi(force = false) {
+        publishStatus();
+        if (!topLevelMissionChiefPage() || (!force && !canonicalMapPresent())) {
+            if (!topLevelMissionChiefPage()) removeRecoveryUi();
+            return null;
+        }
+        if (primaryUiHealthy()) {
+            mark('ui-mounted');
+            return null;
+        }
+        const parent = appendTarget();
+        if (!parent) return null;
+        let button = elementById(RECOVERY_ID);
+        if (!button) {
+            try {
+                button = document.createElement('button');
+                button.id = RECOVERY_ID;
+                button.type = 'button';
+                button.textContent = 'Toolkit Recovery';
+                button.setAttribute('aria-label', 'Recover MissionChief Map Command Toolkit interface');
+                button.addEventListener('click', dispatchRecoveryRequest);
+                important(button, 'all', 'initial');
+                important(button, 'box-sizing', 'border-box');
+                important(button, 'position', 'fixed');
+                important(button, 'right', 'max(14px, env(safe-area-inset-right))');
+                important(button, 'bottom', 'max(14px, env(safe-area-inset-bottom))');
+                important(button, 'z-index', '2147483647');
+                important(button, 'display', 'inline-flex');
+                important(button, 'align-items', 'center');
+                important(button, 'justify-content', 'center');
+                important(button, 'min-width', '154px');
+                important(button, 'min-height', '48px');
+                important(button, 'padding', '0 16px');
+                important(button, 'border', '2px solid #ffcf66');
+                important(button, 'border-radius', '11px');
+                important(button, 'background', '#8f1d16');
+                important(button, 'color', '#ffffff');
+                important(button, 'box-shadow', '0 10px 30px rgba(0,0,0,.65)');
+                important(button, 'font', '900 13px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif');
+                important(button, 'letter-spacing', '.2px');
+                important(button, 'cursor', 'pointer');
+                important(button, 'visibility', 'visible');
+                important(button, 'opacity', '1');
+                important(button, 'pointer-events', 'auto');
+                parent.appendChild(button);
+            } catch (error) { button = null; }
+        }
+        publishStatus();
+        return button;
+    }
+
+    function check() {
+        if (primaryUiHealthy()) {
+            mark('ui-mounted');
+            return true;
+        }
+        ensureRecoveryUi(false);
+        return false;
+    }
+
+    function start() {
+        publishStatus();
+        try { document.addEventListener('readystatechange', publishStatus); } catch (error) {}
+        try { document.addEventListener('DOMContentLoaded', () => window.setTimeout?.(check, 0), { once: true }); } catch (error) {}
+        try { window.addEventListener('pageshow', () => window.setTimeout?.(check, 250)); } catch (error) {}
+        try { checkTimer = window.setTimeout(check, STARTUP_GRACE_MS); } catch (error) {}
+        try { intervalTimer = window.setInterval(check, CHECK_INTERVAL_MS); } catch (error) {}
+    }
+
+    function dispose() {
+        try { window.clearTimeout(checkTimer); } catch (error) {}
+        try { window.clearInterval(intervalTimer); } catch (error) {}
+        removeRecoveryUi();
+    }
+
+    const api = Object.freeze({
+        version: VERSION,
+        eventName: EVENT_NAME,
+        mark,
+        fail,
+        check,
+        requested: () => recoveryRequested,
+        dispose,
+    });
+    try {
+        const previous = window.__MCMS_FIRST_BYTE_BOOTSTRAP__;
+        if (previous?.version !== VERSION) previous?.dispose?.();
+        window.__MCMS_FIRST_BYTE_BOOTSTRAP__ = api;
+    } catch (error) {}
+    start();
+    return api;
+})();
+
+try {
 (function () {
     'use strict';
+    MCMS_FIRST_BYTE.mark('application-entered');
     const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const ALLIANCE_BUILDINGS_PATH_PATTERN = /\/(?:verband\/(?:gebauede|gebaeude|gebäude)|alliance(?:\/|_)(?:buildings|buildings_list))(?:\/|$)/iu;
     const ALLIANCE_BUILDINGS_STORAGE_KEY = 'mc_map_command_toolkit_state_v150';
@@ -468,7 +823,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.6',
+        version: '10.16.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +883,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.6",
-        title: "Known-Good Toolkit UI Restoration",
+        version: "10.16.7",
+        title: "First-Byte UI Recovery and Direct Updates",
         highlights: Object.freeze([
-            "Restores the exact launcher, panel and document-start boot lifecycle proven in v10.16.2 before the complete interface regression.",
-            "Removes the v10.16.4 and v10.16.5 runtime-handoff and emergency-launcher rewrites after they failed to restore the live Toolkit UI.",
-            "Keeps Dispatch Recruitment mismatch classification as immutable scan-local state instead of recalculating it through the global UI render path.",
-            "Auto-selects only stations whose scanned Hiring Phase or Personnel (Desired) differs from the configured plan; exact matches remain visible and unchecked.",
-            "Adds a real sparse-document @run-at document-start runtime test proving Desktop, Tablet and iOS launcher, panel, stylesheet and native map-replacement recovery."
+            "Starts an independent first-byte recovery control before the 2.75 MB application evaluates and retries safely when document-start has no HTML root yet.",
+            "Keeps recovery visible through synchronous application failure, corrupted hidden-state settings and a missing or CSS-hidden primary launcher.",
+            "Adds explicit startup phases from first byte through runtime, state, boot and mounted UI so a failed launch can no longer be mistaken for a healthy release.",
+            "Restores Clean Mode, the command bar and auto-hide state from the recovery control without deleting map profiles, bookmarks or operational history.",
+            "Requires the TKB update and metadata routes to return direct same-origin JavaScript responses instead of GitHub attachment redirects.",
+            "Adds fatal-bootstrap, persisted Clean Mode, direct-response and real Chromium document-start regression coverage."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -587,6 +943,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
     };
     pageWindow[RUNTIME_KEY] = runtime;
+    MCMS_FIRST_BYTE.mark('runtime-installed');
     function runtimeSetTimeout(callback, delay = 0, ...args) {
         if (runtime.destroyed) return null;
         let id = null;
@@ -2047,6 +2404,36 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let commandPaletteSelectedIndex = 0;
     let commandPaletteReturnFocus = null;
     state = loadState();
+    function applyFirstByteRecoveryRequest() {
+        if (runtime.destroyed) return false;
+        state.cleanMode = false;
+        state.commandBarOpen = true;
+        state.autoHideDock = { ...state.autoHideDock, enabled: false };
+        try { saveState(); } catch (error) {}
+        MCMS_FIRST_BYTE.mark('recovery-state-restored');
+        const recover = () => {
+            if (runtime.destroyed || !document.body) return false;
+            runBootIntegration('first-byte recovery root attributes', applyRootAttributes);
+            if (!bootStarted) runBootIntegration('first-byte recovery boot', boot);
+            const mounted = Boolean(runBootIntegration('first-byte recovery UI mount', ensureUi));
+            const control = toolkitElementById(SCRIPT.controlId);
+            const menu = control?.querySelector?.('.mcms-menu-btn');
+            for (const element of [control, menu]) {
+                for (const property of ['display', 'visibility', 'opacity', 'pointer-events']) {
+                    try { element?.style?.removeProperty?.(property); } catch (error) {}
+                }
+            }
+            runBootIntegration('first-byte recovery UI refresh', updateUI);
+            if (mounted) MCMS_FIRST_BYTE.mark('ui-mounted');
+            return mounted;
+        };
+        if (document.body) return recover();
+        runtimeListen(document, 'DOMContentLoaded', recover, { once: true });
+        return true;
+    }
+    runtimeListen(document, MCMS_FIRST_BYTE.eventName, applyFirstByteRecoveryRequest);
+    MCMS_FIRST_BYTE.mark('state-loaded');
+    if (MCMS_FIRST_BYTE.requested()) applyFirstByteRecoveryRequest();
     const toolkitFreshInstallAtLoad = settingsPersistenceMeta.source === 'defaults';
 
     function defaultLayoutDeviceState(position = 'bl', device = 'desktop') {
@@ -13845,11 +14232,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
     }
 
     function applyPersonalisationStyle() {
+        const parent = document.head || document.documentElement;
+        if (!parent) return false;
         let style = document.querySelector(`#${SCRIPT.personalisationStyleId}`);
         if (!style) {
         style = document.createElement('style');
         style.id = SCRIPT.personalisationStyleId;
-        document.head.appendChild(style);
+        parent.appendChild(style);
         }
         const theme = normaliseThemeStudioState(state.themeStudio);
         const preferences = activeLayoutPreferences();
@@ -13965,6 +14354,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}}
         `;
         if (style.textContent !== css) style.textContent = css;
+        return true;
     }
 
     function mapControlLayoutKey(element) {
@@ -14263,6 +14653,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
     }
 
     function setAttributeIfChanged(element, name, value) {
+        if (!element?.getAttribute || !element?.setAttribute) return false;
         const nextValue = String(value);
         if (element.getAttribute(name) === nextValue) return false;
         element.setAttribute(name, nextValue);
@@ -37507,7 +37898,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function createCleanExit() {
         if (!toolkitCommandShellContextActive()) return null;
-        if (document.getElementById(SCRIPT.cleanExitId)) return;
+        if (toolkitElementById(SCRIPT.cleanExitId)) return;
         const button = document.createElement('button');
         button.id = SCRIPT.cleanExitId;
         button.type = 'button';
@@ -39303,7 +39694,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         const control = createControl(mapEl);
         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
-        if (control) ensureVersionStatusButton();
+        if (control) {
+            ensureVersionStatusButton();
+            if (typeof MCMS_FIRST_BYTE !== 'undefined') MCMS_FIRST_BYTE.mark('ui-mounted');
+        }
         if (state.fullscreenMap || fullscreenMapTarget) applyMapFullscreenState();
         if (mapEl) {
             const map = findLeafletMapInstance(false);
@@ -40067,6 +40461,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (runtime.destroyed || bootStarted) return;
         bootStarted = true;
         bootStartedAt = Date.now();
+        MCMS_FIRST_BYTE.mark('boot-started');
         const bootPerformanceStartedAt = startupClock();
         const allianceBuildingsOnly = isAllianceBuildingsPath() && state.allianceBuildingsMap === false;
         runBootIntegration('command-shell route lifecycle', installToolkitCommandShellNavigationHooks);
@@ -40220,9 +40615,9 @@ Credits only. Each station and native action will be fetched again, purchased on
                 recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
             }, 650);
         };
-        runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
-        runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
-        runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+        for (const eventName of ['pageshow', 'popstate', 'hashchange']) {
+            runtimeListen(pageWindow, eventName, recoverUiAfterNavigation);
+        }
         registerBootMaintenanceTasks();
         runtimeListen(document, 'visibilitychange', () => {
             if (document.hidden) return;
@@ -40326,6 +40721,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function scheduleBoot() {
         if (runtime.destroyed || bootStarted) return;
+        MCMS_FIRST_BYTE.mark('boot-scheduled');
         runBootIntegration('idle boot scheduling', () => runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS));
         runtimeSetTimeout(() => {
             if (!runtime.destroyed && !bootStarted) boot();
@@ -41141,3 +41537,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
     // </mcms-alliance-member-manager>
 })();
+} catch (error) {
+    MCMS_FIRST_BYTE.fail(error, 'application');
+    try { console.error('[MissionChief Map Command Toolkit] Application bootstrap failed; first-byte recovery remains available.', error); } catch (consoleError) {}
+}

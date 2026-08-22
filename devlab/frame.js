@@ -101,7 +101,7 @@
     if (/\/api\/vehicles|\/vehicles\.json/iu.test(url.pathname)) return jsonResponse([]);
     if (/\/api\/buildings|\/buildings\.json/iu.test(url.pathname)) return jsonResponse([]);
     if (/toolkit-update-manifest|update-manifest\.json/iu.test(url.pathname)) {
-      return jsonResponse({ schemaVersion: 1, version: "10.16.6", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) });
+      return jsonResponse({ schemaVersion: 1, version: "10.16.7", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) });
     }
     return Promise.resolve(new Response("", { status: 200, headers: { "Content-Type": "text/html" } }));
   }
@@ -197,7 +197,7 @@
     window.GM_setValue = (key, value) => { gmValues.set(key, value); };
     window.GM_deleteValue = key => { gmValues.delete(key); };
     window.GM_xmlhttpRequest = options => {
-      const response = { status: 200, responseText: JSON.stringify({ schemaVersion: 1, version: "10.16.6", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) }) };
+      const response = { status: 200, responseText: JSON.stringify({ schemaVersion: 1, version: "10.16.7", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) }) };
       const timer = window.setTimeout(() => options?.onload?.(response), 0);
       return { abort() { window.clearTimeout(timer); options?.onabort?.(); } };
     };
@@ -206,7 +206,7 @@
       activeTab: fixture.tab,
       uiTheme: fixture.theme,
       setupWizard: { completed: true, schema: 1 },
-      updateBriefing: { enabled: false, seenVersion: "10.16.6", seenFeatures: [] },
+      updateBriefing: { enabled: false, seenVersion: "10.16.7", seenFeatures: [] },
       tabletMode: fixture.device === "tablet" ? "on" : "off",
       mobileMode: fixture.device === "ios" ? "on" : "off",
       majorIncidentFeed: { enabled: false, minimumCredits: 25000 },

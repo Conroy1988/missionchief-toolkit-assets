@@ -22,7 +22,7 @@ def main() -> int:
     assert "MissionChief's visible native workflow" in source
     tracked=[]
     for path in ROOT.rglob("*"):
-        if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue
+        if not path.is_file() or ".git" in path.parts or "node_modules" in path.parts or "release-bundle" in path.parts: continue
         if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
         if "toolkit-current" in path.parts or "dist" in path.parts: continue
         if TOKEN in path.as_posix().lower(): tracked.append(path.as_posix())

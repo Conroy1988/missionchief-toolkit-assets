@@ -47,6 +47,7 @@ def main() -> int:
     )
     runtime = command_text(gate.STAGE_COMMANDS["runtime"])
     assert "test_toolkit_ui_document_start_runtime.mjs" in runtime
+    assert "test_toolkit_ui_first_byte_chromium.mjs" in runtime
     assert "test_ui_mount_integration.mjs" in runtime
     assert "run_userscript_preflight.sh --contracts" in runtime
     workflow = command_text(gate.STAGE_COMMANDS["workflow"])

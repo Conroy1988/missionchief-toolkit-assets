@@ -8,8 +8,12 @@ import { JSDOM, VirtualConsole } from "jsdom";
 
 const source = fs.readFileSync("src/MissionChief_Map_Command_Toolkit.user.js", "utf8");
 const RUNTIME_KEY = "__MC_MAP_COMMAND_TOOLKIT_RUNTIME__";
+const BOOTSTRAP_KEY = "__MCMS_FIRST_BYTE_BOOTSTRAP__";
 const CONTROL_ID = "mc-map-command-toolkit-control";
 const PANEL_ID = "mc-map-command-toolkit-panel";
+const CLEAN_EXIT_ID = "mcms-clean-exit";
+const RECOVERY_ID = "mcms-first-byte-recovery";
+const RECOVERY_DETAILS_ID = "mcms-first-byte-recovery-details";
 const STYLE_ID = "mc-map-command-toolkit-style-v4146";
 const STORAGE_KEY = "mc_map_command_toolkit_state_v150";
 
@@ -121,7 +125,7 @@ function installMap(window, device, generation = 1) {
   return mapElement;
 }
 
-async function scenario(device) {
+async function scenario(device, { cleanMode = false, fatalApplication = false, rootlessStart = false } = {}) {
   const dimensions = mapDimensions(device);
   const virtualConsole = new VirtualConsole();
   const consoleErrors = [];
@@ -179,26 +183,86 @@ async function scenario(device) {
     if (this.id === "map" || this.id === "map_outer") {
       return { x: 0, y: 46, left: 0, top: 46, right: dimensions.width, bottom: dimensions.height, width: dimensions.width, height: dimensions.height - 46 };
     }
+    if (
+      document.documentElement.getAttribute("data-mcms-clean") === "true"
+      && (this.id === CONTROL_ID || this.closest?.(`#${CONTROL_ID}`))
+    ) {
+      return { x: 0, y: 0, left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+    }
     return { x: 8, y: 54, left: 8, top: 54, right: 208, bottom: 98, width: 200, height: 44 };
   };
   window.addEventListener("error", event => runtimeErrors.push(String(event.error?.stack || event.message || event.error)));
   window.addEventListener("unhandledrejection", event => runtimeErrors.push(String(event.reason?.stack || event.reason)));
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
     setupWizard: { completed: true, schema: 1 },
-    updateBriefing: { enabled: false, seenVersion: "10.16.6", seenFeatures: [] },
+    updateBriefing: { enabled: false, seenVersion: "10.16.7", seenFeatures: [] },
     tabletMode: device === "tablet" ? "on" : "off",
     mobileMode: device === "ios" ? "on" : "off",
-    cleanMode: false,
+    cleanMode,
   }));
 
+  if (rootlessStart) {
+    document.documentElement.remove();
+    assert.equal(document.documentElement, null, `${device}: rootless fixture retained an HTML root`);
+    assert.equal(document.body, null, `${device}: rootless fixture retained a body`);
+  }
+
   // Evaluate against the sparse document first: this is the real @run-at document-start order.
-  window.eval(`${source}\n//# sourceURL=toolkit-document-start-${device}.user.js`);
+  const evaluatedSource = fatalApplication
+    ? source.replace(
+      "    MCMS_FIRST_BYTE.mark('application-entered');",
+      "    MCMS_FIRST_BYTE.mark('application-entered');\n    throw new Error('intentional application bootstrap failure');",
+    )
+    : source;
+  if (fatalApplication) assert.notEqual(evaluatedSource, source, `${device}: fatal source transform failed`);
+  window.eval(`${evaluatedSource}\n//# sourceURL=toolkit-document-start-${device}.user.js`);
   assert.equal(document.getElementById(CONTROL_ID), null, `${device}: launcher mounted before the map existed`);
+
+  if (rootlessStart) {
+    const html = document.createElement("html");
+    html.append(document.createElement("head"), document.createElement("body"));
+    document.appendChild(html);
+    assert.ok(document.documentElement && document.body, `${device}: HTML root restoration failed`);
+  }
 
   document.body.innerHTML = '<nav id="navbar-main"></nav><aside id="mission_list"></aside>';
   const initialMap = installMap(window, device, 1);
   Object.defineProperty(document, "readyState", { configurable: true, value: "interactive" });
   document.dispatchEvent(new window.Event("DOMContentLoaded"));
+
+  if (fatalApplication) {
+    const recovery = await waitFor(
+      () => document.getElementById(RECOVERY_ID),
+      `${device} recovery control after fatal application bootstrap`,
+    );
+    assert.equal(window[RUNTIME_KEY], undefined, `${device}: fatal application unexpectedly installed a runtime`);
+    assert.equal(
+      document.documentElement.dataset.mcmsFirstBytePhase,
+      "application-failed",
+      `${device}: fatal application phase was not published`,
+    );
+    assert.match(
+      document.documentElement.dataset.mcmsFirstByteFailure || "",
+      /intentional application bootstrap failure/u,
+      `${device}: fatal application detail was not published`,
+    );
+    assert.notEqual(window.getComputedStyle(recovery).display, "none", `${device}: fatal recovery control is hidden`);
+    recovery.click();
+    const details = await waitFor(
+      () => document.getElementById(RECOVERY_DETAILS_ID),
+      `${device} recovery repair details after fatal application bootstrap`,
+    );
+    assert.equal(
+      details.querySelector('a[href="https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js"]')?.textContent,
+      "Repair Toolkit",
+      `${device}: verified repair route is missing`,
+    );
+    assert.equal(runtimeErrors.length, 0, `${device}: fatal path escaped its first-byte boundary: ${runtimeErrors.join(" | ")}`);
+    assert.equal(consoleErrors.length, 0, `${device}: fatal path jsdom errors: ${consoleErrors.join(" | ")}`);
+    window[BOOTSTRAP_KEY]?.dispose?.();
+    dom.window.close();
+    return;
+  }
 
   const control = await waitFor(
     () => document.getElementById(CONTROL_ID),
@@ -206,12 +270,34 @@ async function scenario(device) {
   );
   assert.equal(control.parentElement, initialMap, `${device}: launcher did not mount into the canonical map`);
   assert.ok(document.getElementById(STYLE_ID), `${device}: main stylesheet is missing`);
-  assert.equal(window[RUNTIME_KEY]?.version, "10.16.6", `${device}: wrong active runtime`);
+  assert.equal(window[RUNTIME_KEY]?.version, "10.16.7", `${device}: wrong active runtime`);
   assert.equal(window[RUNTIME_KEY]?.destroyed, false, `${device}: runtime was destroyed during boot`);
-  assert.notEqual(window.getComputedStyle(control).display, "none", `${device}: launcher is hidden`);
+  let panel = null;
+  if (cleanMode) {
+    const cleanExit = await waitFor(() => document.getElementById(CLEAN_EXIT_ID), `${device} clean-mode exit`);
+    assert.notEqual(window.getComputedStyle(cleanExit).display, "none", `${device}: clean-mode exit is hidden`);
 
-  control.querySelector(".mcms-menu-btn")?.click();
-  const panel = await waitFor(() => document.getElementById(PANEL_ID), `${device} command panel`);
+    // Simulate the live failure state: saved Clean Mode hides the launcher and its exit is missing.
+    cleanExit.remove();
+    window[BOOTSTRAP_KEY]?.check?.();
+    const recovery = await waitFor(() => document.getElementById(RECOVERY_ID), `${device} clean-mode recovery control`);
+    assert.notEqual(window.getComputedStyle(recovery).display, "none", `${device}: clean-mode recovery control is hidden`);
+    recovery.click();
+    await waitFor(
+      () => document.documentElement.getAttribute("data-mcms-clean") === "false",
+      `${device} clean-mode state restoration`,
+    );
+    assert.equal(document.documentElement.getAttribute("data-mcms-command-bar-open"), "true");
+    assert.equal(document.documentElement.getAttribute("data-mcms-dock-auto-hide"), "false");
+    panel = await waitFor(
+      () => document.getElementById(PANEL_ID)?.classList.contains("mcms-open") && document.getElementById(PANEL_ID),
+      `${device} recovered command panel`,
+    );
+  } else {
+    assert.notEqual(window.getComputedStyle(control).display, "none", `${device}: launcher is hidden`);
+    control.querySelector(".mcms-menu-btn")?.click();
+    panel = await waitFor(() => document.getElementById(PANEL_ID), `${device} command panel`);
+  }
   assert.ok(panel.classList.contains("mcms-open"), `${device}: command panel did not open`);
 
   // MissionChief can replace its map node after initial parsing. The launcher must self-heal.
@@ -228,10 +314,14 @@ async function scenario(device) {
   assert.equal(runtimeErrors.length, 0, `${device}: runtime errors: ${runtimeErrors.join(" | ")}`);
   assert.equal(consoleErrors.length, 0, `${device}: jsdom errors: ${consoleErrors.join(" | ")}`);
 
+  window[BOOTSTRAP_KEY]?.dispose?.();
   window[RUNTIME_KEY]?.destroy?.(`${device} document-start test complete`);
   dom.window.close();
 }
 
-assert.match(source, /^\/\/ @version\s+10\.16\.6$/mu);
+assert.match(source, /^\/\/ @version\s+10\.16\.7$/mu);
 for (const device of ["desktop", "tablet", "ios"]) await scenario(device);
-console.log("Toolkit UI document-start runtime passed: Desktop, Tablet and iOS mount and recover after MissionChief replaces the native map.");
+await scenario("desktop", { cleanMode: true });
+await scenario("desktop", { fatalApplication: true });
+await scenario("desktop", { rootlessStart: true });
+console.log("Toolkit UI document-start runtime passed: Desktop, Tablet and iOS mount; null-root document-start and map replacement self-heal; persisted Clean Mode recovers; fatal application bootstrap retains a repair control.");

@@ -1862,7 +1862,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         catalogPromise: null,
         catalogAt: 0,
         typeLabels: {},
-        restoreSnapshot: null
+        restoreSnapshot: null,
+        panel: null,
+        selector: null,
+        launcher: null
     };
     const stationIconCopierRuntime = {
         running: false,
@@ -24025,20 +24028,25 @@ Credits only. Each station and native action will be fetched again, purchased on
         return pending;
     }
 
-    function renderBuildingVisibilitySelector(panel = document.getElementById(SCRIPT.panelId)) {
-        if (!panel) return;
-        const selector = panel.querySelector('[data-building-visibility-selector]');
-        const launcher = panel.querySelector('[data-action="toggle-building-selector"]');
+    function renderBuildingVisibilitySelector(panel = commandInterfacePanel()) {
+        if (!panel) return null;
+        if (buildingVisibilityRuntime.panel !== panel) {
+        buildingVisibilityRuntime.panel = panel;
+        buildingVisibilityRuntime.selector = panel.getElementsByClassName('mcms-building-selector')[0] || null;
+        buildingVisibilityRuntime.launcher = panel.getElementsByClassName('mcms-building-launcher')[0] || null;
+        }
+        const selector = buildingVisibilityRuntime.selector;
+        const launcher = buildingVisibilityRuntime.launcher;
         const summary = buildingVisibilityStatusLabel();
-        updateUiSetText(panel.querySelector('[data-building-visibility-summary]'), summary);
+        updateUiSetText(launcher?.lastElementChild, summary);
         if (launcher) {
         updateUiToggleClass(launcher, 'mcms-on', buildingVisibilityRuntime.open);
         updateUiSetAttribute(launcher, 'aria-expanded', String(buildingVisibilityRuntime.open));
         updateUiSetAttribute(launcher, 'aria-label', `Choose building visibility. Current view: ${summary}.`);
         }
-        if (!selector) return;
+        if (!selector) return null;
         updateUiSetProperty(selector, 'hidden', !buildingVisibilityRuntime.open);
-        if (!buildingVisibilityRuntime.open) return;
+        if (!buildingVisibilityRuntime.open) return null;
 
         const entries = buildingVisibilityTypeEntries();
         const query = dispatchRecruitmentText(buildingVisibilityRuntime.search).toLowerCase();
@@ -24074,6 +24082,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         <div class="mcms-building-type-list">${rows || `<div class="mcms-building-empty">${entries.length ? 'No building types match this search.' : 'No live building types detected yet.'}</div>`}</div>
         <div class="mcms-building-selector-status">${escapeHtml(status)}</div>`;
         setInnerHtmlIfChanged(selector, markup);
+        return selector.getElementsByClassName('mcms-building-search')[0] || null;
     }
 
     function setBuildingVisibilitySelectorOpen(open, { focus = true } = {}) {
@@ -24084,12 +24093,12 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (next) {
         openPanel();
         setActiveTab('map');
-        renderBuildingVisibilitySelector();
         void loadBuildingVisibilityCatalog();
-        if (focus) runtimeSetTimeout(() => document.querySelector(`#${SCRIPT.panelId} [data-building-visibility-search]`)?.focus?.({ preventScroll: true }), 0);
+        const search = renderBuildingVisibilitySelector();
+        if (focus) search?.focus?.({ preventScroll: true });
         } else {
         renderBuildingVisibilitySelector();
-        if (focus) runtimeSetTimeout(() => document.querySelector(`#${SCRIPT.panelId} [data-action="toggle-building-selector"]`)?.focus?.({ preventScroll: true }), 0);
+        if (focus) buildingVisibilityRuntime.launcher?.focus?.({ preventScroll: true });
         }
     }
 
@@ -24849,7 +24858,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         scheduleNativeVisibilityReconcile(0);
         if (deferMapInteractionRefresh({ scope: 'building', markerSync: true })) return;
         invalidateMarkerRegistryCaches('building');
-        runtimeSetTimeout(() => synchroniseBuildingVisibilitySelector(map), 0);
         scheduleMarkerStateSync(0, false);
         scheduleMarkerStateSync(180, true);
         };
@@ -24908,7 +24916,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             { map, types: 'moveend zoomend viewreset', handler: onMapMove },
             { map, types: 'contextmenu', handler: onTabletQuickWheel }
         );
-        runtimeSetTimeout(() => synchroniseBuildingVisibilitySelector(map), 0);
+        scheduleMarkerStateSync(0, false);
         } catch (err) {}
     }
 
@@ -38203,13 +38211,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         panel.addEventListener('input', event => {
             if (event.target?.matches?.('[data-building-visibility-search]')) {
                 buildingVisibilityRuntime.search = String(event.target.value || '').trimStart();
-                renderBuildingVisibilitySelector(panel);
-                runtimeSetTimeout(() => {
-                    const search = panel.querySelector('[data-building-visibility-search]');
-                    if (!search) return;
-                    search.focus?.({ preventScroll: true });
-                    try { search.setSelectionRange(search.value.length, search.value.length); } catch (err) {}
-                }, 0);
+                const search = renderBuildingVisibilitySelector(panel);
+                if (!search) return;
+                search.focus?.({ preventScroll: true });
+                try { search.setSelectionRange(search.value.length, search.value.length); } catch (err) {}
                 return;
             }
             if (event.target?.matches?.('[data-setting="dispatch-recruitment-personnel"]')) {

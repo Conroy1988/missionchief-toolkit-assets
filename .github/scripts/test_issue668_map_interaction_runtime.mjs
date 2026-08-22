@@ -180,11 +180,8 @@ function fakeMap() {
 const map = fakeMap();
 sandbox.__probe.attachMapEvents(map);
 assert.equal(sandbox.runtime.mapBindings.length, 6, "map event ownership changed");
-assert.equal(timers.size, 1, "initial building selector reconciliation was not scheduled");
-const [{ callback: initialBuildingVisibilitySync }] = timers.values();
-timers.clear();
-initialBuildingVisibilitySync();
-assert.equal(value("building-visibility-sync"), 1, "initial building selector reconciliation did not run");
+assert.equal(value("marker-sync"), 1, "initial building selector reconciliation was not delegated to the consolidated marker scheduler");
+counters.clear();
 
 map.emit("movestart");
 assert.equal(attributes.get("data-mcms-map-moving"), "true");

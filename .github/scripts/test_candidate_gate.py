@@ -46,9 +46,8 @@ def main() -> int:
         ("python3", "tools/ensure_dev_dependencies.py"),
     )
     runtime = command_text(gate.STAGE_COMMANDS["runtime"])
+    assert "test_toolkit_ui_document_start_runtime.mjs" in runtime
     assert "test_ui_mount_integration.mjs" in runtime
-    assert "test_issue766_ui_bootstrap_runtime.mjs" in runtime
-    assert "test_issue768_ui_fail_open_runtime.mjs" in runtime
     assert "run_userscript_preflight.sh --contracts" in runtime
     workflow = command_text(gate.STAGE_COMMANDS["workflow"])
     assert "test_consolidated_pr_gate.py" in workflow

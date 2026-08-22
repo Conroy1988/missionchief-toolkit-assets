@@ -44,8 +44,7 @@ def main() -> int:
     assert "if (!toolkitCommandShellRouteEligible(document))" in ensure
     assert "teardownToolkitCommandShell('route is not the canonical top-level map')" in ensure
     assert "if (!mapEl)" in ensure
-    assert "ensureToolkitEmergencyLauncher();" in ensure
-    assert "teardownToolkitCommandShell('canonical map has not been positively identified')" not in ensure
+    assert "canonical map has not been positively identified" in ensure
 
     keyboard = section("    function handleKeyboard(", "    function buildThemeOptions(")
     assert "if (!toolkitCommandShellContextActive())" in keyboard

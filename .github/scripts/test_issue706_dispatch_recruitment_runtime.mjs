@@ -403,6 +403,7 @@ assert.deepEqual(Array.from(scannedSingleCentre, item => item.buildingId), ['101
 assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '77');
 assert.equal(dispatchRecruitmentRuntime.scannedTypeId, 'all-types');
 assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedBuildingIds), ['101', '102'], 'Stations differing from the configured plan must be selected after scanning');
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.matchingBuildingIds), [], 'A complete mismatch scan must not cache false matches');
 
 context.state.dispatchRecruitment.hiringPhase = 'automatic';
 context.state.dispatchRecruitment.personnelDesired = '7';
@@ -411,6 +412,7 @@ const matchingSingleCentre = await context.scanDispatchRecruitmentStations();
 assert.deepEqual(singleScanRequests, ['/buildings/77/leitstelle-buildings']);
 assert.deepEqual(Array.from(matchingSingleCentre, item => item.buildingId), ['101', '102']);
 assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedBuildingIds), ['101'], 'A station already matching Hiring Phase and Personnel (Desired) must remain unselected');
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.matchingBuildingIds), ['102'], 'Exact scan matches must be cached outside the global renderer');
 context.renderDispatchRecruitmentPanel();
 const matchingStation = shell.window.document.querySelector('[data-setting="dispatch-recruitment-station"][value="102"]');
 assert.equal(matchingStation?.checked, false, 'The matching station checkbox must render unchecked');

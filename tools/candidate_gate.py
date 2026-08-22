@@ -45,9 +45,8 @@ STAGE_COMMANDS: dict[str, tuple[tuple[str, ...], ...]] = {
         ("python3", "tools/ensure_dev_dependencies.py"),
     ),
     "runtime": (
+        ("node", ".github/scripts/test_toolkit_ui_document_start_runtime.mjs"),
         ("node", ".github/scripts/test_ui_mount_integration.mjs"),
-        ("node", ".github/scripts/test_issue766_ui_bootstrap_runtime.mjs"),
-        ("node", ".github/scripts/test_issue768_ui_fail_open_runtime.mjs"),
         ("bash", ".github/scripts/run_userscript_preflight.sh", "--contracts"),
     ),
     "development": (

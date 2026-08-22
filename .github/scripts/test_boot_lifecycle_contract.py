@@ -61,11 +61,11 @@ def extract_function(source: str, masked: str, name: str) -> str:
 
 def extract_runtime_block(source: str) -> str:
     start = source.find("const RUNTIME_KEY =")
-    marker = "    function runtimeSetTimeout("
+    marker = "pageWindow[RUNTIME_KEY] = runtime;"
     end = source.find(marker, start)
     if start < 0 or end < 0:
         raise AssertionError("Runtime ownership block not found")
-    return source[start:end]
+    return source[start:end + len(marker)]
 
 
 def extract_bootstrap_tail(source: str) -> str:
@@ -86,7 +86,6 @@ def main() -> int:
 
     assert fixtures["runtimeKey"] in runtime_block
     assert fixtures["replacementReason"] in runtime_block
-    assert runtime_block.index("pageWindow[RUNTIME_KEY] = runtime;") < runtime_block.index(fixtures["replacementReason"]), "Replacement ownership must be claimed before the old runtime is destroyed"
     coordinator_name = fixtures["boot"]["coordinatorFunction"]
     assert coordinator_name == "startBootAttemptCoordinator"
     assert "startBootAttemptCoordinator(bootPerformanceStartedAt);" in functions["boot"]
@@ -173,16 +172,7 @@ function createPageWindow({ idle = true } = {}) {
 }
 
 function installRuntime(pageWindow, SCRIPT) {
-    const TOOLKIT_PRIMARY_CONTROL_ID = "mc-map-command-toolkit-control";
-    const document = { documentElement: { getAttribute: () => null } };
-    const ensureToolkitEmergencyLauncher = () => null;
-    const retireToolkitEmergencyLauncher = () => true;
-    const toolkitElementById = () => ({ dataset: { mcmsLauncherReady: "true" } });
-    const toolkitPrimaryControlUsable = () => true;
 __RUNTIME_BLOCK__
-    claimToolkitRuntime();
-    runtime.recoverUi = () => true;
-    runtime.phase = "ready";
     return runtime;
 }
 
@@ -652,12 +642,11 @@ function testScheduleAndDocumentStart() {
     assert.equal(calls.length, 1, "destroyed or already-started runtime must not reschedule idle boot");
     assert.equal(scheduleTimers.length, 1, "destroyed or already-started runtime must not add a fallback timer");
 
-    const runBootstrap = Function("document", "runtimeListen", "scheduleBoot", "runtimeUpgradeHandoff", "runBootIntegration", "boot", __BOOTSTRAP_SOURCE_STRING__);
+    const runBootstrap = Function("document", "runtimeListen", "scheduleBoot", __BOOTSTRAP_SOURCE_STRING__);
     let scheduled = 0;
     const loadingDocument = { readyState: "loading" };
     const registrations = [];
-    const runImmediate = (_label, callback) => callback();
-    runBootstrap(loadingDocument, (target, type, listener, options) => registrations.push({ target, type, listener, options }), () => { scheduled += 1; }, false, runImmediate, () => { scheduled += 10; });
+    runBootstrap(loadingDocument, (target, type, listener, options) => registrations.push({ target, type, listener, options }), () => { scheduled += 1; });
     assert.equal(scheduled, 0);
     assert.equal(registrations.length, 1);
     assert.equal(registrations[0].type, "DOMContentLoaded");
@@ -666,12 +655,8 @@ function testScheduleAndDocumentStart() {
     assert.equal(scheduled, 1);
 
     scheduled = 0;
-    runBootstrap({ readyState: "complete" }, () => { throw new Error("complete document must not register DOMContentLoaded"); }, () => { scheduled += 1; }, false, runImmediate, () => { scheduled += 10; });
+    runBootstrap({ readyState: "complete" }, () => { throw new Error("complete document must not register DOMContentLoaded"); }, () => { scheduled += 1; });
     assert.equal(scheduled, 1);
-
-    scheduled = 0;
-    runBootstrap({ readyState: "complete" }, () => { throw new Error("replacement boot must not register DOMContentLoaded"); }, () => { scheduled += 1; }, true, runImmediate, () => { scheduled += 10; });
-    assert.equal(scheduled, 10, "same-page replacement must boot immediately");
 }
 
 testRuntimeOwnershipAndTeardown();

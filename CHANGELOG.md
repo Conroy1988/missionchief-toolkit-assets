@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.6] - 2026-08-22
+
+### Known-Good Toolkit UI Restoration
+
+- Restores the exact launcher, panel and document-start boot lifecycle proven in v10.16.2 before the complete interface regression.
+- Removes the v10.16.4 and v10.16.5 runtime-handoff and emergency-launcher rewrites after they failed to restore the live Toolkit UI.
+- Keeps Dispatch Recruitment mismatch classification as immutable scan-local state instead of recalculating it through the global UI render path.
+- Auto-selects only stations whose scanned Hiring Phase or Personnel (Desired) differs from the configured plan; exact matches remain visible and unchecked.
+- Adds a real sparse-document `@run-at document-start` runtime test proving Desktop, Tablet and iOS launcher, panel, stylesheet and native map-replacement recovery.
+
 ## [10.16.5] - 2026-08-22
 
 ### Fail-Open Toolkit UI Recovery

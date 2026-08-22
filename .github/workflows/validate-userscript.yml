@@ -50,45 +50,12 @@ jobs:
             --github-output "$GITHUB_OUTPUT"
           cat path-classification.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Install isolated UI contract runtime
-        if: steps.paths.outputs.runtime == 'true' || steps.paths.outputs.developmentChecks == 'true'
+      - name: Run fail-fast candidate checks
+        if: steps.paths.outputs.integrity == 'true' || steps.paths.outputs.releaseCandidate == 'true' || steps.paths.outputs.documentationChecks == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund \
-            jsdom@26.1.0 acorn@8.15.0
-
-      - name: Validate canonical userscript and distribution
-        if: steps.paths.outputs.integrity == 'true' || steps.paths.outputs.releaseCandidate == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/verify_validation_candidate.py --self-test
-          python3 .github/scripts/validate_userscript.py 2>&1 | tee validation.log
-          python3 .github/scripts/test_documentation_consistency.py
-          node --check src/MissionChief_Map_Command_Toolkit.user.js
-          cmp --silent \
-            dist/MissionChief_Map_Command_Toolkit.user.js \
-            dist/MissionChief_Map_Command_Toolkit.txt
-
-      - name: Run deterministic runtime contracts
-        if: steps.paths.outputs.runtime == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          node .github/scripts/test_ui_mount_integration.mjs
-          bash .github/scripts/run_userscript_preflight.sh --contracts \
-            2>&1 | tee runtime-contracts.log
-
-      - name: Prove local development loop
-        if: steps.paths.outputs.developmentChecks == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/test_dev_workflow.py
-          python3 .github/scripts/test_canary_workflow.py
-          node .github/scripts/test_canary_loader_runtime.mjs
-          node .github/scripts/test_dev_lab_runtime.mjs
+          python3 tools/candidate_gate.py --stage static
 
       - name: Check lightweight performance budget
         if: steps.paths.outputs.performance == 'true'
@@ -97,38 +64,42 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/test_performance_budget.py
-          ARGS=(
-            --candidate src/MissionChief_Map_Command_Toolkit.user.js
-            --policy .github/performance-budget.json
-            --json-output /tmp/performance-budget-report.json
-            --markdown-output /tmp/performance-budget-report.md
-          )
-          if [[ -n "$PR_BASE_SHA" ]] && git cat-file -e "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" 2>/dev/null; then
-            git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/performance-base.user.js
-            ARGS+=(--base /tmp/performance-base.user.js)
-          fi
-          python3 .github/scripts/check_performance_budget.py "${ARGS[@]}"
+          python3 tools/candidate_gate.py --stage performance --report-dir /tmp
+
+      - name: Validate canonical userscript and distribution
+        if: steps.paths.outputs.integrity == 'true' || steps.paths.outputs.releaseCandidate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/candidate_gate.py --stage integrity
+
+      - name: Install isolated UI contract runtime
+        if: steps.paths.outputs.runtime == 'true' || steps.paths.outputs.developmentChecks == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/candidate_gate.py --stage dependencies
+
+      - name: Run deterministic runtime contracts
+        if: steps.paths.outputs.runtime == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/candidate_gate.py --stage runtime
+
+      - name: Prove local development loop
+        if: steps.paths.outputs.developmentChecks == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/candidate_gate.py --stage development
 
       - name: Validate workflow policy changes
         if: steps.paths.outputs.workflowChecks == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/audit_actions_security.py
-          python3 .github/scripts/test_consolidated_pr_gate.py
-          python3 .github/scripts/test_path_aware_blocking.py
-          python3 .github/scripts/test_validation_candidate_pipeline.py
-          python3 .github/scripts/test_branch_write_inventory.py
-          python3 .github/scripts/test_development_package_workflow.py
-          python3 .github/scripts/test_automation_record_hygiene.py
-          python3 .github/scripts/test_release_announcement_state_pipeline.py
-          python3 .github/scripts/test_release_authority_pipeline.py
-          python3 .github/scripts/test_release_recovery_state_pipeline.py
-          python3 .github/scripts/test_shadow_branch_parity.py
-          python3 .github/scripts/test_shadow_sync_writer.py
-          python3 .github/scripts/test_update_manifest_pipeline.py
-          python3 .github/scripts/test_version_status_contract.py
+          python3 tools/candidate_gate.py --stage workflow
 
       - name: Prepare immutable release-ready bundle
         if: steps.paths.outputs.releaseCandidate == 'true'

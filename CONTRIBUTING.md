@@ -33,10 +33,10 @@ Contained userscript changes should use the fastest safe route:
 
 1. Create one owner-authored `feature/`, `fix/` or `chore/` branch from current `main`.
 2. Complete the source, generated distribution, changelog and focused contract in that branch.
-3. Run the deterministic repository preflight:
+3. Generate the single candidate fingerprint and run the CI-equivalent local gate:
 
    ```bash
-   bash .github/scripts/run_userscript_preflight.sh --all
+   ./toolkit promote
    ```
 
 4. Open one pull request.
@@ -51,7 +51,7 @@ The owner-authorised development-package workflow remains available for large ge
 
 ## Validation
 
-Pull requests use one path-aware Toolkit Hotfix Gate runner. Product changes run canonical integrity generation, deterministic runtime contracts and the lightweight performance budget sequentially, then upload the immutable release candidate from that same exact checkout. Exhaustive static, ESLint, deep-performance and repository-wide audits remain scheduled or manually dispatched instead of multiplying every pull request into parallel jobs. Do not bypass a failed check without identifying and correcting the underlying cause.
+Pull requests use one path-aware Toolkit Hotfix Gate runner. Local promotion and CI invoke the same version-controlled candidate stages. Fingerprint, documentation, syntax and lightweight performance failures are evaluated before distribution generation, dependency installation and runtime contracts, then the immutable release candidate is uploaded from that same exact checkout. Exhaustive static, ESLint, deep-performance and repository-wide audits remain scheduled or manually dispatched instead of multiplying every pull request into parallel jobs. Do not bypass a failed check without identifying and correcting the underlying cause.
 
 ## Releases
 

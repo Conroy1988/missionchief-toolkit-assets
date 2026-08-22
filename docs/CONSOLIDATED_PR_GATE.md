@@ -5,10 +5,14 @@ Pipeline v5.3 runs release-critical pull-request validation through one path-awa
 ## Sequential path-aware checks
 
 1. **Classify** the exact changed paths without provisioning another runner.
-2. **Validate** canonical source, generated distribution and documentation when integrity or release-candidate work is required.
-3. **Exercise** rendered UI and deterministic runtime contracts for product or runtime changes.
-4. **Budget** lightweight performance growth and validate workflow policy only when those paths require it.
-5. **Package** one immutable exact-tree release candidate on the same checkout.
+2. **Screen** the generated source fingerprint, documentation and JavaScript syntax before expensive work.
+3. **Budget** lightweight performance growth against the exact pull-request base.
+4. **Validate** canonical source and generated distribution when integrity or release-candidate work is required.
+5. **Provision** the pinned UI dependencies only after the cheap checks pass.
+6. **Exercise** rendered UI, deterministic runtime, local-development and workflow-policy contracts when selected.
+7. **Package** one immutable exact-tree release candidate on the same checkout.
+
+Every command in these stages is owned by `tools/candidate_gate.py`. Local `./toolkit promote` runs the same ordered catalog, including documentation consistency and the performance budget, before GitHub publication.
 
 The **Toolkit Hotfix Gate** succeeds only when every classifier-required step succeeds. Work that is explicitly unnecessary is skipped within that job, so GitHub receives one required result instead of a fan-out of parallel lanes.
 

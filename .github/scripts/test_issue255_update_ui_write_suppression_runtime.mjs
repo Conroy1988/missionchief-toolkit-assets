@@ -13,10 +13,12 @@ import { JSDOM } from "jsdom";
 import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
+const FINGERPRINT_PATH = path.join(ROOT, ".github/fixtures/current-toolkit-candidate.json");
+const FINGERPRINT = JSON.parse(fs.readFileSync(FINGERPRINT_PATH, "utf8")).source;
+const SOURCE_PATH = path.join(ROOT, FINGERPRINT.path);
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "10.16.0";
-const EXPECTED_SHA = "f609e11db118f3872ee23530e522fcc3371fa9f096f2999ff0eca096ff332b33";
+const EXPECTED_VERSION = FINGERPRINT.version;
+const EXPECTED_SHA = FINGERPRINT.sha256;
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader", "syncMapMeasureToolbarButton"];
 

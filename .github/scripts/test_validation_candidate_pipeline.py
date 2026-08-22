@@ -12,6 +12,7 @@ AUTOMATIC = ROOT / ".github/workflows/auto-release-after-validation.yml"
 OWNER = ROOT / ".github/workflows/owner-release-command.yml"
 RELEASE = ROOT / ".github/workflows/release-toolkit.yml"
 VERIFIER = ROOT / ".github/scripts/verify_validation_candidate.py"
+CANDIDATE_GATE = ROOT / "tools/candidate_gate.py"
 DASHBOARD = ROOT / "status/release-dashboard.json"
 DASHBOARD_GENERATOR = ROOT / ".github/scripts/generate_release_dashboard.py"
 RETIRED_RECONCILER = ROOT / ".github/scripts/reconcile_validation_dashboard.py"
@@ -35,6 +36,7 @@ def main() -> int:
     owner = OWNER.read_text(encoding="utf-8")
     release = RELEASE.read_text(encoding="utf-8")
     verifier = VERIFIER.read_text(encoding="utf-8")
+    candidate_gate = CANDIDATE_GATE.read_text(encoding="utf-8")
     generator = DASHBOARD_GENERATOR.read_text(encoding="utf-8")
     reconciler = RETIRED_RECONCILER.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
@@ -55,7 +57,7 @@ def main() -> int:
         "dist/MissionChief_Map_Command_Toolkit.css",
         "publicMainChanged: false",
         "releaseDashboardChanged: false",
-        "verify_validation_candidate.py --self-test",
+        "tools/candidate_gate.py --stage static",
         "name: Toolkit Hotfix Gate",
         "name: Classify changed paths",
         "classify_pr_paths.py",
@@ -64,6 +66,10 @@ def main() -> int:
         "GitHub runners used: **1**",
         "Parallel validation lanes: **0**",
     ], "Canonical validation workflow")
+    require(candidate_gate, [
+        "verify_validation_candidate.py",
+        '"--self-test"',
+    ], "Shared candidate gate")
     forbid(validation, [
         "contents: write",
         "reconcile_validation_dashboard.py",

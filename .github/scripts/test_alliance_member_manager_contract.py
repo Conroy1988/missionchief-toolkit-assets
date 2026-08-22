@@ -55,5 +55,7 @@ assert performance["absoluteLimits"]["mutation_observer_constructions"] >= 13
 preflight = (ROOT / ".github/scripts/run_userscript_preflight.sh").read_text(encoding="utf-8")
 assert "test_ui_mount_policy.py" in preflight
 workflow = (ROOT / ".github/workflows/validate-userscript.yml").read_text(encoding="utf-8")
-assert "test_ui_mount_integration.mjs" in workflow
+candidate_gate = (ROOT / "tools/candidate_gate.py").read_text(encoding="utf-8")
+assert "tools/candidate_gate.py --stage runtime" in workflow
+assert "test_ui_mount_integration.mjs" in candidate_gate
 print("Alliance Member Manager contract passed: corrected lifecycle symbol, DOM-authoritative observation, cross-origin persistence, visible mount states, exception recovery and full rendered integration gate.")

@@ -7,10 +7,12 @@
   ],
   "features": {
     "workflow-policy": {
-      "paths": [".github/workflows/**", ".github/path-aware-validation.json", ".github/branch-write-inventory.json", ".github/dev-test-matrix.json", ".github/scripts/classify_pr_paths.py", ".github/scripts/test_branch_write_inventory.py", ".github/scripts/test_path_aware_blocking.py", ".github/scripts/test_consolidated_pr_gate.py"],
+      "paths": [".github/workflows/**", ".github/path-aware-validation.json", ".github/branch-write-inventory.json", ".github/dev-test-matrix.json", ".github/fixtures/current-toolkit-candidate.json", ".github/scripts/classify_pr_paths.py", ".github/scripts/sync_candidate_fingerprint.py", ".github/scripts/test_candidate_fingerprint.py", ".github/scripts/test_candidate_gate.py", ".github/scripts/test_branch_write_inventory.py", ".github/scripts/test_path_aware_blocking.py", ".github/scripts/test_consolidated_pr_gate.py", "tools/candidate_gate.py", "tools/promote_candidate.py"],
       "anchors": [],
       "tests": [
         ["python3", ".github/scripts/audit_actions_security.py"],
+        ["python3", ".github/scripts/test_candidate_fingerprint.py"],
+        ["python3", ".github/scripts/test_candidate_gate.py"],
         ["python3", ".github/scripts/test_branch_write_inventory.py"],
         ["python3", ".github/scripts/test_path_aware_blocking.py"],
         ["python3", ".github/scripts/test_consolidated_pr_gate.py"]

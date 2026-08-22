@@ -242,6 +242,14 @@ def self_test(policy: dict) -> None:
     assert infrastructure["exhaustivePerformance"]
     assert not infrastructure["releaseCandidate"]
 
+    shared_gate = classify(["tools/candidate_gate.py"], policy)
+    assert shared_gate["runtime"]
+    assert shared_gate["integrity"]
+    assert shared_gate["performance"]
+    assert shared_gate["workflowChecks"]
+    assert shared_gate["developmentChecks"]
+    assert not shared_gate["releaseCandidate"]
+
     unknown = classify(["new-runtime-surface/file.bin"], policy)
     assert all(
         unknown[key]

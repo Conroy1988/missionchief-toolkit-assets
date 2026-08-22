@@ -42,8 +42,10 @@ def main() -> int:
     assert "const host = toolkitControlHost(primaryMap, document);" in create
     assert "if (!host) return null;" in create
     assert "if (menuButton) { togglePanel(); return; }" in create
-    assert "toolkitApplyCommandBarState(control);" in create
+    assert "runBootIntegration('initial command-bar state', () => toolkitApplyCommandBarState(control));" in create
     assert "host.appendChild(control);" in create
+    assert create.index("host.appendChild(control);") < create.index("toolkitApplyCommandBarState(control)")
+    assert "control.dataset.mcmsLauncherReady = 'true';" in create
 
     ensure = section(source, "    function ensureUi()", "    function mutationBelongsToToolkit")
     assert "if (!toolkitCommandShellRouteEligible(document))" in ensure
@@ -51,8 +53,8 @@ def main() -> int:
     assert "const mapEl = toolkitPrimaryMapElement(discoveredMap, document);" in ensure
     assert "if (!mapEl)" in ensure
     assert "const control = createControl(mapEl);" in ensure
-    assert "toolkitApplyCommandBarState(control);" in ensure
-    assert "return Boolean(control || document.getElementById(SCRIPT.controlId));" in ensure
+    assert "runBootIntegration('command-bar reconciliation', () => toolkitApplyCommandBarState(control));" in ensure
+    assert "return Boolean(mountedControl?.dataset?.mcmsLauncherReady === 'true');" in ensure
 
     assert "return toolkitPrimaryMapElement(mapEl, doc);" in source
     assert "return toolkitPrimaryMapElement(mapEl, doc) || doc?.body" not in source

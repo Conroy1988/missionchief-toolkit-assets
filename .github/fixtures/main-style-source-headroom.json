@@ -122,21 +122,21 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 766,
+    "issue": 768,
     "templateBytes": 860592,
     "templateLines": 10061,
     "templateSha256": "bc648a4d60a4c17e8a17c2314e15ad731a838e4ba21415b609b69c2784061b49",
     "canonicalCssSha256": "f1120dd9b3a8c6de332e70c799e2fcded643cd05a9d8d3d797cf08e37132ec5d",
-    "maxSourceBytes": 2754130,
-    "maxSourceLines": 41207,
+    "maxSourceBytes": 2762410,
+    "maxSourceLines": 41351,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 386691,
-      "sourceLines": 5679,
+      "sourceBytes": 394971,
+      "sourceLines": 5823,
       "templateBytes": 45055,
       "templateLines": 527
     },
-    "scope": "Issue #766 deferred runtime handoff, immediate replacement mount, launcher recovery and interrupted-upgrade regression coverage"
+    "scope": "Issue #768 dependency-light recovery launcher, health-aware same-version replacement, fail-open primary mount, Clean Mode restoration and production-map regression coverage"
   }
 }

@@ -48,6 +48,7 @@ node .github/scripts/test_issue685_compact_offset_desktop_command_deck_runtime.m
 node .github/scripts/test_issue517_incident_command_wire_runtime.js
 node .github/scripts/test_issue564_incident_feed_attended_runtime.js
 node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs
+node .github/scripts/test_performance_layout_hardening.mjs
 node .github/scripts/test_issue597_command_interface_runtime.mjs
 node .github/scripts/test_issue601_operational_pressure_runtime.mjs
 node .github/scripts/test_issue606_pressure_vehicle_classification_runtime.mjs

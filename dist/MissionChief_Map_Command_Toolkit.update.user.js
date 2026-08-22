@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.7
+// @version      10.16.8
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -50,7 +50,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.16.7';
+    const VERSION = '10.16.8';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -823,7 +823,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.7',
+        version: '10.16.8',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -883,15 +883,15 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.7",
-        title: "First-Byte UI Recovery and Direct Updates",
+        version: "10.16.8",
+        title: "Performance and Responsive Layout Hardening",
         highlights: Object.freeze([
-            "Starts an independent first-byte recovery control before the 2.75 MB application evaluates and retries safely when document-start has no HTML root yet.",
-            "Keeps recovery visible through synchronous application failure, corrupted hidden-state settings and a missing or CSS-hidden primary launcher.",
-            "Adds explicit startup phases from first byte through runtime, state, boot and mounted UI so a failed launch can no longer be mistaken for a healthy release.",
-            "Restores Clean Mode, the command bar and auto-hide state from the recovery control without deleting map profiles, bookmarks or operational history.",
-            "Requires the TKB update and metadata routes to return direct same-origin JavaScript responses instead of GitHub attachment redirects.",
-            "Adds fatal-bootstrap, persisted Clean Mode, direct-response and real Chromium document-start regression coverage."
+            "Reduces direct mission-list mutation selector work from about 3,000 scans to 2–21 in audited 250-row storms by fast-pathing direct sidebar batches across observers.",
+            "Caches frequently reused UI controls and settings and suppresses unchanged DOM writes during refreshes without changing stored settings or actions.",
+            "Restores tablet panel sizing after dock-fit passes so the command surface clears MissionChief navigation and remains within the visual viewport.",
+            "Reflows tablet command cards into full-width readable rows and fixes iOS tab flow so controls never render under the navigation grid.",
+            "Uses breakpoint-safe dock labels, word-boundary theme wrapping and readable summaries and bookmark actions across all eight themes.",
+            "Adds portable stress metrics and focused permanent regression coverage; the 192-state Desktop, Tablet and iOS audit measured zero text or viewport overflows."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -4917,7 +4917,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             align-items: center !important;
             gap: 8px !important;
             min-width: 0 !important;
-            height: 58px !important;
+            height: auto !important;
+            min-height: 58px !important;
             padding: 6px 8px !important;
             border: 1px solid rgba(255,255,255,.14) !important;
             border-radius: 10px !important;
@@ -5034,7 +5035,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             border-radius: 1px 1px 0 0 !important;
             box-shadow: inset 0 1px rgba(255,255,255,.20), 0 0 3px currentColor !important;
         }#${SCRIPT.panelId} .mcms-ui-theme-preview-factorio span:nth-child(1) { height: 45% !important; background: #d57b2b !important; color: #d57b2b !important; }#${SCRIPT.panelId} .mcms-ui-theme-preview-factorio span:nth-child(2) { height: 78% !important; background: #9fc55a !important; color: #9fc55a !important; }#${SCRIPT.panelId} .mcms-ui-theme-preview-factorio span:nth-child(3) { height: 60% !important; background: #e9c16e !important; color: #e9c16e !important; }#${SCRIPT.panelId} .mcms-ui-theme-btn[data-ui-theme="factorio"] { grid-column: auto !important; }#${SCRIPT.panelId} .mcms-ui-theme-copy { min-width: 0 !important; }#${SCRIPT.panelId} .mcms-ui-theme-copy strong,
-        #${SCRIPT.panelId} .mcms-ui-theme-copy small { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }#${SCRIPT.panelId} .mcms-ui-theme-copy strong { color: inherit !important; font-size: 10px !important; font-weight: 950 !important; }#${SCRIPT.panelId} .mcms-ui-theme-copy small { margin-top: 4px !important; color: rgba(255,255,255,.48) !important; font-size: 7px !important; font-weight: 900 !important; letter-spacing: .7px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: 72px !important; grid-template-columns: 58px minmax(0,1fr) !important; padding: 8px 10px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 58px !important; height: 44px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy strong { font-size: 13px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy small { font-size: 8.5px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-grid { gap: 6px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: 62px !important; grid-template-columns: 46px minmax(0,1fr) !important; padding: 6px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 46px !important; height: 38px !important; }html[data-mcms-ui-theme="cyberpunk"] {
+        #${SCRIPT.panelId} .mcms-ui-theme-copy small { display: block !important; min-width:0 !important; }#${SCRIPT.panelId} .mcms-ui-theme-copy strong { overflow:visible !important; color: inherit !important; font-size: 10.5px !important; line-height:1.15 !important; font-weight: 950 !important; white-space:normal !important; text-overflow:clip !important; overflow-wrap:anywhere !important; }#${SCRIPT.panelId} .mcms-ui-theme-copy small { margin-top: 4px !important; overflow:hidden !important; color: rgba(255,255,255,.70) !important; font-size: 8.5px !important; font-weight: 900 !important; letter-spacing: .45px !important; white-space:nowrap !important; text-overflow:ellipsis !important; }html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) #${SCRIPT.panelId} .mcms-ui-theme-grid { grid-template-columns:1fr !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: auto !important; min-height:72px !important; grid-template-columns: 58px minmax(0,1fr) !important; padding: 8px 10px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 58px !important; height: 44px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy strong { font-size: 13px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy small { font-size: 9px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-grid { gap: 6px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: auto !important; min-height:66px !important; grid-template-columns: 46px minmax(0,1fr) !important; padding: 6px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 46px !important; height: 38px !important; }html[data-mcms-ui-theme="cyberpunk"] {
             --mcms-cp-yellow: #fcee0a;
             --mcms-cp-cyan: #00f0ff;
             --mcms-cp-red: #ff003c;
@@ -12505,9 +12506,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         /* Issue #681: mid-sized Desktop windows use a wider, shorter command surface.
            Settings cards balance into columns instead of inheriting the tallest card in each grid row. */
         @media (min-width:1200px) and (max-width:2239px) {
-            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-layout { grid-template-columns:142px minmax(0,1fr) !important; }
-            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tabs { grid-template-rows:repeat(6,minmax(48px,auto)) !important; padding:8px 7px !important; }
-            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-btn { grid-template-columns:28px minmax(0,1fr) !important; min-height:48px !important; padding:5px 6px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-layout { grid-template-columns:180px minmax(0,1fr) !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tabs { grid-template-rows:repeat(8,minmax(58px,auto)) !important; padding:8px 7px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-btn { grid-template-columns:28px minmax(0,1fr) !important; min-height:58px !important; padding:6px 7px !important; }
             html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-icon { width:28px !important; height:28px !important; }
         }
         @media (min-width:1360px) and (min-height:900px) and (max-width:2239px) {
@@ -12550,8 +12551,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             max-width:none !important;
             max-height:none !important;
         }
-        html[data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-menu-icon { font-size:20px !important; line-height:1 !important; }
-        html[data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-menu-label { font-size:7px !important; line-height:1 !important; font-weight:950 !important; }
+        html[data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-menu-icon { display:grid !important; place-items:center !important; height:22px !important; font-size:20px !important; line-height:22px !important; }
+        html[data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-menu-label { font-size:9px !important; line-height:1 !important; font-weight:950 !important; }
         html[data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-menu-key {
             position:absolute !important;
             right:3px !important;
@@ -12563,7 +12564,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             border-radius:5px !important;
             background:rgba(0,0,0,.50) !important;
             color:#fff !important;
-            font-size:7px !important;
+            font-size:8.5px !important;
             font-weight:950 !important;
         }
         html[data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-floating-filter {
@@ -12592,7 +12593,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             display:block !important;
             padding:0 2px 2px !important;
             color:rgba(255,255,255,.48) !important;
-            font-size:6.5px !important;
+            font-size:9px !important;
             line-height:1 !important;
             font-weight:950 !important;
             letter-spacing:.6px !important;
@@ -12649,7 +12650,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             display:block !important;
             margin-top:3px !important;
             color:rgba(255,255,255,.56) !important;
-            font-size:6px !important;
+            font-size:8px !important;
             line-height:1 !important;
             font-weight:950 !important;
             letter-spacing:.45px !important;
@@ -12764,7 +12765,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-icon { display:none !important; }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-label-desktop { display:none !important; }
-        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-label-tablet { display:block !important; font-size:8px !important; }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-label-tablet { display:block !important; font-size:10px !important; }
 
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId}.mcms-open {
             display:grid !important;
@@ -12893,18 +12894,18 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             width:18px !important;
             min-width:18px !important;
             height:18px !important;
-            font-size:7px !important;
+            font-size:8.5px !important;
         }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-icon { display:none !important; }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-label-desktop,
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-label-tablet { display:none !important; }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-float-label-mobile {
             display:block !important;
-            font-size:clamp(7px,2vw,8.5px) !important;
+            font-size:clamp(9px,2.35vw,10px) !important;
         }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} .mcms-control-state {
             margin-top:2px !important;
-            font-size:5.5px !important;
+            font-size:7.5px !important;
         }
         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.controlId} {
             width:104px !important;
@@ -13347,6 +13348,36 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-pill,.mcms-profile-main span,.mcms-ui-theme-copy small,.mcms-discord-date,.mcms-discord-result,.mcms-discord-stat span,.mcms-discord-breakdown b,.mcms-discord-line,.mcms-discord-foot,.mcms-discord-mini-stats span,.mcms-discord-mini-stats b,.mcms-finance-vault-summary span,.mcms-finance-vault-summary small,.mcms-sweep-state,.mcms-sweep-stat span,.mcms-sweep-meta,.mcms-sweep-report-grid span,.mcms-sweep-report-meta,.mcms-ops-stat-label,.mcms-ops-entry-meta,.mcms-alliance-course-guide summary,.mcms-recruitment-filter-head b,.mcms-recruitment-type b,.mcms-recruitment-station small,.mcms-recruitment-station > b,.mcms-icon-source small,.mcms-icon-default) {
             font-size:var(--mcms-workspace-meta-size) !important;
             line-height:1.4 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-ui-theme-copy strong {
+            font-size:12.5px !important;
+            line-height:1.3 !important;
+            overflow-wrap:normal !important;
+            word-break:normal !important;
+            hyphens:none !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-ui-theme-copy small {
+            font-size:11px !important;
+            letter-spacing:.2px !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-bookmark-btn[data-action="bookmark-save"] {
+            padding-inline:5px !important;
+        }
+        html[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher strong {
+            white-space:normal !important;
+            overflow:visible !important;
+            text-overflow:clip !important;
+            line-height:1.25 !important;
+        }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher {
+            flex-wrap:wrap !important;
+            align-items:stretch !important;
+        }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher > span,
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher > strong {
+            flex:1 1 100% !important;
+            max-width:100% !important;
+            text-align:left !important;
         }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-sweep-log { font:700 var(--mcms-workspace-meta-size)/1.45 system-ui,-apple-system,"Segoe UI",sans-serif !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-discord-stat strong,.mcms-finance-vault-summary b,.mcms-sweep-stat b,.mcms-sweep-count,.mcms-ops-stat-value,.mcms-ops-entry-value,.mcms-sweep-report-grid b) { font-size:14px !important; line-height:1.2 !important; }
@@ -14296,13 +14327,17 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"][data-mcms-command-experience-open] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{grid-area:filters!important;display:grid!important;grid-template-columns:repeat(var(--mcms-desktop-group-columns,4),max-content)!important;align-items:start!important;justify-content:start!important;gap:6px!important;width:var(--mcms-desktop-filter-width,100%)!important;max-width:100%!important;max-height:var(--mcms-desktop-filter-max-height,100vh)!important;margin:0!important;padding:0!important;overflow-x:hidden!important;overflow-y:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;pointer-events:none!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-scroll="true"] .mcms-floating-filter{overflow-y:auto!important;pointer-events:auto!important;padding-right:2px!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group{grid-template-columns:repeat(var(--mcms-desktop-button-columns,2),minmax(0,1fr))!important;gap:4px!important;width:var(--mcms-desktop-group-width,210px)!important;min-width:0!important;padding:5px!important;pointer-events:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group-label{padding:0 2px 2px!important;font-size:7px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-group-label{padding:0 2px 2px!important;color:rgba(255,255,255,.74)!important;font-size:9px!important;line-height:1!important;letter-spacing:0!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-float-btn,.mcms-economy-btn){grid-template-columns:20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;gap:5px!important;padding:3px 6px!important;pointer-events:auto!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-icon{display:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-label-desktop{display:block!important;font-size:9px!important;line-height:1!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-state{font-size:6.5px!important;line-height:1!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-desktop{display:none!important}
-        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-tablet{display:block!important;font-size:8.5px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-label-desktop{display:none!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-float-label-tablet{display:block!important;font-size:9.5px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-control-state{color:rgba(255,255,255,.74)!important;font-size:8.5px!important;line-height:1!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="tight"] .mcms-float-label-tablet{display:block!important;font-size:9.5px!important;line-height:1!important}
+        @media (min-width:2240px) {
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="wide"] .mcms-float-label-desktop{display:block!important}
+            html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit][data-mcms-desktop-dock-size="wide"] .mcms-float-label-tablet{display:none!important}
+        }
         html[data-mcms-device-layout="desktop"]:not([data-mcms-dock-auto-hide="true"]) body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-auto-hide-revealed="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-screen-pins,
         html[data-mcms-device-layout="desktop"][data-mcms-dock-auto-hide="true"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit]:is(:hover,:focus-within) .mcms-screen-pins,
@@ -14317,6 +14352,20 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-control-group[data-control-group="performance"] .mcms-economy-btn{height:auto!important;align-self:stretch!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-screen-pins{gap:6px!important}
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-flow="balanced"] .mcms-screen-pin-btn{height:36px!important;min-height:36px!important}
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-bookmark-row{grid-template-columns:minmax(104px,1fr) 46px 52px 52px 36px!important}
+        html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} .mcms-bookmark-row{grid-template-columns:repeat(4,minmax(44px,1fr))!important;gap:7px!important}
+        html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} .mcms-bookmark-name{grid-column:1/-1!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+        html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} .mcms-profile-row{grid-template-columns:repeat(3,minmax(44px,1fr))!important;gap:7px!important}
+        html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} .mcms-profile-main{grid-column:1/-1!important}
+        html[data-mcms-tablet-active="true"] body #${SCRIPT.panelId} :is(.mcms-position-btn,.mcms-bookmark-btn,.mcms-pin-btn){display:grid!important;place-items:center!important;line-height:1.15!important}
+        html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} .mcms-tab-panel.mcms-active{grid-template-columns:1fr!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.controlId} .mcms-menu-btn{grid-template-rows:22px auto!important;padding:4px!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.controlId} .mcms-menu-icon{height:22px!important;line-height:22px!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.controlId} .mcms-control-state{color:rgba(255,255,255,.8)!important;font-size:8.5px!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-tabs{position:static!important;top:auto!important;grid-template-rows:repeat(3,44px)!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} :is(.mcms-sweep-stat span,.mcms-sweep-meta,.mcms-sweep-log,.mcms-recruitment-filter-head b,.mcms-recruitment-type b,.mcms-recruitment-station small,.mcms-recruitment-station>b,.mcms-icon-source small,.mcms-icon-default){font-size:9.5px!important;line-height:1.35!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} :is(.mcms-sweep-state,.mcms-recruitment-filter-head,.mcms-recruitment-type,.mcms-recruitment-findings,.mcms-alliance-course-guide,.mcms-alliance-course-guide summary,.mcms-empty-state){font-size:10px!important;line-height:1.4!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.panelId} :is(.mcms-recruitment-station strong,.mcms-icon-source strong){font-size:11px!important;line-height:1.3!important}
         html[data-mcms-device-layout="desktop"][data-mcms-command-bar-open="false"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] :is(.mcms-floating-filter,.mcms-screen-pins){display:none!important}
         html[data-mcms-missionchief-reskin="true"]{--mcms-page-bg:#07111a;--mcms-page-surface:#101d28;--mcms-page-surface-2:#172a38;--mcms-page-text:#eef8ff;--mcms-page-muted:#9bb1bf;--mcms-page-accent:#68cfff}
         html[data-mcms-missionchief-reskin="true"][data-mcms-ui-theme="cyberpunk"]{--mcms-page-bg:#060a11;--mcms-page-surface:#10141c;--mcms-page-surface-2:#171d27;--mcms-page-text:#f7f5df;--mcms-page-muted:#9bb8c2;--mcms-page-accent:#fcee0a}
@@ -14405,25 +14454,26 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return deviceLayoutStatusText();
     }
 
-    function refreshTabletModeUi(panel = document.getElementById(SCRIPT.panelId)) {
+    function refreshTabletModeUi(panel = document.getElementById(SCRIPT.panelId), settingsByKey = null, refreshHeader = true) {
         if (!panel) return;
-        panel.classList.toggle('mcms-tablet-active', tabletModeActive);
-        panel.classList.toggle('mcms-mobile-active', mobileModeActive);
-        const tabletSelect = panel.querySelector('[data-setting="tablet-mode"]');
-        const mobileSelect = panel.querySelector('[data-setting="mobile-mode"]');
-        if (tabletSelect && document.activeElement !== tabletSelect) tabletSelect.value = state.tabletMode;
-        if (mobileSelect && document.activeElement !== mobileSelect) mobileSelect.value = state.mobileMode;
-        const desktopDensity = panel.querySelector('[data-setting="density-desktop"]');
-        const tabletDensity = panel.querySelector('[data-setting="density-tablet"]');
-        if (desktopDensity && document.activeElement !== desktopDensity) desktopDensity.value = state.interfaceDensity.desktop;
-        if (tabletDensity && document.activeElement !== tabletDensity) tabletDensity.value = state.interfaceDensity.tablet;
+        const setting = key => settingsByKey?.get?.(key) || panel.querySelector(`[data-setting="${key}"]`);
+        updateUiToggleClass(panel, 'mcms-tablet-active', tabletModeActive);
+        updateUiToggleClass(panel, 'mcms-mobile-active', mobileModeActive);
+        const tabletSelect = setting('tablet-mode');
+        const mobileSelect = setting('mobile-mode');
+        if (tabletSelect && document.activeElement !== tabletSelect) updateUiSetProperty(tabletSelect, 'value', state.tabletMode);
+        if (mobileSelect && document.activeElement !== mobileSelect) updateUiSetProperty(mobileSelect, 'value', state.mobileMode);
+        const desktopDensity = setting('density-desktop');
+        const tabletDensity = setting('density-tablet');
+        if (desktopDensity && document.activeElement !== desktopDensity) updateUiSetProperty(desktopDensity, 'value', state.interfaceDensity.desktop);
+        if (tabletDensity && document.activeElement !== tabletDensity) updateUiSetProperty(tabletDensity, 'value', state.interfaceDensity.tablet);
         const status = panel.querySelector('[data-device-layout-status], [data-tablet-status]');
-        if (status) status.textContent = tabletModeStatusText();
+        if (status) updateUiSetText(status, tabletModeStatusText());
         const dragHandle = panel.querySelector('.mcms-drag-handle');
-        if (dragHandle) dragHandle.title = mobileModeActive
-        ? 'Mobile Mode uses a fixed responsive panel'
-        : 'Hold and drag this header to move the menu';
-        updateCommandInterfaceHeader(panel);
+        if (dragHandle) updateUiSetProperty(dragHandle, 'title', mobileModeActive
+            ? 'Mobile Mode uses a fixed responsive panel'
+            : 'Hold and drag this header to move the menu');
+        if (refreshHeader) updateCommandInterfaceHeader(panel);
         updateDesktopWorkspaceChrome(panel);
     }
 
@@ -15724,6 +15774,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function customVehicleBadgeMutationRelevant(mutation) {
+        if (mutationIsDirectMissionEntryBatch(mutation)) return false;
         const target = mutation?.target;
         if (target?.closest?.(CUSTOM_VEHICLE_BADGE_SELECTOR)) return false;
         const selector = '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_id], [data-vehicle-id], [data-vehicle_id], a[href*="/vehicles/"]';
@@ -19726,7 +19777,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
             : `<div class="mcms-sweep-stat"><b>${summary.outsideDispatch}</b><span>Other centres</span></div>`;
         const runStats = runtimeState.running || runtimeState.processed
             ? `<div class="mcms-sweep-stat"><b>${runtimeState.processed}/${Math.min(plannedQueue.length || runtimeState.processed, DISPATCH_RECRUITMENT_APPLY_LIMIT)}</b><span>Processed</span></div><div class="mcms-sweep-stat"><b>${runtimeState.updated}</b><span>Updated</span></div><div class="mcms-sweep-stat"><b>${runtimeState.partial}</b><span>Partial</span></div><div class="mcms-sweep-stat"><b>${runtimeState.unchanged}</b><span>No change</span></div><div class="mcms-sweep-stat"><b>${runtimeState.skipped + runtimeState.errors}</b><span>Issues</span></div>`
-            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>${assignedLabel}</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div>${scopeStat}<div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span>Unavailable</span></div>`;
+            : `<div class="mcms-sweep-stat"><b>${summary.eligible}</b><span>${assignedLabel}</span></div><div class="mcms-sweep-stat"><b>${plannedQueue.length}</b><span>Selected</span></div>${scopeStat}<div class="mcms-sweep-stat"><b>${summary.unavailable}</b><span title="Unavailable">Blocked</span></div>`;
         const activity = runtimeState.currentItem ? `<div class="mcms-status"><strong>Current:</strong> ${escapeHtml(runtimeState.currentItem)}</div>` : '';
         const outsideDispatchLabel = allCentres ? 'with assignments outside the loaded Dispatch Centre catalogue' : 'assigned to other Dispatch Centres';
         const unassigned = summary.unassignedNames?.length ? `<details class="mcms-recruitment-findings"><summary>${summary.unassigned} unassigned row${summary.unassigned === 1 ? '' : 's'} — excluded from all recruitment changes</summary>${summary.unassignedNames.map(name => `<div>${escapeHtml(name)}</div>`).join('')}${summary.unassigned > summary.unassignedNames.length ? `<div>+ ${summary.unassigned - summary.unassignedNames.length} more</div>` : ''}</details>` : '';
@@ -24013,6 +24064,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function mutationTouchesNativeVisibilityControls(mutation) {
+        if (mutationIsDirectMissionEntryBatch(mutation)) return false;
         const nodes = [mutation?.target, ...Array.from(mutation?.addedNodes || [])];
         return nodes.some(node => {
         if (!node || node.nodeType !== 1) return false;
@@ -29040,7 +29092,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         if (typeof Observer !== 'function') return;
         const observer = runtimeTrackObserver(new Observer(mutations => {
-        const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
+        const relevant = mutations.some(mutation => !mutationIsDirectMissionEntryBatch(mutation) && Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
             if (node?.nodeType !== 1) return false;
             if (node.matches?.(activitySelector)) return true;
             return Boolean(node.querySelector?.(activitySelector));
@@ -36181,10 +36233,12 @@ Credits only. Each station and native action will be fetched again, purchased on
                 clearDesktopDockSizing();
                 clearDesktopPanelSizing(panel);
                 applyMobileDockLayout(mapEl);
+                applyTabletPanelPosition({ sizeOnly: true });
             } else if (tabletModeActive) {
                 clearDesktopDockSizing();
                 clearDesktopPanelSizing(panel);
                 applyTabletDockLayout(mapEl);
+                applyTabletPanelPosition({ sizeOnly: true });
             } else {
                 clearTabletDockSizing();
                 applyDesktopDockLayout(mapEl);
@@ -37936,32 +37990,32 @@ Credits only. Each station and native action will be fetched again, purchased on
             <div class="mcms-floating-filter" aria-label="Persistent map command bar">
                 <div class="mcms-control-group" data-control-group="visibility" aria-label="Visibility controls">
                     <span class="mcms-control-group-label">Visibility</span>
-                    ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
-                    ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
-                    ${makeFloatButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3', 'Vehicles', 'Units')}
-                    ${makeFloatButton('buildings', '4', 'Buildings', 'Toggle your saved building view. Shortcut: 4 · Shift+4 opens the type selector.', 'Buildings', 'Bldgs')}
+                    ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Mine', 'Mine')}
+                    ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Ally', 'Ally')}
+                    ${makeFloatButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3', 'Units', 'Units')}
+                    ${makeFloatButton('buildings', '4', 'Buildings', 'Toggle your saved building view. Shortcut: 4 · Shift+4 opens the type selector.', 'Bldgs', 'Bldgs')}
                 </div>
                 <div class="mcms-control-group" data-control-group="intelligence" aria-label="Intelligence controls">
                     <span class="mcms-control-group-label">Intelligence</span>
-                    ${makeFloatButton('allianceCredits', '5', 'Ally Credits', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5', 'Ally Credits', 'Ally £')}
-                    ${makeFloatButton('missionAge', '6', 'Mission Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
-                    ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Transport', 'Trans')}
-                    ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Unit Count', 'Count')}
+                    ${makeFloatButton('allianceCredits', '5', 'Ally Credits', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5', 'Ally £', 'Ally £')}
+                    ${makeFloatButton('missionAge', '6', 'Mission Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Age', 'Age')}
+                    ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Trans', 'Trans')}
+                    ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Count', 'Count')}
                     ${makeFloatButton('stuckDetector', '', 'Stuck', 'Show/hide Stuck mission labels when no meaningful progress is detected.', 'Stuck', 'Stuck')}
                 </div>
                 <div class="mcms-control-group" data-control-group="dashboard" aria-label="Dashboard controls">
                     <span class="mcms-control-group-label">Dashboard</span>
-                    ${makeActionFloatButton('open-vehicle-status', 'V', 'Vehicle Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Vehicle Codes', 'Codes')}
-                    ${makeActionFloatButton('open-pressure-board', 'B', 'Pressure Board', 'Open or close the Operational Pressure Board. Shortcut: B', 'Pressure Board', 'Pressure', 'pressureBoard')}
+                    ${makeActionFloatButton('open-vehicle-status', 'V', 'Vehicle Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Codes', 'Codes')}
+                    ${makeActionFloatButton('open-pressure-board', 'B', 'Pressure Board', 'Open or close the Operational Pressure Board. Shortcut: B', 'Board', 'Board', 'pressureBoard')}
                     ${makeActionFloatButton('open-command-palette', 'K', 'Command Palette', 'Search missions, vehicles, buildings, locations, settings and Toolkit commands. Shortcut: K', 'Palette', 'Search', 'commandPalette')}
-                    ${makeActionFloatButton('open-map-measure', '', 'Drawing', 'Activate Drawing on the map. No listener or layer exists until opened.', 'Drawing', 'Draw', 'measure')}
+                    ${makeActionFloatButton('open-map-measure', '', 'Drawing', 'Activate Drawing on the map. No listener or layer exists until opened.', 'Draw', 'Draw', 'measure')}
                 </div>
                 <div class="mcms-control-group" data-control-group="performance" aria-label="Performance controls">
-                    <span class="mcms-control-group-label">Performance</span>
+                    <span class="mcms-control-group-label">Perf</span>
                     <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false">
-                        <span class="mcms-float-key" aria-hidden="true">ECO</span>
+                        <span class="mcms-float-key" aria-hidden="true">E</span>
                         <span class="mcms-float-icon" aria-hidden="true">${MAP_CONTROL_ICONS.economyMode}</span>
-                        <span class="mcms-float-copy"><span class="mcms-float-label mcms-float-label-desktop">Economy Mode</span><span class="mcms-float-label mcms-float-label-tablet">Economy</span><span class="mcms-float-label mcms-float-label-mobile">Economy</span><span class="mcms-control-state">OFF</span></span>
+                        <span class="mcms-float-copy"><span class="mcms-float-label mcms-float-label-desktop">Economy Mode</span><span class="mcms-float-label mcms-float-label-tablet">Eco</span><span class="mcms-float-label mcms-float-label-mobile">Eco</span><span class="mcms-control-state">OFF</span></span>
                     </button>
                 </div>
             </div>
@@ -39407,23 +39461,27 @@ Credits only. Each station and native action will be fetched again, purchased on
         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
         const control = document.getElementById(SCRIPT.controlId);
         const panel = document.getElementById(SCRIPT.panelId);
+        const menuButton = control?.querySelector('.mcms-menu-btn') || null;
+        const dockPosition = activeDockPosition();
+        const buildingStatus = buildingVisibilityStatusLabel();
+        const compactBuildingStatus = buildingVisibilityStatusLabel({ compact: true });
         if (control) {
-            const dockPosition = activeDockPosition();
+            const controlToggleButtons = Array.from(control.querySelectorAll('[data-toggle]'));
+            const controlActionButtons = new Map(Array.from(control.querySelectorAll('[data-action]'), button => [button.dataset.action, button]));
             for (const pos of Object.keys(POSITIONS)) updateUiToggleClass(control, `mcms-pos-${pos}`, dockPosition === pos);
             updateUiSetStyleProperty(control.style, '--mcms-nudge-x', `${state.nudge.x}px`);
             updateUiSetStyleProperty(control.style, '--mcms-nudge-y', `${state.nudge.y}px`);
             toolkitApplyCommandBarState(control);
-            const menuButton = control.querySelector('.mcms-menu-btn');
             const menuBinding = state.inputStudio.hotkeys.menu || '—';
             updateUiSetText(menuButton?.querySelector('.mcms-menu-key'), menuBinding);
             updateUiSetAttribute(menuButton, 'aria-keyshortcuts', state.inputStudio.hotkeys.menu || '');
-            control.querySelectorAll('[data-toggle]').forEach(button => {
+            controlToggleButtons.forEach(button => {
                 const binding = state.inputStudio.hotkeys[button.dataset.toggle] || '';
                 updateUiSetText(button.querySelector('.mcms-float-key'), binding || '—');
                 updateUiSetAttribute(button, 'aria-keyshortcuts', binding);
             });
             for (const [action, command] of Object.entries({ 'open-vehicle-status': 'vehicleCodes', 'open-pressure-board': 'pressureBoard', 'open-command-palette': 'palette' })) {
-                const button = Array.from(control.querySelectorAll('[data-action]')).find(item => item.dataset.action === action);
+                const button = controlActionButtons.get(action);
                 const binding = state.inputStudio.hotkeys[command] || '';
                 updateUiSetText(button?.querySelector('.mcms-float-key'), binding || '—');
                 updateUiSetAttribute(button, 'aria-keyshortcuts', binding);
@@ -39439,22 +39497,22 @@ Credits only. Each station and native action will be fetched again, purchased on
                 unitCommitment: state.unitCommitment,
                 stuckDetector: state.stuckDetector.enabled,
             };
-            control.querySelectorAll('[data-toggle]').forEach(btn => {
+            controlToggleButtons.forEach(btn => {
                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
-                const buildingStatus = btn.dataset.toggle === 'buildings' ? buildingVisibilityStatusLabel() : '';
+                const currentBuildingStatus = btn.dataset.toggle === 'buildings' ? buildingStatus : '';
                 updateUiToggleClass(btn, 'mcms-on', on);
                 updateUiSetAttribute(btn, 'aria-pressed', String(on));
                 updateUiSetDataset(btn, 'mcmsState', on ? 'on' : 'off');
-                updateUiSetText(btn.querySelector('.mcms-control-state'), buildingStatus ? buildingVisibilityStatusLabel({ compact: true }) : (on ? 'ON' : 'OFF'));
-                if (buildingStatus) {
-                    updateUiSetProperty(btn, 'title', `Building view: ${buildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
-                    updateUiSetAttribute(btn, 'aria-label', `Buildings: ${buildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
+                updateUiSetText(btn.querySelector('.mcms-control-state'), currentBuildingStatus ? compactBuildingStatus : (on ? 'ON' : 'OFF'));
+                if (currentBuildingStatus) {
+                    updateUiSetProperty(btn, 'title', `Building view: ${currentBuildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
+                    updateUiSetAttribute(btn, 'aria-label', `Buildings: ${currentBuildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
                     return;
                 }
                 const controlName = btn.querySelector('.mcms-float-label-desktop')?.textContent || btn.title || 'Map control';
                 updateUiSetAttribute(btn, 'aria-label', `${controlName}: ${on ? 'on' : 'off'}. ${btn.title || ''}`.trim());
             });
-            const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
+            const vehicleStatusButton = controlActionButtons.get('open-vehicle-status');
             if (vehicleStatusButton) {
                 const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
                 updateUiToggleClass(vehicleStatusButton, 'mcms-on', open);
@@ -39463,7 +39521,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 updateUiSetText(vehicleStatusButton.querySelector('.mcms-control-state'), open ? 'ACTIVE' : 'OFF');
                 updateUiSetAttribute(vehicleStatusButton, 'aria-label', `Vehicle Code Status: ${open ? 'active' : 'off'}. Shortcut: ${state.inputStudio.hotkeys.vehicleCodes || 'none'}.`);
             }
-            const pressureBoardButton = control.querySelector('[data-action="open-pressure-board"]');
+            const pressureBoardButton = controlActionButtons.get('open-pressure-board');
             if (pressureBoardButton) {
                 const open = operationalPressureBoardOpen();
                 updateUiToggleClass(pressureBoardButton, 'mcms-on', open);
@@ -39472,7 +39530,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 updateUiSetText(pressureBoardButton.querySelector('.mcms-control-state'), open ? 'ACTIVE' : 'OFF');
                 updateUiSetAttribute(pressureBoardButton, 'aria-label', `Operational Pressure Board: ${open ? 'active' : 'off'}. Shortcut: ${state.inputStudio.hotkeys.pressureBoard || 'none'}.`);
             }
-            const commandPaletteButton = control.querySelector('[data-action="open-command-palette"]');
+            const commandPaletteButton = controlActionButtons.get('open-command-palette');
             if (commandPaletteButton) {
                 const open = Boolean(commandExperienceElement(SCRIPT.commandPaletteId));
                 updateUiToggleClass(commandPaletteButton, 'mcms-on', open);
@@ -39495,7 +39553,8 @@ Credits only. Each station and native action will be fetched again, purchased on
             }
         }
         if (!panel) return;
-        refreshTabletModeUi(panel);
+        const panelSettings = new Map(Array.from(panel.querySelectorAll('[data-setting]'), setting => [setting.dataset.setting, setting]));
+        refreshTabletModeUi(panel, panelSettings, false);
         panel.querySelectorAll('.mcms-tab-btn').forEach(btn => {
             const active = btn.dataset.tab === state.activeTab;
             updateUiToggleClass(btn, 'mcms-active', active);
@@ -39509,14 +39568,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         });
         const panelOpen = panel.classList.contains('mcms-open');
         updateUiSetAttribute(panel, 'aria-hidden', String(!panelOpen));
-        updateUiSetAttribute(control?.querySelector('.mcms-menu-btn'), 'aria-expanded', String(panelOpen));
+        updateUiSetAttribute(menuButton, 'aria-expanded', String(panelOpen));
         panel.querySelectorAll('.mcms-ui-theme-btn').forEach(btn => {
             const active = btn.dataset.uiTheme === state.uiTheme;
             updateUiToggleClass(btn, 'mcms-active', active);
             updateUiSetAttribute(btn, 'aria-pressed', String(active));
         });
         panel.querySelectorAll('.mcms-theme-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.theme === state.theme));
-        panel.querySelectorAll('.mcms-position-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.position === activeDockPosition()));
+        panel.querySelectorAll('.mcms-position-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.position === dockPosition));
         panel.querySelectorAll('[data-feature-beacon]').forEach(element => updateUiToggleClass(element, 'mcms-feature-viewed', featureBeaconViewed(element.dataset.featureBeacon)));
         const safeModeButton = panel.querySelector('.mcms-safe-mode-setting');
         if (safeModeButton) {
@@ -39555,16 +39614,16 @@ Credits only. Each station and native action will be fetched again, purchased on
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
             const on = Boolean(toggleValues[key]);
-            const buildingStatus = key === 'buildings' ? buildingVisibilityStatusLabel() : '';
+            const currentBuildingStatus = key === 'buildings' ? buildingStatus : '';
             updateUiToggleClass(btn, 'mcms-on', on);
             const pill = btn.querySelector('.mcms-pill');
-            updateUiSetText(pill, buildingStatus
-                ? buildingVisibilityStatusLabel({ compact: true })
+            updateUiSetText(pill, currentBuildingStatus
+                ? compactBuildingStatus
                 : key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
             updateUiSetAttribute(btn, 'aria-pressed', String(on));
-            if (!buildingStatus) return;
-            updateUiSetProperty(btn, 'title', `Building view: ${buildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
-            updateUiSetAttribute(btn, 'aria-label', `Buildings: ${buildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
+            if (!currentBuildingStatus) return;
+            updateUiSetProperty(btn, 'title', `Building view: ${currentBuildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
+            updateUiSetAttribute(btn, 'aria-label', `Buildings: ${currentBuildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
         });
         renderBuildingVisibilitySelector(panel);
         const pressureBoardToggle = panel.querySelector('.mcms-pressure-board-toggle');
@@ -39587,98 +39646,99 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         updateAllianceMemberManagerMenuControl();
         state.quickWheel.slots.slice(0, state.quickWheel.slotCount).forEach((slot, index) => {
-            const select = panel.querySelector(`[data-setting="quick-wheel-slot-${index}"]`);
+            const select = panelSettings.get(`quick-wheel-slot-${index}`);
             if (select && document.activeElement !== select) updateUiSetProperty(select, 'value', quickWheelSlotValue(slot));
         });
-        const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
+        const majorIncidentMinimum = panelSettings.get('major-incident-minimum');
         if (majorIncidentMinimum) updateUiSetProperty(majorIncidentMinimum, 'value', String(state.majorIncidentFeed.minimumCredits));
-        const radius = panel.querySelector('[data-setting="coverage-radius"]');
+        const radius = panelSettings.get('coverage-radius');
         if (radius) updateUiSetProperty(radius, 'value', String(state.coverage.radiusMi));
-        const allianceCreditMinimum = panel.querySelector('[data-setting="alliance-credit-minimum"]');
+        const allianceCreditMinimum = panelSettings.get('alliance-credit-minimum');
         if (allianceCreditMinimum) updateUiSetProperty(allianceCreditMinimum, 'value', String(state.allianceCreditMinimum));
-        const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
+        const transportSweepDelay = panelSettings.get('transport-sweep-delay');
         if (transportSweepDelay) updateUiSetProperty(transportSweepDelay, 'value', String(state.transportSweep.delayMs));
-        const transportSweepMode = panel.querySelector('[data-setting="transport-sweep-mode"]');
+        const transportSweepMode = panelSettings.get('transport-sweep-mode');
         if (transportSweepMode) updateUiSetProperty(transportSweepMode, 'value', state.transportSweep.backgroundFirst === false ? 'native' : 'background');
-        const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
+        const transportSweepMax = panelSettings.get('transport-sweep-max');
         if (transportSweepMax) updateUiSetProperty(transportSweepMax, 'value', String(state.transportSweep.maxPerRun));
-        const allianceCourseDay = panel.querySelector('[data-setting="alliance-course-day"]');
+        const allianceCourseDay = panelSettings.get('alliance-course-day');
         if (allianceCourseDay) updateUiSetProperty(allianceCourseDay, 'value', state.allianceCourses.day);
-        const allianceCourseDuration = panel.querySelector('[data-setting="alliance-course-duration"]');
+        const allianceCourseDuration = panelSettings.get('alliance-course-duration');
         if (allianceCourseDuration) updateUiSetProperty(allianceCourseDuration, 'value', String(state.allianceCourses.shareDuration));
-        const allianceCourseDelay = panel.querySelector('[data-setting="alliance-course-delay"]');
+        const allianceCourseDelay = panelSettings.get('alliance-course-delay');
         if (allianceCourseDelay) updateUiSetProperty(allianceCourseDelay, 'value', String(state.allianceCourses.delayMs));
-        if (panel.classList.contains('mcms-open') && state.activeTab === 'alliance') {
+        if (panelOpen && state.activeTab === 'alliance') {
             renderTransportSweepPanel();
             renderAllianceCoursesPanel();
         }
-        const dispatchRecruitmentPhase = panel.querySelector('[data-setting="dispatch-recruitment-hiring-phase"]');
+        const dispatchRecruitmentPhase = panelSettings.get('dispatch-recruitment-hiring-phase');
         if (dispatchRecruitmentPhase) updateUiSetProperty(dispatchRecruitmentPhase, 'value', state.dispatchRecruitment.hiringPhase);
-        const dispatchRecruitmentPersonnel = panel.querySelector('[data-setting="dispatch-recruitment-personnel"]');
+        const dispatchRecruitmentPersonnel = panelSettings.get('dispatch-recruitment-personnel');
         if (dispatchRecruitmentPersonnel && document.activeElement !== dispatchRecruitmentPersonnel) updateUiSetProperty(dispatchRecruitmentPersonnel, 'value', state.dispatchRecruitment.personnelDesired);
-        const dispatchRecruitmentDelay = panel.querySelector('[data-setting="dispatch-recruitment-delay"]');
+        const dispatchRecruitmentDelay = panelSettings.get('dispatch-recruitment-delay');
         if (dispatchRecruitmentDelay) updateUiSetProperty(dispatchRecruitmentDelay, 'value', String(state.dispatchRecruitment.delayMs));
-        if (panel.classList.contains('mcms-open') && state.activeTab === 'dispatch') {
+        if (panelOpen && state.activeTab === 'dispatch') {
             renderDispatchRecruitmentPanel();
             renderStationIconCopierPanel();
             renderExpansionPlannerPanel();
         }
-        const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
+        const payoutTemplate = panelSettings.get('payout-template');
         if (payoutTemplate) updateUiSetProperty(payoutTemplate, 'value', state.payoutFlash.template);
-        const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) updateUiSetProperty(resourceGapRadius, 'value', String(state.resourceGap.radiusMi));
-        const stuckThreshold = panel.querySelector('[data-setting="stuck-threshold"]');
+        const resourceGapRadius = panelSettings.get('resource-gap-radius'); if (resourceGapRadius) updateUiSetProperty(resourceGapRadius, 'value', String(state.resourceGap.radiusMi));
+        const stuckThreshold = panelSettings.get('stuck-threshold');
         if (stuckThreshold) updateUiSetProperty(stuckThreshold, 'value', String(state.stuckDetector.thresholdMin));
-        const payoutThreshold = panel.querySelector('[data-setting="payout-threshold"]');
+        const payoutThreshold = panelSettings.get('payout-threshold');
         if (payoutThreshold) updateUiSetProperty(payoutThreshold, 'value', String(state.payoutFlash.threshold));
-        const payoutDuration = panel.querySelector('[data-setting="payout-duration"]');
+        const payoutDuration = panelSettings.get('payout-duration');
         if (payoutDuration) updateUiSetProperty(payoutDuration, 'value', String(state.payoutFlash.durationMs / 1000));
-        const payoutVolume = panel.querySelector('[data-setting="payout-volume"]');
+        const payoutVolume = panelSettings.get('payout-volume');
         if (payoutVolume) updateUiSetProperty(payoutVolume, 'value', String(state.payoutFlash.soundVolume));
-        const discordWebhook = panel.querySelector('[data-setting="discord-webhook"]');
+        const discordWebhook = panelSettings.get('discord-webhook');
         if (discordWebhook && document.activeElement !== discordWebhook) updateUiSetProperty(discordWebhook, 'value', getDiscordWebhookUrl());
-        const discordName = panel.querySelector('[data-setting="discord-name"]');
+        const discordName = panelSettings.get('discord-name');
         if (discordName && document.activeElement !== discordName) updateUiSetProperty(discordName, 'value', state.discordReport.webhookName);
-        const discordTopCategories = panel.querySelector('[data-setting="discord-top-categories"]');
+        const discordTopCategories = panelSettings.get('discord-top-categories');
         if (discordTopCategories) updateUiSetProperty(discordTopCategories, 'value', String(state.discordReport.topCategories));
-        const discordPeriod = panel.querySelector('[data-setting="discord-period"]');
+        const discordPeriod = panelSettings.get('discord-period');
         if (discordPeriod) updateUiSetProperty(discordPeriod, 'value', state.discordReport.period);
-        const discordCustomStart = panel.querySelector('[data-setting="discord-custom-start"]');
+        const discordCustomStart = panelSettings.get('discord-custom-start');
         if (discordCustomStart && document.activeElement !== discordCustomStart) updateUiSetProperty(discordCustomStart, 'value', state.discordReport.customStart);
-        const discordCustomEnd = panel.querySelector('[data-setting="discord-custom-end"]');
+        const discordCustomEnd = panelSettings.get('discord-custom-end');
         if (discordCustomEnd && document.activeElement !== discordCustomEnd) updateUiSetProperty(discordCustomEnd, 'value', state.discordReport.customEnd);
-        const discordComparison = panel.querySelector('[data-setting="discord-comparison"]');
+        const discordComparison = panelSettings.get('discord-comparison');
         if (discordComparison) updateUiSetProperty(discordComparison, 'value', String(state.discordReport.includeComparison));
-        const discordChart = panel.querySelector('[data-setting="discord-chart"]');
+        const discordChart = panelSettings.get('discord-chart');
         if (discordChart) updateUiSetProperty(discordChart, 'value', String(state.discordReport.includeChart));
-        const discordComplexity = panel.querySelector('[data-setting="discord-complexity"]');
-        if (discordComplexity) updateUiSetProperty(discordComplexity, 'value', normaliseDiscordReportComplexity(state.discordReport.complexity));
+        const discordComplexityValue = normaliseDiscordReportComplexity(state.discordReport.complexity);
+        const discordComplexity = panelSettings.get('discord-complexity');
+        if (discordComplexity) updateUiSetProperty(discordComplexity, 'value', discordComplexityValue);
         const discordComplexityHelp = panel.querySelector('[data-discord-complexity-help]');
-        if (discordComplexityHelp) updateUiSetText(discordComplexityHelp, FINANCE_REPORT_COMPLEXITY_COPY[normaliseDiscordReportComplexity(state.discordReport.complexity)]);
+        if (discordComplexityHelp) updateUiSetText(discordComplexityHelp, FINANCE_REPORT_COMPLEXITY_COPY[discordComplexityValue]);
         panel.querySelectorAll('[data-discord-min-complexity]').forEach(row => {
             const visible = discordReportComplexityAtLeast(row.dataset.discordMinComplexity, state.discordReport.complexity);
             updateUiSetProperty(row, 'hidden', !visible);
         });
-        const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
+        const discordRisk = panelSettings.get('discord-risk');
         if (discordRisk) updateUiSetProperty(discordRisk, 'value', String(state.discordReport.includeRisk));
-        const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');
+        const discordForecast = panelSettings.get('discord-forecast');
         if (discordForecast) updateUiSetProperty(discordForecast, 'value', String(state.discordReport.includeForecast));
-        const financeVaultEnabled = panel.querySelector('[data-setting="finance-vault-enabled"]');
+        const financeVaultEnabled = panelSettings.get('finance-vault-enabled');
         if (financeVaultEnabled) updateUiSetProperty(financeVaultEnabled, 'value', String(state.financialVault.enabled));
-        const financeVaultRetention = panel.querySelector('[data-setting="finance-vault-retention"]');
+        const financeVaultRetention = panelSettings.get('finance-vault-retention');
         if (financeVaultRetention) updateUiSetProperty(financeVaultRetention, 'value', String(state.financialVault.retentionDays));
-        const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
+        const financeRuleFeed = panelSettings.get('finance-rule-feed');
         if (financeRuleFeed) updateUiSetProperty(financeRuleFeed, 'value', String(state.financialVault.ruleFeedEnabled));
         setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
         setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
-        if (panel.classList.contains('mcms-open') && state.activeTab === 'finance') renderFinanceVaultStatus();
+        if (panelOpen && state.activeTab === 'finance') renderFinanceVaultStatus();
         const economyStatus = panel.querySelector('.mcms-economy-status');
         updateUiSetText(economyStatus, state.economyMode
             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
             : 'Economy Mode is OFF. Enable it here or from the Performance group on the map command bar to reduce CPU, GPU and marker workload.');
         const nudge = panel.querySelector('.mcms-nudge-value');
         updateUiSetText(nudge, `X ${state.nudge.x} / Y ${state.nudge.y}`);
-        if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
-        if ((panel.classList.contains('mcms-open') && state.activeTab === 'missions') || operationalUiIsVisible()) renderOperationalPanels();
+        if (panelOpen && state.activeTab === 'settings') renderProfiles();
+        if ((panelOpen && state.activeTab === 'missions') || operationalUiIsVisible()) renderOperationalPanels();
         updateCommandInterfaceHeader(panel);
     }
     function ensureUi() {
@@ -39757,6 +39817,21 @@ Credits only. Each station and native action will be fetched again, purchased on
             } catch (error) {}
         });
         return true;
+    }
+
+    const DIRECT_MISSION_ENTRY_MUTATION_SELECTOR = '.missionSideBarEntry, .mission-side-bar-entry';
+    function mutationIsDirectMissionEntryBatch(mutation) {
+        if (!mutation || mutation.type !== 'childList') return false;
+        let elementCount = 0;
+        for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
+            if (!collection?.length) continue;
+            for (const node of collection) {
+                if (!node || node.nodeType !== 1) continue;
+                elementCount += 1;
+                if (!node.matches?.(DIRECT_MISSION_ENTRY_MUTATION_SELECTOR)) return false;
+            }
+        }
+        return elementCount > 0;
     }
 
     function mutationBelongsToToolkit(mutation) {
@@ -40491,6 +40566,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             let toolkitUiRemoved = false;
             for (const mutation of mutations) {
                 if (mutationIsLeafletTileNoise(mutation)) continue;
+                if (mutationIsDirectMissionEntryBatch(mutation)) {
+                    externalMutationFound = true;
+                    missionChanged = true;
+                    continue;
+                }
                 const removesToolkitUi = mutationRemovesToolkitUi(mutation);
                 if (removesToolkitUi) toolkitUiRemoved = true;
                 if (mutationBelongsToToolkit(mutation) && !removesToolkitUi) continue;
@@ -40501,7 +40581,6 @@ Credits only. Each station and native action will be fetched again, purchased on
                 }
                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
-                if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
                 if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
             }
             if (!externalMutationFound) return;

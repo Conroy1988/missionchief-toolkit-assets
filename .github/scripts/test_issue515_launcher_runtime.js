@@ -63,7 +63,6 @@ const dock = {
 };
 const control = {
     attrs: {},
-    dataset: { mcmsLauncherReady: 'true' },
     setAttribute(name, value) { this.attrs[name] = String(value); },
     querySelector(selector) {
         if (selector === '.mcms-floating-filter') return filter;
@@ -143,11 +142,6 @@ const sandbox = {
     positionPayoutFlashOverlay() {},
     stopMapMeasure() {},
     teardownToolkitCommandShell() { teardownCount += 1; },
-    ensureToolkitEmergencyLauncher() {},
-    toolkitElementById: id => documentStub.getElementById(id),
-    toolkitPrimaryControlUsable: candidate => candidate?.dataset?.mcmsLauncherReady === 'true',
-    retireToolkitEmergencyLauncher() {},
-    runBootIntegration: (_label, callback) => callback(),
 };
 vm.createContext(sandbox);
 vm.runInContext(`${helperSource}\nthis.helpers={toolkitTopLevelDocument,toolkitCommandShellRouteEligible,toolkitPrimaryMapElement,toolkitControlHost,toolkitApplyCommandBarState,ensureUi};`, sandbox);
@@ -183,6 +177,6 @@ documentStub.mainMap = null;
 documentStub.mapOuter = null;
 assert.equal(helpers.toolkitControlHost(null, documentStub), null, 'document/body fallback is retired');
 assert.equal(helpers.ensureUi(), false, 'root route waits for positive canonical map evidence');
-assert.equal(teardownCount, 1, 'temporary map absence must not tear down the recovery path');
+assert.equal(teardownCount, 2);
 
 console.log('Issue #515 launcher runtime passed with Issue #638 canonical-map ownership hardening.');

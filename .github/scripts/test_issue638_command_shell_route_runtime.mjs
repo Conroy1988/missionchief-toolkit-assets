@@ -130,7 +130,6 @@ function createHarness(pathname = "/", body = MAP_HTML) {
       calls.controls += 1;
       control = window.document.createElement("div");
       control.id = SCRIPT.controlId;
-      control.dataset.mcmsLauncherReady = "true";
       map.appendChild(control);
       return control;
     },
@@ -157,12 +156,6 @@ function createHarness(pathname = "/", body = MAP_HTML) {
     clearIncidentCardRuntime: () => undefined,
     runtimeUnlistenTarget: () => { calls.listenerReleases += 1; return 0; },
     runtimePruneDisconnectedListeners: () => 0,
-    ensureToolkitEmergencyLauncher: () => undefined,
-    removeToolkitEmergencyLauncher: () => undefined,
-    toolkitElementById: id => window.document.getElementById(id),
-    toolkitPrimaryControlUsable: control => control?.dataset?.mcmsLauncherReady === "true",
-    retireToolkitEmergencyLauncher: () => undefined,
-    runBootIntegration: (_label, callback) => callback(),
     INPUT_COMMAND_META: { menu: { action: "menu" } },
     keyboardBindingFromEvent: () => "M",
     isTypingTarget: () => false,

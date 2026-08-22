@@ -16,8 +16,7 @@ def section(start, end):
 control = section('    function createControl(', '    function createPanel(')
 assert 'const primaryMap = toolkitPrimaryMapElement(mapEl, document);' in control
 ensure = section('    function ensureUi()', '    function mutationBelongsToToolkit')
-assert "const mountedControl = control || toolkitElementById(SCRIPT.controlId);" in ensure
-assert "return Boolean(mountedControl?.dataset?.mcmsLauncherReady === 'true');" in ensure
+assert 'return Boolean(control || document.getElementById(SCRIPT.controlId));' in ensure
 boot = section('    function boot()', '    function scheduleBoot()')
 assert 'installMissionMarkerAddHook' in boot
 assert 'installCustomVehicleBadges' in boot

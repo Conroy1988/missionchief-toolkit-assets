@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 690,
-  "expectedMain": "06396e63b3f5473cdde73c68791f7cfaa0afba16",
-  "expectedHead": "6b00f9ce633845880f4b47dddc5d7c0045059d04",
-  "nonce": "issue689-persistent-sweep-report-20260806b"
+  "prNumber": 772,
+  "expectedMain": "cec656258dd5e9ba9eacc05a0b43d0765e3db6ef",
+  "expectedHead": "a8115a4e48587fbabbdda0cd21339b575dbc7199",
+  "nonce": "toolkit-v10-16-8-perf-layout-20260822a"
 }

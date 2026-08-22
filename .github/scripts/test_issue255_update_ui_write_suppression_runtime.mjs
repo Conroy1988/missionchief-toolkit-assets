@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "10.15.3";
-const EXPECTED_SHA = "b79974c63e01b5a95a5b9a2b5b0e52e5a9f03340a7dd94d1c46af15398cc24f2";
+const EXPECTED_VERSION = "10.16.0";
+const EXPECTED_SHA = "8bdb8e3feeae3a022f6a5cddf13e36dd54e4ddb395bebdfe076b8b536eca9809";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader", "syncMapMeasureToolbarButton"];
 
@@ -190,6 +190,8 @@ export async function measureWriteSuppression() {
     COMMAND_SECTION_META: Object.freeze({ map: { label: "Map", title: "Map Controls" }, missions: { label: "Missions", title: "Mission Operations" }, alliance: { label: "Alliance Admin", title: "Alliance Administration" }, dispatch: { label: "Dispatch", title: "Dispatch Administration" }, finance: { label: "Finance", title: "Finance Command" }, locations: { label: "Locations", title: "Saved Locations" }, appearance: { label: "Appearance", title: "Appearance" }, settings: { label: "Settings", title: "Toolkit Settings" } }),
     commandSearchQuery: "", mobileModeActive: false, mapMeasureRuntime: { active: false },
     activeDockPosition: () => state.position, quickWheelSlotValue: slot => `${slot.kind}:${slot.id}`,
+    buildingVisibilityStatusLabel: ({ compact = false } = {}) => compact ? "ALL" : "All types · Own + Alliance",
+    renderBuildingVisibilitySelector: () => countNested("renderBuildingVisibilitySelector"),
     applyRootAttributes: () => countNested("applyRootAttributes"), scheduleMajorIncidentFeedRender: () => countNested("scheduleMajorIncidentFeedRender"), removeMajorIncidentFeed: () => countNested("removeMajorIncidentFeed"), toolkitApplyCommandBarState: () => countNested("toolkitApplyCommandBarState"), refreshTabletModeUi: () => countNested("refreshTabletModeUi"), updateAllianceMemberManagerMenuControl: () => countNested("updateAllianceMemberManagerMenuControl"), renderTransportSweepPanel: () => countNested("renderTransportSweepPanel"), renderAllianceCoursesPanel: () => countNested("renderAllianceCoursesPanel"), renderDispatchRecruitmentPanel: () => countNested("renderDispatchRecruitmentPanel"), getDiscordWebhookUrl: () => "https://discord.invalid/webhook", setDiscordStatus: () => countNested("setDiscordStatus"), discordFinanceStatus: "ready", discordFinanceStatusTone: "success", setOperationalSitrepStatus: () => countNested("setOperationalSitrepStatus"), operationalSitrepStatus: "ready", operationalSitrepStatusTone: "neutral", operationalPressureBoardOpen: () => false, renderFinanceVaultStatus: () => countNested("renderFinanceVaultStatus"), renderProfiles: () => countNested("renderProfiles"), operationalVisible: false, operationalUiIsVisible: () => sandbox.operationalVisible, renderOperationalPanels: () => countNested("renderOperationalPanels"), __MCMS_PROFILER__: profiler };
   sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v9.0.1.js" });
   const panel = window.document.getElementById(sandbox.SCRIPT.panelId);

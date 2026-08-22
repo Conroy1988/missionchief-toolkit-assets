@@ -53,7 +53,7 @@ def main() -> int:
         require(text, [
             "MissionChief Map Command Toolkit — CANARY",
             "@namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit/canary",
-            "@version      10.15.3.20260822000000",
+            "@version      10.16.0.20260822000000",
             "pageWindow.__MCMS_CANARY_RUNTIME__ = MCMS_CANARY_BUILD",
             '"buildId":"test-20260822-deadbeef"',
         ], "generated canary")

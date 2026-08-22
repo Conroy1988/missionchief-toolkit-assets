@@ -27,17 +27,19 @@ for token in (
     'function nativeAllianceBuildingLayerAllowed(',
     'function suppressLeakedAllianceBuildingLayer(',
     'function synchroniseNativeAllianceBuildingVisibility(',
+    'function synchroniseBuildingVisibilitySelector(',
+    'function buildingVisibilityLayerAllowed(',
     'const allowedByNativeFilter = nativeAllianceBuildingLayerAllowed(map, layer);',
     "map.on('overlayadd overlayremove', onNativeOverlayChange);",
     "map.on('moveend zoomend viewreset', onMapMove);",
-    'if (!isPersonalBuilding) suppressLeakedAllianceBuildingLayer(map, layer);',
+    'synchroniseBuildingVisibilitySelector(map);',
 ):
     assert token in SOURCE, token
 assert "data-mcms-show-buildings" in SOURCE
 assert 'mcms-marker-personal-building' in SOURCE
 assert 'mcms-marker-alliance-building' not in SOURCE
 assert SOURCE.count("runtimeRegisterTask('building-visibility'") == 1
-assert "intervalResolver: () => nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000" in SOURCE
+assert "intervalResolver: () => buildingVisibilityFilterIsCustom() ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000" in SOURCE
 
 
 def visible(*, alliance: bool, native_filter_visible: bool, direct_on_map: bool) -> bool:

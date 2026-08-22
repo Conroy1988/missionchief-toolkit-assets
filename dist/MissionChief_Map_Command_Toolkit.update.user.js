@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.15.3
+// @version      10.16.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.15.3',
+        version: '10.16.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,15 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.15.3",
-        title: "Live Regression Hotfix",
+        version: "10.16.0",
+        title: "Building Visibility Selector",
         highlights: Object.freeze([
-            "Keeps Personnel (Desired) synchronized and saved on every valid input so UI refreshes cannot restore an older 1,000 value.",
-            "Restores MissionChief’s native PUT or PATCH personnel submission with CSRF and AJAX headers, then tolerates bounded stale API reads without repeating a write.",
-            "Fixes Button 3 by targeting only show_vehicle, excluding the separate mobile_show_vehicle value and supporting query-based Map and vehicles tabs.",
-            "Restores the saved Desktop workspace width immediately after every main-page switch instead of collapsing to the legacy 720-pixel fallback.",
-            "Preserves the full-width Expansion & Upgrade Planner layout, Credit-only safeguards, Tablet and iOS behaviour and all supported themes.",
-            "Replaces the parallel pull-request validation fan-out with one path-aware runner while exhaustive audits remain available through scheduled or manual workflows."
+            "Replaces the all-or-nothing Buildings control with a persistent selector for exact MissionChief building types.",
+            "Adds Own, Alliance and combined ownership scopes, live type search, per-type counts, checkboxes and one-tap Only views.",
+            "Keeps shortcut 4 as a fast hide or restore action for the saved view, while Shift+4 and the visible chooser open the selector.",
+            "Adds All, None and Restore actions, clear ALL, single-type, N TYPES and HIDDEN status labels, and Map Profile persistence.",
+            "Uses native per-building filter targets with marker-layer fallback, new-marker enforcement and teardown restoration across Desktop, Tablet and iOS."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1333,6 +1332,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const STARTUP_SETTLE_WINDOW_MS = 8000;
     const STARTUP_MUTATION_DEBOUNCE_MS = 520;
     const BUILDING_VISIBILITY_RECHECK_MS = 4000;
+    const BUILDING_VISIBILITY_SCOPES = Object.freeze(['own', 'alliance', 'both']);
+    const BUILDING_VISIBILITY_MODES = Object.freeze(['all', 'selected']);
     const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);
     const NATIVE_VEHICLE_SETTINGS_REQUEST_TIMEOUT_MS = 12000;
     const NATIVE_VEHICLE_SETTINGS_API_PATH = '/api/settings';
@@ -1600,6 +1601,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let cachedUserIdReadAt = 0;
     let personalBuildingIdsCache = { revision: -1, userId: null, createdAt: 0, values: new Set() };
     let buildingRecordIndexCache = { revision: -1, userId: null, recordsById: new Map(), allianceRecords: [] };
+    let buildingVisibilityTargetCache = { revision: -1, service: null, createdAt: 0, entries: [] };
     let missionIconMarkerCache = new WeakMap();
     let panelPositionTimer = null;
     let coverageRenderSignature = '';
@@ -1641,6 +1643,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const hiddenNativeAllianceBuildingLayers = new Set();
     const nativeAllianceBuildingLayerTargets = new WeakMap();
     let enforcingNativeAllianceBuildingVisibility = false;
+    const hiddenBuildingVisibilityLayers = new Set();
+    const buildingVisibilityLayerOpacity = new Map();
+    const buildingVisibilityManagedTargets = new Map();
+    let enforcingBuildingVisibility = false;
     const economyHiddenVehicleLayers = new Set();
     const economyHiddenBuildingLayers = new Set();
     const economyLeafletOptionSnapshots = new Map();
@@ -1847,6 +1853,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         skipped: 0,
         errors: 0,
         log: []
+    };
+    const buildingVisibilityRuntime = {
+        open: false,
+        search: '',
+        loading: false,
+        error: '',
+        catalogPromise: null,
+        catalogAt: 0,
+        typeLabels: {},
+        restoreSnapshot: null
     };
     const stationIconCopierRuntime = {
         running: false,
@@ -2275,6 +2291,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         nudge: { x: 0, y: 0 },
         panelPosition: null,
         visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
+        buildingVisibility: { scope: 'both', mode: 'all', selectedTypeIds: [] },
         nativeVisibility: { migratedFeatures: [] },
         quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
         coverage: { enabled: false, radiusMi: 10 },
@@ -2288,6 +2305,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         ...parsed,
         nudge: { ...base.nudge, ...(parsed.nudge || {}) },
         visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+        buildingVisibility: { ...base.buildingVisibility, ...(parsed.buildingVisibility || {}) },
         nativeVisibility: { ...base.nativeVisibility, ...(parsed.nativeVisibility || {}) },
         quickPins: normaliseQuickPins(parsed.quickPins, base.quickPins),
         coverage: { ...base.coverage, ...(parsed.coverage || {}) },
@@ -2336,6 +2354,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.commandBarOpen = merged.commandBarOpen !== false;
         merged.economyMode = Boolean(merged.economyMode);
         merged.fullscreenMap = Boolean(merged.fullscreenMap);
+        merged.buildingVisibility.scope = BUILDING_VISIBILITY_SCOPES.includes(String(merged.buildingVisibility.scope)) ? String(merged.buildingVisibility.scope) : 'both';
+        merged.buildingVisibility.mode = BUILDING_VISIBILITY_MODES.includes(String(merged.buildingVisibility.mode)) ? String(merged.buildingVisibility.mode) : 'all';
+        merged.buildingVisibility.selectedTypeIds = Array.from(new Set((Array.isArray(merged.buildingVisibility.selectedTypeIds) ? merged.buildingVisibility.selectedTypeIds : [])
+            .map(value => String(value || '').trim())
+            .filter(value => /^\d+$/u.test(value))))
+            .slice(0, 512);
         merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
         merged.customVehicleBadges = merged.customVehicleBadges !== false;
         merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
@@ -3377,7 +3401,43 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-pin-btn { width: 100% !important; min-width: 0 !important; height: 28px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 9px !important; background: rgba(255,255,255,.065) !important; color: rgba(255,255,255,.84) !important; cursor: pointer !important; font-size: 9px !important; line-height: 28px !important; font-weight: 900 !important; text-align: center !important; padding: 0 !important; overflow: hidden !important; }#${SCRIPT.panelId} .mcms-small-btn { height: auto !important; min-height: 28px !important; line-height: 1.15 !important; padding: 5px 6px !important; white-space: normal !important; overflow-wrap: anywhere !important; display: flex !important; align-items: center !important; justify-content: center !important; }#${SCRIPT.panelId} .mcms-position-btn:hover,
         #${SCRIPT.panelId} .mcms-small-btn:hover,
         #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
-        #${SCRIPT.panelId} .mcms-pin-btn:hover { background: rgba(255,255,255,.14) !important; }#${SCRIPT.panelId} .mcms-quick-row { display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; gap: 6px !important; margin-bottom: 6px !important; }#${SCRIPT.panelId} .mcms-bookmark-row { display: grid !important; grid-template-columns: minmax(0,1fr) 32px 38px 36px 26px !important; gap: 5px !important; align-items: center !important; margin-bottom: 5px !important; }#${SCRIPT.panelId} .mcms-bookmark-name { color: rgba(255,255,255,.86) !important; font-size: 10px !important; font-weight: 850 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }#${SCRIPT.panelId} .mcms-status { margin-top: 8px !important; padding: 7px !important; border-radius: 9px !important; border: 1px solid rgba(255,255,255,.12) !important; background: rgba(255,255,255,.055) !important; color: rgba(255,255,255,.68) !important; font-size: 9px !important; line-height: 1.25 !important; }#${SCRIPT.panelId} .mcms-input,
+        #${SCRIPT.panelId} .mcms-pin-btn:hover { background: rgba(255,255,255,.14) !important; }
+        #${SCRIPT.panelId} .mcms-building-launcher { width:100% !important; margin-top:8px !important; min-height:36px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; padding:7px 9px !important; border:1px solid rgba(88,166,255,.28) !important; border-radius:10px !important; background:linear-gradient(135deg,rgba(88,166,255,.09),rgba(124,77,255,.07)) !important; color:#f4f8ff !important; cursor:pointer !important; text-align:left !important; }
+        #${SCRIPT.panelId} .mcms-building-launcher:hover,#${SCRIPT.panelId} .mcms-building-launcher.mcms-on { border-color:rgba(120,190,255,.72) !important; background:rgba(50,130,220,.19) !important; }
+        #${SCRIPT.panelId} .mcms-building-launcher span { min-width:0 !important; font-size:10px !important; font-weight:900 !important; }
+        #${SCRIPT.panelId} .mcms-building-launcher strong { flex:0 1 auto !important; max-width:58% !important; padding:3px 7px !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; color:#bfe1ff !important; font-size:8px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+        #${SCRIPT.panelId} .mcms-building-selector[hidden] { display:none !important; }
+        #${SCRIPT.panelId} .mcms-building-selector { margin-top:7px !important; padding:9px !important; border:1px solid rgba(88,166,255,.30) !important; border-radius:11px !important; background:linear-gradient(145deg,rgba(15,23,34,.96),rgba(11,16,25,.98)) !important; box-shadow:inset 0 1px rgba(255,255,255,.04) !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:8px !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-head strong { display:block !important; color:#fff !important; font-size:11px !important; font-weight:950 !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-head small { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.54) !important; font-size:7.5px !important; line-height:1.3 !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-head button { width:25px !important; height:25px !important; flex:0 0 25px !important; padding:0 !important; border:1px solid rgba(255,255,255,.13) !important; border-radius:8px !important; background:rgba(255,255,255,.07) !important; color:#fff !important; cursor:pointer !important; font-size:14px !important; }
+        #${SCRIPT.panelId} .mcms-building-scope { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; margin-top:8px !important; }
+        #${SCRIPT.panelId} .mcms-building-scope button { min-width:0 !important; min-height:29px !important; padding:4px 5px !important; border:1px solid rgba(255,255,255,.12) !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; color:rgba(255,255,255,.72) !important; cursor:pointer !important; font-size:8px !important; font-weight:900 !important; }
+        #${SCRIPT.panelId} .mcms-building-scope button.mcms-on { border-color:rgba(120,190,255,.72) !important; background:rgba(25,118,210,.35) !important; color:#fff !important; }
+        #${SCRIPT.panelId} .mcms-building-search { height:32px !important; margin-top:7px !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-actions { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; margin-top:6px !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-actions button:disabled { opacity:.38 !important; cursor:not-allowed !important; }
+        #${SCRIPT.panelId} .mcms-building-type-list { display:grid !important; gap:4px !important; max-height:250px !important; margin-top:7px !important; padding-right:2px !important; overflow-y:auto !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row { display:grid !important; grid-template-columns:minmax(0,1fr) 42px !important; gap:5px !important; align-items:stretch !important; min-width:0 !important; padding:5px !important; border:1px solid rgba(255,255,255,.08) !important; border-radius:8px !important; background:rgba(255,255,255,.035) !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row:hover { border-color:rgba(120,190,255,.32) !important; background:rgba(88,166,255,.07) !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row label { display:grid !important; grid-template-columns:18px minmax(0,1fr) !important; gap:5px !important; align-items:center !important; min-width:0 !important; cursor:pointer !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row input { width:16px !important; height:16px !important; margin:0 !important; accent-color:#4aa8ff !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row span { min-width:0 !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row strong { display:block !important; color:#f5f8ff !important; font-size:8.5px !important; line-height:1.2 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.panelId} .mcms-building-type-row small { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.48) !important; font-size:6.8px !important; line-height:1.2 !important; }
+        #${SCRIPT.panelId} .mcms-building-only-btn { min-width:0 !important; border:1px solid rgba(88,166,255,.22) !important; border-radius:7px !important; background:rgba(88,166,255,.08) !important; color:#bfe1ff !important; cursor:pointer !important; font-size:7px !important; font-weight:950 !important; }
+        #${SCRIPT.panelId} .mcms-building-only-btn:hover { background:rgba(88,166,255,.20) !important; color:#fff !important; }
+        #${SCRIPT.panelId} .mcms-building-empty { padding:14px 8px !important; border:1px dashed rgba(255,255,255,.12) !important; border-radius:8px !important; color:rgba(255,255,255,.52) !important; font-size:8px !important; text-align:center !important; }
+        #${SCRIPT.panelId} .mcms-building-selector-status { margin-top:7px !important; color:rgba(255,255,255,.52) !important; font-size:7.5px !important; line-height:1.3 !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-launcher { min-height:48px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-scope button { min-height:44px !important; font-size:10px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-search { height:44px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-type-row { grid-template-columns:minmax(0,1fr) 50px !important; min-height:54px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-only-btn { min-height:44px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-type-row strong { font-size:10px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-type-row small { font-size:8px !important; }
+        #${SCRIPT.panelId} .mcms-quick-row { display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; gap: 6px !important; margin-bottom: 6px !important; }#${SCRIPT.panelId} .mcms-bookmark-row { display: grid !important; grid-template-columns: minmax(0,1fr) 32px 38px 36px 26px !important; gap: 5px !important; align-items: center !important; margin-bottom: 5px !important; }#${SCRIPT.panelId} .mcms-bookmark-name { color: rgba(255,255,255,.86) !important; font-size: 10px !important; font-weight: 850 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }#${SCRIPT.panelId} .mcms-status { margin-top: 8px !important; padding: 7px !important; border-radius: 9px !important; border: 1px solid rgba(255,255,255,.12) !important; background: rgba(255,255,255,.055) !important; color: rgba(255,255,255,.68) !important; font-size: 9px !important; line-height: 1.25 !important; }#${SCRIPT.panelId} .mcms-input,
         #${SCRIPT.panelId} .mcms-select { user-select: text !important; }#${SCRIPT.panelId} .mcms-discord-wide { grid-template-columns: 92px minmax(0,1fr) !important; }#${SCRIPT.panelId} .mcms-discord-preview { margin-top:8px !important; min-height:72px !important; }#${SCRIPT.panelId} .mcms-discord-empty { padding:14px 10px !important; border:1px dashed rgba(88,166,255,.28) !important; border-radius:10px !important; background:linear-gradient(135deg,rgba(88,166,255,.06),rgba(124,77,255,.05)) !important; color:rgba(255,255,255,.58) !important; font-size:9px !important; line-height:1.35 !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-discord-card { padding:10px !important; border-radius:12px !important; border:1px solid rgba(255,255,255,.14) !important; background:linear-gradient(145deg,rgba(22,28,38,.96),rgba(11,15,22,.98)) !important; box-shadow:inset 0 1px rgba(255,255,255,.04),0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="positive"] { border-color:rgba(46,204,113,.48) !important; box-shadow:inset 3px 0 #2ecc71,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="negative"] { border-color:rgba(231,76,60,.52) !important; box-shadow:inset 3px 0 #e74c3c,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="neutral"] { border-color:rgba(241,196,15,.42) !important; box-shadow:inset 3px 0 #f1c40f,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-head { display:flex !important; justify-content:space-between !important; align-items:flex-start !important; gap:8px !important; margin-bottom:8px !important; }#${SCRIPT.panelId} .mcms-discord-title { color:#fff !important; font-size:10px !important; font-weight:950 !important; letter-spacing:.35px !important; }#${SCRIPT.panelId} .mcms-discord-date { margin-top:2px !important; color:rgba(255,255,255,.54) !important; font-size:8px !important; font-weight:800 !important; }#${SCRIPT.panelId} .mcms-discord-result { padding:3px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; font-size:8px !important; font-weight:950 !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-stats { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; }#${SCRIPT.panelId} .mcms-discord-stat { min-width:0 !important; padding:7px 5px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-discord-stat span { display:block !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:900 !important; text-transform:uppercase !important; letter-spacing:.5px !important; }#${SCRIPT.panelId} .mcms-discord-stat strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:10px !important; font-weight:950 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.panelId} .mcms-discord-breakdowns { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-discord-breakdown { min-width:0 !important; padding:7px !important; border-radius:8px !important; background:rgba(255,255,255,.04) !important; }#${SCRIPT.panelId} .mcms-discord-breakdown b { display:block !important; margin-bottom:4px !important; color:#bbdefb !important; font-size:7.5px !important; text-transform:uppercase !important; letter-spacing:.55px !important; }#${SCRIPT.panelId} .mcms-discord-line { display:flex !important; justify-content:space-between !important; gap:5px !important; margin-top:3px !important; color:rgba(255,255,255,.68) !important; font-size:7.5px !important; }#${SCRIPT.panelId} .mcms-discord-line span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-line strong { color:#fff !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-foot { margin-top:7px !important; padding-top:6px !important; border-top:1px solid rgba(255,255,255,.08) !important; color:rgba(255,255,255,.48) !important; font-size:7.5px !important; line-height:1.3 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="good"] { border-color:rgba(46,204,113,.38) !important; color:#9be8b8 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="bad"] { border-color:rgba(231,76,60,.42) !important; color:#ffaaa1 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="busy"] { border-color:rgba(52,152,219,.42) !important; color:#9bd5ff !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:6px !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats span { min-width:0 !important; padding:5px 4px !important; border-radius:7px !important; background:rgba(88,166,255,.07) !important; color:rgba(255,255,255,.52) !important; font-size:6.8px !important; font-weight:850 !important; text-align:center !important; text-transform:uppercase !important; letter-spacing:.3px !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats b { display:block !important; margin-top:2px !important; color:#fff !important; font-size:7.8px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-chart { display:block !important; width:100% !important; margin-top:8px !important; border-radius:9px !important; border:1px solid rgba(255,255,255,.11) !important; background:#0b1018 !important; }#${SCRIPT.panelId} .mcms-discord-date-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; }#${SCRIPT.panelId} .mcms-discord-date-grid .mcms-row { grid-template-columns:56px minmax(0,1fr) !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin:7px 0 !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary span { min-width:0 !important; padding:7px 5px !important; border:1px solid rgba(88,166,255,.18) !important; border-radius:8px !important; background:rgba(88,166,255,.055) !important; color:rgba(255,255,255,.54) !important; font-size:6.8px !important; font-weight:850 !important; text-align:center !important; text-transform:uppercase !important; letter-spacing:.3px !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary b { display:block !important; margin-bottom:2px !important; color:#fff !important; font-size:8px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary small { grid-column:1/-1 !important; padding:5px 7px !important; border-radius:7px !important; background:rgba(255,255,255,.035) !important; color:rgba(255,255,255,.48) !important; font-size:7.2px !important; line-height:1.35 !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-finance-private-note { border-color:rgba(241,196,15,.34) !important; color:#f5d984 !important; }#${SCRIPT.panelId} .mcms-sweep-card { margin-top:8px !important; padding:8px !important; border-radius:9px !important; border:1px solid rgba(255,183,72,.28) !important; background:rgba(88,46,4,.13) !important; }#${SCRIPT.panelId} .mcms-sweep-head { display:flex !important; justify-content:space-between !important; align-items:center !important; gap:8px !important; color:#ffe0a3 !important; font-size:9px !important; font-weight:950 !important; }#${SCRIPT.panelId} .mcms-sweep-state { padding:2px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; color:rgba(255,255,255,.78) !important; font-size:7px !important; letter-spacing:.35px !important; }#${SCRIPT.panelId} .mcms-sweep-state.mcms-running { background:rgba(255,145,24,.28) !important; color:#fff1cf !important; }#${SCRIPT.panelId} .mcms-sweep-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-stat { min-width:0 !important; padding:5px 3px !important; border-radius:7px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-sweep-stat b { display:block !important; color:#fff !important; font-size:11px !important; line-height:1 !important; }#${SCRIPT.panelId} .mcms-sweep-stat span { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.50) !important; font-size:6.5px !important; font-weight:900 !important; text-transform:uppercase !important; }#${SCRIPT.panelId} .mcms-sweep-queue { display:grid !important; gap:4px !important; max-height:128px !important; overflow-y:auto !important; margin-top:7px !important; padding-right:2px !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }#${SCRIPT.panelId} .mcms-sweep-entry { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:6px !important; padding:6px !important; border-radius:7px !important; border:1px solid rgba(255,255,255,.08) !important; background:rgba(255,255,255,.04) !important; }#${SCRIPT.panelId} .mcms-sweep-entry.mcms-current { border-color:rgba(255,177,57,.62) !important; background:rgba(255,145,24,.11) !important; }#${SCRIPT.panelId} .mcms-sweep-title { min-width:0 !important; color:#f7f8fb !important; font-size:8.5px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.panelId} .mcms-sweep-meta { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:800 !important; }#${SCRIPT.panelId} .mcms-sweep-count { color:#ffc86b !important; font-size:9px !important; font-weight:950 !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-sweep-log { max-height:72px !important; overflow-y:auto !important; margin-top:7px !important; padding:6px !important; border-radius:7px !important; background:rgba(0,0,0,.18) !important; color:rgba(255,255,255,.64) !important; font:700 7px/1.35 Arial,Helvetica,sans-serif !important; white-space:normal !important; }#${SCRIPT.transportSweepHudId} { position:fixed !important; top:max(12px,env(safe-area-inset-top)) !important; right:max(12px,env(safe-area-inset-right)) !important; z-index:2147482000 !important; width:min(340px,calc(100vw - 24px)) !important; padding:11px !important; border:1px solid rgba(255,184,72,.72) !important; border-radius:12px !important; background:linear-gradient(145deg,rgba(18,23,31,.97),rgba(34,22,8,.97)) !important; color:#f8fbff !important; box-shadow:0 18px 55px rgba(0,0,0,.55),0 0 0 1px rgba(255,184,72,.08) inset !important; font:800 11px/1.25 Arial,Helvetica,sans-serif !important; pointer-events:none !important; touch-action:none !important; user-select:none !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; }#${SCRIPT.transportSweepHudId}[data-state="complete"] { border-color:rgba(70,229,139,.78) !important; background:linear-gradient(145deg,rgba(12,29,25,.98),rgba(8,47,31,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-state="error"] { border-color:rgba(255,100,108,.82) !important; background:linear-gradient(145deg,rgba(35,17,21,.98),rgba(54,12,18,.97)) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head span { min-width:0 !important; display:flex !important; align-items:center !important; gap:7px !important; color:#ffe3ad !important; font-size:11px !important; font-weight:950 !important; letter-spacing:.15px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head i { width:8px !important; height:8px !important; flex:0 0 8px !important; border-radius:50% !important; background:#ffb648 !important; box-shadow:0 0 0 4px rgba(255,182,72,.13),0 0 12px rgba(255,182,72,.58) !important; }#${SCRIPT.transportSweepHudId}[data-state="complete"] .mcms-sweep-hud-head i { background:#46e58b !important; box-shadow:0 0 0 4px rgba(70,229,139,.13),0 0 12px rgba(70,229,139,.58) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head b { flex:0 0 auto !important; padding:3px 7px !important; border-radius:999px !important; background:rgba(255,255,255,.09) !important; color:rgba(255,255,255,.74) !important; font-size:7px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.45px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-status { margin-top:9px !important; color:#fff !important; font-size:10px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { margin-top:3px !important; color:rgba(255,255,255,.58) !important; font-size:8px !important; font-weight:750 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin-top:9px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats span { min-width:0 !important; padding:7px 4px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats b { display:block !important; color:#fff !important; font-size:13px !important; line-height:1 !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats small { display:block !important; margin-top:4px !important; color:rgba(255,255,255,.48) !important; font-size:6.4px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.25px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared { background:rgba(70,229,139,.15) !important; box-shadow:0 0 0 1px rgba(70,229,139,.24) inset !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared b { color:#73f2ab !important; font-size:17px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-foot { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:7px !important; border-top:1px solid rgba(255,255,255,.09) !important; color:rgba(255,255,255,.42) !important; font-size:7px !important; font-weight:850 !important; text-transform:uppercase !important; letter-spacing:.25px !important; }
         #${SCRIPT.panelId} .mcms-sweep-last-report { margin-top:8px !important; padding:9px !important; border:1px solid rgba(70,229,139,.42) !important; border-radius:10px !important; background:linear-gradient(145deg,rgba(14,40,31,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="partial"] { border-color:rgba(255,182,72,.46) !important; background:linear-gradient(145deg,rgba(49,32,10,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="error"] { border-color:rgba(255,100,108,.48) !important; background:linear-gradient(145deg,rgba(49,17,22,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="stopped"] { border-color:rgba(149,165,166,.45) !important; }#${SCRIPT.panelId} .mcms-sweep-report-summary { margin-top:7px !important; color:#f7fbff !important; font-size:9px !important; font-weight:900 !important; line-height:1.3 !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid span { min-width:0 !important; padding:6px 3px !important; border-radius:7px !important; background:rgba(255,255,255,.055) !important; color:rgba(255,255,255,.50) !important; font-size:6.5px !important; font-weight:900 !important; text-align:center !important; text-transform:uppercase !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid b { display:block !important; margin-bottom:3px !important; color:#fff !important; font-size:11px !important; line-height:1 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:7px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:850 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="good"] { color:#73f2ab !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="bad"] { color:#ff8b92 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="busy"] { color:#8bd3ff !important; }#${SCRIPT.panelId} .mcms-sweep-report-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-report-actions > :only-child { grid-column:1/-1 !important; }#${SCRIPT.transportSweepHudId}[data-state="partial"] { border-color:rgba(255,182,72,.82) !important; background:linear-gradient(145deg,rgba(35,25,10,.98),rgba(54,31,8,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-state="stopped"] { border-color:rgba(149,165,166,.78) !important; background:linear-gradient(145deg,rgba(24,29,31,.98),rgba(34,39,41,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-final="true"] { pointer-events:auto !important; touch-action:auto !important; user-select:auto !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:8px !important; border-top:1px solid rgba(255,255,255,.09) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span { min-width:0 !important; color:rgba(255,255,255,.58) !important; font-size:7px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="good"] { color:#73f2ab !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="bad"] { color:#ff8b92 !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="busy"] { color:#8bd3ff !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > div { display:flex !important; gap:5px !important; flex:0 0 auto !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions button { min-height:26px !important; padding:4px 8px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:7px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font:900 7px/1 Arial,Helvetica,sans-serif !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions button:hover { background:rgba(255,255,255,.16) !important; }
         @media (max-width:700px) {#${SCRIPT.transportSweepHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; padding:9px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { display:none !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { gap:3px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions { align-items:flex-end !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span { white-space:normal !important; }
@@ -13038,6 +13098,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         buildingRegistryRevision += 1;
         personalBuildingIdsCache.createdAt = 0;
         buildingRecordIndexCache.revision = -1;
+        buildingVisibilityTargetCache.createdAt = 0;
         }
     }
 
@@ -14239,6 +14300,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
         setAttributeIfChanged(root, 'data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
         setAttributeIfChanged(root, 'data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
+        setAttributeIfChanged(root, 'data-mcms-building-scope', state.buildingVisibility?.scope || 'both');
+        setAttributeIfChanged(root, 'data-mcms-building-mode', state.buildingVisibility?.mode || 'all');
         applyPersonalisationStyle();
         applyLayoutBuilderControl();
     }
@@ -23364,6 +23427,21 @@ Credits only. Each station and native action will be fetched again, purchased on
     function adoptNativeVisibilityFeature(feature, { persist = true, refresh = true } = {}) {
         const snapshot = readNativeVisibilityState(feature);
         if (!snapshot.available) return { handled: false, changed: false, migrated: false };
+        if (feature === 'buildings' && state?.buildingVisibility) {
+        const wanted = nativeBuildingVisibilityDesired();
+        const wasMigrated = nativeVisibilityFeatureMigrated(feature);
+        const handled = snapshot.value === wanted || applyNativeVisibilityPreference(feature, wanted, { persistMigration: persist });
+        if (handled) {
+            nativeVisibilityBoundFeatures.add(feature);
+            nativeVisibilitySessionInitialised.add(feature);
+            nativeVisibilityPendingFeatures.delete(feature);
+        }
+        const migrated = !wasMigrated && nativeVisibilityFeatureMigrated(feature);
+        synchroniseBuildingVisibilitySelector();
+        if (migrated && persist) saveState();
+        if (refresh) updateUI();
+        return { handled, changed: false, migrated };
+        }
         nativeVisibilityBoundFeatures.add(feature);
         nativeVisibilitySessionInitialised.add(feature);
         nativeVisibilityPendingFeatures.delete(feature);
@@ -23390,6 +23468,28 @@ Credits only. Each station and native action will be fetched again, purchased on
         let economyVisibilityChanged = false;
         for (const feature of NATIVE_VISIBILITY_FEATURES) {
         const snapshot = readNativeVisibilityState(feature);
+        if (feature === 'buildings' && state?.buildingVisibility) {
+            if (!snapshot.available) {
+            nativeVisibilityBoundFeatures.delete(feature);
+            nativeVisibilitySessionInitialised.delete(feature);
+            nativeVisibilityPendingFeatures.add(feature);
+            synchroniseBuildingVisibilitySelector();
+            continue;
+            }
+            const wasMigrated = nativeVisibilityFeatureMigrated(feature);
+            const wanted = nativeBuildingVisibilityDesired();
+            const needsWrite = snapshot.value !== wanted || nativeVisibilityPendingFeatures.has(feature) || !nativeVisibilitySessionInitialised.has(feature);
+            if (needsWrite) applyNativeVisibilityPreference(feature, wanted, { persistMigration: false });
+            else {
+            nativeVisibilityBoundFeatures.add(feature);
+            nativeVisibilitySessionInitialised.add(feature);
+            nativeVisibilityPendingFeatures.delete(feature);
+            markNativeVisibilityFeatureMigrated(feature);
+            }
+            stateChanged ||= !wasMigrated && nativeVisibilityFeatureMigrated(feature);
+            synchroniseBuildingVisibilitySelector();
+            continue;
+        }
         if (!snapshot.available) {
             const wasBound = nativeVisibilityBoundFeatures.delete(feature);
             nativeVisibilitySessionInitialised.delete(feature);
@@ -23551,7 +23651,445 @@ Credits only. Each station and native action will be fetched again, purchased on
         try {
         return service.getFilterLayerByBuildingParams({ user_id: userId, building_type: buildingType }) || null;
         } catch (err) {
-        return null;
+            return null;
+        }
+    }
+
+    function buildingVisibilityTypeId(layer, record = getBuildingRecordForLayer(layer)) {
+        const value = record?.building_type ?? record?.buildingType ?? layer?.building_type ?? layer?.buildingType ?? layer?.options?.building_type ?? layer?.options?.buildingType;
+        const typeId = String(value ?? '').trim();
+        return /^\d+$/u.test(typeId) ? typeId : '';
+    }
+
+    function buildingVisibilityOwnerScope(layer, record = getBuildingRecordForLayer(layer)) {
+        const currentUserId = currentUserIdCached();
+        const ownerId = record?.user_id ?? record?.userId ?? layer?.user_id ?? layer?.userId ?? layer?.options?.user_id ?? layer?.options?.userId;
+        if (currentUserId !== null && ownerId !== undefined && ownerId !== null && ownerId !== '') {
+        return String(ownerId) === currentUserId ? 'own' : 'alliance';
+        }
+        if (isAllianceBuildingLayer(layer, record)) return 'alliance';
+        return 'own';
+    }
+
+    function buildingVisibilityLayerAllowed(layer, record = getBuildingRecordForLayer(layer)) {
+        if (!state.visibility.buildings) return false;
+        const config = state.buildingVisibility || { scope: 'both', mode: 'all', selectedTypeIds: [] };
+        const scope = buildingVisibilityOwnerScope(layer, record);
+        if (config.scope !== 'both' && config.scope !== scope) return false;
+        if (config.mode === 'all') return true;
+        const typeId = buildingVisibilityTypeId(layer, record);
+        return Boolean(typeId && config.selectedTypeIds.includes(typeId));
+    }
+
+    function buildingVisibilityTypeLabel(typeId, record = null) {
+        const id = String(typeId || '');
+        const candidates = [
+        buildingVisibilityRuntime.typeLabels[id],
+        dispatchRecruitmentRuntime.typeLabels[id],
+        stationIconCopierRuntime.typeLabels[id],
+        expansionPlannerRuntime.typeLabels[id],
+        record?.building_type_caption,
+        record?.buildingTypeCaption,
+        record?.building_type_name,
+        record?.buildingTypeName,
+        record?.type_caption,
+        record?.typeCaption
+        ];
+        const label = candidates.map(dispatchRecruitmentText).find(Boolean);
+        return label || `Building type ${id || '?'}`;
+    }
+
+    function buildingVisibilityTypeEntries() {
+        const entries = new Map();
+        const ensure = (typeId, record = null) => {
+        const id = String(typeId || '');
+        if (!/^\d+$/u.test(id)) return null;
+        if (!entries.has(id)) entries.set(id, { id, label: buildingVisibilityTypeLabel(id, record), own: 0, alliance: 0, total: 0 });
+        const entry = entries.get(id);
+        const nextLabel = buildingVisibilityTypeLabel(id, record);
+        if (!/^Building type \d+$/u.test(nextLabel)) entry.label = nextLabel;
+        return entry;
+        };
+        for (const labels of [buildingVisibilityRuntime.typeLabels, dispatchRecruitmentRuntime.typeLabels, stationIconCopierRuntime.typeLabels, expansionPlannerRuntime.typeLabels]) {
+        for (const typeId of Object.keys(labels || {})) ensure(typeId);
+        }
+        for (const typeId of state.buildingVisibility.selectedTypeIds) ensure(typeId);
+
+        const countedBuildingIds = new Set();
+        const layersById = new Map(getBuildingMarkerLayers().map(layer => [getBuildingLayerId(layer), layer]).filter(([id]) => id !== null));
+        const countRecord = (layer, record) => {
+        const buildingId = getBuildingLayerId(layer) ?? String(record?.id ?? record?.building_id ?? '');
+        if (buildingId && countedBuildingIds.has(buildingId)) return;
+        const typeId = buildingVisibilityTypeId(layer, record);
+        const entry = ensure(typeId, record);
+        if (!entry) return;
+        if (buildingId) countedBuildingIds.add(buildingId);
+        const ownerScope = buildingVisibilityOwnerScope(layer, record);
+        entry[ownerScope] += 1;
+        entry.total += 1;
+        };
+        for (const [buildingId, record] of getBuildingRecordIndex().recordsById.entries()) {
+        countRecord(layersById.get(String(buildingId)) || { building_id: buildingId }, record);
+        }
+        for (const layer of getBuildingMarkerLayers()) countRecord(layer, getBuildingRecordForLayer(layer) || layer);
+        return Array.from(entries.values()).sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
+    }
+
+    function buildingVisibilityNativeTargetEntries(map) {
+        const service = pageWindow.map_filters_service || null;
+        const now = Date.now();
+        if (
+        buildingVisibilityTargetCache.revision === buildingRegistryRevision &&
+        buildingVisibilityTargetCache.service === service &&
+        now - buildingVisibilityTargetCache.createdAt <= BUILDING_VISIBILITY_RECHECK_MS
+        ) return buildingVisibilityTargetCache.entries;
+        const entries = [];
+        const seenParams = new Set();
+        const register = (layer, record) => {
+        const userId = record?.user_id ?? record?.userId ?? layer?.user_id ?? layer?.userId ?? layer?.options?.user_id ?? layer?.options?.userId;
+        const typeId = buildingVisibilityTypeId(layer, record);
+        if (userId === undefined || userId === null || !typeId) return;
+        const key = `${String(userId)}:${typeId}`;
+        if (seenParams.has(key)) return;
+        seenParams.add(key);
+        const target = resolveNativeBuildingFilterTarget(layer, record);
+        if (target && target !== map) entries.push({ target, layer, record, typeId, scope: buildingVisibilityOwnerScope(layer, record) });
+        };
+        for (const [buildingId, record] of getBuildingRecordIndex().recordsById.entries()) {
+        register({ building_id: buildingId, user_id: record?.user_id, building_type: record?.building_type }, record);
+        }
+        for (const layer of getBuildingMarkerLayers()) register(layer, getBuildingRecordForLayer(layer) || layer);
+        buildingVisibilityTargetCache = { revision: buildingRegistryRevision, service, createdAt: now, entries };
+        return entries;
+    }
+
+    function buildingVisibilitySelectionSnapshot() {
+        return {
+        enabled: Boolean(state.visibility.buildings),
+        scope: state.buildingVisibility.scope,
+        mode: state.buildingVisibility.mode,
+        selectedTypeIds: [...state.buildingVisibility.selectedTypeIds]
+        };
+    }
+
+    function buildingVisibilitySnapshotsEqual(left, right) {
+        if (!left || !right) return false;
+        return left.enabled === right.enabled && left.scope === right.scope && left.mode === right.mode &&
+        left.selectedTypeIds.length === right.selectedTypeIds.length && left.selectedTypeIds.every((value, index) => value === right.selectedTypeIds[index]);
+    }
+
+    function buildingVisibilityScopeLabel(scope = state.buildingVisibility?.scope || 'both') {
+        if (scope === 'own') return 'Own';
+        if (scope === 'alliance') return 'Alliance';
+        return 'Own + Alliance';
+    }
+
+    function buildingVisibilityStatusLabel({ compact = false } = {}) {
+        if (!state.visibility.buildings) return compact ? 'HIDDEN' : 'Hidden · selection saved';
+        const config = state.buildingVisibility || { scope: 'both', mode: 'all', selectedTypeIds: [] };
+        const scope = buildingVisibilityScopeLabel();
+        if (config.mode === 'all') return compact ? (config.scope === 'both' ? 'ALL' : scope.toUpperCase()) : `All types · ${scope}`;
+        const selected = config.selectedTypeIds;
+        if (!selected.length) return compact ? 'NONE' : `No types · ${scope}`;
+        if (selected.length === 1) {
+        const label = buildingVisibilityTypeLabel(selected[0]);
+        return compact ? label.toUpperCase().slice(0, 12) : `${label} · ${scope}`;
+        }
+        return compact ? `${selected.length} TYPES` : `${selected.length} types · ${scope}`;
+    }
+
+    function nativeBuildingVisibilityDesired() {
+        return Boolean(state.visibility.buildings && (state.buildingVisibility?.scope || 'both') !== 'alliance');
+    }
+
+    function setBuildingVisibilityTarget(map, target, visible, metadata = {}) {
+        if (!map || !target || target === map) return false;
+        if (!buildingVisibilityManagedTargets.has(target)) {
+        buildingVisibilityManagedTargets.set(target, { ...metadata, visible: nativeBuildingFilterTargetIsVisible(map, target) });
+        }
+        const current = nativeBuildingFilterTargetIsVisible(map, target);
+        if (current === Boolean(visible)) return false;
+        try {
+        if (visible) map.addLayer?.(target);
+        else map.removeLayer?.(target);
+        return true;
+        } catch (err) {
+        return false;
+        }
+    }
+
+    function hideBuildingVisibilityLayer(map, layer, record = getBuildingRecordForLayer(layer)) {
+        if (!map || !layer) return false;
+        hiddenBuildingVisibilityLayers.add(layer);
+        if (!buildingVisibilityLayerOpacity.has(layer)) {
+        const opacity = Number(layer.options?.opacity);
+        buildingVisibilityLayerOpacity.set(layer, Number.isFinite(opacity) ? opacity : 1);
+        }
+        try { if (typeof layer.setOpacity === 'function') layer.setOpacity(0); } catch (err) {}
+        const target = resolveNativeBuildingFilterTarget(layer, record);
+        attachAllianceBuildingToNativeFilterTarget(layer, target);
+        try {
+        const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+        if (onMap) map.removeLayer?.(layer);
+        } catch (err) {}
+        return true;
+    }
+
+    function restoreBuildingVisibilityLayer(map, layer, record = getBuildingRecordForLayer(layer)) {
+        if (!map || !layer) return false;
+        const wasHidden = hiddenBuildingVisibilityLayers.delete(layer);
+        const opacity = buildingVisibilityLayerOpacity.get(layer);
+        buildingVisibilityLayerOpacity.delete(layer);
+        try { if (typeof layer.setOpacity === 'function') layer.setOpacity(Number.isFinite(opacity) ? opacity : 1); } catch (err) {}
+        if (!wasHidden) return false;
+        const target = resolveNativeBuildingFilterTarget(layer, record);
+        attachAllianceBuildingToNativeFilterTarget(layer, target);
+        try {
+        const targetVisible = !target || target === map || nativeBuildingFilterTargetIsVisible(map, target);
+        const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+        if (targetVisible && !onMap) map.addLayer?.(layer);
+        } catch (err) {}
+        return true;
+    }
+
+    function synchroniseBuildingVisibilitySelector(map = findLeafletMapInstance(false)) {
+        if (!map || enforcingBuildingVisibility) return;
+        enforcingBuildingVisibility = true;
+        try {
+        const layers = getBuildingMarkerLayers().filter(Boolean);
+        const currentLayers = new Set(layers);
+        for (const layer of Array.from(hiddenBuildingVisibilityLayers)) {
+            if (currentLayers.has(layer)) continue;
+            hiddenBuildingVisibilityLayers.delete(layer);
+            const opacity = buildingVisibilityLayerOpacity.get(layer);
+            buildingVisibilityLayerOpacity.delete(layer);
+            try { if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(opacity) ? opacity : 1); } catch (err) {}
+        }
+
+        const targetDecisions = new Map();
+        const registerTarget = ({ target, layer, record, typeId, scope }) => {
+            const allowed = buildingVisibilityLayerAllowed(layer, record);
+            const current = targetDecisions.get(target);
+            targetDecisions.set(target, current ? { ...current, visible: current.visible || allowed } : {
+            visible: allowed,
+            typeId,
+            scope
+            });
+        };
+        for (const entry of buildingVisibilityNativeTargetEntries(map)) registerTarget(entry);
+        for (const [target, decision] of targetDecisions.entries()) setBuildingVisibilityTarget(map, target, decision.visible, decision);
+
+        for (const layer of layers) {
+            const record = getBuildingRecordForLayer(layer) || layer;
+            if (buildingVisibilityLayerAllowed(layer, record)) restoreBuildingVisibilityLayer(map, layer, record);
+            else hideBuildingVisibilityLayer(map, layer, record);
+        }
+        } finally {
+        enforcingBuildingVisibility = false;
+        }
+    }
+
+    function buildingVisibilityFilterIsCustom() {
+        const config = state.buildingVisibility || { scope: 'both', mode: 'all' };
+        return !state.visibility.buildings || config.scope !== 'both' || config.mode !== 'all';
+    }
+
+    function releaseBuildingVisibilitySelector(map = findLeafletMapInstance(false)) {
+        if (!map) {
+        for (const [layer, opacity] of buildingVisibilityLayerOpacity.entries()) {
+            try { if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(opacity) ? opacity : 1); } catch (err) {}
+        }
+        hiddenBuildingVisibilityLayers.clear();
+        buildingVisibilityLayerOpacity.clear();
+        buildingVisibilityManagedTargets.clear();
+        return;
+        }
+        const previous = enforcingBuildingVisibility;
+        enforcingBuildingVisibility = true;
+        try {
+        for (const layer of Array.from(hiddenBuildingVisibilityLayers)) restoreBuildingVisibilityLayer(map, layer);
+        for (const [target, original] of buildingVisibilityManagedTargets.entries()) {
+            const visible = nativeBuildingFilterTargetIsVisible(map, target);
+            if (visible === Boolean(original.visible)) continue;
+            try {
+            if (original.visible) map.addLayer?.(target);
+            else map.removeLayer?.(target);
+            } catch (err) {}
+        }
+        buildingVisibilityManagedTargets.clear();
+        } finally {
+        enforcingBuildingVisibility = previous;
+        }
+    }
+
+    function commitBuildingVisibilitySelection(message = '') {
+        state.buildingVisibility.selectedTypeIds = Array.from(new Set(state.buildingVisibility.selectedTypeIds.map(String)))
+        .filter(value => /^\d+$/u.test(value))
+        .sort((left, right) => Number(left) - Number(right));
+        saveState();
+        applyRootAttributes();
+        updateUI();
+        applyMapVisibilityToggleEffects('buildings');
+        reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
+        if (message) showToast(message);
+        toolkitAnalyticsRecordFeature('buildingVisibility', 'building_filter');
+    }
+
+    function setBuildingVisibilityType(typeId, selected) {
+        const id = String(typeId || '');
+        if (!/^\d+$/u.test(id)) return false;
+        const knownTypeIds = buildingVisibilityTypeEntries().map(entry => entry.id);
+        const selection = new Set(state.buildingVisibility.mode === 'all' ? knownTypeIds : state.buildingVisibility.selectedTypeIds);
+        if (selected) selection.add(id);
+        else selection.delete(id);
+        if (knownTypeIds.length > 0 && knownTypeIds.every(value => selection.has(value))) {
+        state.buildingVisibility.mode = 'all';
+        state.buildingVisibility.selectedTypeIds = [];
+        } else {
+        state.buildingVisibility.mode = 'selected';
+        state.buildingVisibility.selectedTypeIds = Array.from(selection);
+        }
+        state.visibility.buildings = state.buildingVisibility.mode === 'all' || state.buildingVisibility.selectedTypeIds.length > 0;
+        commitBuildingVisibilitySelection(selected ? `${buildingVisibilityTypeLabel(id)} added` : `${buildingVisibilityTypeLabel(id)} hidden`);
+        return true;
+    }
+
+    function setBuildingVisibilityOnly(typeId) {
+        const id = String(typeId || '');
+        if (!/^\d+$/u.test(id)) return false;
+        state.buildingVisibility.mode = 'selected';
+        state.buildingVisibility.selectedTypeIds = [id];
+        state.visibility.buildings = true;
+        commitBuildingVisibilitySelection(`Only ${buildingVisibilityTypeLabel(id)} shown`);
+        return true;
+    }
+
+    function setBuildingVisibilityScope(scope) {
+        const nextScope = String(scope || '');
+        if (!BUILDING_VISIBILITY_SCOPES.includes(nextScope)) return false;
+        state.buildingVisibility.scope = nextScope;
+        if (state.buildingVisibility.mode === 'all' || state.buildingVisibility.selectedTypeIds.length > 0) state.visibility.buildings = true;
+        commitBuildingVisibilitySelection(`${buildingVisibilityScopeLabel(nextScope)} buildings selected`);
+        return true;
+    }
+
+    function selectAllBuildingVisibilityTypes() {
+        state.buildingVisibility.mode = 'all';
+        state.buildingVisibility.selectedTypeIds = [];
+        state.visibility.buildings = true;
+        commitBuildingVisibilitySelection(`All ${buildingVisibilityScopeLabel().toLowerCase()} building types shown`);
+    }
+
+    function hideAllBuildingVisibilityTypes() {
+        state.visibility.buildings = false;
+        commitBuildingVisibilitySelection('All buildings hidden · selection saved');
+    }
+
+    function restoreBuildingVisibilitySelection() {
+        const snapshot = buildingVisibilityRuntime.restoreSnapshot;
+        if (!snapshot) return false;
+        state.visibility.buildings = Boolean(snapshot.enabled);
+        state.buildingVisibility.scope = BUILDING_VISIBILITY_SCOPES.includes(snapshot.scope) ? snapshot.scope : 'both';
+        state.buildingVisibility.mode = BUILDING_VISIBILITY_MODES.includes(snapshot.mode) ? snapshot.mode : 'all';
+        state.buildingVisibility.selectedTypeIds = Array.isArray(snapshot.selectedTypeIds) ? [...snapshot.selectedTypeIds] : [];
+        commitBuildingVisibilitySelection('Building view restored');
+        return true;
+    }
+
+    async function loadBuildingVisibilityCatalog({ force = false } = {}) {
+        if (buildingVisibilityRuntime.catalogPromise) return buildingVisibilityRuntime.catalogPromise;
+        if (!force && buildingVisibilityRuntime.catalogAt && Object.keys(buildingVisibilityRuntime.typeLabels).length) return buildingVisibilityRuntime.typeLabels;
+        buildingVisibilityRuntime.loading = true;
+        buildingVisibilityRuntime.error = '';
+        renderBuildingVisibilitySelector();
+        const pending = (async () => {
+        try {
+            const { doc } = await fetchDispatchRecruitmentDocument('/buildings/new');
+            const catalog = parseDispatchRecruitmentCatalog(doc);
+            buildingVisibilityRuntime.typeLabels = { ...buildingVisibilityRuntime.typeLabels, ...catalog.typeLabels };
+            buildingVisibilityRuntime.catalogAt = Date.now();
+            return buildingVisibilityRuntime.typeLabels;
+        } catch (err) {
+            buildingVisibilityRuntime.error = 'Native type catalogue unavailable · live map types still work';
+            return buildingVisibilityRuntime.typeLabels;
+        } finally {
+            buildingVisibilityRuntime.loading = false;
+            buildingVisibilityRuntime.catalogPromise = null;
+            if (!runtime.destroyed) {
+            renderBuildingVisibilitySelector();
+            updateUI();
+            }
+        }
+        })();
+        buildingVisibilityRuntime.catalogPromise = pending;
+        return pending;
+    }
+
+    function renderBuildingVisibilitySelector(panel = document.getElementById(SCRIPT.panelId)) {
+        if (!panel) return;
+        const selector = panel.querySelector('[data-building-visibility-selector]');
+        const launcher = panel.querySelector('[data-action="toggle-building-selector"]');
+        const summary = buildingVisibilityStatusLabel();
+        updateUiSetText(panel.querySelector('[data-building-visibility-summary]'), summary);
+        if (launcher) {
+        updateUiToggleClass(launcher, 'mcms-on', buildingVisibilityRuntime.open);
+        updateUiSetAttribute(launcher, 'aria-expanded', String(buildingVisibilityRuntime.open));
+        updateUiSetAttribute(launcher, 'aria-label', `Choose building visibility. Current view: ${summary}.`);
+        }
+        if (!selector) return;
+        updateUiSetProperty(selector, 'hidden', !buildingVisibilityRuntime.open);
+        if (!buildingVisibilityRuntime.open) return;
+
+        const entries = buildingVisibilityTypeEntries();
+        const query = dispatchRecruitmentText(buildingVisibilityRuntime.search).toLowerCase();
+        const visibleEntries = entries.filter(entry => !query || entry.label.toLowerCase().includes(query) || entry.id.includes(query));
+        const selectedIds = new Set(state.buildingVisibility.selectedTypeIds);
+        const scope = state.buildingVisibility.scope;
+        const rows = visibleEntries.map(entry => {
+        const selected = state.buildingVisibility.mode === 'all' || selectedIds.has(entry.id);
+        const scopeCount = scope === 'both' ? entry.total : entry[scope];
+        return `<div class="mcms-building-type-row" data-building-type-row="${escapeHtml(entry.id)}">
+            <label><input type="checkbox" data-setting="building-visibility-type" value="${escapeHtml(entry.id)}"${selected ? ' checked' : ''}><span><strong>${escapeHtml(entry.label)}</strong><small>${scopeCount} in scope · ${entry.own} own · ${entry.alliance} alliance</small></span></label>
+            <button class="mcms-building-only-btn" type="button" data-action="building-type-only" data-building-type="${escapeHtml(entry.id)}" title="Show only ${escapeHtml(entry.label)}">Only</button>
+        </div>`;
+        }).join('');
+        const restoreAvailable = !buildingVisibilitySnapshotsEqual(buildingVisibilityRuntime.restoreSnapshot, buildingVisibilitySelectionSnapshot());
+        const status = buildingVisibilityRuntime.loading
+        ? 'Loading MissionChief building types…'
+        : buildingVisibilityRuntime.error || `${entries.length} building type${entries.length === 1 ? '' : 's'} · ${buildingVisibilityStatusLabel()}`;
+        const markup = `
+        <div class="mcms-building-selector-head">
+            <div><strong>Building visibility</strong><small>Shortcut 4 toggles this saved view · Shift+4 opens it</small></div>
+            <button type="button" data-action="toggle-building-selector" aria-label="Close building visibility selector">×</button>
+        </div>
+        <div class="mcms-building-scope" role="group" aria-label="Building ownership scope">
+            ${BUILDING_VISIBILITY_SCOPES.map(value => `<button type="button" data-action="building-scope" data-building-scope="${value}" class="${scope === value ? 'mcms-on' : ''}" aria-pressed="${scope === value}">${escapeHtml(buildingVisibilityScopeLabel(value))}</button>`).join('')}
+        </div>
+        <input class="mcms-input mcms-building-search" type="search" autocomplete="off" spellcheck="false" data-building-visibility-search value="${escapeHtml(buildingVisibilityRuntime.search)}" placeholder="Search building types" aria-label="Search building types">
+        <div class="mcms-building-selector-actions">
+            <button class="mcms-small-btn" type="button" data-action="building-types-all">All</button>
+            <button class="mcms-small-btn" type="button" data-action="building-types-none" title="Hide every building while retaining this selection">None</button>
+            <button class="mcms-small-btn" type="button" data-action="building-types-restore"${restoreAvailable ? '' : ' disabled'}>Restore</button>
+        </div>
+        <div class="mcms-building-type-list">${rows || `<div class="mcms-building-empty">${entries.length ? 'No building types match this search.' : 'No live building types detected yet.'}</div>`}</div>
+        <div class="mcms-building-selector-status">${escapeHtml(status)}</div>`;
+        setInnerHtmlIfChanged(selector, markup);
+    }
+
+    function setBuildingVisibilitySelectorOpen(open, { focus = true } = {}) {
+        const next = Boolean(open);
+        if (next && !buildingVisibilityRuntime.open) buildingVisibilityRuntime.restoreSnapshot = buildingVisibilitySelectionSnapshot();
+        buildingVisibilityRuntime.open = next;
+        if (!next) buildingVisibilityRuntime.search = '';
+        if (next) {
+        openPanel();
+        setActiveTab('map');
+        renderBuildingVisibilitySelector();
+        void loadBuildingVisibilityCatalog();
+        if (focus) runtimeSetTimeout(() => document.querySelector(`#${SCRIPT.panelId} [data-building-visibility-search]`)?.focus?.({ preventScroll: true }), 0);
+        } else {
+        renderBuildingVisibilitySelector();
+        if (focus) runtimeSetTimeout(() => document.querySelector(`#${SCRIPT.panelId} [data-action="toggle-building-selector"]`)?.focus?.({ preventScroll: true }), 0);
         }
     }
 
@@ -23564,6 +24102,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function nativeAllianceBuildingLayerAllowed(map, layer, record = getBuildingRecordForLayer(layer)) {
+        if (state?.buildingVisibility) return buildingVisibilityLayerAllowed(layer, record);
         if (!isAllianceBuildingLayer(layer, record)) return true;
         const target = resolveNativeBuildingFilterTarget(layer, record);
         if (!target || target === map) return true;
@@ -23619,6 +24158,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function nativeAllianceBuildingFilterMayNeedEnforcement(map = findLeafletMapInstance(false)) {
         if (!map) return false;
+        if (state?.buildingVisibility) return buildingVisibilityFilterIsCustom() || hiddenBuildingVisibilityLayers.size > 0;
         if (hiddenNativeAllianceBuildingLayers.size) return true;
         const seenTargets = new Set();
         for (const record of getBuildingRecordIndex().allianceRecords) {
@@ -23633,6 +24173,10 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function synchroniseNativeAllianceBuildingVisibility(map = findLeafletMapInstance(false)) {
+        if (state?.buildingVisibility) {
+        synchroniseBuildingVisibilitySelector(map);
+        return;
+        }
         if (!map || enforcingNativeAllianceBuildingVisibility) return;
         const layers = getBuildingMarkerLayers().filter(Boolean);
         const currentLayers = new Set(layers);
@@ -23650,6 +24194,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function releaseNativeAllianceBuildingVisibility(map = findLeafletMapInstance(false)) {
+        releaseBuildingVisibilitySelector(map);
         if (!map) {
         hiddenNativeAllianceBuildingLayers.clear();
         return;
@@ -23766,6 +24311,10 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function synchronisePersonalBuildingVisibility(map = findLeafletMapInstance(false)) {
+        if (state?.buildingVisibility) {
+        synchroniseBuildingVisibilitySelector(map);
+        return;
+        }
         if (!map || enforcingPersonalBuildingVisibility) return;
 
         const currentBuildingLayers = getBuildingMarkerLayers().filter(Boolean);
@@ -23945,7 +24494,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         else markerStateSyncTimer = null;
         if (runtime.destroyed || document.hidden) return;
         if ((nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) || state.markerFocus) synchroniseVehicleMarkerClasses();
-        if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();
+        if (buildingVisibilityFilterIsCustom()) synchroniseBuildingVisibilitySelector();
         if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
         };
         const id = runtimeSetTimeout(callback, Math.max(0, Number(delay) || 0));
@@ -24260,7 +24809,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
         const onLayerAdd = event => {
         const layer = event?.layer;
-        if (isToolkitLeafletLayer(layer) || economyLayerEnforcement) return;
+        if (isToolkitLeafletLayer(layer) || enforcingBuildingVisibility || economyLayerEnforcement) return;
         const scope = inferScope(layer);
         if (deferMapInteractionRefresh({
             scope,
@@ -24275,9 +24824,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (isVehicleLayer && followedVehicleId) refreshVehicleFollowBinding();
         if (state.markerFocus && isVehicleLayer) scheduleMarkerStateSync(0, false);
         if (scope === 'building') {
-            const isPersonalBuilding = markPersonalBuildingLayerIfOwned(layer);
-            if (isPersonalBuilding && nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) hidePersonalBuildingLayer(map, layer);
-            if (!isPersonalBuilding) suppressLeakedAllianceBuildingLayer(map, layer);
+            markPersonalBuildingLayerIfOwned(layer);
+            synchroniseBuildingVisibilitySelector(map);
         }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all', positionPanel: false });
         if (state.economyMode && (scope === 'vehicle' || scope === 'building')) scheduleEconomyLayerSync(80);
@@ -24285,7 +24833,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
         const onLayerRemove = event => {
         const layer = event?.layer;
-        if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || enforcingNativeAllianceBuildingVisibility || economyLayerEnforcement) return;
+        if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || enforcingNativeAllianceBuildingVisibility || enforcingBuildingVisibility || economyLayerEnforcement) return;
         const scope = inferScope(layer);
         if (deferMapInteractionRefresh({
             scope,
@@ -24301,6 +24849,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         scheduleNativeVisibilityReconcile(0);
         if (deferMapInteractionRefresh({ scope: 'building', markerSync: true })) return;
         invalidateMarkerRegistryCaches('building');
+        runtimeSetTimeout(() => synchroniseBuildingVisibilitySelector(map), 0);
         scheduleMarkerStateSync(0, false);
         scheduleMarkerStateSync(180, true);
         };
@@ -24317,7 +24866,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         mapInteractionMarkerSyncNeeded ||= Boolean(
             (nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) ||
             state.markerFocus ||
-            (nativeVisibilityFallbackNeeded('buildings') && !enforcingPersonalBuildingVisibility && !state.visibility.buildings) ||
+            buildingVisibilityFilterIsCustom() ||
             nativeAllianceBuildingFilterMayNeedEnforcement(map)
         );
         document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
@@ -24359,6 +24908,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             { map, types: 'moveend zoomend viewreset', handler: onMapMove },
             { map, types: 'contextmenu', handler: onTabletQuickWheel }
         );
+        runtimeSetTimeout(() => synchroniseBuildingVisibilitySelector(map), 0);
         } catch (err) {}
     }
 
@@ -28771,6 +29321,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     myMissions: state.visibility.myMissions,
                     buildings: state.visibility.buildings,
                 },
+                buildingVisibility: state.buildingVisibility,
                 allianceCredits: state.allianceCredits,
                 missionAge: state.missionAge,
                 unitCommitment: state.unitCommitment,
@@ -28836,9 +29387,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         renderScreenPins();
         updateUI();
         for (const feature of NATIVE_VISIBILITY_FEATURES) {
-        if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, state.visibility[feature]);
+        if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, feature === 'buildings' ? nativeBuildingVisibilityDesired() : state.visibility[feature]);
         }
-        if (nativeVisibilityFallbackNeeded('buildings')) synchronisePersonalBuildingVisibility();
+        synchroniseBuildingVisibilitySelector();
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
     }
 
@@ -28853,6 +29404,16 @@ Credits only. Each station and native action will be fetched again, purchased on
         const profileVisibility = { ...(settings.visibility || {}) };
         delete profileVisibility.vehicles;
         state.visibility = { ...state.visibility, ...profileVisibility };
+        if (settings.buildingVisibility && typeof settings.buildingVisibility === 'object') {
+        const scope = String(settings.buildingVisibility.scope || '');
+        const mode = String(settings.buildingVisibility.mode || '');
+        state.buildingVisibility = {
+            scope: BUILDING_VISIBILITY_SCOPES.includes(scope) ? scope : state.buildingVisibility.scope,
+            mode: BUILDING_VISIBILITY_MODES.includes(mode) ? mode : state.buildingVisibility.mode,
+            selectedTypeIds: Array.from(new Set((Array.isArray(settings.buildingVisibility.selectedTypeIds) ? settings.buildingVisibility.selectedTypeIds : [])
+            .map(String).filter(value => /^\d+$/u.test(value))))
+        };
+        }
         state.allianceCredits = Boolean(settings.allianceCredits);
         state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(settings.allianceCreditMinimum)) ? Number(settings.allianceCreditMinimum) : state.allianceCreditMinimum;
         state.missionAge = Boolean(settings.missionAge);
@@ -34967,7 +35528,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
         else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
         else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
-        else if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+        else if (feature === 'buildings') {
+        state.visibility.buildings = !state.visibility.buildings;
+        if (state.visibility.buildings && state.buildingVisibility.mode === 'selected' && !state.buildingVisibility.selectedTypeIds.length) state.buildingVisibility.mode = 'all';
+        }
         else return false;
         return true;
     }
@@ -34995,8 +35559,8 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
     function applyMapVisibilityToggleEffects(feature) {
         const visibilityFeature = nativeVisibilityDescriptor(feature);
-        const nativeHandled = visibilityFeature ? applyNativeVisibilityPreference(feature, state.visibility[feature]) : false;
-        if (feature === 'buildings' && !nativeHandled) synchronisePersonalBuildingVisibility();
+        if (visibilityFeature) applyNativeVisibilityPreference(feature, feature === 'buildings' ? nativeBuildingVisibilityDesired() : state.visibility[feature]);
+        if (feature === 'buildings') synchroniseBuildingVisibilitySelector();
         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
         if (feature === 'missionAge') {
         runtimeClearTimeout(missionAgeTimer);
@@ -35075,6 +35639,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         applyPayoutAudioToggleEffects(feature);
         applyMissionMonitoringToggleEffects(feature);
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
+        if (feature === 'buildings') showToast(`Buildings · ${buildingVisibilityStatusLabel()}`);
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
         if (feature === 'unitCommitment') {
@@ -35570,6 +36135,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (panelResizeState) endPanelResize(null);
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
+        buildingVisibilityRuntime.open = false;
+        buildingVisibilityRuntime.search = '';
+        renderBuildingVisibilitySelector(panel);
         panel.classList.remove('mcms-open');
         panel.setAttribute('aria-hidden', 'true');
         const menuButton = document.querySelector(`#${SCRIPT.controlId} .mcms-menu-btn`);
@@ -36491,6 +37059,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (event.key === 'Escape' && closeTabletQuickWheel({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeCommandExperienceModal()) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeHelpCenter()) { event.preventDefault(); return; }
+        if (event.key === 'Escape' && buildingVisibilityRuntime.open) { event.preventDefault(); setBuildingVisibilitySelectorOpen(false); return; }
         if (event.key === 'Escape') {
             if (state.fullscreenMap) { event.preventDefault(); setMapFullscreen(false); return; }
             const hadOpenUi = Boolean(
@@ -36503,6 +37072,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             closeVehicleCodeStatus();
             closeOperationalPressureBoard();
             if (hadOpenUi) event.preventDefault();
+            return;
+        }
+        if (state.shortcuts && !state.safeMode.enabled && !isTypingTarget(event.target) && !event.defaultPrevented && !event.repeat && !event.metaKey && keyboardBindingFromEvent(event) === 'Shift+4') {
+            event.preventDefault();
+            setBuildingVisibilitySelectorOpen(true);
             return;
         }
         if (!state.shortcuts || isTypingTarget(event.target) || event.defaultPrevented || event.repeat || event.metaKey) return;
@@ -36904,7 +37478,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
                     ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
                     ${makeFloatButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3', 'Vehicles', 'Units')}
-                    ${makeFloatButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4', 'Buildings', 'Bldgs')}
+                    ${makeFloatButton('buildings', '4', 'Buildings', 'Toggle your saved building view. Shortcut: 4 · Shift+4 opens the type selector.', 'Buildings', 'Bldgs')}
                 </div>
                 <div class="mcms-control-group" data-control-group="intelligence" aria-label="Intelligence controls">
                     <span class="mcms-control-group-label">Intelligence</span>
@@ -36977,7 +37551,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
             if (actionButton) handleAction(actionButton);
         });
-        control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
+        control.addEventListener('contextmenu', event => {
+            event.preventDefault();
+            if (closestEventTarget(event, '[data-toggle="buildings"]')) setBuildingVisibilitySelectorOpen(true);
+            else openPanel();
+        });
         toolkitApplyCommandBarState(control);
         host.appendChild(control);
         control.classList.remove('mcms-control-fallback');
@@ -37243,12 +37821,14 @@ Credits only. Each station and native action will be fetched again, purchased on
                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3')}
-                    ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
+                    ${makeToggleButton('buildings', '4', 'Buildings', 'Toggle your saved building view. Shortcut: 4 · Shift+4 opens the type selector.')}
                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
                 </div>
+                <button class="mcms-building-launcher" type="button" data-action="toggle-building-selector" aria-expanded="false" aria-controls="mcms-building-visibility-selector"><span>Choose building types &amp; ownership</span><strong data-building-visibility-summary>All types · Own + Alliance</strong></button>
+                <div class="mcms-building-selector" id="mcms-building-visibility-selector" data-building-visibility-selector hidden></div>
                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
                 <div class="mcms-status">Ready.</div>
             </section>
@@ -37621,6 +38201,17 @@ Credits only. Each station and native action will be fetched again, purchased on
         });
         panel.addEventListener('change', event => handleSettingChange(event.target));
         panel.addEventListener('input', event => {
+            if (event.target?.matches?.('[data-building-visibility-search]')) {
+                buildingVisibilityRuntime.search = String(event.target.value || '').trimStart();
+                renderBuildingVisibilitySelector(panel);
+                runtimeSetTimeout(() => {
+                    const search = panel.querySelector('[data-building-visibility-search]');
+                    if (!search) return;
+                    search.focus?.({ preventScroll: true });
+                    try { search.setSelectionRange(search.value.length, search.value.length); } catch (err) {}
+                }, 0);
+                return;
+            }
             if (event.target?.matches?.('[data-setting="dispatch-recruitment-personnel"]')) {
                 captureDispatchRecruitmentPersonnelDraft(event.target);
                 return;
@@ -37747,6 +38338,12 @@ Credits only. Each station and native action will be fetched again, purchased on
             setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
             return;
         }
+        if (action === 'toggle-building-selector') { setBuildingVisibilitySelectorOpen(!buildingVisibilityRuntime.open); return; }
+        if (action === 'building-scope') { setBuildingVisibilityScope(button.dataset.buildingScope); return; }
+        if (action === 'building-types-all') { selectAllBuildingVisibilityTypes(); return; }
+        if (action === 'building-types-none') { hideAllBuildingVisibilityTypes(); return; }
+        if (action === 'building-types-restore') { restoreBuildingVisibilitySelection(); return; }
+        if (action === 'building-type-only') { setBuildingVisibilityOnly(button.dataset.buildingType); return; }
         if (action === 'place-go') {
             const place = QUICK_PLACES.find(item => item.id === button.dataset.place);
             if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
@@ -37974,6 +38571,10 @@ Credits only. Each station and native action will be fetched again, purchased on
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
+        if (setting === 'building-visibility-type') {
+            setBuildingVisibilityType(String(target.value || ''), Boolean(target.checked));
+            return;
+        }
         if (setting.startsWith('alliance-course-') && (allianceCourseRuntime.running || allianceCourseRuntime.scanPromise)) {
             updateUI();
             showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
@@ -38370,10 +38971,16 @@ Credits only. Each station and native action will be fetched again, purchased on
             };
             control.querySelectorAll('[data-toggle]').forEach(btn => {
                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
+                const buildingStatus = btn.dataset.toggle === 'buildings' ? buildingVisibilityStatusLabel() : '';
                 updateUiToggleClass(btn, 'mcms-on', on);
                 updateUiSetAttribute(btn, 'aria-pressed', String(on));
                 updateUiSetDataset(btn, 'mcmsState', on ? 'on' : 'off');
-                updateUiSetText(btn.querySelector('.mcms-control-state'), on ? 'ON' : 'OFF');
+                updateUiSetText(btn.querySelector('.mcms-control-state'), buildingStatus ? buildingVisibilityStatusLabel({ compact: true }) : (on ? 'ON' : 'OFF'));
+                if (buildingStatus) {
+                    updateUiSetProperty(btn, 'title', `Building view: ${buildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
+                    updateUiSetAttribute(btn, 'aria-label', `Buildings: ${buildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
+                    return;
+                }
                 const controlName = btn.querySelector('.mcms-float-label-desktop')?.textContent || btn.title || 'Map control';
                 updateUiSetAttribute(btn, 'aria-label', `${controlName}: ${on ? 'on' : 'off'}. ${btn.title || ''}`.trim());
             });
@@ -38478,11 +39085,18 @@ Credits only. Each station and native action will be fetched again, purchased on
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
             const on = Boolean(toggleValues[key]);
+            const buildingStatus = key === 'buildings' ? buildingVisibilityStatusLabel() : '';
             updateUiToggleClass(btn, 'mcms-on', on);
             const pill = btn.querySelector('.mcms-pill');
-            updateUiSetText(pill, key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
+            updateUiSetText(pill, buildingStatus
+                ? buildingVisibilityStatusLabel({ compact: true })
+                : key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
             updateUiSetAttribute(btn, 'aria-pressed', String(on));
+            if (!buildingStatus) return;
+            updateUiSetProperty(btn, 'title', `Building view: ${buildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
+            updateUiSetAttribute(btn, 'aria-label', `Buildings: ${buildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
         });
+        renderBuildingVisibilitySelector(panel);
         const pressureBoardToggle = panel.querySelector('.mcms-pressure-board-toggle');
         if (pressureBoardToggle) {
             const open = operationalPressureBoardOpen();
@@ -39361,13 +39975,12 @@ Credits only. Each station and native action will be fetched again, purchased on
             economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
         });
         runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
-            if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();
-            if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
+            synchroniseBuildingVisibilitySelector();
             if (state.economyMode) scheduleEconomyLayerSync(0);
         }, {
-            intervalResolver: () => nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+            intervalResolver: () => buildingVisibilityFilterIsCustom() ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
             economyIntervalMs: 45 * 1000,
-            economyIntervalResolver: () => ((nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+            economyIntervalResolver: () => (buildingVisibilityFilterIsCustom() || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
         });
     }
 
@@ -39423,7 +40036,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
-                if ((nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
+                if (buildingVisibilityFilterIsCustom() || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
             }
             if (layoutChanged) invalidateMapElementCache();
             if (document.hidden || dragState || mapInteractionWorkDeferred()) return;
@@ -39540,7 +40153,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             refreshSuppression();
             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
             if (state.economyMode) scheduleEconomyLayerSync(0);
-            if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
+            synchroniseBuildingVisibilitySelector();
             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
             scheduleMajorIncidentFeedRender(80);
         });
@@ -39575,14 +40188,10 @@ Credits only. Each station and native action will be fetched again, purchased on
             disposeCoverageCanvasRenderer();
             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
             majorIncidentFeedLayoutTimer = null;
-            const originalBuildingVisibility = state.visibility.buildings;
             try {
-                state.visibility.buildings = true;
-                synchronisePersonalBuildingVisibility(cachedMap);
+                releaseBuildingVisibilitySelector(cachedMap);
             } catch (err) {
                 console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
-            } finally {
-                state.visibility.buildings = originalBuildingVisibility;
             }
             try { creditsValueObserver?.disconnect(); } catch (err) {}
             removeMajorIncidentFeed();

@@ -1,6 +1,6 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "version": "10.15.3",
+  "version": "10.16.0",
   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
   "distributionFiles": [
     "dist/MissionChief_Map_Command_Toolkit.user.js",
@@ -20,12 +20,12 @@
     "dist/SHA256SUMS.txt",
     "dist/release-manifest.json"
   ],
-  "sha256": "b79974c63e01b5a95a5b9a2b5b0e52e5a9f03340a7dd94d1c46af15398cc24f2",
-  "bytes": 2706768,
-  "lines": 40456,
+  "sha256": "8bdb8e3feeae3a022f6a5cddf13e36dd54e4ddb395bebdfe076b8b536eca9809",
+  "bytes": 2746991,
+  "lines": 41065,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",
-    "runtimeVersion": "10.15.3",
+    "runtimeVersion": "10.16.0",
     "author": "Conroy1988",
     "license": "MIT",
     "missionChiefRules": [
@@ -42,7 +42,7 @@
     "updateUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/",
     "metadataUrl": "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/metadata/",
     "authority": "tkb-website-only",
-    "stylesheetSha256": "a1d12f4d8d8c65940a6cc61c6a37988a4f7254fb050906e3904500ead5c8239a"
+    "stylesheetSha256": "fdf976252ed3a6a48d015a4b459a6fe032b3f7a71d49b257a051869480898cb8"
   },
   "distributionStatus": "dry-run-first-party-assets"
 }

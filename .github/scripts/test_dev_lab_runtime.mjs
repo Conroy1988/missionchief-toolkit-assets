@@ -48,6 +48,18 @@ async function scenario(device, tab, focus = "") {
   assert.equal(report.widthStable, true, `${device}: page navigation changed panel width by ${report.widthRange}`);
   assert.equal(report.noHorizontalOverflow, true, `${device}: horizontal overflow detected`);
   assert.equal(report.errors.length, 0, `${device}: runtime errors: ${report.errors.join(" | ")}`);
+  if (tab === "map") {
+    const launcher = panel.querySelector('[data-action="toggle-building-selector"]');
+    assert.ok(launcher, `${device}: building selector launcher missing`);
+    launcher.click();
+    const selector = await waitFor(() => {
+      const element = panel.querySelector("[data-building-visibility-selector]");
+      return element && !element.hidden ? element : null;
+    });
+    await waitFor(() => selector.querySelectorAll("[data-building-type-row]").length >= 3);
+    assert.ok(selector.querySelector('[data-action="building-type-only"]'), `${device}: building Only action missing`);
+    assert.ok(selector.querySelector('[data-building-scope="both"].mcms-on'), `${device}: combined building scope missing`);
+  }
   window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.destroy?.("Dev Lab test complete");
   window.__MCMS_DEV_LAB_OBSERVER__?.disconnect?.();
   dom.window.close();

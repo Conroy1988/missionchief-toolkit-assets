@@ -31,7 +31,7 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 29
+    assert apply_root.count("setAttributeIfChanged(root,") == 31
     assert "data-mcms-critical-view" not in apply_root
     assert "root.setAttribute(" not in apply_root
     assert apply_root.index("setAttributeIfChanged(root, 'data-mcms-economy'") < apply_root.index("activeDeviceLayout = resolveDeviceLayout()")
@@ -61,7 +61,8 @@ const state = {{
     economyMode: false, fullscreenMap: false, allianceBuildingsMap: true, tabletMode: "auto", mobileMode: "auto",
     interfaceDensity: {{ desktop: "compact", tablet: "command" }}, themeStudio: {{ enabled: false }},
     missionChiefReskin: false, autoHideDock: {{ enabled: false, edge: "auto" }}, safeMode: {{ enabled: false }},
-    visibility: {{ allianceMissions: true, myMissions: false, vehicles: true, buildings: false }}
+    visibility: {{ allianceMissions: true, myMissions: false, vehicles: true, buildings: false }},
+    buildingVisibility: {{ scope: "both", mode: "all", selectedTypeIds: [] }}
 }};
 function normaliseUiTheme(value) {{ return String(value); }}
 function resolveDeviceLayout() {{ calculations.layout += 1; return nextLayout; }}
@@ -85,10 +86,10 @@ const expected = {{
     "data-mcms-tablet-active": "false", "data-mcms-mobile-mode": "auto", "data-mcms-mobile-active": "false",
     "data-mcms-tablet-orientation": "landscape", "data-mcms-mobile-orientation": "landscape",
     "data-mcms-show-alliance-missions": "true", "data-mcms-show-my-missions": "false",
-    "data-mcms-show-buildings": "false"
+    "data-mcms-show-buildings": "false", "data-mcms-building-scope": "both", "data-mcms-building-mode": "all"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 29, "first call writes every missing attribute");
+assert.equal(root.calls.length, 31, "first call writes every missing attribute");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
 root.clearCalls();

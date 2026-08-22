@@ -55,6 +55,14 @@
         ["node", ".github/scripts/test_native_map_visibility_bridge_runtime.mjs"]
       ]
     },
+    "building-visibility": {
+      "paths": ["docs/building-visibility-selector.md", ".github/scripts/test_building_visibility_selector_*", ".github/scripts/test_issue536_alliance_building_visibility.py", ".github/scripts/test_root_attribute_write_suppression_contract.py", ".github/fixtures/settings-ui-contract.json"],
+      "anchors": ["buildingVisibility", "BuildingVisibility", "BUILDING_VISIBILITY", "mcms-building-selector"],
+      "tests": [
+        ["python3", ".github/scripts/test_building_visibility_selector_contract.py"],
+        ["node", ".github/scripts/test_building_visibility_selector_runtime.mjs"]
+      ]
+    },
     "desktop-workspace": {
       "paths": ["docs/desktop-toolkit-workspace.md", ".github/scripts/test_desktop_toolkit_workspace*", ".github/scripts/test_issue6*desktop*"],
       "anchors": ["desktopPanel", "DesktopPanel", "panelWorkspace", "desktop workspace", "mcms-command-layout", "mcms-command-card-wide"],

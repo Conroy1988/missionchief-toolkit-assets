@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.0
+// @version      10.16.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.0',
+        version: '10.16.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.0",
-        title: "Building Visibility Selector",
+        version: "10.16.1",
+        title: "Dispatch Recruitment Restoration",
         highlights: Object.freeze([
-            "Replaces the all-or-nothing Buildings control with a persistent selector for exact MissionChief building types.",
-            "Adds Own, Alliance and combined ownership scopes, live type search, per-type counts, checkboxes and one-tap Only views.",
-            "Keeps shortcut 4 as a fast hide or restore action for the saved view, while Shift+4 and the visible chooser open the selector.",
-            "Adds All, None and Restore actions, clear ALL, single-type, N TYPES and HIDDEN status labels, and Map Profile persistence.",
-            "Uses native per-building filter targets with marker-layer fallback, new-marker enforcement and teardown restoration across Desktop, Tablet and iOS."
+            "Keeps Personnel (Desired), Hiring Phase and station delay editable and persisted while Dispatch Centre catalogues or station matrices are loading.",
+            "Accepts MissionChief's exact personnel edit form whether its action already includes the personnel-only flag or leaves that flag for the native AJAX caller.",
+            "Uses the form's authenticity token when embedded and otherwise falls back to the current page's native Rails CSRF token.",
+            "Normalises only the exact same-origin station update route, while continuing to reject ambiguous forms, extra building fields, assignment controls and external actions.",
+            "Adds end-to-end regression coverage for the live partial shape and for changing Personnel (Desired) during an active scan without restoring an older value."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -18548,6 +18548,10 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         return DISPATCH_RECRUITMENT_PHASE_META[String(value)]?.label || 'Off';
     }
 
+    function dispatchRecruitmentLocalPlanSetting(setting) {
+        return ['dispatch-recruitment-hiring-phase', 'dispatch-recruitment-personnel', 'dispatch-recruitment-delay'].includes(String(setting || ''));
+    }
+
     function dispatchRecruitmentCurrentPhase(value) {
         const text = dispatchRecruitmentText(value).toLowerCase();
         if (text.includes('auto')) return 'automatic';
@@ -19008,19 +19012,24 @@ Each course will use the maximum classroom count currently exposed by MissionChi
     function prepareDispatchRecruitmentPersonnelSubmission(doc, item, personnelDesired) {
         const expectedPath = `/buildings/${item.buildingId}`;
         const forms = Array.from(doc?.querySelectorAll?.('form[action]') || []);
-        const form = forms.find(candidate => {
+        const matchingForms = forms.filter(candidate => {
             try {
                 const action = new URL(candidate.getAttribute('action'), document.baseURI || pageWindow.location.href);
                 const keys = Array.from(action.searchParams.keys());
-                return action.origin === pageWindow.location.origin && action.pathname === expectedPath && keys.length === 1 && keys[0] === 'personal_count_target_only' && action.searchParams.get('personal_count_target_only') === '1';
+                const supportedQuery = !keys.length || (keys.length === 1 && keys[0] === 'personal_count_target_only' && action.searchParams.get('personal_count_target_only') === '1');
+                const targets = Array.from(candidate.getElementsByTagName('input')).filter(control => control.name === 'building[personal_count_target]');
+                return action.origin === pageWindow.location.origin && action.pathname === expectedPath && !action.hash && supportedQuery && targets.length === 1;
             } catch (err) { return false; }
         });
-        if (!form) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form is unavailable');
+        if (matchingForms.length !== 1) throw dispatchRecruitmentSafeSkip(matchingForms.length ? 'native Personnel (Desired) form is ambiguous' : 'native Personnel (Desired) form is unavailable');
+        const form = matchingForms[0];
         if (String(form.getAttribute('method') || '').toLowerCase() !== 'post') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form method changed unexpectedly');
         const declaredBuildingId = String(form.getAttribute('building_id') || '');
         if (declaredBuildingId && declaredBuildingId !== item.buildingId) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) form belongs to another station');
         const input = form.querySelector('input[name="building[personal_count_target]"]');
-        const token = form.querySelector('input[name="authenticity_token"]')?.value;
+        const embeddedToken = String(form.querySelector('input[name="authenticity_token"]')?.value || '').trim();
+        const pageToken = String(Array.from(document.getElementsByTagName('meta')).find(meta => meta.getAttribute('name') === 'csrf-token')?.getAttribute('content') || '').trim();
+        const token = embeddedToken || pageToken;
         const methodOverride = String(form.querySelector('input[name="_method"]')?.value || '').toLowerCase();
         const submit = form.querySelector('input[type="submit"][name], button[type="submit"][name]');
         const unexpectedBuildingFields = Array.from(form.elements || [])
@@ -19031,6 +19040,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         if (!token || !['put', 'patch'].includes(methodOverride)) throw dispatchRecruitmentSafeSkip('native Personnel (Desired) authenticity or update-method guard is unavailable');
         if (submit?.name !== 'commit') throw dispatchRecruitmentSafeSkip('native Personnel (Desired) Save action is unavailable');
         const action = new URL(form.getAttribute('action'), document.baseURI || pageWindow.location.href);
+        if (!action.searchParams.has('personal_count_target_only')) action.searchParams.set('personal_count_target_only', '1');
         const params = new URLSearchParams();
         const utf8 = form.querySelector('input[type="hidden"][name="utf8"]');
         if (utf8 && !utf8.disabled) params.set('utf8', utf8.value || '✓');
@@ -19236,6 +19246,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         if (!host) return;
         const runtimeState = dispatchRecruitmentRuntime;
         const locked = runtimeState.running || Boolean(runtimeState.scanPromise) || Boolean(runtimeState.catalogPromise) || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || Boolean(stationIconCopierRuntime.scanPromise) || Boolean(stationIconCopierRuntime.catalogPromise) || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || Boolean(expansionPlannerRuntime.scanPromise) || Boolean(expansionPlannerRuntime.catalogPromise);
+        const planLocked = runtimeState.running;
         const dispatchSelect = panel.querySelector('[data-setting="dispatch-recruitment-centre"]');
         const dispatchOptions = runtimeState.dispatches.length
             ? `<option value="${DISPATCH_RECRUITMENT_ALL_CENTRES}">ALL DISPATCH CENTRES</option>${runtimeState.dispatches.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('')}`
@@ -19257,7 +19268,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         }
         panel.querySelectorAll('[data-setting^="dispatch-recruitment-"]').forEach(control => {
             if (control === dispatchSelect || control === buildingTypeSelect || ['dispatch-recruitment-type', 'dispatch-recruitment-station'].includes(control.dataset.setting)) return;
-            updateUiSetProperty(control, 'disabled', locked);
+            updateUiSetProperty(control, 'disabled', planLocked);
         });
         const allCentres = state.dispatchRecruitment.dispatchId === DISPATCH_RECRUITMENT_ALL_CENTRES;
         const summary = runtimeState.summary || { totalRows: 0, eligible: 0, unassigned: 0, outsideDispatch: 0, outsideType: 0, unavailable: 0, typeCounts: {}, dispatchCounts: {}, unassignedNames: [], outsideDispatchNames: [], outsideTypeNames: [], unavailableNames: [] };
@@ -38563,7 +38574,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         return true; }
     function captureDispatchRecruitmentPersonnelDraft(target) {
         if (!target?.matches?.('[data-setting="dispatch-recruitment-personnel"]')) return false;
-        if (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise) return false;
+        if (dispatchRecruitmentRuntime.running) return false;
         const value = String(target.value || '').trim();
         if (value && (!/^\d+$/u.test(value) || Number(value) > DISPATCH_RECRUITMENT_PERSONNEL_MAX)) return false;
         const normalised = value ? String(Number(value)) : '';
@@ -38585,9 +38596,9 @@ Credits only. Each station and native action will be fetched again, purchased on
             showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
             return;
         }
-        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise)) {
+        if (setting.startsWith('dispatch-recruitment-') && (dispatchRecruitmentRuntime.running || (!dispatchRecruitmentLocalPlanSetting(setting) && (dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise)))) {
             updateUI();
-            showToast('Wait for Dispatch Recruitment to finish loading or scanning, or stop the active run before changing its plan');
+            showToast('Wait for Dispatch Recruitment to finish loading or scanning, or stop the active run before changing its scope or selection');
             return;
         }
         if (setting.startsWith('station-icon-') && (stationIconCopierRuntime.running || stationIconCopierRuntime.preparing || stationIconCopierRuntime.scanPromise || stationIconCopierRuntime.catalogPromise || dispatchRecruitmentRuntime.running || dispatchRecruitmentRuntime.scanPromise || dispatchRecruitmentRuntime.catalogPromise || expansionPlannerRuntime.running || expansionPlannerRuntime.preparing || expansionPlannerRuntime.scanPromise || expansionPlannerRuntime.catalogPromise)) {

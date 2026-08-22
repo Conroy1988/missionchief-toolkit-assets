@@ -123,21 +123,21 @@
   },
   "v10Candidate": {
     "issue": 760,
-    "templateBytes": 860592,
-    "templateLines": 10061,
-    "templateSha256": "bc648a4d60a4c17e8a17c2314e15ad731a838e4ba21415b609b69c2784061b49",
-    "canonicalCssSha256": "f1120dd9b3a8c6de332e70c799e2fcded643cd05a9d8d3d797cf08e37132ec5d",
-    "maxSourceBytes": 2770376,
-    "maxSourceLines": 41575,
+    "templateBytes": 862823,
+    "templateLines": 10092,
+    "templateSha256": "2405e8a51121264996f28416338bd65549b42487b4e7300c62a769adb56fc8de",
+    "canonicalCssSha256": "94d65750c875c6d2d69851942165477214c66618931a0db41a38ea5ccc2028e1",
+    "maxSourceBytes": 2776757,
+    "maxSourceLines": 41653,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 402937,
-      "sourceLines": 6047,
-      "templateBytes": 45055,
-      "templateLines": 527
+      "sourceBytes": 409318,
+      "sourceLines": 6125,
+      "templateBytes": 47286,
+      "templateLines": 558
     },
-    "scope": "Issue #760 plus v10.16.7 critical first-byte UI recovery, null-root startup, fatal-bootstrap recovery and direct-update delivery contracts",
-    "incident": "v10.16.7-first-byte-ui-recovery"
+    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery and v10.16.8 measured performance, responsive-layout and text-containment hardening",
+    "incident": "v10.16.8-performance-responsive-layout-audit"
   }
 }

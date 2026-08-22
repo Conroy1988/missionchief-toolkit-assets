@@ -42,6 +42,20 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+function runtimeProbeSource() {
+  return `"use strict";
+const fs = require("node:fs");
+const outputPath = process.env.MCMS_RUNTIME_STRESS_METRICS_PATH;
+const startedAt = process.hrtime.bigint();
+process.once("exit", () => {
+  if (!outputPath) return;
+  const elapsedSeconds = Number(process.hrtime.bigint() - startedAt) / 1e9;
+  const peakRssKb = Number(process.resourceUsage?.().maxRSS);
+  try { fs.writeFileSync(outputPath, JSON.stringify({ elapsedSeconds, peakRssKb })); } catch {}
+});
+`;
+}
+
 export function runRuntimeStressAudit() {
   const output = process.env.MCMS_AUDIT_OUTPUT || path.join(root, "audit-output");
   fs.mkdirSync(output, { recursive: true });
@@ -54,6 +68,8 @@ export function runRuntimeStressAudit() {
   const results = [];
   const failures = [];
   const started = process.hrtime.bigint();
+  const probePath = path.join(os.tmpdir(), `mcms-runtime-stress-probe-${process.pid}.cjs`);
+  fs.writeFileSync(probePath, runtimeProbeSource(), "utf8");
 
   for (const [relative, repeats] of tests) {
     const absolute = path.join(root, relative);
@@ -63,27 +79,29 @@ export function runRuntimeStressAudit() {
     }
     const samples = [];
     for (let iteration = 1; iteration <= repeats; iteration += 1) {
-      const metricsPath = path.join(os.tmpdir(), `mcms-audit-${process.pid}-${results.length}-${iteration}.txt`);
+      const metricsPath = path.join(os.tmpdir(), `mcms-audit-${process.pid}-${results.length}-${iteration}.json`);
+      const iterationStartedAt = process.hrtime.bigint();
       const run = spawnSync(
-        "/usr/bin/time",
-        ["-f", "%e %M", "-o", metricsPath, process.execPath, "--unhandled-rejections=strict", absolute],
+        process.execPath,
+        ["--unhandled-rejections=strict", absolute],
         {
           cwd: root,
           encoding: "utf8",
           timeout: Math.ceil(perRunSecondsCeiling * 1000) + 15000,
           env: {
             ...process.env,
-            NODE_OPTIONS: [process.env.NODE_OPTIONS, "--unhandled-rejections=strict"].filter(Boolean).join(" "),
+            MCMS_RUNTIME_STRESS_METRICS_PATH: metricsPath,
+            NODE_OPTIONS: [process.env.NODE_OPTIONS, "--unhandled-rejections=strict", `--require=${probePath}`].filter(Boolean).join(" "),
           },
           maxBuffer: 16 * 1024 * 1024,
         },
       );
-      let elapsedSeconds = Number.NaN;
+      let elapsedSeconds = Number(process.hrtime.bigint() - iterationStartedAt) / 1e9;
       let peakRssKb = Number.NaN;
       try {
-        const metrics = fs.readFileSync(metricsPath, "utf8").trim().split(/\s+/u);
-        elapsedSeconds = Number.parseFloat(metrics[0]);
-        peakRssKb = Number.parseInt(metrics[1], 10);
+        const metrics = JSON.parse(fs.readFileSync(metricsPath, "utf8"));
+        if (Number.isFinite(Number(metrics.elapsedSeconds))) elapsedSeconds = Number(metrics.elapsedSeconds);
+        if (Number.isFinite(Number(metrics.peakRssKb))) peakRssKb = Number(metrics.peakRssKb);
       } catch {}
       try { fs.unlinkSync(metricsPath); } catch {}
       samples.push({ iteration, status: run.status, signal: run.signal, elapsedSeconds, peakRssKb });
@@ -109,6 +127,7 @@ export function runRuntimeStressAudit() {
       samples,
     });
   }
+  try { fs.unlinkSync(probePath); } catch {}
 
   const totalSeconds = Number(process.hrtime.bigint() - started) / 1e9;
   if (totalSeconds > totalSecondsCeiling) failures.push(`Complete runtime stress took ${totalSeconds.toFixed(2)}s, exceeding ${totalSecondsCeiling}s`);

@@ -19,8 +19,8 @@ def main() -> int:
     )
     for token in (
         "@media (min-width:1200px) and (max-width:2239px)",
-        "grid-template-columns:142px minmax(0,1fr)",
-        "grid-template-rows:repeat(6,minmax(48px,auto))",
+        "grid-template-columns:180px minmax(0,1fr)",
+        "grid-template-rows:repeat(8,minmax(58px,auto))",
         "@media (min-width:1360px) and (min-height:900px) and (max-width:2239px)",
         '.mcms-tab-panel[data-panel="settings"].mcms-active',
         "column-width:230px",

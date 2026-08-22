@@ -1548,7 +1548,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             align-items: center !important;
             gap: 8px !important;
             min-width: 0 !important;
-            height: 58px !important;
+            height: auto !important;
+            min-height: 58px !important;
             padding: 6px 8px !important;
             border: 1px solid rgba(255,255,255,.14) !important;
             border-radius: 10px !important;
@@ -1665,7 +1666,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             border-radius: 1px 1px 0 0 !important;
             box-shadow: inset 0 1px rgba(255,255,255,.20), 0 0 3px currentColor !important;
         }#mc-map-command-toolkit-panel .mcms-ui-theme-preview-factorio span:nth-child(1) { height: 45% !important; background: #d57b2b !important; color: #d57b2b !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-preview-factorio span:nth-child(2) { height: 78% !important; background: #9fc55a !important; color: #9fc55a !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-preview-factorio span:nth-child(3) { height: 60% !important; background: #e9c16e !important; color: #e9c16e !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-btn[data-ui-theme="factorio"] { grid-column: auto !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-copy { min-width: 0 !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-copy strong,
-        #mc-map-command-toolkit-panel .mcms-ui-theme-copy small { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-copy strong { color: inherit !important; font-size: 10px !important; font-weight: 950 !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-copy small { margin-top: 4px !important; color: rgba(255,255,255,.48) !important; font-size: 7px !important; font-weight: 900 !important; letter-spacing: .7px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-btn { height: 72px !important; grid-template-columns: 58px minmax(0,1fr) !important; padding: 8px 10px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-preview { width: 58px !important; height: 44px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-copy strong { font-size: 13px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-copy small { font-size: 8.5px !important; }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-grid { gap: 6px !important; }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-btn { height: 62px !important; grid-template-columns: 46px minmax(0,1fr) !important; padding: 6px !important; }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-preview { width: 46px !important; height: 38px !important; }html[data-mcms-ui-theme="cyberpunk"] {
+        #mc-map-command-toolkit-panel .mcms-ui-theme-copy small { display: block !important; min-width:0 !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-copy strong { overflow:visible !important; color: inherit !important; font-size: 10.5px !important; line-height:1.15 !important; font-weight: 950 !important; white-space:normal !important; text-overflow:clip !important; overflow-wrap:anywhere !important; }#mc-map-command-toolkit-panel .mcms-ui-theme-copy small { margin-top: 4px !important; overflow:hidden !important; color: rgba(255,255,255,.70) !important; font-size: 8.5px !important; font-weight: 900 !important; letter-spacing: .45px !important; white-space:nowrap !important; text-overflow:ellipsis !important; }html[data-mcms-tablet-active="true"]:not([data-mcms-mobile-active="true"]) #mc-map-command-toolkit-panel .mcms-ui-theme-grid { grid-template-columns:1fr !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-btn { height: auto !important; min-height:72px !important; grid-template-columns: 58px minmax(0,1fr) !important; padding: 8px 10px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-preview { width: 58px !important; height: 44px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-copy strong { font-size: 13px !important; }html[data-mcms-tablet-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-copy small { font-size: 9px !important; }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-grid { gap: 6px !important; }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-btn { height: auto !important; min-height:66px !important; grid-template-columns: 46px minmax(0,1fr) !important; padding: 6px !important; }html[data-mcms-mobile-active="true"] #mc-map-command-toolkit-panel .mcms-ui-theme-preview { width: 46px !important; height: 38px !important; }html[data-mcms-ui-theme="cyberpunk"] {
             --mcms-cp-yellow: #fcee0a;
             --mcms-cp-cyan: #00f0ff;
             --mcms-cp-red: #ff003c;
@@ -9136,9 +9137,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         /* Issue #681: mid-sized Desktop windows use a wider, shorter command surface.
            Settings cards balance into columns instead of inheriting the tallest card in each grid row. */
         @media (min-width:1200px) and (max-width:2239px) {
-            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-command-layout { grid-template-columns:142px minmax(0,1fr) !important; }
-            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tabs { grid-template-rows:repeat(6,minmax(48px,auto)) !important; padding:8px 7px !important; }
-            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-btn { grid-template-columns:28px minmax(0,1fr) !important; min-height:48px !important; padding:5px 6px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-command-layout { grid-template-columns:180px minmax(0,1fr) !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tabs { grid-template-rows:repeat(8,minmax(58px,auto)) !important; padding:8px 7px !important; }
+            html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-btn { grid-template-columns:28px minmax(0,1fr) !important; min-height:58px !important; padding:6px 7px !important; }
             html[data-mcms-device-layout="desktop"]:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-tab-icon { width:28px !important; height:28px !important; }
         }
         @media (min-width:1360px) and (min-height:900px) and (max-width:2239px) {
@@ -9181,8 +9182,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             max-width:none !important;
             max-height:none !important;
         }
-        html[data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-menu-icon { font-size:20px !important; line-height:1 !important; }
-        html[data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-menu-label { font-size:7px !important; line-height:1 !important; font-weight:950 !important; }
+        html[data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-menu-icon { display:grid !important; place-items:center !important; height:22px !important; font-size:20px !important; line-height:22px !important; }
+        html[data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-menu-label { font-size:9px !important; line-height:1 !important; font-weight:950 !important; }
         html[data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-menu-key {
             position:absolute !important;
             right:3px !important;
@@ -9194,7 +9195,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             border-radius:5px !important;
             background:rgba(0,0,0,.50) !important;
             color:#fff !important;
-            font-size:7px !important;
+            font-size:8.5px !important;
             font-weight:950 !important;
         }
         html[data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-floating-filter {
@@ -9223,7 +9224,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             display:block !important;
             padding:0 2px 2px !important;
             color:rgba(255,255,255,.48) !important;
-            font-size:6.5px !important;
+            font-size:9px !important;
             line-height:1 !important;
             font-weight:950 !important;
             letter-spacing:.6px !important;
@@ -9280,7 +9281,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             display:block !important;
             margin-top:3px !important;
             color:rgba(255,255,255,.56) !important;
-            font-size:6px !important;
+            font-size:8px !important;
             line-height:1 !important;
             font-weight:950 !important;
             letter-spacing:.45px !important;
@@ -9395,7 +9396,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-icon { display:none !important; }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-label-desktop { display:none !important; }
-        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-label-tablet { display:block !important; font-size:8px !important; }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-label-tablet { display:block !important; font-size:10px !important; }
 
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-panel.mcms-open {
             display:grid !important;
@@ -9524,18 +9525,18 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             width:18px !important;
             min-width:18px !important;
             height:18px !important;
-            font-size:7px !important;
+            font-size:8.5px !important;
         }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-icon { display:none !important; }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-label-desktop,
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-label-tablet { display:none !important; }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-float-label-mobile {
             display:block !important;
-            font-size:clamp(7px,2vw,8.5px) !important;
+            font-size:clamp(9px,2.35vw,10px) !important;
         }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control .mcms-control-state {
             margin-top:2px !important;
-            font-size:5.5px !important;
+            font-size:7.5px !important;
         }
         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"][data-mcms-ui-theme] body #mc-map-command-toolkit-control {
             width:104px !important;
@@ -9978,6 +9979,36 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window :is(.mcms-pill,.mcms-profile-main span,.mcms-ui-theme-copy small,.mcms-discord-date,.mcms-discord-result,.mcms-discord-stat span,.mcms-discord-breakdown b,.mcms-discord-line,.mcms-discord-foot,.mcms-discord-mini-stats span,.mcms-discord-mini-stats b,.mcms-finance-vault-summary span,.mcms-finance-vault-summary small,.mcms-sweep-state,.mcms-sweep-stat span,.mcms-sweep-meta,.mcms-sweep-report-grid span,.mcms-sweep-report-meta,.mcms-ops-stat-label,.mcms-ops-entry-meta,.mcms-alliance-course-guide summary,.mcms-recruitment-filter-head b,.mcms-recruitment-type b,.mcms-recruitment-station small,.mcms-recruitment-station > b,.mcms-icon-source small,.mcms-icon-default) {
             font-size:var(--mcms-workspace-meta-size) !important;
             line-height:1.4 !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-ui-theme-copy strong {
+            font-size:12.5px !important;
+            line-height:1.3 !important;
+            overflow-wrap:normal !important;
+            word-break:normal !important;
+            hyphens:none !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-ui-theme-copy small {
+            font-size:11px !important;
+            letter-spacing:.2px !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-bookmark-btn[data-action="bookmark-save"] {
+            padding-inline:5px !important;
+        }
+        html[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-building-launcher strong {
+            white-space:normal !important;
+            overflow:visible !important;
+            text-overflow:clip !important;
+            line-height:1.25 !important;
+        }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-building-launcher {
+            flex-wrap:wrap !important;
+            align-items:stretch !important;
+        }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-building-launcher > span,
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #mc-map-command-toolkit-panel .mcms-building-launcher > strong {
+            flex:1 1 100% !important;
+            max-width:100% !important;
+            text-align:left !important;
         }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window .mcms-sweep-log { font:700 var(--mcms-workspace-meta-size)/1.45 system-ui,-apple-system,"Segoe UI",sans-serif !important; }
         html[data-mcms-device-layout="desktop"] body #mc-map-command-toolkit-panel.mcms-workspace-window :is(.mcms-discord-stat strong,.mcms-finance-vault-summary b,.mcms-sweep-stat b,.mcms-sweep-count,.mcms-ops-stat-value,.mcms-ops-entry-value,.mcms-sweep-report-grid b) { font-size:14px !important; line-height:1.2 !important; }

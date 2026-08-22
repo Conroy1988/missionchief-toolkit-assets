@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.16.8] - 2026-08-22
+
+### Performance and Responsive Layout Hardening
+
+- Reduces direct mission-list mutation selector work from about 3,000 scans to 2–21 in audited 250-row storms by fast-pathing direct sidebar batches across observers.
+- Caches frequently reused UI controls and settings and suppresses unchanged DOM writes during refreshes without changing stored settings or actions.
+- Restores tablet panel sizing after dock-fit passes so the command surface clears MissionChief navigation and remains within the visual viewport.
+- Reflows tablet command cards into full-width readable rows and fixes iOS tab flow so controls never render under the navigation grid.
+- Uses breakpoint-safe dock labels, word-boundary theme wrapping and readable summaries and bookmark actions across all eight themes.
+- Adds portable stress metrics and focused permanent regression coverage; the 192-state Desktop, Tablet and iOS audit measured zero text or viewport overflows.
+
 ## [10.16.7] - 2026-08-22
 
 ### First-Byte UI Recovery and Direct Updates

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.2
+// @version      10.16.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.2',
+        version: '10.16.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.2",
-        title: "Dispatch Recruitment State Isolation",
+        version: "10.16.3",
+        title: "Dispatch Recruitment Mismatch Selection",
         highlights: Object.freeze([
-            "Stops Personnel (Desired) from being overwritten by the Expansion Planner's 1 second delay during Dispatch interface rendering.",
-            "Keeps the visible Personnel (Desired) value aligned with its saved value after focus changes, page cycling and other Dispatch setting updates.",
-            "Restricts Expansion & Upgrade Planner value writes to its own six scalar controls.",
-            "Prevents the planner renderer from mutating Dispatch Recruitment, Station Icon Copier and dynamic target controls.",
-            "Adds mounted Desktop and Tablet regression coverage for the complete delegated input and rerender flow."
+            "Auto-selects only stations whose scanned Hiring Phase or Personnel (Desired) differs from the configured Dispatch Recruitment plan.",
+            "Keeps stations already matching both requested values visible and unchecked with a clear MATCHES status.",
+            "Fails closed with no automatic station selection when the configured plan values are incomplete or invalid.",
+            "Preserves manual Select all, Clear, type filters and individual station selection after the mismatch-first scan.",
+            "Adds exact scan-runtime coverage for mismatching, matching and incomplete-plan selection states."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -18898,7 +18898,8 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 dispatchRecruitmentRuntime.scannedAt = Date.now();
                 dispatchRecruitmentRuntime.scannedDispatchId = dispatchId;
                 dispatchRecruitmentRuntime.scannedTypeId = buildingTypeId;
-                dispatchRecruitmentRuntime.selectedBuildingIds = new Set(result.queue.map(item => item.buildingId));
+                const selectionPlan = dispatchRecruitmentConfiguredPlan();
+                dispatchRecruitmentRuntime.selectedBuildingIds = dispatchRecruitmentDefaultSelectedBuildingIds(result.queue, selectionPlan);
                 dispatchRecruitmentRuntime.selectedTypeIds = new Set(result.queue.map(item => item.typeId));
                 dispatchRecruitmentRuntime.currentItem = '';
                 dispatchRecruitmentRuntime.log = [];
@@ -18908,7 +18909,12 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                     ? `${centreCount} Dispatch Centre${centreCount === 1 ? '' : 's'}; ${result.summary.outsideDispatch} outside the loaded catalogue`
                     : `${result.summary.outsideDispatch} assigned elsewhere`;
                 const typeDetail = allTypes ? `${Object.keys(result.summary.typeCounts).length} native type${Object.keys(result.summary.typeCounts).length === 1 ? '' : 's'}` : typeName;
-                dispatchRecruitmentLog(`${scanName} · ${typeName}: ${result.summary.eligible} editable assigned station${result.summary.eligible === 1 ? '' : 's'} across ${typeDetail} and ${assignmentDetail}; ${result.summary.outsideType} outside the selected type; ${result.summary.unassigned} unassigned; ${result.summary.unavailable} unavailable`);
+                const selectedCount = dispatchRecruitmentRuntime.selectedBuildingIds.size;
+                const matchingCount = selectionPlan ? result.queue.length - selectedCount : 0;
+                const selectionDetail = selectionPlan
+                    ? `${selectedCount} selected for changes; ${matchingCount} already match and were left unselected`
+                    : 'configured values were incomplete; no stations were auto-selected';
+                dispatchRecruitmentLog(`${scanName} · ${typeName}: ${result.summary.eligible} editable assigned station${result.summary.eligible === 1 ? '' : 's'} across ${typeDetail} and ${assignmentDetail}; ${result.summary.outsideType} outside the selected type; ${result.summary.unassigned} unassigned; ${result.summary.unavailable} unavailable; ${selectionDetail}`);
                 if (result.summary.truncated) dispatchRecruitmentLog(`${result.summary.truncated} rows exceed the ${DISPATCH_RECRUITMENT_SCAN_LIMIT}-station safety limit and were not selected`, 'warn');
                 return result.queue;
             } catch (err) {
@@ -18996,6 +19002,28 @@ Each course will use the maximum classroom count currently exposed by MissionChi
 
     function dispatchRecruitmentRecordMatches(record, plan) {
         return Number(record?.personal_count_target) === Number(plan.personnelDesired) && dispatchRecruitmentRecordPhase(record) === plan.hiringPhase;
+    }
+
+    // Issue #764: a scan may show every eligible station, but only exact plan mismatches are selected by default.
+    function dispatchRecruitmentConfiguredPlan() {
+        const hiringPhase = String(state.dispatchRecruitment.hiringPhase || '');
+        const personnelText = String(state.dispatchRecruitment.personnelDesired ?? '').trim();
+        if (!DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes(hiringPhase)) return null;
+        if (!/^\d+$/u.test(personnelText) || Number(personnelText) > DISPATCH_RECRUITMENT_PERSONNEL_MAX) return null;
+        return { hiringPhase, personnelDesired: Number(personnelText) };
+    }
+
+    function dispatchRecruitmentScanItemMatchesPlan(item, plan) {
+        return Boolean(plan)
+            && String(item?.currentPhase || '') === plan.hiringPhase
+            && Number(item?.currentDesired) === plan.personnelDesired;
+    }
+
+    function dispatchRecruitmentDefaultSelectedBuildingIds(queue, plan) {
+        if (!plan) return new Set();
+        return new Set(Array.from(queue || [])
+            .filter(item => !dispatchRecruitmentScanItemMatchesPlan(item, plan))
+            .map(item => item.buildingId));
     }
 
     function dispatchRecruitmentNativeHireAction(doc, buildingId, token) {
@@ -19287,10 +19315,12 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const emptyStationMessage = runtimeState.scannedAt && !summary.eligible
             ? `No editable stations are assigned within this scope. ${summary.unassigned} unassigned, ${summary.outsideDispatch} assigned outside the scope and ${summary.unavailable} unavailable row${summary.unavailable === 1 ? '' : 's'} were excluded.`
             : runtimeState.scannedAt ? 'No stations match the active type filters.' : `Load and scan ${allCentres ? 'ALL DISPATCH CENTRES' : 'a Dispatch Centre'} to preview editable stations.`;
+        const configuredPlan = dispatchRecruitmentConfiguredPlan();
         const stationRows = visibleQueue.length ? visibleQueue.map(item => {
             const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
             const current = runtimeState.currentBuildingId === item.buildingId;
-            const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'partial' ? 'PARTIAL' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : 'EXCLUDED';
+            const matchesPlan = dispatchRecruitmentScanItemMatchesPlan(item, configuredPlan);
+            const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'partial' ? 'PARTIAL' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : matchesPlan ? 'MATCHES' : 'EXCLUDED';
             const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
             const centre = allCentres ? `${item.dispatchName || `Dispatch Centre ${item.dispatchId}`} · ` : '';
             return `<label class="mcms-recruitment-station ${current ? 'mcms-current' : ''}" data-outcome="${escapeHtml(item.outcome)}"><input type="checkbox" data-setting="dispatch-recruitment-station" value="${escapeHtml(item.buildingId)}" ${selected ? 'checked' : ''} ${locked ? 'disabled' : ''}><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(centre)}${escapeHtml(item.typeLabel)} · Hiring ${escapeHtml(dispatchRecruitmentPhaseLabel(item.currentPhase))} · Desired ${item.currentDesired} · Staff ${escapeHtml(item.currentStaff)}${escapeHtml(detail)}</small></span><b>${outcome}</b></label>`;
@@ -38432,7 +38462,17 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (action === 'start-alliance-courses') { void startAllianceCourses(); return; }
         if (action === 'stop-alliance-courses') { stopAllianceCourses(); return; }
         if (action === 'load-dispatch-recruitment') { void loadDispatchRecruitmentCatalog({ force: true }); return; }
-        if (action === 'scan-dispatch-recruitment') { void scanDispatchRecruitmentStations().then(queue => showToast(queue.length ? `${queue.length} editable station${queue.length === 1 ? '' : 's'} found` : 'No editable stations found')); return; }
+        if (action === 'scan-dispatch-recruitment') {
+            void scanDispatchRecruitmentStations().then(queue => {
+                if (!queue.length) { showToast('No editable stations found'); return; }
+                const plan = dispatchRecruitmentConfiguredPlan();
+                if (!plan) { showToast(`${queue.length} editable station${queue.length === 1 ? '' : 's'} found · set valid plan values and rescan`); return; }
+                const selected = dispatchRecruitmentRuntime.selectedBuildingIds.size;
+                const matching = queue.length - selected;
+                showToast(`${selected} station${selected === 1 ? '' : 's'} selected for changes${matching ? ` · ${matching} already match` : ''}`);
+            });
+            return;
+        }
         if (action === 'select-all-dispatch-recruitment') { dispatchRecruitmentSelectVisible(true); return; }
         if (action === 'clear-dispatch-recruitment') { dispatchRecruitmentSelectVisible(false); return; }
         if (action === 'apply-dispatch-recruitment') { void startDispatchRecruitment(); return; }

@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.3] - 2026-08-22
+
+### Dispatch Recruitment Mismatch Selection
+
+- Auto-selects only stations whose scanned Hiring Phase or Personnel (Desired) differs from the configured Dispatch Recruitment plan.
+- Keeps stations already matching both requested values visible and unchecked with a clear MATCHES status.
+- Fails closed with no automatic station selection when the configured plan values are incomplete or invalid.
+- Preserves manual Select all, Clear, type filters and individual station selection after the mismatch-first scan.
+- Adds exact scan-runtime coverage for mismatching, matching and incomplete-plan selection states.
+
 ## [10.16.2] - 2026-08-22
 
 ### Dispatch Recruitment State Isolation

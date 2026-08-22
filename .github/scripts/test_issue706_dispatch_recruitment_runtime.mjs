@@ -401,6 +401,27 @@ assert.deepEqual(singleScanRequests, ['/buildings/77/leitstelle-buildings']);
 assert.deepEqual(Array.from(scannedSingleCentre, item => item.buildingId), ['101', '102']);
 assert.equal(dispatchRecruitmentRuntime.scannedDispatchId, '77');
 assert.equal(dispatchRecruitmentRuntime.scannedTypeId, 'all-types');
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedBuildingIds), ['101', '102'], 'Stations differing from the configured plan must be selected after scanning');
+
+context.state.dispatchRecruitment.hiringPhase = 'automatic';
+context.state.dispatchRecruitment.personnelDesired = '7';
+singleScanRequests.length = 0;
+const matchingSingleCentre = await context.scanDispatchRecruitmentStations();
+assert.deepEqual(singleScanRequests, ['/buildings/77/leitstelle-buildings']);
+assert.deepEqual(Array.from(matchingSingleCentre, item => item.buildingId), ['101', '102']);
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedBuildingIds), ['101'], 'A station already matching Hiring Phase and Personnel (Desired) must remain unselected');
+context.renderDispatchRecruitmentPanel();
+const matchingStation = shell.window.document.querySelector('[data-setting="dispatch-recruitment-station"][value="102"]');
+assert.equal(matchingStation?.checked, false, 'The matching station checkbox must render unchecked');
+assert.match(matchingStation?.closest('label')?.textContent || '', /MATCHES/u, 'The matching station must be visibly distinguished from a manually excluded mismatch');
+
+context.state.dispatchRecruitment.personnelDesired = '';
+singleScanRequests.length = 0;
+await context.scanDispatchRecruitmentStations();
+assert.deepEqual(singleScanRequests, ['/buildings/77/leitstelle-buildings']);
+assert.deepEqual(Array.from(dispatchRecruitmentRuntime.selectedBuildingIds), [], 'An incomplete plan must fail closed with no automatic station selection');
+context.state.dispatchRecruitment.hiringPhase = '3';
+context.state.dispatchRecruitment.personnelDesired = '5';
 
 const fireTypeScanRequests = [];
 context.state.dispatchRecruitment.buildingTypeId = '2';
@@ -681,4 +702,4 @@ assert.equal(dispatchRecruitmentRuntime.errors, 1);
 assert.equal(dispatchRecruitmentRuntime.running, false);
 assert.ok(dispatchRecruitmentRuntime.log.some(entry => /SAFETY STOP/u.test(entry.message)));
 
-console.log('Issues #706/#724/#726 Dispatch Recruitment runtime contract passed: explicit native type scope, stale-scan invalidation, complete matrices and mutation immutability are proven');
+console.log('Issues #706/#724/#726/#764 Dispatch Recruitment runtime contract passed: exact mismatch-first selection, explicit native type scope, stale-scan invalidation, complete matrices and mutation immutability are proven');

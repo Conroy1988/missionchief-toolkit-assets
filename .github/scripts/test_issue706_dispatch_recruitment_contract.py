@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.3"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source
@@ -105,6 +105,10 @@ def main() -> int:
     assert "doc.getElementsByTagName('table').namedItem('building_table')?.id !== 'building_table'" in scan
     assert "Promise.all" not in scan, "Native centre matrices must be fetched sequentially"
     assert "dispatchRecruitmentRuntime.scannedTypeId = buildingTypeId" in scan
+    assert "dispatchRecruitmentDefaultSelectedBuildingIds(result.queue, selectionPlan)" in scan
+    assert "already match and were left unselected" in scan
+    assert "function dispatchRecruitmentScanItemMatchesPlan(" in implementation
+    assert ".filter(item => !dispatchRecruitmentScanItemMatchesPlan(item, plan))" in implementation
 
     for guard in (
         "url.origin !== pageWindow.location.origin",
@@ -170,7 +174,7 @@ def main() -> int:
     assert "test_issue706_dispatch_recruitment_contract.py" in preflight
     assert "test_issue706_dispatch_recruitment_runtime.mjs" in preflight
 
-    print("Issues #706/#724/#726 Dispatch Recruitment source contract passed: centre/type scope, complete sequential matrices, global deduplication and mutation immutability are fail-closed.")
+    print("Issues #706/#724/#726/#764 Dispatch Recruitment source contract passed: centre/type scope, mismatch-first selection, complete sequential matrices, global deduplication and mutation immutability are fail-closed.")
     return 0
 
 

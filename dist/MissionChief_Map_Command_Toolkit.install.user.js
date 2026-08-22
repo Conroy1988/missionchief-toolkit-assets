@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.1
+// @version      10.16.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.1',
+        version: '10.16.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,14 +528,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.1",
-        title: "Dispatch Recruitment Restoration",
+        version: "10.16.2",
+        title: "Dispatch Recruitment State Isolation",
         highlights: Object.freeze([
-            "Keeps Personnel (Desired), Hiring Phase and station delay editable and persisted while Dispatch Centre catalogues or station matrices are loading.",
-            "Accepts MissionChief's exact personnel edit form whether its action already includes the personnel-only flag or leaves that flag for the native AJAX caller.",
-            "Uses the form's authenticity token when embedded and otherwise falls back to the current page's native Rails CSRF token.",
-            "Normalises only the exact same-origin station update route, while continuing to reject ambiguous forms, extra building fields, assignment controls and external actions.",
-            "Adds end-to-end regression coverage for the live partial shape and for changing Personnel (Desired) during an active scan without restoring an older value."
+            "Stops Personnel (Desired) from being overwritten by the Expansion Planner's 1 second delay during Dispatch interface rendering.",
+            "Keeps the visible Personnel (Desired) value aligned with its saved value after focus changes, page cycling and other Dispatch setting updates.",
+            "Restricts Expansion & Upgrade Planner value writes to its own six scalar controls.",
+            "Prevents the planner renderer from mutating Dispatch Recruitment, Station Icon Copier and dynamic target controls.",
+            "Adds mounted Desktop and Tablet regression coverage for the complete delegated input and rerender flow."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -21312,8 +21312,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         const settings = new Map();
         const actions = new Map();
         let host = null;
-        for (const control of [...Array.from(panel?.getElementsByTagName?.('select') || []), ...Array.from(panel?.getElementsByTagName?.('input') || [])]) if (control.dataset.setting) settings.set(control.dataset.setting, control);
-        for (const button of Array.from(panel?.getElementsByTagName?.('button') || [])) if (button.dataset.action) actions.set(button.dataset.action, button);
+        for (const control of [...Array.from(panel?.getElementsByTagName?.('select') || []), ...Array.from(panel?.getElementsByTagName?.('input') || [])]) {
+            const setting = String(control.dataset.setting || '');
+            if (setting.startsWith('expansion-planner-') && setting !== 'expansion-planner-target') settings.set(setting, control);
+        }
+        for (const button of Array.from(panel?.getElementsByTagName?.('button') || [])) {
+            const action = String(button.dataset.action || '');
+            if (action.includes('expansion-planner')) actions.set(action, button);
+        }
         for (const container of Array.from(panel?.getElementsByTagName?.('div') || [])) if (container.hasAttribute('data-expansion-planner')) { host = container; break; }
         return { settings, actions, host };
     }
@@ -21344,9 +21350,16 @@ Credits only. Each station and native action will be fetched again, purchased on
             setInnerHtmlIfChanged(typeSelect, runtimeState.dispatches.length ? `<option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">ALL BUILDING TYPES</option>${types.map(([id, label]) => `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`).join('')}` : `<option value="${DISPATCH_RECRUITMENT_ALL_TYPES}">Load stations first</option>`);
             updateUiSetProperty(typeSelect, 'value', typeId); typeSelect.disabled = locked || !runtimeState.dispatches.length;
         }
-        for (const [setting, control] of controls.settings) {
-            if (['expansion-planner-centre', 'expansion-planner-building-type'].includes(setting)) continue;
-            if (document.activeElement !== control) updateUiSetProperty(control, 'value', setting === 'expansion-planner-operation' ? state.expansionPlanner.operationKind : setting === 'expansion-planner-budget' ? state.expansionPlanner.creditBudget : setting === 'expansion-planner-max-stations' ? String(state.expansionPlanner.maxStations) : String(state.expansionPlanner.delayMs));
+        const localPlanValues = new Map([
+            ['expansion-planner-operation', state.expansionPlanner.operationKind],
+            ['expansion-planner-budget', state.expansionPlanner.creditBudget],
+            ['expansion-planner-max-stations', String(state.expansionPlanner.maxStations)],
+            ['expansion-planner-delay', String(state.expansionPlanner.delayMs)],
+        ]);
+        for (const [setting, value] of localPlanValues) {
+            const control = controls.settings.get(setting);
+            if (!control) continue;
+            if (document.activeElement !== control) updateUiSetProperty(control, 'value', value);
             control.disabled = locked;
         }
         const planned = expansionPlannerPlannedQueue();

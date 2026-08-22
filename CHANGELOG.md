@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.2] - 2026-08-22
+
+### Dispatch Recruitment State Isolation
+
+- Stops Personnel (Desired) from being overwritten by the Expansion Planner's 1 second delay during Dispatch interface rendering.
+- Keeps the visible Personnel (Desired) value aligned with its saved value after focus changes, page cycling and other Dispatch setting updates.
+- Restricts Expansion & Upgrade Planner value writes to its own six scalar controls.
+- Prevents the planner renderer from mutating Dispatch Recruitment, Station Icon Copier and dynamic target controls.
+- Adds mounted Desktop and Tablet regression coverage for the complete delegated input and rerender flow.
+
 ## [10.16.1] - 2026-08-22
 
 ### Dispatch Recruitment Restoration

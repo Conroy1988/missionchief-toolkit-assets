@@ -18,6 +18,7 @@ const shell = new JSDOM(`<!doctype html><html><body><section id="panel" class="m
 <select data-setting="expansion-planner-operation"><option value="all">All</option><option value="level">Level</option><option value="extension">Extension</option></select>
 <input data-setting="expansion-planner-budget"><input data-setting="expansion-planner-max-stations">
 <select data-setting="expansion-planner-delay"><option value="1500">1.5 seconds</option></select>
+<input data-setting="dispatch-recruitment-personnel" value="400">
 <button data-action="load-expansion-planner"></button><button data-action="scan-expansion-planner"></button>
 <button data-action="apply-expansion-planner"></button><button data-action="stop-expansion-planner"></button>
 <button data-action="select-all-expansion-planner"></button><button data-action="clear-expansion-planner"></button>
@@ -57,6 +58,18 @@ const context = vm.createContext({
     gmGetValueSafe: () => '', gmSetValueSafe: () => true, gmDeleteValueSafe: () => true,
 });
 vm.runInContext(source.slice(start, end), context, { filename: 'issue744-expansion-upgrade-planner.js' });
+
+const indexedControls = context.expansionPlannerPanelControlIndex(shell.window.document.getElementById('panel'));
+assert.deepEqual(Array.from(indexedControls.settings.keys()).sort(), [
+    'expansion-planner-budget',
+    'expansion-planner-building-type',
+    'expansion-planner-centre',
+    'expansion-planner-delay',
+    'expansion-planner-max-stations',
+    'expansion-planner-operation',
+], 'Expansion Planner must index only its own scalar controls');
+context.renderExpansionPlannerPanel();
+assert.equal(shell.window.document.querySelector('[data-setting="dispatch-recruitment-personnel"]').value, '400', 'Expansion Planner rendering must never overwrite Personnel (Desired)');
 
 expansionPlannerRuntime.catalogPromise = Promise.resolve(['catalogue-in-flight']);
 assert.deepEqual(Array.from(await context.loadExpansionPlannerCatalog()), ['catalogue-in-flight'], 'A concurrent load must await the authoritative in-flight catalogue');

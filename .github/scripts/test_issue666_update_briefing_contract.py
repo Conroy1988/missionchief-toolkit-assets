@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.4"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.5"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.16.4"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.16.5"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Keeps the working Toolkit runtime and launcher alive until an updated bundle has fully evaluated and is ready to take ownership.",
+            "Installs an independent recovery launcher before the full Toolkit bundle evaluates, so a bootstrap interruption cannot leave the map without a Toolkit control.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

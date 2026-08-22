@@ -173,8 +173,16 @@ function createPageWindow({ idle = true } = {}) {
 }
 
 function installRuntime(pageWindow, SCRIPT) {
+    const TOOLKIT_PRIMARY_CONTROL_ID = "mc-map-command-toolkit-control";
+    const document = { documentElement: { getAttribute: () => null } };
+    const ensureToolkitEmergencyLauncher = () => null;
+    const retireToolkitEmergencyLauncher = () => true;
+    const toolkitElementById = () => ({ dataset: { mcmsLauncherReady: "true" } });
+    const toolkitPrimaryControlUsable = () => true;
 __RUNTIME_BLOCK__
     claimToolkitRuntime();
+    runtime.recoverUi = () => true;
+    runtime.phase = "ready";
     return runtime;
 }
 

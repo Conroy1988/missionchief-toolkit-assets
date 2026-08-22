@@ -37,21 +37,21 @@ window.eval(frameRuntime);
 
 await window.__MCMS_DEV_LAB_API__.boot({ sourceText: source });
 const firstRuntime = await waitFor(
-  () => window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.version === "10.16.4" && window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__,
-  "v10.16.4 runtime",
+  () => window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.version === "10.16.5" && window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__,
+  "v10.16.5 runtime",
 );
 const firstControl = await waitFor(
   () => window.document.getElementById("mc-map-command-toolkit-control"),
-  "v10.16.4 command launcher",
+  "v10.16.5 command launcher",
 );
-assert.ok(window.document.getElementById("mc-map-command-toolkit-style-v4146"), "v10.16.4 stylesheet is missing");
+assert.ok(window.document.getElementById("mc-map-command-toolkit-style-v4146"), "v10.16.5 stylesheet is missing");
 
 const upgradedSource = source
-  .replace("// @version      10.16.4", "// @version      10.16.5")
-  .replace("version: '10.16.4'", "version: '10.16.5'")
-  .replace('version: "10.16.4"', 'version: "10.16.5"');
-assert.match(upgradedSource, /^\/\/ @version\s+10\.16\.5$/mu);
-assert.match(upgradedSource, /version: '10\.16\.5'/u);
+  .replace("// @version      10.16.5", "// @version      10.16.6")
+  .replace("version: '10.16.5'", "version: '10.16.6'")
+  .replace('version: "10.16.5"', 'version: "10.16.6"');
+assert.match(upgradedSource, /^\/\/ @version\s+10\.16\.6$/mu);
+assert.match(upgradedSource, /version: '10\.16\.6'/u);
 
 const handoffMarker = "    // Issue #766: a working runtime is not destroyed until this replacement bundle has";
 assert.ok(upgradedSource.includes(handoffMarker), "The deferred runtime handoff marker is missing");
@@ -69,8 +69,8 @@ assert.equal(window.document.getElementById("mc-map-command-toolkit-control"), f
 
 await window.__MCMS_DEV_LAB_API__.loadToolkit(upgradedSource);
 const replacementRuntime = await waitFor(
-  () => window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.version === "10.16.5" && window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__,
-  "v10.16.5 replacement runtime",
+  () => window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.version === "10.16.6" && window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__,
+  "v10.16.6 replacement runtime",
 );
 const replacementControl = await waitFor(
   () => window.document.getElementById("mc-map-command-toolkit-control"),

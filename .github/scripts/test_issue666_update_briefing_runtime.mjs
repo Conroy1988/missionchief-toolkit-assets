@@ -8,7 +8,7 @@ import vm from "node:vm";
 const source = fs.readFileSync(new URL("../../src/MissionChief_Map_Command_Toolkit.user.js", import.meta.url), "utf8");
 const metadataVersion = source.match(/^\/\/\s*@version\s+([^\s]+)/mu)?.[1];
 const runtimeVersion = source.match(/\bversion:\s*'([^']+)'/u)?.[1];
-assert.equal(metadataVersion, "10.16.4");
+assert.equal(metadataVersion, "10.16.5");
 assert.equal(runtimeVersion, metadataVersion);
 
 const releaseStart = source.indexOf("    const RELEASE_BRIEFING = Object.freeze(");
@@ -48,8 +48,8 @@ vm.runInContext(
 const { RELEASE_BRIEFING, updateBriefingBody, openToolkitReleaseNotes, openUpdateBriefing } = sandbox.__api;
 const body = updateBriefingBody();
 assert.match(body, /NOW INSTALLED/u);
-assert.match(body, /<strong>v10\.16\.4<\/strong>/u);
-assert.match(body, /Emergency Toolkit UI Restoration/u);
+assert.match(body, /<strong>v10\.16\.5<\/strong>/u);
+assert.match(body, /Fail-Open Toolkit UI Recovery/u);
 for (const highlight of RELEASE_BRIEFING.highlights) assert.ok(body.includes(sandbox.escapeHtml(highlight)), highlight);
 for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alliance Chat", "Unit Locator &amp; Follow", "Session Cleanup</b>"]) {
   assert.ok(!body.includes(stale), stale);
@@ -57,8 +57,8 @@ for (const stale of ["review every v10.2 feature", "Cleaner mission map and Alli
 
 assert.equal(openUpdateBriefing(), true);
 assert.equal(modal.kind, "Update Briefing");
-assert.equal(modal.title, "What’s New & Feature Beacon · v10.16.4");
-assert.equal(modal.subtitle, "Emergency Toolkit UI Restoration");
+assert.equal(modal.title, "What’s New & Feature Beacon · v10.16.5");
+assert.equal(modal.subtitle, "Fail-Open Toolkit UI Recovery");
 assert.equal(modal.body, body);
 
 sandbox.state.updateBriefing.enabled = false;
@@ -70,7 +70,7 @@ assert.ok(modal);
 
 openToolkitReleaseNotes();
 assert.deepEqual(opened[0].args, [
-  "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.16.4",
+  "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v10.16.5",
   "_blank",
   "noopener,noreferrer",
 ]);

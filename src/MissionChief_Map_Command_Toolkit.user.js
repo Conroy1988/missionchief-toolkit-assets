@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.4
+// @version      10.16.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,6 +51,109 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 (function () {
     'use strict';
     const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+    const TOOLKIT_RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
+    const TOOLKIT_EMERGENCY_LAUNCHER_ID = 'mcms-toolkit-emergency-launcher';
+    const TOOLKIT_EMERGENCY_STYLE_ID = 'mcms-toolkit-emergency-style';
+    const TOOLKIT_PRIMARY_CONTROL_ID = 'mc-map-command-toolkit-control';
+    function toolkitElementById(id) {
+        return document.getElementById(id);
+    }
+    function toolkitEmergencyRouteEligible() {
+        try {
+            const path = String(pageWindow.location?.pathname || '/').replace(/\/{2,}/gu, '/').replace(/\/+$/gu, '') || '/';
+            const view = document.defaultView;
+            return (!view || view.top === view) && path === '/';
+        } catch (error) {
+            return false;
+        }
+    }
+    function toolkitPrimaryControlUsable(control = toolkitElementById(TOOLKIT_PRIMARY_CONTROL_ID)) {
+        if (!control || control.isConnected === false || control.dataset?.mcmsLauncherReady !== 'true') return false;
+        try {
+            const rect = control.getBoundingClientRect?.();
+            const style = pageWindow.getComputedStyle?.(control);
+            const viewportWidth = Number(pageWindow.innerWidth || document.documentElement?.clientWidth || 0);
+            const viewportHeight = Number(pageWindow.innerHeight || document.documentElement?.clientHeight || 0);
+            return Boolean(
+                (!rect || (
+                    rect.width > 1 && rect.height > 1
+                    && (!viewportWidth || (rect.right > 0 && rect.left < viewportWidth))
+                    && (!viewportHeight || (rect.bottom > 0 && rect.top < viewportHeight))
+                ))
+                && style?.display !== 'none'
+                && style?.visibility !== 'hidden'
+                && style?.visibility !== 'collapse'
+                && (!style?.opacity || Number(style.opacity) !== 0)
+                && style?.pointerEvents !== 'none'
+            );
+        } catch (error) {
+            return true;
+        }
+    }
+    function removeToolkitEmergencyLauncher() {
+        toolkitElementById(TOOLKIT_EMERGENCY_LAUNCHER_ID)?.remove?.();
+        toolkitElementById(TOOLKIT_EMERGENCY_STYLE_ID)?.remove?.();
+        return true;
+    }
+    function retireToolkitEmergencyLauncher() {
+        if (!toolkitPrimaryControlUsable()) return false;
+        return removeToolkitEmergencyLauncher();
+    }
+    function ensureToolkitEmergencyLauncher() {
+        if (!toolkitEmergencyRouteEligible()) {
+            removeToolkitEmergencyLauncher();
+            return null;
+        }
+        const root = document.documentElement;
+        if (!root) return null;
+        let style = toolkitElementById(TOOLKIT_EMERGENCY_STYLE_ID);
+        if (!style) {
+            style = document.createElement('style');
+            style.id = TOOLKIT_EMERGENCY_STYLE_ID;
+            style.textContent = `
+                @keyframes mcmsToolkitEmergencyReveal { to { opacity:1; pointer-events:auto; transform:none; } }
+                #${TOOLKIT_EMERGENCY_LAUNCHER_ID} {
+                    all:initial !important; position:fixed !important; z-index:2147483647 !important;
+                    left:max(48px,env(safe-area-inset-left)) !important; top:max(50px,env(safe-area-inset-top)) !important;
+                    display:flex !important; align-items:center !important; justify-content:center !important;
+                    min-width:142px !important; min-height:44px !important; padding:0 14px !important;
+                    border:2px solid #ffcf66 !important; border-radius:10px !important;
+                    background:#8f1d16 !important; color:#fff !important;
+                    box-shadow:0 8px 26px rgba(0,0,0,.62) !important;
+                    font:900 13px/1 Arial,Helvetica,sans-serif !important; letter-spacing:.2px !important;
+                    cursor:pointer !important; opacity:0; pointer-events:none; transform:translateY(-4px);
+                    animation:mcmsToolkitEmergencyReveal 0s linear 1600ms forwards !important;
+                }
+                #${TOOLKIT_EMERGENCY_LAUNCHER_ID}:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
+            `;
+            root.appendChild(style);
+        }
+        let button = toolkitElementById(TOOLKIT_EMERGENCY_LAUNCHER_ID);
+        if (!button) {
+            button = document.createElement('button');
+            button.id = TOOLKIT_EMERGENCY_LAUNCHER_ID;
+            button.type = 'button';
+            button.textContent = 'Restore Toolkit UI';
+            button.title = 'Restore the MissionChief Map Command Toolkit launcher';
+            button.setAttribute('aria-label', 'Restore MissionChief Map Command Toolkit interface');
+            button.onclick = () => {
+                const activeRuntime = pageWindow[TOOLKIT_RUNTIME_KEY];
+                let recovered = false;
+                try { recovered = activeRuntime?.recoverUi?.({ emergency: true, reason: 'emergency launcher' }) === true; } catch (error) {}
+                if (recovered && retireToolkitEmergencyLauncher()) return;
+                if (!activeRuntime || typeof activeRuntime.recoverUi !== 'function') {
+                    try { pageWindow.location.reload(); } catch (error) {}
+                    return;
+                }
+                button.textContent = 'Toolkit recovery pending';
+            };
+            root.appendChild(button);
+        }
+        return button;
+    }
+    // Issue #768: this dependency-light launcher is installed before the full bundle
+    // evaluates, so an interrupted bootstrap can never leave the user without recovery UI.
+    ensureToolkitEmergencyLauncher();
     const ALLIANCE_BUILDINGS_PATH_PATTERN = /\/(?:verband\/(?:gebauede|gebaeude|gebäude)|alliance(?:\/|_)(?:buildings|buildings_list))(?:\/|$)/iu;
     const ALLIANCE_BUILDINGS_STORAGE_KEY = 'mc_map_command_toolkit_state_v150';
     const ALLIANCE_BUILDINGS_SETTINGS_VAULT_KEY = 'mc_map_command_toolkit_settings_v1';
@@ -468,7 +571,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.4',
+        version: '10.16.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,22 +631,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.4",
-        title: "Emergency Toolkit UI Restoration",
+        version: "10.16.5",
+        title: "Fail-Open Toolkit UI Recovery",
         highlights: Object.freeze([
-            "Keeps the working Toolkit runtime and launcher alive until an updated bundle has fully evaluated and is ready to take ownership.",
-            "Mounts the replacement command launcher immediately during a same-page update instead of waiting for an idle browser window.",
-            "Adds independent recovery checks for the launcher, stylesheet and clean-mode exit after startup.",
-            "Keeps Dispatch Recruitment mismatch classification out of the global UI render path while preserving mismatch-first scan selection.",
-            "Adds an exact same-page production upgrade regression, including an interrupted replacement, for the main launcher, panel, stylesheet and runtime lifecycle."
+            "Installs an independent recovery launcher before the full Toolkit bundle evaluates, so a bootstrap interruption cannot leave the map without a Toolkit control.",
+            "Recovers a healthy same-version runtime and replaces an incomplete one instead of blindly suppressing every reinjection.",
+            "Makes primary launcher placement and interaction fail open when optional rendering, saved state or panel setup fails.",
+            "Keeps a recovery control available in Clean Mode and restores the full command shell when the user activates it.",
+            "Adds production-map runtime coverage for interrupted evaluation, incomplete and healthy same-version runtimes, Clean Mode and launcher self-healing."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
     const previousRuntime = pageWindow[RUNTIME_KEY];
-    if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) return;
+    if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) {
+        ensureToolkitEmergencyLauncher();
+        let recovered = false;
+        try {
+            recovered = previousRuntime.phase === 'ready'
+                && typeof previousRuntime.recoverUi === 'function'
+                && previousRuntime.recoverUi({ reason: 'same-version reinjection' }) === true;
+        } catch (error) {}
+        const recoveredControl = toolkitElementById(TOOLKIT_PRIMARY_CONTROL_ID);
+        const recoveredControlOwned = toolkitPrimaryControlUsable(recoveredControl)
+            || Boolean(recoveredControl?.dataset?.mcmsLauncherReady === 'true' && document.documentElement?.getAttribute('data-mcms-clean') === 'true');
+        if (recovered && recoveredControlOwned) {
+            retireToolkitEmergencyLauncher();
+            return;
+        }
+    }
     const runtimeUpgradeHandoff = Boolean(previousRuntime && previousRuntime.destroyed !== true);
     const runtime = {
         version: SCRIPT.version,
+        phase: 'evaluating',
         destroyed: false,
         timeouts: new Set(),
         intervals: new Set(),
@@ -559,6 +678,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         destroy(reason = 'runtime shutdown') {
         if (this.destroyed) return;
         this.destroyed = true;
+        this.phase = 'destroyed';
         for (const id of this.timeouts) { try { pageWindow.clearTimeout(id); } catch (err) {} }
         for (const id of this.intervals) { try { pageWindow.clearInterval(id); } catch (err) {} }
         for (const id of this.animationFrames) { try { pageWindow.cancelAnimationFrame(id); } catch (err) {} }
@@ -591,6 +711,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (runtimeClaimed) return runtime;
         pageWindow[RUNTIME_KEY] = runtime;
         runtimeClaimed = true;
+        runtime.phase = 'claimed';
         try { previousRuntime?.destroy?.('replaced by a fully evaluated toolkit runtime'); } catch (err) {}
         return runtime;
     }
@@ -35538,6 +35659,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         document.documentElement?.removeAttribute?.('data-mcms-help-open');
         document.documentElement?.style?.removeProperty?.('cursor');
         document.body?.style?.removeProperty?.('user-select');
+        removeToolkitEmergencyLauncher();
         return { reason, removed };
     }
     function toolkitApplyCommandBarState(control = null) {
@@ -37526,16 +37648,22 @@ Credits only. Each station and native action will be fetched again, purchased on
         const primaryMap = toolkitPrimaryMapElement(mapEl, document);
         const host = toolkitControlHost(primaryMap, document);
         if (!host) return null;
-        const existing = document.getElementById(SCRIPT.controlId);
+        let existing = toolkitElementById(SCRIPT.controlId);
+        if (existing && existing.dataset?.mcmsLauncherReady !== 'true') {
+            existing.remove();
+            existing = null;
+        }
         if (existing) {
             if (existing.parentElement !== host) host.appendChild(existing);
+            if (!Object.keys(POSITIONS).some(pos => existing.classList.contains(`mcms-pos-${pos}`))) existing.classList.add('mcms-pos-bl');
             existing.classList.remove('mcms-control-fallback');
-            toolkitApplyCommandBarState(existing);
+            runBootIntegration('existing command-bar state', () => toolkitApplyCommandBarState(existing));
+            retireToolkitEmergencyLauncher();
             return existing;
         }
         const control = document.createElement('div');
         control.id = SCRIPT.controlId;
-        control.className = 'mcms-control';
+        control.className = 'mcms-control mcms-pos-bl mcms-control-fallback';
         control.setAttribute('aria-label', `${SCRIPT.name} control`);
         control.innerHTML = `
             <div class="mcms-launch-row">
@@ -37581,6 +37709,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             </div>
             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
         `;
+        host.appendChild(control);
         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
             control.addEventListener(eventName, stopMapInteraction, { passive: false });
         });
@@ -37631,11 +37760,12 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (closestEventTarget(event, '[data-toggle="buildings"]')) setBuildingVisibilitySelectorOpen(true);
             else openPanel();
         });
-        toolkitApplyCommandBarState(control);
-        host.appendChild(control);
+        control.dataset.mcmsLauncherReady = 'true';
+        runBootIntegration('initial command-bar state', () => toolkitApplyCommandBarState(control));
         control.classList.remove('mcms-control-fallback');
-        renderScreenPins();
-        updateUI();
+        runBootIntegration('initial screen pins', renderScreenPins);
+        runBootIntegration('initial launcher render', updateUI);
+        retireToolkitEmergencyLauncher();
         return control;
     }
 
@@ -39300,28 +39430,34 @@ Credits only. Each station and native action will be fetched again, purchased on
             teardownToolkitCommandShell('route is not the canonical top-level map');
             return true;
         }
+        ensureToolkitEmergencyLauncher();
         const discoveredMap = getLargestLeafletMap();
         const mapEl = toolkitPrimaryMapElement(discoveredMap, document);
         if (!mapEl) {
-            teardownToolkitCommandShell('canonical map has not been positively identified');
             return false;
         }
         const control = createControl(mapEl);
-        if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
-        if (control) ensureVersionStatusButton();
-        if (state.fullscreenMap || fullscreenMapTarget) applyMapFullscreenState();
+        if (settingsPanelActivated && !toolkitElementById(SCRIPT.panelId)) runBootIntegration('settings panel recovery', createPanel);
+        if (control) runBootIntegration('version status control', ensureVersionStatusButton);
+        if (state.fullscreenMap || fullscreenMapTarget) runBootIntegration('fullscreen map state', applyMapFullscreenState);
         if (mapEl) {
-            const map = findLeafletMapInstance(false);
-            if (mapMeasureRuntime.active && mapMeasureRuntime.map !== map) stopMapMeasure(false);
-            if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
-            if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
-            else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
-            const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
-            if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+            runBootIntegration('optional map UI state', () => {
+                const map = findLeafletMapInstance(false);
+                if (mapMeasureRuntime.active && mapMeasureRuntime.map !== map) stopMapMeasure(false);
+                if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+                if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+                else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+                const payoutOverlay = toolkitElementById(SCRIPT.payoutFlashId);
+                if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+            });
         }
-        toolkitApplyCommandBarState(control);
-        if (!maybeShowSetupWizard()) maybeShowUpdateBriefing();
-        return Boolean(control || document.getElementById(SCRIPT.controlId));
+        runBootIntegration('command-bar reconciliation', () => toolkitApplyCommandBarState(control));
+        runBootIntegration('startup guidance', () => {
+            if (!maybeShowSetupWizard()) maybeShowUpdateBriefing();
+        });
+        const mountedControl = control || toolkitElementById(SCRIPT.controlId);
+        if (toolkitPrimaryControlUsable(mountedControl)) retireToolkitEmergencyLauncher();
+        return Boolean(mountedControl?.dataset?.mcmsLauncherReady === 'true');
     }
 
     let toolkitCommandShellRouteReconcileQueued = false;
@@ -40343,12 +40479,19 @@ Credits only. Each station and native action will be fetched again, purchased on
         }, Math.min(1200, STARTUP_IDLE_TIMEOUT_MS));
     }
 
-    function recoverToolkitCommandShell() {
+    function recoverToolkitCommandShell(options = {}) {
         if (runtime.destroyed || !toolkitCommandShellRouteEligible(document)) return false;
-        installMainStyles();
-        applyRootAttributes();
+        ensureToolkitEmergencyLauncher();
+        if (options?.emergency === true && state.cleanMode) {
+            state.cleanMode = false;
+            runBootIntegration('emergency clean-mode reset', saveState);
+        }
+        runBootIntegration('recovery stylesheet', installMainStyles);
+        runBootIntegration('recovery root attributes', applyRootAttributes);
         runBootIntegration('clean-mode recovery control', createCleanExit);
-        return Boolean(runBootIntegration('command-shell recovery', ensureUi));
+        const recovered = Boolean(runBootIntegration('command-shell recovery', ensureUi));
+        if (recovered) retireToolkitEmergencyLauncher();
+        return recovered;
     }
 
     // <mcms-alliance-member-manager>
@@ -41156,14 +41299,15 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     // Issue #766: a working runtime is not destroyed until this replacement bundle has
     // evaluated its complete command-shell and Alliance Member Manager implementation.
-    claimToolkitRuntime();
-    if (runtimeUpgradeHandoff) {
-        removeOldInstances();
-        try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
-        installMainStyles();
-        applyRootAttributes();
-    }
     runtime.recoverUi = recoverToolkitCommandShell;
+    claimToolkitRuntime();
+    runtime.phase = 'ready';
+    if (runtimeUpgradeHandoff) {
+        runBootIntegration('replacement instance cleanup', removeOldInstances);
+        try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+        runBootIntegration('replacement stylesheet', installMainStyles);
+        runBootIntegration('replacement root attributes', applyRootAttributes);
+    }
 
     registerBootMaintenanceTasks({ uiOnly: true });
     if (document.readyState === 'loading') {

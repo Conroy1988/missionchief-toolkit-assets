@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.5] - 2026-08-22
+
+### Fail-Open Toolkit UI Recovery
+
+- Installs an independent recovery launcher before the full Toolkit bundle evaluates, so a bootstrap interruption cannot leave the map without a Toolkit control.
+- Recovers a healthy same-version runtime and replaces an incomplete one instead of blindly suppressing every reinjection.
+- Makes primary launcher placement and interaction fail open when optional rendering, saved state or panel setup fails.
+- Keeps a recovery control available in Clean Mode and restores the full command shell when the user activates it.
+- Adds production-map runtime coverage for interrupted evaluation, incomplete and healthy same-version runtimes, Clean Mode and launcher self-healing.
+
 ## [10.16.4] - 2026-08-22
 
 ### Emergency Toolkit UI Restoration

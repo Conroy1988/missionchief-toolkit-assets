@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.15.3"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.0"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.15.3"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.16.0"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Fixes Button 3 by targeting only show_vehicle, excluding the separate mobile_show_vehicle value and supporting query-based Map and vehicles tabs.",
+            "Replaces the all-or-nothing Buildings control with a persistent selector for exact MissionChief building types.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

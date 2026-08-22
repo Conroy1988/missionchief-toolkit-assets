@@ -95,10 +95,13 @@
 
   function fixtureFetch(input) {
     const url = new URL(typeof input === "string" ? input : input?.url || String(input), location.origin);
+    if (url.pathname === "/buildings/new") {
+      return Promise.resolve(new Response('<select id="building_leitstelle_building_id" name="building[leitstelle_building_id]"></select><select id="building_building_type" name="building[building_type]"><option value="2">Fire Station</option><option value="6">Police Station</option><option value="22">Ambulance Station</option></select>', { status: 200, headers: { "Content-Type": "text/html" } }));
+    }
     if (/\/api\/vehicles|\/vehicles\.json/iu.test(url.pathname)) return jsonResponse([]);
     if (/\/api\/buildings|\/buildings\.json/iu.test(url.pathname)) return jsonResponse([]);
     if (/toolkit-update-manifest|update-manifest\.json/iu.test(url.pathname)) {
-      return jsonResponse({ schemaVersion: 1, version: "10.15.3", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) });
+      return jsonResponse({ schemaVersion: 1, version: "10.16.0", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) });
     }
     return Promise.resolve(new Response("", { status: 200, headers: { "Content-Type": "text/html" } }));
   }
@@ -156,12 +159,45 @@
     mapElement._leaflet_map = map;
     mapElement._leaflet_id = 1;
 
+    const buildingRecords = [
+      { id: 501, user_id: 1988, building_type: 2, building_type_caption: "Fire Station", caption: "Leith Fire Station" },
+      { id: 502, user_id: 1988, building_type: 6, building_type_caption: "Police Station", caption: "Central Police Station" },
+      { id: 601, user_id: 77, building_type: 2, building_type_caption: "Fire Station", caption: "Alliance Fire Station" },
+      { id: 602, user_id: 77, building_type: 22, building_type_caption: "Ambulance Station", caption: "Alliance Ambulance Station" },
+    ];
+    const buildingTargets = new Map();
+    const buildingMarkers = buildingRecords.map(record => {
+      const marker = window.L.marker({ lat: 55.9533, lng: -3.1883 });
+      Object.assign(marker, { building_id: record.id, user_id: record.user_id, building_type: record.building_type, building: record });
+      marker.setOpacity = value => { marker.options.opacity = Number(value); return marker; };
+      const key = `${record.user_id}:${record.building_type}`;
+      if (!buildingTargets.has(key)) {
+        const children = new Set();
+        buildingTargets.set(key, {
+          _leaflet_id: 1000 + buildingTargets.size,
+          children,
+          addLayer(layer) { children.add(layer); return this; },
+          hasLayer(layer) { return children.has(layer); },
+        });
+      }
+      buildingTargets.get(key).addLayer(marker);
+      map.addLayer(marker);
+      return marker;
+    });
+    for (const target of buildingTargets.values()) map.addLayer(target);
+    window.building_markers = buildingMarkers;
+    window.building_markers_params_cache_per_id = buildingRecords;
+    window.building_markers_cache = buildingRecords;
+    window.map_filters_service = {
+      getFilterLayerByBuildingParams(params) { return buildingTargets.get(`${params.user_id}:${params.building_type}`) || null; },
+    };
+
     const gmValues = new Map();
     window.GM_getValue = (key, fallback) => gmValues.has(key) ? gmValues.get(key) : fallback;
     window.GM_setValue = (key, value) => { gmValues.set(key, value); };
     window.GM_deleteValue = key => { gmValues.delete(key); };
     window.GM_xmlhttpRequest = options => {
-      const response = { status: 200, responseText: JSON.stringify({ schemaVersion: 1, version: "10.15.3", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) }) };
+      const response = { status: 200, responseText: JSON.stringify({ schemaVersion: 1, version: "10.16.0", downloadUrl: "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/", sha256: "0".repeat(64) }) };
       const timer = window.setTimeout(() => options?.onload?.(response), 0);
       return { abort() { window.clearTimeout(timer); options?.onabort?.(); } };
     };
@@ -170,7 +206,7 @@
       activeTab: fixture.tab,
       uiTheme: fixture.theme,
       setupWizard: { completed: true, schema: 1 },
-      updateBriefing: { enabled: false, seenVersion: "10.15.3", seenFeatures: [] },
+      updateBriefing: { enabled: false, seenVersion: "10.16.0", seenFeatures: [] },
       tabletMode: fixture.device === "tablet" ? "on" : "off",
       mobileMode: fixture.device === "ios" ? "on" : "off",
       majorIncidentFeed: { enabled: false, minimumCredits: 25000 },

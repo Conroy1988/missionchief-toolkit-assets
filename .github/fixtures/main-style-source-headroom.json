@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 756,
-    "version": "10.15.3",
-    "sourceBytes": 2706768,
-    "sourceLines": 40455,
-    "sourceSha256": "b79974c63e01b5a95a5b9a2b5b0e52e5a9f03340a7dd94d1c46af15398cc24f2",
-    "templateBytes": 853272,
-    "templateLines": 10025,
-    "templateSha256": "dbbac0dc98327fe7cc96acfd36fbca905a70917d541160bc2c99e1c62f27dede",
-    "canonicalCssSha256": "3c7384ef34aee0a5a3c337ce6e365279330098fa688ac58b06ddbd66053e1ec1",
-    "maxSourceBytes": 2711768,
-    "maxSourceLines": 40555,
+    "issue": 758,
+    "version": "10.16.0",
+    "sourceBytes": 2746962,
+    "sourceLines": 41069,
+    "sourceSha256": "f609e11db118f3872ee23530e522fcc3371fa9f096f2999ff0eca096ff332b33",
+    "templateBytes": 860592,
+    "templateLines": 10061,
+    "templateSha256": "bc648a4d60a4c17e8a17c2314e15ad731a838e4ba21415b609b69c2784061b49",
+    "canonicalCssSha256": "f1120dd9b3a8c6de332e70c799e2fcded643cd05a9d8d3d797cf08e37132ec5d",
+    "maxSourceBytes": 2751991,
+    "maxSourceLines": 41164,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 344329,
-      "sourceLines": 5027,
-      "templateBytes": 37735,
-      "templateLines": 491
+      "sourceBytes": 384552,
+      "sourceLines": 5636,
+      "templateBytes": 45055,
+      "templateLines": 527
     },
-    "scope": "Live Dispatch Recruitment persistence and native submission repair, exact desktop vehicle-setting targeting, stable Desktop tab sizing and a single-runner PR gate"
+    "scope": "Persistent building-type and ownership visibility selector with native filter targets, responsive saved views and focused local validation"
   }
 }

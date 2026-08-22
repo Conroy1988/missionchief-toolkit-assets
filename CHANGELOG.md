@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.16.0] - 2026-08-22
+
+### Building Visibility Selector
+
+- Replaces the all-or-nothing Buildings control with a persistent selector for exact MissionChief building types.
+- Adds Own, Alliance and combined ownership scopes, live type search, per-type counts, checkboxes and one-tap Only views.
+- Keeps shortcut 4 as a fast hide or restore action for the saved view, while Shift+4 and the visible chooser open the selector.
+- Adds All, None and Restore actions, clear ALL, single-type, N TYPES and HIDDEN status labels, and Map Profile persistence.
+- Uses native per-building filter targets with marker-layer fallback, new-marker enforcement and teardown restoration across Desktop, Tablet and iOS.
+
 ## [10.15.3] - 2026-08-21
 
 ### Live Regression Hotfix

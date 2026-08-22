@@ -87,7 +87,7 @@ for token in (
     "showToast(verified.value ? 'MissionChief vehicles on' : 'MissionChief vehicles off');",
     "if (feature === 'vehicles') {\n            void toggleNativeVehicleVisibility();",
     "delete profileVisibility.vehicles;",
-    "if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, state.visibility[feature]);",
+    "if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, feature === 'buildings' ? nativeBuildingVisibilityDesired() : state.visibility[feature]);",
     "Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3",
     "const { missionMarkerIcons, personalMissionIcons, allianceMissionIcons } = getMissionIconsByOwnership();",
     "const missionId = missionIdFromMarker(marker);",
@@ -95,7 +95,8 @@ for token in (
     "if (missionMarkerIcons.has(icon)) continue;",
     "vehicleMarkerIcons.delete(icon);",
     "return { missionMarkerIcons, personalMissionIcons, allianceMissionIcons };",
-    "if (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) synchronisePersonalBuildingVisibility();",
+    "function nativeBuildingVisibilityDesired()",
+    "if (feature === 'buildings') synchroniseBuildingVisibilitySelector();",
 ):
     assert token in SOURCE, token
 

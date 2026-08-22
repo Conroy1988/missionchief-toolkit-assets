@@ -53,7 +53,7 @@ def main() -> int:
 
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     assert matrix["schemaVersion"] == 1
-    assert {"workflow-policy", "dev-lab", "canary", "dispatch-recruitment", "expansion-planner", "native-visibility", "desktop-workspace", "transport-sweep", "finance", "command-shell"} <= set(matrix["features"])
+    assert {"workflow-policy", "dev-lab", "canary", "dispatch-recruitment", "expansion-planner", "native-visibility", "building-visibility", "desktop-workspace", "transport-sweep", "finance", "command-shell"} <= set(matrix["features"])
     assert matrix["sourceFallback"] == [["bash", ".github/scripts/run_userscript_preflight.sh", "--contracts"]]
     commands = [tuple(command) for command in matrix["always"]]
     assert ("node", "--check", "src/MissionChief_Map_Command_Toolkit.user.js") in commands

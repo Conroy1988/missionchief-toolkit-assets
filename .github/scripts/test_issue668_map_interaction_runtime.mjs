@@ -123,6 +123,7 @@ const sandbox = {
   markVehicleIcon() { count("vehicle-icon"); },
   refreshVehicleFollowBinding() { count("follow-refresh"); },
   markPersonalBuildingLayerIfOwned: () => false,
+  synchroniseBuildingVisibilitySelector() { count("building-visibility-sync"); },
   hidePersonalBuildingLayer() { count("hide-building"); },
   suppressLeakedAllianceBuildingLayer() { count("alliance-building"); },
   stopVehicleFollow() { count("stop-follow"); },
@@ -141,7 +142,7 @@ let pendingEnabledMapRefresh={includeSnapshots:false,positionPanel:false,refresh
 let mapInteractionMoving=false,mapInteractionSettling=false,mapInteractionDeferredRefresh=false,mapInteractionDeferredSnapshots=false,mapInteractionDeferredDomMutation=false,mapInteractionMarkerSyncNeeded=false;
 const mapInteractionDirtyScopes=new Set();
 let coverageCanvasRenderer=null;
-let dragState=null,economyLayerEnforcement=false,enforcingPersonalBuildingVisibility=false,enforcingNativeAllianceBuildingVisibility=false;
+let dragState=null,economyLayerEnforcement=false,enforcingPersonalBuildingVisibility=false,enforcingNativeAllianceBuildingVisibility=false,enforcingBuildingVisibility=false;
 let followedVehicleId='',followedVehicleMarker=null,vehicleFollowRecentering=false,activeDeviceLayout='desktop';
 `;
 vm.runInContext(declarations + [
@@ -179,6 +180,8 @@ function fakeMap() {
 const map = fakeMap();
 sandbox.__probe.attachMapEvents(map);
 assert.equal(sandbox.runtime.mapBindings.length, 6, "map event ownership changed");
+assert.equal(value("marker-sync"), 1, "initial building selector reconciliation was not delegated to the consolidated marker scheduler");
+counters.clear();
 
 map.emit("movestart");
 assert.equal(attributes.get("data-mcms-map-moving"), "true");

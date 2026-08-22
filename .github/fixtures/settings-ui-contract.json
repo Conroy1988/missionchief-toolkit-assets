@@ -84,6 +84,7 @@
     "stop-station-icons",
     "stop-transport-sweep",
     "test-payout-flash",
+    "toggle-building-selector",
     "toggle-command-search",
     "toggle-safe-mode",
     "toggle-workspace-maximize",

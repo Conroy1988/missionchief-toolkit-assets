@@ -54,6 +54,7 @@ const dispatchRecruitmentRuntime = {
     scannedDispatchId: '',
     scannedTypeId: '',
     selectedBuildingIds: new Set(),
+    matchingBuildingIds: new Set(),
     selectedTypeIds: new Set(),
     currentBuildingId: '',
     currentItem: '',

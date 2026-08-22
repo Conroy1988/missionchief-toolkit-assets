@@ -19,7 +19,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.3"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.16.4"
 
     state = section(source, "    function defaultState()", "    function normaliseLoadedState(")
     for required in [

@@ -122,21 +122,21 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v10Candidate": {
-    "issue": 760,
+    "issue": 766,
     "templateBytes": 860592,
     "templateLines": 10061,
     "templateSha256": "bc648a4d60a4c17e8a17c2314e15ad731a838e4ba21415b609b69c2784061b49",
     "canonicalCssSha256": "f1120dd9b3a8c6de332e70c799e2fcded643cd05a9d8d3d797cf08e37132ec5d",
-    "maxSourceBytes": 2751991,
-    "maxSourceLines": 41164,
+    "maxSourceBytes": 2754130,
+    "maxSourceLines": 41207,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 384552,
-      "sourceLines": 5636,
+      "sourceBytes": 386691,
+      "sourceLines": 5679,
       "templateBytes": 45055,
       "templateLines": 527
     },
-    "scope": "Issue #760 Dispatch Recruitment plan persistence, native personnel-form action normalisation, page-token CSRF fallback and live-partial regression coverage"
+    "scope": "Issue #766 deferred runtime handoff, immediate replacement mount, launcher recovery and interrupted-upgrade regression coverage"
   }
 }

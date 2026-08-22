@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.3
+// @version      10.16.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -468,7 +468,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.3',
+        version: '10.16.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -528,20 +528,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.3",
-        title: "Dispatch Recruitment Mismatch Selection",
+        version: "10.16.4",
+        title: "Emergency Toolkit UI Restoration",
         highlights: Object.freeze([
-            "Auto-selects only stations whose scanned Hiring Phase or Personnel (Desired) differs from the configured Dispatch Recruitment plan.",
-            "Keeps stations already matching both requested values visible and unchecked with a clear MATCHES status.",
-            "Fails closed with no automatic station selection when the configured plan values are incomplete or invalid.",
-            "Preserves manual Select all, Clear, type filters and individual station selection after the mismatch-first scan.",
-            "Adds exact scan-runtime coverage for mismatching, matching and incomplete-plan selection states."
+            "Keeps the working Toolkit runtime and launcher alive until an updated bundle has fully evaluated and is ready to take ownership.",
+            "Mounts the replacement command launcher immediately during a same-page update instead of waiting for an idle browser window.",
+            "Adds independent recovery checks for the launcher, stylesheet and clean-mode exit after startup.",
+            "Keeps Dispatch Recruitment mismatch classification out of the global UI render path while preserving mismatch-first scan selection.",
+            "Adds an exact same-page production upgrade regression, including an interrupted replacement, for the main launcher, panel, stylesheet and runtime lifecycle."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
     const previousRuntime = pageWindow[RUNTIME_KEY];
     if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) return;
-    try { previousRuntime?.destroy?.('replaced by a newer toolkit runtime'); } catch (err) {}
+    const runtimeUpgradeHandoff = Boolean(previousRuntime && previousRuntime.destroyed !== true);
     const runtime = {
         version: SCRIPT.version,
         destroyed: false,
@@ -586,7 +586,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         }
     };
-    pageWindow[RUNTIME_KEY] = runtime;
+    let runtimeClaimed = false;
+    function claimToolkitRuntime() {
+        if (runtimeClaimed) return runtime;
+        pageWindow[RUNTIME_KEY] = runtime;
+        runtimeClaimed = true;
+        try { previousRuntime?.destroy?.('replaced by a fully evaluated toolkit runtime'); } catch (err) {}
+        return runtime;
+    }
     function runtimeSetTimeout(callback, delay = 0, ...args) {
         if (runtime.destroyed) return null;
         let id = null;
@@ -1843,6 +1850,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         scannedDispatchId: '',
         scannedTypeId: '',
         selectedBuildingIds: new Set(),
+        matchingBuildingIds: new Set(),
         selectedTypeIds: new Set(),
         currentBuildingId: '',
         currentItem: '',
@@ -13045,10 +13053,12 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
 
     // Install presentation rules while the document is still sparse. This avoids a late
     // full-page selector rematch after MissionChief has rendered its map and mission list.
-    removeOldInstances();
-    try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
-    installMainStyles();
-    applyRootAttributes();
+    if (!runtimeUpgradeHandoff) {
+        removeOldInstances();
+        try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+        installMainStyles();
+        applyRootAttributes();
+    }
 
     function isVisible(el) {
         if (!el || !(el instanceof Element)) return false;
@@ -18741,6 +18751,7 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         dispatchRecruitmentRuntime.scannedDispatchId = '';
         dispatchRecruitmentRuntime.scannedTypeId = '';
         dispatchRecruitmentRuntime.selectedBuildingIds.clear();
+        dispatchRecruitmentRuntime.matchingBuildingIds.clear();
         dispatchRecruitmentRuntime.selectedTypeIds.clear();
         dispatchRecruitmentRuntime.log = [];
         resetDispatchRecruitmentResults();
@@ -18900,6 +18911,9 @@ Each course will use the maximum classroom count currently exposed by MissionChi
                 dispatchRecruitmentRuntime.scannedTypeId = buildingTypeId;
                 const selectionPlan = dispatchRecruitmentConfiguredPlan();
                 dispatchRecruitmentRuntime.selectedBuildingIds = dispatchRecruitmentDefaultSelectedBuildingIds(result.queue, selectionPlan);
+                dispatchRecruitmentRuntime.matchingBuildingIds = new Set(selectionPlan
+                    ? result.queue.filter(item => dispatchRecruitmentScanItemMatchesPlan(item, selectionPlan)).map(item => item.buildingId)
+                    : []);
                 dispatchRecruitmentRuntime.selectedTypeIds = new Set(result.queue.map(item => item.typeId));
                 dispatchRecruitmentRuntime.currentItem = '';
                 dispatchRecruitmentRuntime.log = [];
@@ -19315,11 +19329,10 @@ Each course will use the maximum classroom count currently exposed by MissionChi
         const emptyStationMessage = runtimeState.scannedAt && !summary.eligible
             ? `No editable stations are assigned within this scope. ${summary.unassigned} unassigned, ${summary.outsideDispatch} assigned outside the scope and ${summary.unavailable} unavailable row${summary.unavailable === 1 ? '' : 's'} were excluded.`
             : runtimeState.scannedAt ? 'No stations match the active type filters.' : `Load and scan ${allCentres ? 'ALL DISPATCH CENTRES' : 'a Dispatch Centre'} to preview editable stations.`;
-        const configuredPlan = dispatchRecruitmentConfiguredPlan();
         const stationRows = visibleQueue.length ? visibleQueue.map(item => {
             const selected = runtimeState.selectedBuildingIds.has(item.buildingId);
             const current = runtimeState.currentBuildingId === item.buildingId;
-            const matchesPlan = dispatchRecruitmentScanItemMatchesPlan(item, configuredPlan);
+            const matchesPlan = runtimeState.matchingBuildingIds.has(item.buildingId);
             const outcome = item.outcome === 'updated' ? 'UPDATED' : item.outcome === 'partial' ? 'PARTIAL' : item.outcome === 'unchanged' ? 'NO CHANGE' : item.outcome === 'skipped' ? 'SKIPPED' : item.outcome === 'error' ? 'ERROR' : selected ? 'SELECTED' : matchesPlan ? 'MATCHES' : 'EXCLUDED';
             const detail = item.outcomeDetail ? ` · ${item.outcomeDetail}` : '';
             const centre = allCentres ? `${item.dispatchName || `Dispatch Centre ${item.dispatchId}`} · ` : '';
@@ -38633,6 +38646,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const normalised = value ? String(Number(value)) : '';
         if (state.dispatchRecruitment.personnelDesired === normalised) return true;
         state.dispatchRecruitment.personnelDesired = normalised;
+        dispatchRecruitmentRuntime.matchingBuildingIds.clear();
         resetDispatchRecruitmentResults();
         saveState();
         return true;
@@ -38768,6 +38782,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         if (setting === 'dispatch-recruitment-hiring-phase') {
             state.dispatchRecruitment.hiringPhase = DISPATCH_RECRUITMENT_HIRING_PHASE_OPTIONS.includes(String(target.value)) ? String(target.value) : '3';
+            dispatchRecruitmentRuntime.matchingBuildingIds.clear();
             resetDispatchRecruitmentResults();
             saveState(); updateUI();
             showToast(`Hiring Phase: ${dispatchRecruitmentPhaseLabel(state.dispatchRecruitment.hiringPhase)}`);
@@ -40002,8 +40017,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         };
         runBootAttempt();
     }
-    function registerBootMaintenanceTasks() {
-        runtimeRegisterTask('ui-integrity', 2500, () => { if (!document.hidden) return ensureUi(); }, { intervalResolver: () => document.hidden ? 30000 : 2500, economyIntervalMs: 5000, economyIntervalResolver: () => document.hidden ? 30000 : 5000 });
+    function registerBootMaintenanceTasks({ uiOnly = false } = {}) {
+        runtimeRegisterTask('ui-integrity', 2500, () => {
+            if (document.hidden) return;
+            if (!commandExperienceElement(SCRIPT.controlId) || !commandExperienceElement(SCRIPT.styleId)) return recoverToolkitCommandShell();
+            runBootIntegration('clean-mode recovery control', createCleanExit);
+            return ensureUi();
+        }, { intervalResolver: () => document.hidden ? 30000 : 2500, economyIntervalMs: 5000, economyIntervalResolver: () => document.hidden ? 30000 : 5000 });
+        if (uiOnly) return;
         runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
             if (!vehicleDataNeeded()) return;
             installRadioMessageHook();
@@ -40322,10 +40343,12 @@ Credits only. Each station and native action will be fetched again, purchased on
         }, Math.min(1200, STARTUP_IDLE_TIMEOUT_MS));
     }
 
-    if (document.readyState === 'loading') {
-        runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
-    } else {
-        scheduleBoot();
+    function recoverToolkitCommandShell() {
+        if (runtime.destroyed || !toolkitCommandShellRouteEligible(document)) return false;
+        installMainStyles();
+        applyRootAttributes();
+        runBootIntegration('clean-mode recovery control', createCleanExit);
+        return Boolean(runBootIntegration('command-shell recovery', ensureUi));
     }
 
     // <mcms-alliance-member-manager>
@@ -41130,4 +41153,24 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
     }
     // </mcms-alliance-member-manager>
+
+    // Issue #766: a working runtime is not destroyed until this replacement bundle has
+    // evaluated its complete command-shell and Alliance Member Manager implementation.
+    claimToolkitRuntime();
+    if (runtimeUpgradeHandoff) {
+        removeOldInstances();
+        try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+        installMainStyles();
+        applyRootAttributes();
+    }
+    runtime.recoverUi = recoverToolkitCommandShell;
+
+    registerBootMaintenanceTasks({ uiOnly: true });
+    if (document.readyState === 'loading') {
+        runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
+    } else if (runtimeUpgradeHandoff) {
+        runBootIntegration('replacement boot', boot);
+    } else {
+        scheduleBoot();
+    }
 })();

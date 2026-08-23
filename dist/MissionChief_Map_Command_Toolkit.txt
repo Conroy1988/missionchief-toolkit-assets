@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.17.0
+// @version      10.17.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.17.0';
+    const VERSION = '10.17.1';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -824,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.17.0',
+        version: '10.17.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -887,15 +887,15 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.17.0",
-        title: "Fast Map Replacement Renderer",
+        version: "10.17.1",
+        title: "Fast Map Render and HUD Repair",
         highlights: Object.freeze([
-            "Adds a session-only Fast Map control directly beside Economy Mode and loads no MapLibre code, worker or WebGL context until the player explicitly selects it.",
-            "Stops native Leaflet rendering by stopping animation, disabling handlers, detaching the exact map DOM and guarding detached marker writes while retaining MissionChief’s live data feed.",
-            "Renders buildings, personal and alliance missions and vehicles through one MapLibre WebGL canvas with clustering, incremental GeoJSON updates and native filter visibility.",
-            "Restores the exact Leaflet element, view and enabled handlers on exit, cancellation, route teardown, Drawing, Coverage or a fatal WebGL, worker or style failure.",
-            "Pins MapLibre 5.24.0 to an exact byte length and SHA-256 and evaluates it only after verification through its tested browser UMD export path.",
-            "Adds contained Desktop, Tablet and iOS controls, live renderer diagnostics and permanent proofs for native Fire filtering, live mission changes, 5,009-point scale, one 1,000-vehicle diff and zero detached Leaflet marker writes."
+            "Replaces the inherited Leaflet raster-tile bridge with OpenFreeMap’s MapLibre-native vector style, removing the blank-grey-map failure shown in the live report.",
+            "Adds a positive activation gate: the base vector source, four operational GeoJSON sources and their WebGL layers must mount and reach an idle render before Fast Map reports ACTIVE.",
+            "Restores the exact native MissionChief Leaflet map when the replacement style is unavailable, incomplete or outside the startup safety timeout.",
+            "Moves the Fast Map health, metrics, zoom and Native controls from the obstructed bottom edge to the clear top-centre map area on Desktop, Tablet and iOS.",
+            "Keeps OpenStreetMap and OpenFreeMap attribution visible directly beneath the relocated controls.",
+            "Extends the static and live Dev Lab contracts with base-map readiness, provider ownership and relocated-attribution assertions, and verifies the exact MapLibre 5.24.0 browser path against the production OpenFreeMap style."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1915,8 +1915,12 @@ try {
         engineSha256: '45a9b07a9189ce56054c620a947ccf41e291e58c95e9b61533b740aaa65ee5cb',
         engineBytes: 1056837,
         engineMaxBytes: 1100000,
+        baseStyleUrl: 'https://tiles.openfreemap.org/styles/bright',
+        baseSourceId: 'openmaptiles',
+        minZoom: 1,
+        maxZoom: 20,
         requestTimeoutMs: 20000,
-        readyTimeoutMs: 12000,
+        readyTimeoutMs: 20000,
         syncVisibleMs: 750,
         syncHiddenMs: 3000,
         sourceIds: Object.freeze({
@@ -2384,7 +2388,6 @@ try {
         errorCount: 0,
         activatedAt: 0,
         lastSyncAt: 0,
-        attribution: 'Map data',
     };
     const fastMapManagedTimeout = runtimeSetTimeout;
     const fastMapManagedAnimationFrame = runtimeRequestAnimationFrame;
@@ -10201,7 +10204,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }.mcms-fast-map .maplibregl-canvas-container.maplibregl-interactive { cursor:grab !important; user-select:none !important; -webkit-user-select:none !important;
         }.mcms-fast-map .maplibregl-canvas-container.maplibregl-interactive:active { cursor:grabbing !important;
         }#${SCRIPT.fastMapHudId} {
-            position:absolute !important; z-index:2147483200 !important; left:50% !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; transform:translateX(-50%) !important;
+            position:absolute !important; z-index:2147483200 !important; left:50% !important; top:calc(8px + env(safe-area-inset-top)) !important; bottom:auto !important; transform:translateX(-50%) !important;
             display:grid !important; grid-template-columns:minmax(0,auto) minmax(120px,1fr) auto !important; align-items:center !important; gap:9px !important;
             width:max-content !important; max-width:min(720px,calc(100% - 18px)) !important; min-height:42px !important; padding:6px 7px 6px 10px !important;
             overflow:hidden !important; border:1px solid rgba(112,216,255,.62) !important; border-radius:12px !important;
@@ -10216,11 +10219,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }#${SCRIPT.fastMapHudId} .mcms-fast-map-actions { display:flex !important; gap:4px !important; min-width:0 !important;
         }#${SCRIPT.fastMapHudId} button { min-width:30px !important; height:30px !important; padding:0 8px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:8px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font-size:11px !important; font-weight:900 !important; white-space:nowrap !important;
         }#${SCRIPT.fastMapHudId} button:is(:hover,:focus-visible) { border-color:#75d9ff !important; background:rgba(42,142,188,.34) !important; outline:none !important;
-        }.mcms-fast-map-attribution { position:absolute !important; z-index:2147483100 !important; right:5px !important; bottom:3px !important; max-width:42% !important; padding:1px 4px !important; overflow:hidden !important; border-radius:4px !important; background:rgba(255,255,255,.82) !important; color:#24333b !important; font:600 7px/1.2 system-ui,sans-serif !important; text-overflow:ellipsis !important; white-space:nowrap !important; pointer-events:auto !important;
-        }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} { grid-template-columns:minmax(0,1fr) auto !important; gap:6px !important; bottom:max(5px,env(safe-area-inset-bottom)) !important; width:calc(100% - 10px) !important; max-width:calc(100% - 10px) !important; min-height:40px !important; padding:5px 6px !important; border-radius:10px !important;
+        }.mcms-fast-map-attribution { position:absolute !important; z-index:2147483100 !important; left:50% !important; top:calc(58px + env(safe-area-inset-top)) !important; right:auto !important; bottom:auto !important; transform:translateX(-50%) !important; max-width:min(460px,calc(100% - 12px)) !important; padding:2px 5px !important; overflow:hidden !important; border-radius:4px !important; background:rgba(255,255,255,.88) !important; color:#24333b !important; font:600 7px/1.2 system-ui,sans-serif !important; text-overflow:ellipsis !important; white-space:nowrap !important; pointer-events:auto !important;
+        }.mcms-fast-map-attribution a { color:#24333b !important; text-decoration:none !important;
+        }.mcms-fast-map-attribution a:is(:hover,:focus-visible) { text-decoration:underline !important; outline:none !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} { grid-template-columns:minmax(0,1fr) auto !important; gap:6px !important; top:calc(5px + env(safe-area-inset-top)) !important; bottom:auto !important; width:calc(100% - 10px) !important; max-width:calc(100% - 10px) !important; min-height:40px !important; padding:5px 6px !important; border-radius:10px !important;
         }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} .mcms-fast-map-brand { display:none !important;
         }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} button { min-width:32px !important; height:32px !important; padding:0 7px !important;
-        }html[data-mcms-mobile-active="true"] .mcms-fast-map-attribution { bottom:50px !important; max-width:65% !important;
+        }html[data-mcms-mobile-active="true"] .mcms-fast-map-attribution { top:calc(50px + env(safe-area-inset-top)) !important; bottom:auto !important; max-width:calc(100% - 12px) !important;
         }@media (prefers-reduced-motion:reduce) { .mcms-fast-map *, #${SCRIPT.controlId} .mcms-fast-map-btn { animation:none !important; transition:none !important; }
         }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} { grid-template-columns:109px minmax(0,1fr) !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row { grid-area:menu !important; width:109px !important; gap:5px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell { grid-area:auto !important; width:52px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-economy-btn { width:52px !important; height:48px !important; border-radius:13px !important; }html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {
             width:109px !important; max-width:109px !important; grid-template-columns:109px !important; grid-template-areas:"menu" !important;
@@ -23564,48 +23569,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
     }
 
-    function fastMapPlainAttribution(value) {
-        const wrapper = document.createElement('div');
-        setInnerHtmlIfChanged(wrapper, String(value || ''));
-        return String(wrapper.textContent || '').replace(/\s+/gu, ' ').trim().slice(0, 180);
-    }
-
-    function fastMapTileTemplate(value) {
-        let url = String(value || '').trim();
-        if (!url || !url.includes('{z}') || !url.includes('{x}') || !url.includes('{y}') || url.includes('{-y}')) return '';
-        url = url.replaceAll('{s}', 'a').replaceAll('{r}', '');
-        if (url.startsWith('//')) url = `${location.protocol}${url}`;
-        else if (url.startsWith('/')) url = `${location.origin}${url}`;
-        if (location.protocol === 'https:' && url.startsWith('http:')) url = `https:${url.slice(5)}`;
-        return /^https?:\/\//iu.test(url) ? url : '';
-    }
-
-    function fastMapBaseTiles(map) {
-        let selected = null;
-        try {
-        map?.eachLayer?.(layer => {
-            if (selected) return;
-            const template = fastMapTileTemplate(layer?._url ?? layer?.options?.url);
-            if (!template || typeof layer?.getTileUrl !== 'function') return;
-            const tileSizeValue = Number(layer?.options?.tileSize?.x ?? layer?.options?.tileSize);
-            selected = {
-            url: template,
-            tileSize: [256, 512].includes(tileSizeValue) ? tileSizeValue : 256,
-            minzoom: Math.max(0, Number(layer?.options?.minZoom) || 0),
-            maxzoom: Math.min(22, Math.max(1, Number(layer?.options?.maxZoom) || 19)),
-            attribution: fastMapPlainAttribution(layer?.options?.attribution) || 'MissionChief map data'
-            };
-        });
-        } catch (err) {}
-        return selected || {
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        tileSize: 256,
-        minzoom: 0,
-        maxzoom: 19,
-        attribution: '© OpenStreetMap contributors'
-        };
-    }
-
     function fastMapFeatureCollection(features = []) {
         return { type: 'FeatureCollection', features: Array.from(features || []) };
     }
@@ -23619,24 +23582,19 @@ Credits only. Each station and native action will be fetched again, purchased on
         };
     }
 
-    function fastMapStyle(tileSource, collections) {
+    function fastMapOperationalSources(collections) {
         const ids = FAST_MAP.sourceIds;
-        return {
-        version: 8,
-        sources: {
-            'mcms-fast-base': {
-            type: 'raster', tiles: [tileSource.url], tileSize: tileSource.tileSize,
-            minzoom: tileSource.minzoom, maxzoom: tileSource.maxzoom,
-            attribution: tileSource.attribution
-            },
-            [ids.buildings]: fastMapSourceSpecification(collections[ids.buildings], true),
-            [ids.allianceMissions]: fastMapSourceSpecification(collections[ids.allianceMissions], true),
-            [ids.personalMissions]: fastMapSourceSpecification(collections[ids.personalMissions], false),
-            [ids.vehicles]: fastMapSourceSpecification(collections[ids.vehicles], false)
-        },
-        layers: [
-            { id: 'mcms-fast-background', type: 'background', paint: { 'background-color': '#c9d0c9' } },
-            { id: 'mcms-fast-base', type: 'raster', source: 'mcms-fast-base', paint: { 'raster-fade-duration': 0 } },
+        return [
+            [ids.buildings, fastMapSourceSpecification(collections[ids.buildings], true)],
+            [ids.allianceMissions, fastMapSourceSpecification(collections[ids.allianceMissions], true)],
+            [ids.personalMissions, fastMapSourceSpecification(collections[ids.personalMissions], false)],
+            [ids.vehicles, fastMapSourceSpecification(collections[ids.vehicles], false)]
+        ];
+    }
+
+    function fastMapOperationalLayers() {
+        const ids = FAST_MAP.sourceIds;
+        return [
             { id: 'mcms-fast-building-clusters', type: 'circle', source: ids.buildings, filter: ['has', 'point_count'], paint: {
             'circle-color': '#53616e', 'circle-opacity': 0.86, 'circle-stroke-color': '#f5fbff', 'circle-stroke-width': 1.5,
             'circle-radius': ['step', ['get', 'point_count'], 9, 50, 13, 250, 17]
@@ -23661,8 +23619,24 @@ Credits only. Each station and native action will be fetched again, purchased on
             'circle-color': ['get', 'colour'], 'circle-opacity': 0.96, 'circle-stroke-color': '#e7f5ff', 'circle-stroke-width': 1.2,
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 14, 6.5]
             } }
-        ]
-        };
+        ];
+    }
+
+    function fastMapInstallOperationalLayers(map, collections) {
+        const baseStyle = map.getStyle?.();
+        const baseLayers = Array.isArray(baseStyle?.layers) ? baseStyle.layers : [];
+        if (!map.getSource?.(FAST_MAP.baseSourceId) || !baseLayers.some(layer => layer?.source === FAST_MAP.baseSourceId)) {
+        throw new Error('Fast Map base style did not expose its validated vector source.');
+        }
+        for (const [sourceId, specification] of fastMapOperationalSources(collections)) map.addSource(sourceId, specification);
+        for (const layer of fastMapOperationalLayers()) map.addLayer(layer);
+        for (const sourceId of Object.values(FAST_MAP.sourceIds)) {
+        if (!map.getSource?.(sourceId)) throw new Error(`Fast Map operational source ${sourceId} did not mount.`);
+        }
+        for (const layerId of [...fastMapPointLayerIds(), ...fastMapClusterLayerSources().keys()]) {
+        if (!map.getLayer?.(layerId)) throw new Error(`Fast Map operational layer ${layerId} did not mount.`);
+        }
+        return true;
     }
 
     function fastMapPointLayerIds() {
@@ -23679,16 +23653,15 @@ Credits only. Each station and native action will be fetched again, purchased on
     function createMapLibreFastMapAdapter(library, config) {
         let map = null;
         let removed = false;
-        const tileSource = config.tileSource;
-        const style = fastMapStyle(tileSource, config.collections);
+        let baseMapReady = false;
         try {
         map = new library.Map({
             container: config.container,
-            style,
+            style: FAST_MAP.baseStyleUrl,
             center: [config.view.lng, config.view.lat],
             zoom: config.view.zoom,
-            minZoom: tileSource.minzoom,
-            maxZoom: tileSource.maxzoom,
+            minZoom: FAST_MAP.minZoom,
+            maxZoom: FAST_MAP.maxZoom,
             attributionControl: false,
             antialias: false,
             fadeDuration: 0,
@@ -23705,8 +23678,23 @@ Credits only. Each station and native action will be fetched again, purchased on
         const clusterLayers = fastMapClusterLayerSources();
         let movementStartedAt = 0;
         let movementFrames = 0;
+        let readySettled = false;
+        let readyTimer = null;
+        let resolveReady = null;
+        let rejectReady = null;
+        let startupBaseError = null;
         const clock = () => Number(pageWindow.performance?.now?.()) || Date.now();
-        const onError = event => config.onError?.(event?.error || new Error('MapLibre reported a rendering error.'));
+        const settleReady = error => {
+        if (readySettled) return;
+        readySettled = true;
+        runtimeClearTimeout(readyTimer);
+        if (error) rejectReady?.(error); else resolveReady?.(true);
+        };
+        const onError = event => {
+        const error = event?.error instanceof Error ? event.error : new Error(String(event?.error || 'MapLibre reported a rendering error.'));
+        if (!readySettled && String(event?.sourceId || '') === FAST_MAP.baseSourceId) startupBaseError = error;
+        config.onError?.(error);
+        };
         const onMoveStart = event => {
         movementStartedAt = clock();
         movementFrames = 0;
@@ -23726,16 +23714,16 @@ Credits only. Each station and native action will be fetched again, purchased on
         map.on('moveend', onMoveEnd);
 
         const ready = new Promise((resolve, reject) => {
-        let settled = false;
-        const timer = fastMapManagedTimeout(() => {
-            if (settled) return;
-            settled = true;
-            reject(new Error('Fast Map did not become ready before its safety timeout.'));
-        }, FAST_MAP.readyTimeoutMs);
+        resolveReady = resolve;
+        rejectReady = reject;
+        readyTimer = fastMapManagedTimeout(() => settleReady(new Error('Fast Map base style did not become ready before its safety timeout.')), FAST_MAP.readyTimeoutMs);
         map.once('load', () => {
-            if (settled || removed) return;
-            settled = true;
-            runtimeClearTimeout(timer);
+            if (readySettled || removed) return;
+            try { fastMapInstallOperationalLayers(map, config.collections); }
+            catch (error) {
+            settleReady(error instanceof Error ? error : new Error('Fast Map operational layers could not be mounted.'));
+            return;
+            }
             try { map.touchZoomRotate?.disableRotation?.(); } catch (err) {}
             for (const layerId of fastMapPointLayerIds()) {
             map.on('click', layerId, event => {
@@ -23762,7 +23750,21 @@ Credits only. Each station and native action will be fetched again, purchased on
             const original = event?.originalEvent;
             config.onContextMenu?.({ x: Number(original?.clientX), y: Number(original?.clientY) }, original);
             });
-            resolve(true);
+            map.once('idle', () => {
+            if (readySettled || removed) return;
+            try {
+                const sourceLoaded = map.isSourceLoaded?.(FAST_MAP.baseSourceId) === true;
+                if (!sourceLoaded || startupBaseError) {
+                const detail = startupBaseError?.message ? ` ${startupBaseError.message}` : '';
+                throw new Error(`Fast Map base style loaded without usable map data.${detail}`.trim());
+                }
+                baseMapReady = true;
+                settleReady(null);
+            } catch (error) {
+                settleReady(error instanceof Error ? error : new Error('Fast Map base style validation failed.'));
+            }
+            });
+            try { map.triggerRepaint?.(); } catch (err) {}
         });
         });
 
@@ -23789,8 +23791,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             map.setPaintProperty('mcms-fast-buildings', 'circle-opacity', buildingOpacity);
             map.setPaintProperty('mcms-fast-building-clusters', 'circle-opacity', focus ? 0.22 : 0.86);
             map.setPaintProperty('mcms-fast-vehicles', 'circle-opacity', vehicleOpacity);
-            map.setPaintProperty('mcms-fast-base', 'raster-contrast', presentation.roadPriority ? 0.28 : 0);
-            map.setPaintProperty('mcms-fast-base', 'raster-saturation', presentation.roadPriority ? -0.35 : 0);
             } catch (err) { return false; }
             return true;
         },
@@ -23805,10 +23805,13 @@ Credits only. Each station and native action will be fetched again, purchased on
             return true;
         },
         resize() { try { map.resize(); return true; } catch (err) { return false; } },
+        isBaseMapReady() { return baseMapReady && map.isStyleLoaded?.() === true; },
         getRendererCount() { return config.container.querySelectorAll('canvas.maplibregl-canvas, canvas').length; },
         destroy() {
             if (removed) return;
             removed = true;
+            baseMapReady = false;
+            if (!readySettled) settleReady(new Error('Fast Map startup was cancelled.'));
             try { map.off('error', onError); map.off('movestart', onMoveStart); map.off('render', onRender); map.off('moveend', onMoveEnd); } catch (err) {}
             try { map.remove(); } catch (err) {}
         }
@@ -24191,7 +24194,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             <button type="button" data-fast-map-exit title="Restore MissionChief native map">Native</button>
             </span>
         </div>
-        <a class="mcms-fast-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">${escapeHtml(fastMapRuntime.attribution)}</a>`);
+        <span class="mcms-fast-map-attribution" aria-label="Fast Map data attribution">
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+            <span aria-hidden="true"> · </span>
+            <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>
+        </span>`);
         const rect = nativeElement.getBoundingClientRect?.();
         if (Number(rect?.height) > 0) shell.style.minHeight = `${Math.round(rect.height)}px`;
         shell.onclick = event => {
@@ -24331,6 +24338,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         errors: fastMapRuntime.errorCount,
         engineVersion: FAST_MAP.engineVersion,
         engineLoaded: Boolean(fastMapRuntime.engineLibrary || fastMapDevelopmentEngineFactory()),
+        baseMapReady: Boolean(fastMapRuntime.adapter?.isBaseMapReady?.()),
         error: fastMapRuntime.error
         };
     }
@@ -24385,8 +24393,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         const initialView = { lat: Number(nativeMap.getCenter()?.lat), lng: Number(nativeMap.getCenter()?.lng), zoom: Number(nativeMap.getZoom?.()) };
         if (![initialView.lat, initialView.lng, initialView.zoom].every(Number.isFinite)) throw new Error('MissionChief native map view was invalid.');
-        const tileSource = fastMapBaseTiles(nativeMap);
-        fastMapRuntime.attribution = tileSource.attribution;
         const snapshot = fastMapDataSnapshot(nativeMap);
         fastMapAdoptInitialSnapshot(snapshot);
         setFastMapPhase('starting');
@@ -24396,7 +24402,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         const config = {
             container: surface,
             view: initialView,
-            tileSource,
             collections: snapshot.collections,
             onFeature: fastMapOpenReference,
             onFps: fps => { fastMapRuntime.lastRenderFps = Number(fps) || 0; updateFastMapHud(); },

@@ -29,11 +29,21 @@ for fragment, message in [
     ("The only evaluated bytes are the exact, pinned SHA-256 payload above.", "verified-evaluation boundary is undocumented"),
     ("Function('module', 'exports', 'define'", "the verified UMD evaluation does not shadow CommonJS and AMD loaders"),
     ("library = evaluate(undefined, undefined, undefined);", "the pinned UMD bundle is not forced through its browser export path"),
+    ("baseStyleUrl: 'https://tiles.openfreemap.org/styles/bright'", "the MapLibre-native base style is not fixed to OpenFreeMap"),
+    ("style: FAST_MAP.baseStyleUrl", "MapLibre does not own its base-style request"),
+    ("fastMapInstallOperationalLayers(map, config.collections)", "operational layers are not mounted after the base style loads"),
+    ("map.once('idle'", "Fast Map does not wait for a completed render before activation"),
+    ("map.isSourceLoaded?.(FAST_MAP.baseSourceId) === true", "Fast Map does not positively validate its vector source"),
+    ("baseMapReady: Boolean(fastMapRuntime.adapter?.isBaseMapReady?.())", "base-map readiness is missing from diagnostics"),
     ("promoteId: 'ref'", "GeoJSON features do not have stable IDs"),
     ("typeof source.updateData === 'function'", "partial GeoJSON updates are not preferred"),
     ("cluster: true", "large static sources are not clustered"),
 ]:
     require(fragment, message)
+
+for forbidden in ["function fastMapBaseTiles(", "function fastMapTileTemplate(", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"]:
+    if forbidden in SOURCE:
+        raise AssertionError(f"Fast Map must not inherit or fall back to browser raster tiles: {forbidden}")
 
 if "new library.Marker" in SOURCE or "new maplibregl.Marker" in SOURCE:
     raise AssertionError("Fast Map must use WebGL source layers, not per-point DOM Marker objects")
@@ -81,6 +91,9 @@ for fragment, message in [
 for css_fragment, message in [
     (".mcms-fast-map-btn .mcms-float-label { min-width:0", "Fast Map button lacks text containment"),
     ("max-width:min(720px,calc(100% - 18px))", "Fast Map metrics HUD lacks a viewport width cap"),
+    ("top:calc(8px + env(safe-area-inset-top))", "Fast Map HUD is not anchored above MissionChief's bottom UI"),
+    ("bottom:auto", "Fast Map HUD does not explicitly release its old bottom anchor"),
+    ("top:calc(58px + env(safe-area-inset-top))", "Fast Map attribution is not kept with the relocated HUD"),
     ("text-overflow:ellipsis", "Fast Map text lacks overflow protection"),
     ('html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId}', "Fast Map HUD lacks an iOS layout"),
 ]:
@@ -93,6 +106,7 @@ for device in ["desktop", "tablet", "ios"]:
 for assertion in [
     "connectedLeafletPanes, 0",
     "connectedRenderers, 1",
+    "active.baseMapReady, true",
     "restoration did not return the exact original map node",
     "forced startup failure",
     "startup cancellation",
@@ -106,4 +120,4 @@ for assertion in [
     if assertion not in runtime_test:
         raise AssertionError(f"Fast Map runtime proof is missing: {assertion}")
 
-print("Fast Map contract pins and verifies MapLibre, remains opt-in/session-only, suspends Leaflet rendering, contains text, and proves exact rollback across all layouts.")
+print("Fast Map contract pins and verifies MapLibre, owns a validated vector base style, clears MissionChief's bottom UI, remains session-only, and proves exact rollback across all layouts.")

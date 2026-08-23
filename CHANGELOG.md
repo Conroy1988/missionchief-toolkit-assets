@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.17.1] - 2026-08-23
+
+### Fast Map Render and HUD Repair
+
+- Replaces the inherited Leaflet raster-tile bridge with OpenFreeMap’s MapLibre-native vector style, removing the blank-grey-map failure shown in the live report.
+- Adds a positive activation gate: the base vector source, four operational GeoJSON sources and their WebGL layers must mount and reach an idle render before Fast Map reports ACTIVE.
+- Restores the exact native MissionChief Leaflet map when the replacement style is unavailable, incomplete or outside the startup safety timeout.
+- Moves the Fast Map health, metrics, zoom and Native controls from the obstructed bottom edge to the clear top-centre map area on Desktop, Tablet and iOS.
+- Keeps OpenStreetMap and OpenFreeMap attribution visible directly beneath the relocated controls.
+- Extends the static and live Dev Lab contracts with base-map readiness, provider ownership and relocated-attribution assertions, and verifies the exact MapLibre 5.24.0 browser path against the production OpenFreeMap style.
+
 ## [10.17.0] - 2026-08-23
 
 ### Fast Map Replacement Renderer

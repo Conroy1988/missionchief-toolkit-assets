@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.17.2] - 2026-08-23
+
+### Fast Map Marker and Route Restoration
+
+- Restores MissionChief’s building, mission and vehicle pictures in Fast Map by bridging the active native Leaflet icon URL, size and current vehicle graphic into MapLibre symbol layers.
+- Deduplicates shared graphics into a bounded-concurrency sprite loader with same-origin/CORS loading, an approved MissionChief-storage fallback, byte and dimension limits, and per-image fallback isolation.
+- Retains the lightweight coloured point beneath each marker so an unavailable custom image cannot break the rest of Fast Map.
+- Restores MissionChief’s red vehicle destination lines from each active vehicle marker’s native `polyline`, including waypoint progress and automatic removal when the native route disappears.
+- Adds a fifth stable-ID GeoJSON source for vehicle routes while preserving clustering, native visibility filters, feature clicks, incremental updates and exact Leaflet rollback.
+- Extends the Desktop, Tablet, iOS and 5,000-vehicle runtime contract with native image descriptors, live image additions and in-place route-geometry updates.
+
 ## [10.17.1] - 2026-08-23
 
 ### Fast Map Render and HUD Repair

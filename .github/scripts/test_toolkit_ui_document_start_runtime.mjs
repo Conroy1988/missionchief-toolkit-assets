@@ -195,7 +195,7 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
   window.addEventListener("unhandledrejection", event => runtimeErrors.push(String(event.reason?.stack || event.reason)));
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
     setupWizard: { completed: true, schema: 1 },
-    updateBriefing: { enabled: false, seenVersion: "10.17.1", seenFeatures: [] },
+    updateBriefing: { enabled: false, seenVersion: "10.17.2", seenFeatures: [] },
     tabletMode: device === "tablet" ? "on" : "off",
     mobileMode: device === "ios" ? "on" : "off",
     cleanMode,
@@ -270,7 +270,7 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
   );
   assert.equal(control.parentElement, initialMap, `${device}: launcher did not mount into the canonical map`);
   assert.ok(document.getElementById(STYLE_ID), `${device}: main stylesheet is missing`);
-  assert.equal(window[RUNTIME_KEY]?.version, "10.17.1", `${device}: wrong active runtime`);
+  assert.equal(window[RUNTIME_KEY]?.version, "10.17.2", `${device}: wrong active runtime`);
   assert.equal(window[RUNTIME_KEY]?.destroyed, false, `${device}: runtime was destroyed during boot`);
   let panel = null;
   if (cleanMode) {
@@ -319,7 +319,7 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
   dom.window.close();
 }
 
-assert.match(source, /^\/\/ @version\s+10\.17\.1$/mu);
+assert.match(source, /^\/\/ @version\s+10\.17\.2$/mu);
 for (const device of ["desktop", "tablet", "ios"]) await scenario(device);
 await scenario("desktop", { cleanMode: true });
 await scenario("desktop", { fatalApplication: true });

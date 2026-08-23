@@ -81,8 +81,8 @@ async function exerciseDevice(device, deep = false) {
   assert.equal(active.connectedRenderers, 1, `${device}: Fast Map must mount exactly one renderer`);
   assert.equal(active.adapterRenderers, 1, `${device}: adapter reported more than one renderer`);
   assert.equal(active.baseMapReady, true, `${device}: Fast Map became active before its base map was ready`);
-  assert.equal(JSON.stringify(active.featureCounts), JSON.stringify({ buildings: 4, allianceMissions: 1, personalMissions: 1, vehicles: 3 }), `${device}: live MissionChief marker bridge lost data`);
-  assert.equal(active.totalFeatures, 9, `${device}: unexpected Fast Map point total`);
+  assert.equal(JSON.stringify(active.featureCounts), JSON.stringify({ buildings: 4, allianceMissions: 1, personalMissions: 1, vehicles: 3, vehicleRoutes: 1 }), `${device}: live MissionChief marker bridge lost data`);
+  assert.equal(active.totalFeatures, 10, `${device}: unexpected Fast Map feature total`);
   assert.ok(nativeMap._handlers.every(handler => !handler.enabled()), `${device}: native Leaflet interaction handlers are still running`);
   assert.ok(nativeMap.stopCalls >= 1, `${device}: native Leaflet animations were not stopped`);
   assert.ok(window.document.getElementById("map").contains(window.document.getElementById("mc-map-command-toolkit-control")), `${device}: Fast Map lost its own off switch`);
@@ -100,6 +100,18 @@ async function exerciseDevice(device, deep = false) {
   }, `${device}: live vehicle movement did not reach the Fast Map source`);
 
   const adapter = window.__MCMS_FAST_MAP_TEST_ENGINE_STATE__.adapters.at(-1);
+  const bridgedPoints = ["mcms-fast-buildings", "mcms-fast-alliance-missions", "mcms-fast-personal-missions", "mcms-fast-vehicles"]
+    .flatMap(sourceId => adapter.sourceFeatures(sourceId));
+  assert.ok(bridgedPoints.every(feature => feature.properties?.iconKey), `${device}: native building, mission, or vehicle images were replaced by fallback dots`);
+  for (const feature of bridgedPoints) {
+    const descriptor = adapter.imageDescriptor(feature.properties.iconKey);
+    assert.ok(descriptor?.url && descriptor.width > 0 && descriptor.height > 0, `${device}: marker image descriptor is incomplete`);
+  }
+  assert.equal(active.markerImages?.available, 8, `${device}: native marker images were not deduplicated into the Fast Map sprite bridge`);
+  const routeFeature = adapter.sourceFeatures("mcms-fast-vehicle-routes").find(feature => feature.properties?.recordId === "702");
+  assert.equal(routeFeature?.geometry?.type, "LineString", `${device}: active vehicle destination route was not bridged`);
+  assert.equal(JSON.stringify(routeFeature?.geometry?.coordinates?.at(-1)), JSON.stringify([-3.061, 55.998]), `${device}: vehicle destination route lost its final waypoint`);
+
   adapter.triggerFeature("mission:1001");
   assert.equal(window.__MCMS_LAST_LIGHTBOX__, "/missions/1001", `${device}: Fast Map mission click did not use MissionChief's native mission route`);
 
@@ -124,7 +136,10 @@ async function exerciseDevice(device, deep = false) {
       `${device}: restored native Fire stations did not return to the Fast Map source`,
     );
 
-    const liveMission = window.L.marker({ lat: 55.86, lng: -3.08 });
+    const liveMission = window.L.marker(
+      { lat: 55.86, lng: -3.08 },
+      { icon: window.L.icon({ iconUrl: "/images/fixture-mission-live.png", iconSize: [32, 37], iconAnchor: [16, 37] }) },
+    );
     Object.assign(liveMission, { mission_id: 1003, id: 1003, user_id: 1988, caption: "Live Fast Map mission" });
     liveMission.options = { ...liveMission.options, mission_id: 1003, user_id: 1988 };
     nativeMap.addLayer(liveMission);
@@ -134,6 +149,8 @@ async function exerciseDevice(device, deep = false) {
       () => adapter.sourceFeatures("mcms-fast-personal-missions").some(feature => feature.properties?.recordId === "1003"),
       `${device}: live mission added while native events were detached did not reach Fast Map`,
     );
+    const liveMissionFeature = adapter.sourceFeatures("mcms-fast-personal-missions").find(feature => feature.properties?.recordId === "1003");
+    assert.ok(adapter.imageDescriptor(liveMissionFeature?.properties?.iconKey)?.url.endsWith("/images/fixture-mission-live.png"), `${device}: a live mission image did not join the sprite bridge`);
     assert.equal(liveMission._renderWrites, 0, `${device}: newly added native mission rendered inside the parked Leaflet map`);
     nativeMap.removeLayer(liveMission);
     window.mission_markers.splice(window.mission_markers.indexOf(liveMission), 1);
@@ -235,7 +252,17 @@ async function exerciseScale() {
     { mode: "diff", remove: 0, add: 0, update: 1000 },
     "scale: movement storm rebuilt the complete vehicle source instead of applying an ID-based diff",
   );
-  assert.ok(diagnostics(window).syncMs < 1000, `scale: deterministic 5,009-point bridge exceeded the 1,000 ms safety ceiling (${diagnostics(window).syncMs.toFixed(1)} ms)`);
+  window.__MCMS_FIXTURE_VEHICLE_ROUTE__.setLatLngs([
+    { lat: 55.947, lng: -3.119 },
+    { lat: 55.979, lng: -3.083 },
+    { lat: 56.011, lng: -3.042 },
+  ]);
+  await waitFor(
+    () => adapter.sourceFeatures("mcms-fast-vehicle-routes")[0]?.geometry?.coordinates?.at(-1)?.[0] === -3.042,
+    "scale: vehicle route changed in place but the Fast Map line source did not update",
+    10000,
+  );
+  assert.ok(diagnostics(window).syncMs < 1000, `scale: deterministic 5,010-feature bridge exceeded the 1,000 ms safety ceiling (${diagnostics(window).syncMs.toFixed(1)} ms)`);
 
   window.document.querySelector(".mcms-fast-map-btn").click();
   await waitFor(() => diagnostics(window).phase === "off", "scale: native map did not restore after the large-source test");
@@ -249,4 +276,4 @@ await exerciseDevice("desktop", true);
 await exerciseDevice("tablet");
 await exerciseDevice("ios");
 await exerciseScale();
-console.log("Fast Map suspended native Leaflet rendering, bridged 5,009 live points with an incremental 1,000-vehicle update, survived failure/cancellation, restored the exact map, and fit Desktop, Tablet and iOS.");
+console.log("Fast Map suspended native Leaflet rendering, bridged marker images plus a live vehicle route across 5,010 features with an incremental 1,000-vehicle update, survived failure/cancellation, restored the exact map, and fit Desktop, Tablet and iOS.");

@@ -64,18 +64,28 @@ async function scenario(device, tab, focus = "") {
   }
   if (tab === "map") {
     const launcher = panel.querySelector('[data-toggle="buildings"]');
-    assert.ok(launcher, `${device}: native station-filter launcher missing`);
+    assert.ok(launcher, `${device}: native building-filter launcher missing`);
     launcher.click();
     const popup = await waitFor(() => {
       const element = window.document.querySelector("#mc-map-command-toolkit-building-quick-filter");
       return element && !element.hidden ? element : null;
     });
-    assert.equal(popup.querySelectorAll("[data-native-building-filter]").length, 3, `${device}: popup did not contain exactly three station filters`);
+    const buildingRows = Array.from(popup.querySelectorAll("[data-native-building-filter]"));
+    assert.equal(buildingRows.length, 30, `${device}: popup did not contain the complete popularity-ranked building catalogue`);
     assert.deepEqual(
-      Array.from(popup.querySelectorAll(".mcms-native-building-copy strong"), element => element.textContent.trim()),
-      ["Ambulance Stations", "Fire Stations", "Police Stations"],
-      `${device}: station filters changed order or label`,
+      buildingRows.slice(0, 3).map(row => row.querySelector(".mcms-native-building-copy strong")?.textContent.trim()),
+      ["Ambulance Stations", "Police Stations", "Fire Stations"],
+      `${device}: most-popular building filters changed order or label`,
     );
+    assert.equal(buildingRows.at(-1)?.querySelector(".mcms-native-building-copy strong")?.textContent.trim(), "Building Complexes", `${device}: final popularity-ranked building filter changed`);
+    assert.deepEqual(buildingRows.map(row => Number(row.dataset.popularityRank)), Array.from({ length: 30 }, (_, index) => index + 1), `${device}: popularity ranks are incomplete or out of order`);
+    assert.deepEqual(
+      Array.from(popup.querySelectorAll(".mcms-native-building-section-title"), element => element.textContent.trim()),
+      ["Most popular", "All other buildings · popularity order"],
+      `${device}: building filter sections changed`,
+    );
+    assert.equal(popup.querySelectorAll(".mcms-native-building-featured").length, 3, `${device}: the most-popular trio is not visually distinguished`);
+    assert.equal(buildingRows.filter(row => row.disabled).length, 0, `${device}: a Dev Lab building filter could not bind to its native fixture control`);
     popup.querySelector('[data-native-building-filter="fire"]').click();
     await waitFor(() => !window.document.querySelector("#filter_2").checked);
     assert.equal(popup.hidden, false, `${device}: native filter click closed the popup before multi-selection`);
@@ -94,4 +104,4 @@ async function scenario(device, tab, focus = "") {
 await scenario("desktop", "dispatch", "expansion-and-upgrade-planner");
 await scenario("tablet", "dispatch", "dispatch-recruitment");
 await scenario("ios", "map");
-console.log("Dev Lab mounted canonical source across Desktop, Tablet and iOS; native station filters supported multi-selection while page cycling retained width and produced no horizontal overflow or runtime errors.");
+console.log("Dev Lab mounted canonical source across Desktop, Tablet and iOS; complete popularity-ranked UK building filters supported multi-selection while page cycling retained width and produced no horizontal overflow or runtime errors.");

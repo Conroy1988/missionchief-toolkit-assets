@@ -45,25 +45,38 @@ function extractFunction(name) {
 const dom = new JSDOM(`<!doctype html><html><body>
   <ul id="map_filters">
     <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_22" value="22" checked> Ambulance Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_fire_small" value="firehouse_small_missions"> Fire Station (Small)</label></li>
     <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_2" value="2"> Fire Station</label></li>
     <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_6" value="6" checked> Police Station</label></li>
-    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_99" value="99"> Coastguard Station</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_hospital" value="4"> Klinik</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_coastguard" value="coastal_rescue_missions"> SAR</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_lifeboat" value="coastal_rescue"> Lifeboat Stations</label></li>
+    <li class="filter_list__element building-filter"><label><input type="checkbox" id="filter_complex" value="building_complex"> Building Complex</label></li>
     <li class="filter_list__element"><label><input type="checkbox" id="user_buildings" value="user_buildings" checked> My buildings</label></li>
   </ul>
   <div id="mcms-control"><label class="building-filter"><input type="checkbox" id="fake_fire" value="fire_station"> Fire Station</label></div>
 </body></html>`, { url: "https://www.missionchief.co.uk/", pretendToBeVisual: true });
 
 const { window } = dom;
+window.I18n = {
+  t: key => ({ "map_filters.hospital_missions": "Klinik" })[key] || `translation missing: ${key}`,
+};
 const changeCounts = new Map();
 for (const input of window.document.querySelectorAll("#map_filters input")) {
   input.addEventListener("change", () => changeCounts.set(input.id, (changeCounts.get(input.id) || 0) + 1));
 }
 
 const descriptors = Object.freeze({
-  ambulance: Object.freeze({ label: "Ambulance Stations", icon: "✚", labels: Object.freeze(["Ambulance Station", "Ambulance Stations"]), tokens: Object.freeze(["ambulance_station", "ambulance_stations"]) }),
-  fire: Object.freeze({ label: "Fire Stations", icon: "◆", labels: Object.freeze(["Fire Station", "Fire Stations"]), tokens: Object.freeze(["fire_station", "fire_stations"]) }),
-  police: Object.freeze({ label: "Police Stations", icon: "★", labels: Object.freeze(["Police Station", "Police Stations"]), tokens: Object.freeze(["police_station", "police_stations"]) }),
+  ambulance: Object.freeze({ label: "Ambulance Stations", icon: "✚", labels: Object.freeze(["Ambulance Station", "Ambulance Stations"]), tokens: Object.freeze(["ambulance_station", "ambulance_stations", "ambulance_station_missions"]), i18n: Object.freeze(["map_filters.ambulance_station_missions"]), buildingTypeIds: Object.freeze([2]), tone: "medical" }),
+  police: Object.freeze({ label: "Police Stations", icon: "★", labels: Object.freeze(["Police Station", "Police Stations"]), tokens: Object.freeze(["police_station", "police_stations", "police_station_missions"]), i18n: Object.freeze(["map_filters.police_station_missions"]), buildingTypeIds: Object.freeze([6]), tone: "police" }),
+  fire: Object.freeze({ label: "Fire Stations", icon: "◆", labels: Object.freeze(["Fire Station", "Fire Stations"]), tokens: Object.freeze(["fire_station", "fire_stations", "firehouse_missions"]), i18n: Object.freeze(["map_filters.firehouse_missions"]), buildingTypeIds: Object.freeze([0]), tone: "fire" }),
+  hospital: Object.freeze({ label: "Hospitals", icon: "H", labels: Object.freeze(["Hospital", "Hospitals"]), tokens: Object.freeze(["hospital", "hospitals", "hospital_missions"]), i18n: Object.freeze(["map_filters.hospital_missions"]), buildingTypeIds: Object.freeze([4]), tone: "medical" }),
+  fire_small: Object.freeze({ label: "Small Fire Stations", icon: "◆", labels: Object.freeze(["Fire Station (Small)", "Small Fire Station"]), tokens: Object.freeze(["fire_station_small", "firehouse_small_missions"]), i18n: Object.freeze(["map_filters.firehouse_small_missions"]), buildingTypeIds: Object.freeze([18]), tone: "fire" }),
+  coastguard_rescue: Object.freeze({ label: "Coastguard Rescue Stations", icon: "⚓", labels: Object.freeze(["Coastguard Rescue Station", "SAR"]), tokens: Object.freeze(["coastguard_rescue_station", "coastal_rescue_missions"]), i18n: Object.freeze(["map_filters.coastal_rescue_missions"]), buildingTypeIds: Object.freeze([28]), tone: "rescue" }),
+  lifeboat: Object.freeze({ label: "Lifeboat Stations", icon: "⚓", labels: Object.freeze(["Lifeboat Station", "Lifeboat Stations"]), tokens: Object.freeze(["lifeboat_station", "coastal_rescue"]), i18n: Object.freeze(["map_filters.coastal_rescue"]), buildingTypeIds: Object.freeze([27]), tone: "rescue" }),
+  building_complexes: Object.freeze({ label: "Building Complexes", icon: "▦", labels: Object.freeze(["Building Complex", "Large complex", "Small complex"]), tokens: Object.freeze(["building_complex"]), i18n: Object.freeze(["map_filters.building_complex"]), buildingTypeIds: Object.freeze([23, 24]), tone: "support" }),
 });
+const order = Object.freeze(["ambulance", "police", "fire", "hospital", "fire_small", "coastguard_rescue", "lifeboat", "building_complexes"]);
 
 const toasts = [];
 const analytics = [];
@@ -77,6 +90,7 @@ const sandbox = {
   pageWindow: window,
   SCRIPT: { controlId: "mcms-control", panelId: "mcms-panel", commandExperienceModalId: "mcms-modal", commandPaletteId: "mcms-palette" },
   NATIVE_BUILDING_QUICK_FILTERS: descriptors,
+  NATIVE_BUILDING_QUICK_FILTER_ORDER: order,
   nativeVisibilityWriteDepth: 0,
   showToast: message => toasts.push(message),
   renderNativeBuildingQuickFilterPopover: () => { renders += 1; },
@@ -98,7 +112,11 @@ const functionNames = [
   "nativeVisibilityControlState",
   "dispatchNativeVisibilityControl",
   "nativeBuildingQuickFilterDescriptor",
+  "nativeBuildingQuickFilterTranslatedLabels",
+  "nativeBuildingQuickFilterControlLabels",
+  "nativeBuildingQuickFilterTokenMatches",
   "nativeBuildingQuickFilterControlMatches",
+  "nativeBuildingQuickFilterControls",
   "findNativeBuildingQuickFilterControl",
   "nativeBuildingQuickFilterSnapshot",
   "nativeBuildingQuickFilterMarkup",
@@ -112,8 +130,13 @@ const probe = sandbox.__probe;
 
 assert.equal(probe.findNativeBuildingQuickFilterControl("ambulance")?.id, "filter_22");
 assert.equal(probe.findNativeBuildingQuickFilterControl("fire")?.id, "filter_2", "Toolkit-owned lookalike must be ignored");
+assert.equal(probe.findNativeBuildingQuickFilterControl("fire_small")?.id, "filter_fire_small", "Small station must not be claimed by the main Fire descriptor");
 assert.equal(probe.findNativeBuildingQuickFilterControl("police")?.id, "filter_6");
-assert.equal(probe.findNativeBuildingQuickFilterControl("coastguard"), null);
+assert.equal(probe.findNativeBuildingQuickFilterControl("hospital")?.id, "filter_hospital", "Live I18n labels must be accepted");
+assert.equal(probe.findNativeBuildingQuickFilterControl("coastguard_rescue")?.id, "filter_coastguard");
+assert.equal(probe.findNativeBuildingQuickFilterControl("lifeboat")?.id, "filter_lifeboat");
+assert.equal(probe.findNativeBuildingQuickFilterControl("building_complexes")?.id, "filter_complex");
+assert.equal(probe.findNativeBuildingQuickFilterControl("unknown"), null);
 assert.deepEqual(JSON.parse(JSON.stringify(probe.nativeBuildingQuickFilterSnapshot("ambulance"))), {
   available: true,
   enabled: true,
@@ -121,9 +144,14 @@ assert.deepEqual(JSON.parse(JSON.stringify(probe.nativeBuildingQuickFilterSnapsh
 }, "snapshot must report native checked state");
 
 const markup = probe.nativeBuildingQuickFilterMarkup();
-assert.equal((markup.match(/data-native-building-filter=/gu) || []).length, 3, "popup must expose exactly three service filters");
-for (const label of ["Ambulance Stations", "Fire Stations", "Police Stations"]) assert.ok(markup.includes(label), `${label} missing`);
-assert.ok(!markup.includes("Coastguard"));
+assert.equal((markup.match(/data-native-building-filter=/gu) || []).length, order.length, "popup must expose the full supplied UK catalogue");
+for (const label of ["Ambulance Stations", "Police Stations", "Fire Stations", "Hospitals", "Coastguard Rescue Stations", "Lifeboat Stations", "Building Complexes"]) assert.ok(markup.includes(label), `${label} missing`);
+assert.ok(markup.indexOf("Ambulance Stations") < markup.indexOf("Police Stations"));
+assert.ok(markup.indexOf("Police Stations") < markup.indexOf("Fire Stations"));
+assert.ok(markup.includes("Most popular"));
+assert.ok(markup.includes("All other buildings · popularity order"));
+assert.equal((markup.match(/mcms-native-building-featured/gu) || []).length, 3);
+assert.equal((markup.match(/data-popularity-rank=/gu) || []).length, order.length);
 assert.ok(!markup.includes("My buildings"));
 
 assert.equal(probe.activateNativeBuildingQuickFilter("fire"), true);
@@ -144,4 +172,4 @@ assert.equal(positions, 2);
 assert.equal(toasts.at(-1), "Station filter unavailable · use MissionChief Filters");
 
 dom.window.close();
-console.log("Native Building quick-filter runtime passed: exact three-service discovery, Toolkit exclusion, native checkbox events, state verification and no custom layer path.");
+console.log("Native Building quick-filter runtime passed: popularity order, exact main/small discovery, live translations, Toolkit exclusion, native checkbox events and no custom layer path.");

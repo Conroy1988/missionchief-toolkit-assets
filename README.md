@@ -63,7 +63,7 @@ It does not invent game actions or replace permissions. It makes MissionChief's 
 | **01 · Detect** | Incident Command Wire surfaces developing work while Mission Age and Mission Value establish urgency and scale. |
 | **02 · Understand** | MissionChief UK Knowledge Link, Unit Commitment and Operational SITREP turn a marker into actionable context. |
 | **03 · Match** | Operational Pressure Board and Procurement Brain combine live shortages with recent demand history while Vehicle Code Status, Custom Vehicle Badges and Resource Gap expose readiness and load. |
-| **04 · Command** | Native My Missions, Alliance Missions, fleet and My Buildings filter shortcuts, Quick Places, bookmarks, coverage rings and on-demand Drawing convert intent into map action. |
+| **04 · Command** | Native My Missions, Alliance Missions, fleet and complete popularity-ranked UK building filter shortcuts, Quick Places, bookmarks, coverage rings and on-demand Drawing convert intent into map action. |
 | **05 · Act safely** | Contextual Command Menus reach MissionChief's native controls; high-impact administrative work requires a fresh scan, explicit confirmation and sequential execution. |
 | **06 · Verify** | Transport outcomes, recruitment results, course starts and financial checkpoints remain visible instead of disappearing behind a click. |
 | **07 · Account** | Operational Timeline, Alliance Credits, variance preservation, payout context, Financial Archive and optional reports close the operational loop. |
@@ -74,7 +74,7 @@ It does not invent game actions or replace permissions. It makes MissionChief's 
 |---|---|
 | **Incident command** | Incident Command Wire · Mission Age · Mission Value · MissionChief UK Knowledge Link · Unit Commitment · Operational SITREP |
 | **Fleet and transport** | Operational Pressure Board · Procurement Brain · Operational Timeline · Vehicle Code Status · Custom Vehicle Badges · Resource Gap · Transport Watcher · Unit Locator & Follow Mode |
-| **Map and places** | Native personal and alliance mission filters · native vehicles and My Buildings filters · separate alliance buildings · Quick Places · smart bookmarks · coverage rings · kilometre measurement · arrows · shapes · zones · text · markers |
+| **Map and places** | Native personal and alliance mission filters · native vehicles · all 31 active UK building types in popularity order · separate alliance buildings · Quick Places · smart bookmarks · coverage rings · kilometre measurement · arrows · shapes · zones · text · markers |
 | **Administration** | Dispatch Recruitment · Station Icon Copier · Expansion & Upgrade Planner · Alliance Courses · Patient Transport Sweep · Alliance Member Manager · Alliance Buildings performance guard |
 | **Finance and accountability** | Alliance Credits · reconciliation checkpoints · variance · payout feedback · Financial Archive · explicit Discord reporting |
 
@@ -255,7 +255,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 <details>
 <summary><strong>Map command and places</strong></summary>
 
-- Buttons 1, 2 and 4 mirror MissionChief’s native My Missions, Alliance Missions and My Buildings filters without opening the filter menu
+- Buttons 1 and 2 mirror MissionChief’s native My Missions and Alliance Missions filters; button 4 opens all 31 active UK building types with Ambulance, Police and Fire first
 - Button 3 reads MissionChief’s persisted **Show vehicles on map** value, targets only the exact desktop `show_vehicle` control—not `mobile_show_vehicle`—submits its native global **Map and vehicles** form, verifies the result through the settings API and asks MissionChief’s own map routines to refresh; the Toolkit owns no separate vehicle mask
 - MissionChief’s separate Alliance Buildings toggle remains independent and untouched
 - Quick Places and Smart Bookmark Labels
@@ -326,7 +326,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 | Key | Action |
 |---|---|
 | <kbd>1</kbd> · <kbd>2</kbd> | Toggle My Missions · Toggle Alliance Missions |
-| <kbd>3</kbd> · <kbd>4</kbd> | Toggle MissionChief Vehicles · Toggle My Buildings |
+| <kbd>3</kbd> · <kbd>4</kbd> | Toggle MissionChief Vehicles · Open UK Building Filters |
 | <kbd>5</kbd> · <kbd>6</kbd> | Toggle Alliance Credits · Toggle Mission Age |
 | <kbd>V</kbd> · <kbd>B</kbd> | Vehicle Code Status · Operational Pressure Board |
 | <kbd>K</kbd> | Toolkit Command Palette |

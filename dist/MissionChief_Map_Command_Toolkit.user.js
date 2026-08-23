@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.17.3
+// @version      10.17.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.17.3';
+    const VERSION = '10.17.4';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -824,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.17.3',
+        version: '10.17.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -887,14 +887,15 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.17.3",
-        title: "Fast Map Icon Stability Hotfix",
+        version: "10.17.4",
+        title: "Complete UK Building Filters",
         highlights: Object.freeze([
-            "Keeps each last successfully decoded building, mission or vehicle picture visible while MissionChief refreshes, removes or replaces its native icon URL.",
-            "Promotes replacement sprites only after their pixels are ready, eliminating the loaded-image-to-fallback-dot flash during asynchronous refreshes.",
-            "Accepts MissionChief PNG/APNG, JPEG, GIF and WebP marker assets through a signature-verified, byte-bounded decoder before scaling them for WebGL.",
-            "Retries transient image failures with capped backoff and prunes superseded descriptors so a temporary network error or rapidly changing vehicle graphic cannot permanently blank or grow the sprite bridge.",
-            "Adds a delayed icon-churn regression across Desktop, Tablet and iOS while retaining the 5,010-feature incremental Fast Map stress proof and exact native rollback."
+            "Expands the Buildings popup from three services to every active MissionChief UK building type.",
+            "Keeps Ambulance, Police and Fire first, then lists every other building in a fixed popularity-led UK order.",
+            "Covers all 31 active UK building types through 30 native filter rows, with large and small Building Complexes sharing MissionChief's combined control.",
+            "Resolves current native labels, UK and US spellings, MissionChief filter identifiers and live I18n translations without introducing a Toolkit-owned map layer.",
+            "Scans MissionChief's native filter controls once per popup render so the expanded catalogue remains bounded on Desktop, Tablet and iOS.",
+            "Adds clear Most popular and All other buildings sections, service-colour cues, sticky section labels and safe viewport scrolling."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1700,25 +1701,78 @@ try {
     const NATIVE_VEHICLE_SETTINGS_SEED_PATHS = Object.freeze(['/settings/index', '/settings']);
     const NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT = 12;
     const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles']);
+    const defineNativeBuildingQuickFilter = (label, icon, labels, tokens, i18n, buildingTypeIds, tone) => Object.freeze({
+        label,
+        icon,
+        labels: Object.freeze(labels),
+        tokens: Object.freeze(tokens),
+        i18n: Object.freeze(i18n),
+        buildingTypeIds: Object.freeze(buildingTypeIds),
+        tone
+    });
+    const NATIVE_BUILDING_QUICK_FILTER_ORDER = Object.freeze([
+        'ambulance',
+        'police',
+        'fire',
+        'hospital',
+        'ambulance_small',
+        'fire_small',
+        'police_small',
+        'medical_helicopter',
+        'police_aviation',
+        'dispatch_center',
+        'fire_academy',
+        'medical_academy',
+        'police_training',
+        'search_rescue_hq',
+        'coastguard_rescue',
+        'lifeboat',
+        'hart_base',
+        'home_response',
+        'gp_surgery',
+        'urgent_treatment',
+        'mountain_rescue',
+        'coastal_rescue_heliport',
+        'search_rescue_college',
+        'recovery_centre',
+        'bomb_disposal',
+        'police_depot',
+        'custody_suite',
+        'prison',
+        'staging_area',
+        'building_complexes'
+    ]);
     const NATIVE_BUILDING_QUICK_FILTERS = Object.freeze({
-        ambulance: Object.freeze({
-        label: 'Ambulance Stations',
-        icon: '✚',
-        labels: Object.freeze(['Ambulance Station', 'Ambulance Stations']),
-        tokens: Object.freeze(['ambulance_station', 'ambulance_stations'])
-        }),
-        fire: Object.freeze({
-        label: 'Fire Stations',
-        icon: '◆',
-        labels: Object.freeze(['Fire Station', 'Fire Stations']),
-        tokens: Object.freeze(['fire_station', 'fire_stations'])
-        }),
-        police: Object.freeze({
-        label: 'Police Stations',
-        icon: '★',
-        labels: Object.freeze(['Police Station', 'Police Stations']),
-        tokens: Object.freeze(['police_station', 'police_stations'])
-        })
+        ambulance: defineNativeBuildingQuickFilter('Ambulance Stations', '✚', ['Ambulance Station', 'Ambulance Stations'], ['ambulance_station', 'ambulance_stations', 'ambulance_station_missions'], ['map_filters.ambulance_station_missions'], [2], 'medical'),
+        police: defineNativeBuildingQuickFilter('Police Stations', '★', ['Police Station', 'Police Stations'], ['police_station', 'police_stations', 'police_station_missions'], ['map_filters.police_station_missions'], [6], 'police'),
+        fire: defineNativeBuildingQuickFilter('Fire Stations', '◆', ['Fire Station', 'Fire Stations'], ['fire_station', 'fire_stations', 'firehouse_missions'], ['map_filters.firehouse_missions'], [0], 'fire'),
+        hospital: defineNativeBuildingQuickFilter('Hospitals', 'H', ['Hospital', 'Hospitals'], ['hospital', 'hospitals', 'hospital_missions'], ['map_filters.hospital_missions'], [4], 'medical'),
+        ambulance_small: defineNativeBuildingQuickFilter('Small Ambulance Stations', '✚', ['Ambulance Station (Small station)', 'Ambulance Station (Small)', 'Small Ambulance Station', 'Small Ambulance Stations'], ['ambulance_station_small', 'ambulance_station_small_missions'], ['map_filters.ambulance_station_small_missions'], [20], 'medical'),
+        fire_small: defineNativeBuildingQuickFilter('Small Fire Stations', '◆', ['Fire Station (Small station)', 'Fire Station (Small)', 'Small Fire Station', 'Small Fire Stations'], ['fire_station_small', 'firehouse_small_missions'], ['map_filters.firehouse_small_missions'], [18], 'fire'),
+        police_small: defineNativeBuildingQuickFilter('Small Police Stations', '★', ['Police Station (Small station)', 'Police Station (Small)', 'Small Police Station', 'Small Police Stations'], ['police_station_small', 'police_small_missions'], ['map_filters.police_small_missions'], [19], 'police'),
+        medical_helicopter: defineNativeBuildingQuickFilter('Medical Helicopter Stations', '▲', ['Medical Helicopter station', 'Medical Helicopter Station', 'Medical Helicopter Stations'], ['medical_helicopter_station', 'medical_helicopter_stations', 'rescue_copter_station_missions'], ['map_filters.rescue_copter_station_missions'], [5], 'medical'),
+        police_aviation: defineNativeBuildingQuickFilter('Police Aviation', '▲', ['Police Aviation', 'Police Aviation Station', 'Police Aviation Stations'], ['police_aviation', 'police_copter_station_missions'], ['map_filters.police_copter_station_missions'], [13], 'police'),
+        dispatch_center: defineNativeBuildingQuickFilter('Dispatch Centres', '⌁', ['Dispatch Center', 'Dispatch Centers', 'Dispatch Centre', 'Dispatch Centres'], ['dispatch_center', 'dispatch_centers', 'dispatch_centre', 'dispatch_centres', 'dispatch_center_missions'], ['map_filters.dispatch_center_missions'], [7], 'support'),
+        fire_academy: defineNativeBuildingQuickFilter('Fire Academies', 'A', ['Fire academy', 'Fire Academy', 'Fire Academies'], ['fire_academy', 'fire_academies', 'fire_school', 'fire_school_missions'], ['map_filters.fire_school_missions'], [1], 'fire'),
+        medical_academy: defineNativeBuildingQuickFilter('Medical Academies', 'A', ['Medical Academy', 'Medical Academies', 'Ambulance Academy', 'Ambulance Academies'], ['medical_academy', 'medical_academies', 'ambulance_academy', 'rescue_school', 'rescue_school_missions'], ['map_filters.rescue_school_missions'], [3], 'medical'),
+        police_training: defineNativeBuildingQuickFilter('Police Training Centres', 'A', ['Police training centre', 'Police Training Centre', 'Police Training Centres', 'Police Academy', 'Police Academies'], ['police_training_centre', 'police_training_centres', 'police_training_center', 'police_school_missions'], ['map_filters.police_school_missions'], [8], 'police'),
+        search_rescue_hq: defineNativeBuildingQuickFilter('Search and Rescue HQs', '⌖', ['Search and Rescue HQ', 'Search and Rescue HQs', 'SAR HQ', 'SAR HQs', 'USAR'], ['search_and_rescue_hq', 'search_rescue_hq', 'sar_hq', 'technical_aid', 'technical_aid_missions', 'search_and_rescue_missions'], ['map_filters.technical_aid', 'map_filters.technical_aid_missions', 'map_filters.search_and_rescue_missions'], [31], 'rescue'),
+        coastguard_rescue: defineNativeBuildingQuickFilter('Coastguard Rescue Stations', '⚓', ['Coastguard Rescue Station', 'Coastguard Rescue Stations', 'Coast Guard Rescue Station', 'SAR'], ['coastguard_rescue_station', 'coast_guard_rescue_station', 'coastal_rescue_missions'], ['map_filters.coastal_rescue_missions'], [28], 'rescue'),
+        lifeboat: defineNativeBuildingQuickFilter('Lifeboat Stations', '⚓', ['Lifeboat Station', 'Lifeboat Stations'], ['lifeboat_station', 'lifeboat_stations', 'coastal_rescue'], ['map_filters.coastal_rescue'], [27], 'rescue'),
+        hart_base: defineNativeBuildingQuickFilter('HART Bases', 'H', ['HART Base', 'HART Bases', 'Hazardous Area Response Team Base'], ['hart_base', 'hart_bases', 'hazard_response_ems', 'hazardous_area_response_team'], [], [25], 'medical'),
+        home_response: defineNativeBuildingQuickFilter('Home Response Locations', '⌂', ['Home Response Location', 'Home Response Locations'], ['home_response_location', 'home_response_locations'], [], [22], 'medical'),
+        gp_surgery: defineNativeBuildingQuickFilter('GP Surgeries', '+', ['GP Surgery', 'GP Surgeries', 'General Practitioner'], ['gp_surgery', 'gp_surgeries', 'general_practitioner'], ['map_filters.general_practitioner'], [32], 'medical'),
+        urgent_treatment: defineNativeBuildingQuickFilter('Urgent Treatment Centres', 'U', ['Urgent Treatment Center', 'Urgent Treatment Centers', 'Urgent Treatment Centre', 'Urgent Treatment Centres', 'Clinic'], ['urgent_treatment_center', 'urgent_treatment_centers', 'urgent_treatment_centre', 'clinic', 'clinic_missions'], ['map_filters.clinic_missions'], [21], 'medical'),
+        mountain_rescue: defineNativeBuildingQuickFilter('Mountain Rescue Stations', '▲', ['Mountain Rescue Station', 'Mountain Rescue Stations', 'Mountain Rescue', 'Fjellredningsstasjon', 'Fjellredning'], ['mountain_rescue_station', 'mountain_rescue_stations', 'mountain_rescue', 'mountain_rescue_missions'], ['map_filters.mountain_rescue', 'map_filters.mountain_rescue_missions'], [33], 'rescue'),
+        coastal_rescue_heliport: defineNativeBuildingQuickFilter('Coastal Rescue Heliports', 'H', ['Coastal Rescue Heliport', 'Coastal Rescue Heliports', 'Coastguard Rescue Heliport'], ['coastal_rescue_heliport', 'coastal_rescue_heliports', 'coastal_rescue_heli_port', 'water_rescue_heliport'], [], [30], 'rescue'),
+        search_rescue_college: defineNativeBuildingQuickFilter('Search and Rescue Colleges', 'A', ['Search and Rescue College', 'Search and Rescue Colleges', 'Water Rescue School'], ['search_and_rescue_college', 'search_rescue_college', 'water_rescue_school', 'water_rescue_school_missions'], [], [29], 'rescue'),
+        recovery_centre: defineNativeBuildingQuickFilter('Recovery Centres', 'R', ['Recovery Centre', 'Recovery Centres', 'Recovery Center', 'Recovery Centers'], ['recovery_centre', 'recovery_centres', 'recovery_center', 'recovery_centers', 'tow_trucks', 'tow_trucks_missions'], ['map_filters.tow_trucks', 'map_filters.tow_trucks_missions'], [34], 'support'),
+        bomb_disposal: defineNativeBuildingQuickFilter('Bomb Disposal HQs', '!', ['Bomb Disposal HQ', 'Bomb Disposal HQs', 'Bomb Disposal'], ['bomb_disposal_hq', 'bomb_disposal_hqs', 'bomb_disposal', 'bomb_disposal_missions'], ['map_filters.bomb_disposal_missions'], [35], 'police'),
+        police_depot: defineNativeBuildingQuickFilter('Large Police Depots', 'D', ['Large Police Depot', 'Large Police Depots', 'Police Depot', 'Police Depots'], ['large_police_depot', 'large_police_depots', 'police_depot'], ['map_filters.police_depot'], [26], 'police'),
+        custody_suite: defineNativeBuildingQuickFilter('Custody Suites', 'C', ['Custody Suite', 'Custody Suites'], ['custody_suite', 'custody_suites'], ['map_filters.custody_suite'], [36], 'police'),
+        prison: defineNativeBuildingQuickFilter('Prisons', 'P', ['Prison', 'Prisons'], ['prison', 'prisons', 'prison_missions'], ['map_filters.prison_missions'], [16], 'police'),
+        staging_area: defineNativeBuildingQuickFilter('Staging Areas', 'S', ['Staging area', 'Staging Area', 'Staging Areas', 'Rapid Setup Group (SEG)'], ['staging_area', 'staging_areas', 'staging_area_missions', 'rapid_deployment_group', 'rapid_setup_group_seg'], ['map_filters.staging_area_missions', 'map_filters.rapid_deployment_group'], [14], 'support'),
+        building_complexes: defineNativeBuildingQuickFilter('Building Complexes', '▦', ['Building Complex', 'Building Complexes', 'Large complex', 'Small complex'], ['building_complex', 'building_complexes', 'large_complex', 'small_complex'], ['map_filters.building_complex'], [23, 24], 'support')
     });
     const NATIVE_VISIBILITY_FILTERS = Object.freeze({
         myMissions: Object.freeze({
@@ -3865,14 +3919,18 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-head small { display:block !important; margin-top:3px !important; color:rgba(232,241,255,.68) !important; font-size:9px !important; line-height:1.35 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
         #${SCRIPT.buildingQuickFilterId} [data-native-building-close] { width:30px !important; height:30px !important; padding:0 !important; border:1px solid rgba(255,255,255,.16) !important; border-radius:9px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font:800 18px/28px system-ui,-apple-system,"Segoe UI",sans-serif !important; text-align:center !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-list { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:7px !important; min-width:0 !important; margin-top:10px !important; }
-        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { display:grid !important; grid-template-columns:36px minmax(0,1fr) minmax(50px,auto) !important; gap:8px !important; align-items:center !important; width:100% !important; min-width:0 !important; min-height:54px !important; padding:7px 8px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:11px !important; background:rgba(255,255,255,.055) !important; color:#f7faff !important; cursor:pointer !important; text-align:left !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-section-title { position:sticky !important; top:-10px !important; z-index:2 !important; margin:2px 0 0 !important; padding:7px 5px 5px !important; border-bottom:1px solid rgba(126,192,255,.18) !important; background:rgba(12,18,28,.97) !important; color:rgba(203,228,255,.72) !important; font-size:8px !important; line-height:1.2 !important; font-weight:950 !important; letter-spacing:.55px !important; text-transform:uppercase !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { display:grid !important; grid-template-columns:36px minmax(0,1fr) minmax(50px,auto) !important; gap:8px !important; align-items:center !important; width:100% !important; min-width:0 !important; min-height:50px !important; padding:6px 8px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:11px !important; background:rgba(255,255,255,.055) !important; color:#f7faff !important; cursor:pointer !important; text-align:left !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter.mcms-native-building-featured { min-height:56px !important; border-color:rgba(126,192,255,.28) !important; background:rgba(88,166,255,.085) !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter:hover { border-color:rgba(139,205,255,.62) !important; background:rgba(88,166,255,.14) !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter.mcms-on { border-color:rgba(111,222,162,.76) !important; background:rgba(34,150,94,.20) !important; box-shadow:inset 3px 0 #55d991 !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter:disabled { opacity:.55 !important; cursor:not-allowed !important; filter:saturate(.55) !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-icon { display:flex !important; align-items:center !important; justify-content:center !important; width:36px !important; height:36px !important; border-radius:10px !important; background:rgba(255,255,255,.10) !important; color:#fff !important; font-size:16px !important; line-height:1 !important; font-weight:950 !important; }
-        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter-ambulance .mcms-native-building-icon { background:rgba(39,174,96,.28) !important; color:#8ff0b8 !important; }
-        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter-fire .mcms-native-building-icon { background:rgba(231,76,60,.26) !important; color:#ffaca3 !important; }
-        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter-police .mcms-native-building-icon { background:rgba(52,152,219,.28) !important; color:#a9dcff !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-tone-medical .mcms-native-building-icon { background:rgba(39,174,96,.28) !important; color:#8ff0b8 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-tone-fire .mcms-native-building-icon { background:rgba(231,76,60,.26) !important; color:#ffaca3 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-tone-police .mcms-native-building-icon { background:rgba(52,152,219,.28) !important; color:#a9dcff !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-tone-rescue .mcms-native-building-icon { background:rgba(26,188,156,.24) !important; color:#9ff3df !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-tone-support .mcms-native-building-icon { background:rgba(155,89,182,.24) !important; color:#e0b5f3 !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy { display:block !important; min-width:0 !important; max-width:100% !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy strong { display:block !important; min-width:0 !important; color:#fff !important; font-size:11px !important; line-height:1.2 !important; font-weight:900 !important; white-space:normal !important; overflow-wrap:anywhere !important; word-break:normal !important; }
         #${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy small { display:block !important; min-width:0 !important; margin-top:3px !important; color:rgba(232,241,255,.60) !important; font-size:8px !important; line-height:1.25 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
@@ -3881,7 +3939,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.buildingQuickFilterId} p { margin:9px 1px 0 !important; color:rgba(232,241,255,.65) !important; font-size:8.5px !important; line-height:1.4 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
         #${SCRIPT.buildingQuickFilterId} button:focus-visible { outline:2px solid #84c9ff !important; outline-offset:2px !important; }
         html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.buildingQuickFilterId} { padding:11px !important; }
-        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { min-height:60px !important; padding:8px !important; }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { min-height:58px !important; padding:8px !important; }
         @media (max-width:360px) {
             #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { grid-template-columns:34px minmax(0,1fr) !important; }
             #${SCRIPT.buildingQuickFilterId} .mcms-native-building-state { grid-column:2 !important; justify-self:start !important; max-width:100% !important; }
@@ -25362,38 +25420,75 @@ Credits only. Each station and native action will be fetched again, purchased on
         return NATIVE_BUILDING_QUICK_FILTERS[String(key || '')] || null;
     }
 
+    function nativeBuildingQuickFilterTranslatedLabels(descriptor) {
+        if (!descriptor) return [];
+        const labels = new Set(descriptor.labels.map(normaliseNativeVisibilityLabel).filter(Boolean));
+        const translator = pageWindow.I18n?.t;
+        if (typeof translator === 'function') {
+        for (const key of descriptor.i18n) {
+            try {
+            const translated = String(translator.call(pageWindow.I18n, key) || '');
+            if (!/translation missing|missing translation/iu.test(translated)) labels.add(normaliseNativeVisibilityLabel(translated));
+            } catch (err) {}
+        }
+        }
+        return Array.from(labels).filter(Boolean);
+    }
+
+    function nativeBuildingQuickFilterControlLabels(control) {
+        if (!control) return [];
+        const labels = [];
+        try { Array.from(control.labels || []).forEach(label => labels.push(label.textContent)); } catch (err) {}
+        const wrapper = control.closest?.('label, li, .filter_list__item, .filter_list__element, .leaflet-control-layers-overlays > label');
+        if (wrapper) labels.push(wrapper.textContent);
+        labels.push(control.getAttribute?.('aria-label'), control.getAttribute?.('title'));
+        return Array.from(new Set(labels.map(normaliseNativeVisibilityLabel).filter(Boolean)));
+    }
+
+    function nativeBuildingQuickFilterTokenMatches(token, alias) {
+        if (!token || !alias) return false;
+        if (token === alias) return true;
+        const canonical = token
+        .replace(/^(?:map_)?filter_/u, '')
+        .replace(/^building_filter_/u, '')
+        .replace(/_filter$/u, '');
+        return canonical === alias;
+    }
+
     function nativeBuildingQuickFilterControlMatches(control, descriptor) {
         if (!control || !descriptor || nativeVisibilityControlBelongsToToolkit(control)) return false;
         const wrapper = control.closest?.('.building-filter') || control.parentElement?.querySelector?.('.building-filter') || null;
         const tokens = nativeVisibilityControlTokens(control);
         const tokenAliases = descriptor.tokens.map(normaliseNativeVisibilityToken);
-        const tokenMatch = tokens.some(token => tokenAliases.some(alias => (
-        token === alias || token.endsWith(`_${alias}`) || token.startsWith(`${alias}_`)
-        )));
-        const label = nativeVisibilityControlLabel(control);
-        const labelMatch = descriptor.labels.map(normaliseNativeVisibilityLabel).some(candidate => (
-        label === candidate || label.startsWith(`${candidate} `) || label.endsWith(` ${candidate}`)
-        ));
+        const tokenMatch = tokens.some(token => tokenAliases.some(alias => nativeBuildingQuickFilterTokenMatches(token, alias)));
+        const controlLabels = nativeBuildingQuickFilterControlLabels(control);
+        const translatedLabels = nativeBuildingQuickFilterTranslatedLabels(descriptor);
+        const labelMatch = controlLabels.some(label => translatedLabels.includes(label));
         return Boolean((wrapper && labelMatch) || tokenMatch);
     }
 
-    function findNativeBuildingQuickFilterControl(key) {
-        const descriptor = nativeBuildingQuickFilterDescriptor(key);
-        if (!descriptor) return null;
+    function nativeBuildingQuickFilterControls() {
         const controls = [];
         const seen = new Set();
         for (const root of nativeVisibilityControlRoots()) {
         for (const control of nativeVisibilityInteractiveControls(root)) {
-            if (!control || seen.has(control)) continue;
+            if (!control || seen.has(control) || nativeVisibilityControlBelongsToToolkit(control)) continue;
             seen.add(control);
             controls.push(control);
         }
         }
-        return controls.find(control => nativeBuildingQuickFilterControlMatches(control, descriptor)) || null;
+        return controls;
     }
 
-    function nativeBuildingQuickFilterSnapshot(key) {
-        const control = findNativeBuildingQuickFilterControl(key);
+    function findNativeBuildingQuickFilterControl(key, controls = null) {
+        const descriptor = nativeBuildingQuickFilterDescriptor(key);
+        if (!descriptor) return null;
+        const candidates = Array.isArray(controls) ? controls : nativeBuildingQuickFilterControls();
+        return candidates.find(control => nativeBuildingQuickFilterControlMatches(control, descriptor)) || null;
+    }
+
+    function nativeBuildingQuickFilterSnapshot(key, controls = null) {
+        const control = findNativeBuildingQuickFilterControl(key, controls);
         const enabled = nativeVisibilityControlState(control);
         return {
         available: Boolean(control && enabled !== null && !control.disabled && control.getAttribute?.('aria-disabled') !== 'true'),
@@ -25403,18 +25498,28 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function nativeBuildingQuickFilterMarkup() {
-        const rows = Object.entries(NATIVE_BUILDING_QUICK_FILTERS).map(([key, descriptor]) => {
-        const snapshot = nativeBuildingQuickFilterSnapshot(key);
+        const controls = nativeBuildingQuickFilterControls();
+        const row = (key, rank) => {
+        const descriptor = nativeBuildingQuickFilterDescriptor(key);
+        const snapshot = nativeBuildingQuickFilterSnapshot(key, controls);
         const stateLabel = !snapshot.available ? 'UNAVAILABLE' : snapshot.enabled ? 'SHOWN' : 'HIDDEN';
-        return `<button class="mcms-native-building-filter mcms-native-building-filter-${escapeHtml(key)}${snapshot.enabled ? ' mcms-on' : ''}" type="button" data-native-building-filter="${escapeHtml(key)}" aria-pressed="${snapshot.enabled}"${snapshot.available ? '' : ' disabled'}>
+        const featured = rank <= 3;
+        return `<button class="mcms-native-building-filter mcms-native-building-filter-${escapeHtml(key)} mcms-native-building-tone-${escapeHtml(descriptor.tone)}${featured ? ' mcms-native-building-featured' : ''}${snapshot.enabled ? ' mcms-on' : ''}" type="button" data-native-building-filter="${escapeHtml(key)}" data-popularity-rank="${rank}" aria-pressed="${snapshot.enabled}"${snapshot.available ? '' : ' disabled'}>
             <span class="mcms-native-building-icon" aria-hidden="true">${escapeHtml(descriptor.icon)}</span>
             <span class="mcms-native-building-copy"><strong>${escapeHtml(descriptor.label)}</strong><small>MissionChief native filter</small></span>
             <span class="mcms-native-building-state">${stateLabel}</span>
         </button>`;
-        }).join('');
-        return `<div class="mcms-native-building-head"><div><strong>Station filters</strong><small>Direct MissionChief controls · no Toolkit layer scan</small></div><button type="button" data-native-building-close aria-label="Close station filters">×</button></div>
-        <div class="mcms-native-building-list">${rows}</div>
-        <p>Need another building type? Use MissionChief’s own Filters menu.</p>`;
+        };
+        const popularRows = NATIVE_BUILDING_QUICK_FILTER_ORDER.slice(0, 3).map((key, index) => row(key, index + 1)).join('');
+        const otherRows = NATIVE_BUILDING_QUICK_FILTER_ORDER.slice(3).map((key, index) => row(key, index + 4)).join('');
+        return `<div class="mcms-native-building-head"><div><strong>Building filters</strong><small>Direct MissionChief controls · UK popularity order</small></div><button type="button" data-native-building-close aria-label="Close building filters">×</button></div>
+        <div class="mcms-native-building-list">
+            <div class="mcms-native-building-section-title">Most popular</div>
+            ${popularRows}
+            <div class="mcms-native-building-section-title">All other buildings · popularity order</div>
+            ${otherRows}
+        </div>
+        <p>Every UK building type is covered. Unavailable means MissionChief has not exposed that native filter on this map.</p>`;
     }
 
     function ensureNativeBuildingQuickFilterPopover() {
@@ -25426,7 +25531,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         popover.hidden = true;
         popover.setAttribute('role', 'dialog');
         popover.setAttribute('aria-modal', 'false');
-        popover.setAttribute('aria-label', 'MissionChief station filters');
+        popover.setAttribute('aria-label', 'MissionChief building filters');
         document.body.appendChild(popover);
         buildingQuickFilterRuntime.popover = popover;
         return popover;
@@ -38115,8 +38220,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         toggle('vehicles', 'MissionChief Vehicles', state.visibility.vehicles, 'vehicles', 'show vehicles on map game setting units visibility');
         add(
             'buildings',
-            `${buildingQuickFilterRuntime.open ? 'Close' : 'Open'} Station Filters`,
-            'Ambulance, Fire and Police stations through MissionChief native filters',
+            `${buildingQuickFilterRuntime.open ? 'Close' : 'Open'} Building Filters`,
+            'All UK building types through MissionChief native filters, ordered by popularity',
             'buildings stations ambulance fire police native filters visibility',
             () => toggleNativeBuildingQuickFilter(),
             true
@@ -39182,7 +39287,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Mine', 'Mine')}
                     ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Ally', 'Ally')}
                     ${makeFloatButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3', 'Units', 'Units')}
-                    ${makeFloatButton('buildings', '4', 'Buildings', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4', 'Bldgs', 'Bldgs')}
+                    ${makeFloatButton('buildings', '4', 'Buildings', 'Open all UK building filters in popularity order, powered directly by MissionChief. Shortcut: 4', 'Bldgs', 'Bldgs')}
                 </div>
                 <div class="mcms-control-group" data-control-group="intelligence" aria-label="Intelligence controls">
                     <span class="mcms-control-group-label">Intelligence</span>
@@ -39531,7 +39636,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3')}
-                    ${makeToggleButton('buildings', '4', 'Buildings', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4')}
+                    ${makeToggleButton('buildings', '4', 'Buildings', 'Open all UK building filters in popularity order, powered directly by MissionChief. Shortcut: 4')}
                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
@@ -40685,8 +40790,8 @@ Credits only. Each station and native action will be fetched again, purchased on
                 updateUiSetDataset(btn, 'mcmsState', on ? 'on' : 'off');
                 updateUiSetText(btn.querySelector('.mcms-control-state'), isBuildingFilter ? (on ? 'OPEN' : 'FILTER') : (on ? 'ON' : 'OFF'));
                 if (isBuildingFilter) {
-                    updateUiSetProperty(btn, 'title', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4');
-                    updateUiSetAttribute(btn, 'aria-label', `Buildings native station filters: ${on ? 'open' : 'closed'}. Shortcut: 4.`);
+                    updateUiSetProperty(btn, 'title', 'Open all UK building filters in popularity order, powered directly by MissionChief. Shortcut: 4');
+                    updateUiSetAttribute(btn, 'aria-label', `Buildings native filters: ${on ? 'open' : 'closed'}. Shortcut: 4.`);
                     updateUiSetAttribute(btn, 'aria-expanded', String(on));
                     updateUiSetAttribute(btn, 'aria-controls', SCRIPT.buildingQuickFilterId);
                     return;
@@ -40818,8 +40923,8 @@ Credits only. Each station and native action will be fetched again, purchased on
                 : key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
             updateUiSetAttribute(btn, 'aria-pressed', String(on));
             if (!isBuildingFilter) return;
-            updateUiSetProperty(btn, 'title', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4');
-            updateUiSetAttribute(btn, 'aria-label', `Buildings native station filters: ${on ? 'open' : 'closed'}. Shortcut: 4.`);
+            updateUiSetProperty(btn, 'title', 'Open all UK building filters in popularity order, powered directly by MissionChief. Shortcut: 4');
+            updateUiSetAttribute(btn, 'aria-label', `Buildings native filters: ${on ? 'open' : 'closed'}. Shortcut: 4.`);
             updateUiSetAttribute(btn, 'aria-expanded', String(on));
             updateUiSetAttribute(btn, 'aria-controls', SCRIPT.buildingQuickFilterId);
         });

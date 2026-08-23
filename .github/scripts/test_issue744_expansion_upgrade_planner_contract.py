@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.17.3"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.17.4"
     assert "'expansionPlanner'" in source, "Expansion Planner analytics allow-list entry is missing"
     assert "expansion-upgrade-planner" in source_section(source, "    function commandPaletteActionEntries(", "    function commandPaletteMissionEntries(")
     assert "@connect      *" not in source, "Expansion Planner must not request wildcard userscript network access"

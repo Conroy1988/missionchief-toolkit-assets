@@ -80,6 +80,7 @@ async function exerciseDevice(device, deep = false) {
   assert.equal(active.connectedLeafletPanes, 0, `${device}: connected Leaflet panes are still rendering underneath Fast Map`);
   assert.equal(active.connectedRenderers, 1, `${device}: Fast Map must mount exactly one renderer`);
   assert.equal(active.adapterRenderers, 1, `${device}: adapter reported more than one renderer`);
+  assert.equal(active.baseMapReady, true, `${device}: Fast Map became active before its base map was ready`);
   assert.equal(JSON.stringify(active.featureCounts), JSON.stringify({ buildings: 4, allianceMissions: 1, personalMissions: 1, vehicles: 3 }), `${device}: live MissionChief marker bridge lost data`);
   assert.equal(active.totalFeatures, 9, `${device}: unexpected Fast Map point total`);
   assert.ok(nativeMap._handlers.every(handler => !handler.enabled()), `${device}: native Leaflet interaction handlers are still running`);
@@ -87,6 +88,8 @@ async function exerciseDevice(device, deep = false) {
   assert.ok(window.document.getElementById("map").contains(window.document.getElementById("mc-map-command-toolkit-control")), `${device}: Fast Map lost its own off switch`);
   assert.equal(window.document.querySelector(".mcms-fast-map-btn").getAttribute("aria-pressed"), "true", `${device}: active control state is inaccessible`);
   assert.ok(window.document.querySelector("#mc-map-command-toolkit-fast-map-hud [data-fast-map-health]").textContent.includes("Leaflet parked"), `${device}: suspension state is not visible to the player`);
+  const attributionLinks = Array.from(window.document.querySelectorAll(".mcms-fast-map-attribution a"));
+  assert.deepEqual(attributionLinks.map(link => link.textContent.trim()), ["© OpenStreetMap contributors", "OpenFreeMap"], `${device}: relocated base-map attribution is incomplete`);
 
   vehicleMarker.setLatLng({ lat: 55.99, lng: -3.04 });
   assert.equal(vehicleMarker._renderWrites, writesBeforeActivation, `${device}: guarded Leaflet marker still wrote to detached DOM`);

@@ -123,21 +123,21 @@
   },
   "v10Candidate": {
     "issue": 760,
-    "templateBytes": 867943,
-    "templateLines": 10120,
-    "templateSha256": "33299f4ce64251fe43afb08aa71fb56b6ec214b5cbebf98beadc5710f61693b0",
-    "canonicalCssSha256": "1edd20e2e15b66c4de70adb471cd029809713660a754199257da30f051f6d45e",
-    "maxSourceBytes": 2819807,
-    "maxSourceLines": 42402,
+    "templateBytes": 868422,
+    "templateLines": 10122,
+    "templateSha256": "e66632ea9c8021467c0520828f6b641bde3175b320cd9324a396e45ef23c83c6",
+    "canonicalCssSha256": "21cc5850235a4fdaf022cb3a8e6fa44701f91100c8638a049ff803564ff04040",
+    "maxSourceBytes": 2820610,
+    "maxSourceLines": 42407,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 452368,
-      "sourceLines": 6874,
-      "templateBytes": 52406,
-      "templateLines": 586
+      "sourceBytes": 453171,
+      "sourceLines": 6879,
+      "templateBytes": 52885,
+      "templateLines": 588
     },
-    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, and the v10.17.0 opt-in Fast Map replacement renderer",
-    "incident": "fast-map-native-renderer-suspension"
+    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, and the v10.17.1 base-map/HUD repair",
+    "incident": "fast-map-base-style-and-hud-repair"
   }
 }

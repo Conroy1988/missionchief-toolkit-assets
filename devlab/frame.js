@@ -278,6 +278,7 @@
           getView() { return { ...view }; },
           setView(lat, lng, zoom) { view = { lat: Number(lat), lng: Number(lng), zoom: Number(zoom) }; config.onFps?.(60); return true; },
           resize() { this.resizeCount = (this.resizeCount || 0) + 1; return true; },
+          isBaseMapReady() { return !destroyed; },
           getRendererCount() { return destroyed ? 0 : config.container.querySelectorAll("canvas").length; },
           triggerFeature(ref) { config.onFeature?.(ref); },
           sourceFeatures(sourceId) { return Array.from(sources.get(sourceId)?.values?.() || []); },

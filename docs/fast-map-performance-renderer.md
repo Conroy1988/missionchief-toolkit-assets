@@ -18,6 +18,12 @@ There are no connected Leaflet panes beneath Fast Map. MissionChief networking a
 
 When Fast Map stops, its current centre and zoom are transferred back, the WebGL renderer and sync timer are destroyed, the exact original node is reinserted at its original DOM anchor, the exact control node is returned, guarded marker writes are refreshed in bounded batches, previously enabled handlers are re-enabled, and Leaflet receives a non-animated size refresh.
 
+## Base-map readiness
+
+Fast Map does not inherit MissionChief’s Leaflet raster URL. That path can be browser- or provider-specific and can leave MapLibre with a technically mounted but visually empty raster layer. The replacement renderer instead owns the MapLibre-native OpenFreeMap Bright style at `https://tiles.openfreemap.org/styles/bright`.
+
+Activation is positive rather than optimistic. After the base style loads, the Toolkit validates the expected `openmaptiles` vector source, mounts the four operational GeoJSON sources and their circle/cluster layers, waits for MapLibre’s next idle render, and only then exposes the `ACTIVE` state. Missing style data, an invalid source/layer topology or the 20-second safety timeout destroys the replacement renderer and restores the exact native map.
+
 ## Data path
 
 The bridge reads the existing MissionChief registries without making duplicate game API polling loops:
@@ -37,7 +43,7 @@ MapLibre GL JS `5.24.0` is loaded lazily from an exact-version jsDelivr URL. Bef
 
 `45a9b07a9189ce56054c620a947ccf41e291e58c95e9b61533b740aaa65ee5cb`
 
-An unavailable userscript request, unexpected HTTP status, byte mismatch, hash mismatch, blocked verified evaluation, unsupported WebGL, startup timeout, invalid adapter, cancelled startup, route change or fatal renderer error uses the same restoration path. Fast Map never writes an enabled preference to saved Toolkit state, so a reload always starts with native MissionChief rendering.
+The OpenFreeMap style is declarative map data, not executable Toolkit code. Its expected vector-source topology is checked before operational layers mount. An unavailable userscript request, unexpected HTTP status, byte mismatch, hash mismatch, blocked verified evaluation, unavailable or incomplete base style, unsupported WebGL, startup timeout, invalid adapter, cancelled startup, route change or fatal renderer error uses the same restoration path. Fast Map never writes an enabled preference to saved Toolkit state, so a reload always starts with native MissionChief rendering.
 
 ## Player-visible diagnostics
 
@@ -50,17 +56,19 @@ While active, the bounded metrics HUD reports:
 - renderer warnings;
 - the explicit `Leaflet parked · one renderer` state.
 
-The HUD includes zoom and Native-map controls and has dedicated Desktop, Tablet and iOS containment rules. The Eco-adjacent toggle exposes OFF, LOAD, START, ACTIVE and ERROR states without exceeding compact labels.
+The HUD includes zoom and Native-map controls and has dedicated Desktop, Tablet and iOS containment rules. It is anchored at the top centre of the map, with OpenStreetMap/OpenFreeMap attribution directly beneath it, so MissionChief’s bottom command UI cannot hide either surface. The Eco-adjacent toggle exposes OFF, LOAD, START, ACTIVE and ERROR states without exceeding compact labels.
 
 ## Permanent proof
 
-`.github/scripts/test_fast_map_contract.py` protects lazy loading, exact pin/integrity checks, session-only state, source-layer rendering, placement beside Economy Mode, text containment, Leaflet suspension and rollback anchors.
+`.github/scripts/test_fast_map_contract.py` protects lazy loading, exact pin/integrity checks, OpenFreeMap ownership, post-style source/layer mounting, idle-render gating, session-only state, placement beside Economy Mode, top-HUD containment, Leaflet suspension and rollback anchors.
 
 `.github/scripts/test_fast_map_runtime.mjs` mounts the canonical userscript in the Dev Lab and verifies on Desktop, Tablet and iOS that:
 
 - the original map starts connected and Fast Map starts off;
 - activation disconnects the exact native node;
 - zero Leaflet panes remain connected and exactly one replacement renderer exists;
+- the base map is ready before the active phase is exposed;
+- OpenStreetMap and OpenFreeMap attribution remains present beneath the top HUD;
 - live missions, buildings and vehicles reach the replacement sources;
 - detached marker movement performs no guarded Leaflet DOM write;
 - MissionChief's native Fire checkbox removes and restores the correct Fast Map buildings without reconnecting Leaflet;

@@ -264,6 +264,23 @@
       "description": "Make the map faster to read, easier to navigate and more useful during busy sessions.",
       "features": [
         {
+          "name": "Fast Map",
+          "summary": "Replaces connected Leaflet rendering with one opt-in MapLibre WebGL canvas while preserving MissionChief live data, native filters and exact rollback.",
+          "details": [
+            "Session-only and off by default",
+            "Zero connected Leaflet panes while active",
+            "Clustered buildings and alliance missions with incremental live point updates",
+            "Exact native element, view and handler restoration on exit or failure"
+          ],
+          "visual": "fast-map",
+          "tags": [
+            "maplibre",
+            "performance",
+            "webgl",
+            "map"
+          ]
+        },
+        {
           "name": "Toolkit Command Palette",
           "summary": "Searches live missions, personal vehicles, buildings, locations, Settings cards and safe Toolkit actions from one responsive surface.",
           "details": [

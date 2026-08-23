@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.17.2
+// @version      10.17.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.17.2';
+    const VERSION = '10.17.3';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -824,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.17.2',
+        version: '10.17.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -887,15 +887,14 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.17.2",
-        title: "Fast Map Marker and Route Restoration",
+        version: "10.17.3",
+        title: "Fast Map Icon Stability Hotfix",
         highlights: Object.freeze([
-            "Restores MissionChief’s building, mission and vehicle pictures in Fast Map by bridging the active native Leaflet icon URL, size and current vehicle graphic into MapLibre symbol layers.",
-            "Deduplicates shared graphics into a bounded-concurrency sprite loader with same-origin/CORS loading, an approved MissionChief-storage fallback, byte and dimension limits, and per-image fallback isolation.",
-            "Retains the lightweight coloured point beneath each marker so an unavailable custom image cannot break the rest of Fast Map.",
-            "Restores MissionChief’s red vehicle destination lines from each active vehicle marker’s native polyline, including waypoint progress and automatic removal when the native route disappears.",
-            "Adds a fifth stable-ID GeoJSON source for vehicle routes while preserving clustering, native visibility filters, feature clicks, incremental updates and exact Leaflet rollback.",
-            "Extends the Desktop, Tablet, iOS and 5,000-vehicle runtime contract with native image descriptors, live image additions and in-place route-geometry updates."
+            "Keeps each last successfully decoded building, mission or vehicle picture visible while MissionChief refreshes, removes or replaces its native icon URL.",
+            "Promotes replacement sprites only after their pixels are ready, eliminating the loaded-image-to-fallback-dot flash during asynchronous refreshes.",
+            "Accepts MissionChief PNG/APNG, JPEG, GIF and WebP marker assets through a signature-verified, byte-bounded decoder before scaling them for WebGL.",
+            "Retries transient image failures with capped backoff and prunes superseded descriptors so a temporary network error or rapidly changing vehicle graphic cannot permanently blank or grow the sprite bridge.",
+            "Adds a delayed icon-churn regression across Desktop, Tablet and iOS while retaining the 5,010-feature incremental Fast Map stress proof and exact native rollback."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1924,7 +1923,12 @@ try {
         syncVisibleMs: 750,
         syncHiddenMs: 3000,
         markerImageMaxDimension: 96,
+        markerImageSourceMaxDimension: 4096,
+        markerImageMaxBytes: 4 * 1024 * 1024,
+        markerImageMimeTypes: Object.freeze(['image/png', 'image/jpeg', 'image/gif', 'image/webp']),
         markerImageConcurrency: 6,
+        markerImageRetryBaseMs: 750,
+        markerImageRetryMaxMs: 30000,
         markerImageFallbackId: 'mcms-fast-marker-image-fallback',
         sourceIds: Object.freeze({
         buildings: 'mcms-fast-buildings',
@@ -23683,12 +23687,90 @@ Credits only. Each station and native action will be fetched again, purchased on
         ]);
     }
 
+    function fastMapMarkerImageMime(bytes) {
+        const startsWith = (...expected) => expected.every((value, index) => bytes[index] === value);
+        if (startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return 'image/png';
+        if (startsWith(0xff, 0xd8, 0xff)) return 'image/jpeg';
+        if (startsWith(0x47, 0x49, 0x46, 0x38) && [0x37, 0x39].includes(bytes[4]) && bytes[5] === 0x61) return 'image/gif';
+        if (startsWith(0x52, 0x49, 0x46, 0x46) && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
+        return '';
+    }
+
+    async function fastMapInspectMarkerImageBlob(blob, label = 'Fast Map marker') {
+        if (!blob || typeof blob.slice !== 'function') throw new Error(`The ${label} host did not return a readable image file.`);
+        const size = Number(blob.size) || 0;
+        if (!size || size > FAST_MAP.markerImageMaxBytes) throw new Error(`The ${label} must be between 1 byte and ${Math.round(FAST_MAP.markerImageMaxBytes / 1048576)} MB.`);
+        const signature = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
+        const mime = fastMapMarkerImageMime(signature);
+        if (!FAST_MAP.markerImageMimeTypes.includes(mime)) throw new Error(`The ${label} is not a supported PNG, JPEG, GIF or WebP image.`);
+        return { blob, mime };
+    }
+
+    async function fastMapFetchMarkerImagePrivileged(iconUrl, label = 'Fast Map marker') {
+        const href = stationIconPrivilegedImageUrl(iconUrl);
+        let requested;
+        try { requested = new URL(stationIconSafeUrl(iconUrl)); } catch (err) { requested = null; }
+        if (!href) {
+        const host = requested?.hostname ? ` (${requested.hostname})` : '';
+        throw new Error(`The ${label} image host${host} is not an approved MissionChief asset host.`);
+        }
+        const response = await runtimeGmRequest({
+        method: 'GET',
+        url: href,
+        headers: { Accept: FAST_MAP.markerImageMimeTypes.join(',') },
+        timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS,
+        responseType: 'arraybuffer',
+        anonymous: true,
+        messages: {
+            network: `The ${label} asset host could not be reached.`,
+            timeout: `The ${label} asset request timed out.`,
+            abort: `The ${label} asset request was cancelled.`,
+            create: `The ${label} asset request could not be created.`
+        }
+        });
+        const status = Number(response?.status) || 0;
+        if (status < 200 || status >= 300) throw new Error(`The ${label} host returned HTTP ${status || 'error'}.`);
+        const finalHref = String(response?.finalUrl || '').trim();
+        if (!finalHref || !stationIconPrivilegedImageUrl(finalHref)) throw new Error(`The ${label} redirected outside the approved MissionChief asset host.`);
+        const bytes = response?.response;
+        const size = Number(bytes?.byteLength);
+        if (!Number.isFinite(size) || size <= 0) throw new Error(`The ${label} host did not return a readable image file.`);
+        if (size > FAST_MAP.markerImageMaxBytes) throw new Error(`The ${label} exceeds the ${Math.round(FAST_MAP.markerImageMaxBytes / 1048576)} MB safety limit.`);
+        const headerMime = stationIconResponseHeader(response?.responseHeaders, 'content-type').split(';')[0].trim().toLowerCase();
+        return fastMapInspectMarkerImageBlob(new Blob([bytes], { type: headerMime }), label);
+    }
+
+    async function fastMapFetchMarkerImage(iconUrl, label = 'Fast Map marker') {
+        const href = stationIconSafeUrl(iconUrl);
+        if (!href) throw new Error(`The ${label} URL is missing or unsafe.`);
+        const url = new URL(href);
+        let response;
+        try {
+        response = await runtimeFetch(url.href, {
+            method: 'GET',
+            credentials: url.origin === pageWindow.location.origin ? 'same-origin' : 'omit',
+            mode: 'cors',
+            cache: 'default',
+            headers: { Accept: FAST_MAP.markerImageMimeTypes.join(',') },
+            timeoutMs: STATION_ICON_REQUEST_TIMEOUT_MS
+        });
+        } catch (err) {
+        return fastMapFetchMarkerImagePrivileged(url.href, label);
+        }
+        if (!response.ok) throw new Error(`The ${label} host returned HTTP ${response.status}.`);
+        if (!stationIconSafeUrl(response.url || url.href)) throw new Error(`The ${label} redirected to an unsafe URL.`);
+        return fastMapInspectMarkerImageBlob(await response.blob(), label);
+    }
+
     async function fastMapLoadMarkerImage(descriptor) {
-        const verified = await fetchStationIconImage(descriptor?.url, 'Fast Map marker');
+        const verified = await fastMapFetchMarkerImage(descriptor?.url, 'Fast Map marker');
         const bitmap = await stationIconLoadBitmap(verified.blob);
         try {
         const naturalWidth = Math.max(1, Math.round(Number(bitmap?.width || bitmap?.naturalWidth) || 1));
         const naturalHeight = Math.max(1, Math.round(Number(bitmap?.height || bitmap?.naturalHeight) || 1));
+        if (naturalWidth > FAST_MAP.markerImageSourceMaxDimension || naturalHeight > FAST_MAP.markerImageSourceMaxDimension) {
+            throw new Error(`The Fast Map marker exceeds the ${FAST_MAP.markerImageSourceMaxDimension}px source-image safety limit.`);
+        }
         const width = Math.max(1, Math.min(FAST_MAP.markerImageMaxDimension, Math.round(Number(descriptor?.width) || naturalWidth)));
         const height = Math.max(1, Math.min(FAST_MAP.markerImageMaxDimension, Math.round(Number(descriptor?.height) || naturalHeight)));
         const canvas = document.createElement('canvas');
@@ -23736,10 +23818,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         const markerImageDescriptors = new Map(config.images || []);
         const markerImageQueue = [];
         const markerImagePending = new Set();
+        const markerImageLoading = new Set();
         const markerImageLoaded = new Set();
-        const markerImageFailed = new Set();
+        const markerImageFailures = new Map();
+        const markerImageRetryTimers = new Map();
+        let markerImageRetained = new Set(markerImageDescriptors.keys());
         const handledFeatureClicks = new WeakSet();
         let markerImageWorkers = 0;
+        let markerImagePruneTimer = null;
         let movementStartedAt = 0;
         let movementFrames = 0;
         let readySettled = false;
@@ -23772,39 +23858,90 @@ Credits only. Each station and native action will be fetched again, purchased on
         movementStartedAt = 0;
         movementFrames = 0;
         };
+        const clearMarkerImageRetry = imageId => {
+        const timer = markerImageRetryTimers.get(imageId);
+        if (timer !== undefined) runtimeClearTimeout(timer);
+        markerImageRetryTimers.delete(imageId);
+        };
+        const scheduleMarkerImageRetry = (imageId, descriptor) => {
+        if (removed || markerImageDescriptors.get(imageId) !== descriptor || markerImageRetryTimers.has(imageId)) return;
+        const failures = Math.min(16, (markerImageFailures.get(imageId) || 0) + 1);
+        markerImageFailures.set(imageId, failures);
+        const delay = Math.min(FAST_MAP.markerImageRetryMaxMs, FAST_MAP.markerImageRetryBaseMs * (2 ** Math.min(6, failures - 1)));
+        markerImageRetryTimers.set(imageId, fastMapManagedTimeout(() => {
+            markerImageRetryTimers.delete(imageId);
+            queueMarkerImage(imageId);
+        }, delay));
+        };
         const drainMarkerImageQueue = () => {
         while (!removed && markerImageWorkers < FAST_MAP.markerImageConcurrency && markerImageQueue.length) {
             const imageId = markerImageQueue.shift();
             const descriptor = markerImageDescriptors.get(imageId);
             if (!descriptor || map.hasImage?.(imageId)) {
             markerImagePending.delete(imageId);
-            if (map.hasImage?.(imageId)) markerImageLoaded.add(imageId);
+            if (map.hasImage?.(imageId)) {
+                markerImageLoaded.add(imageId);
+                markerImageFailures.delete(imageId);
+                clearMarkerImageRetry(imageId);
+            }
             continue;
             }
             markerImageWorkers += 1;
+            markerImageLoading.add(imageId);
             Promise.resolve(config.loadMarkerImage?.(descriptor)).then(image => {
-            if (removed || !image || map.hasImage?.(imageId)) return;
+            if (!image) throw new Error('Fast Map did not receive decoded marker pixels.');
+            if (removed || markerImageDescriptors.get(imageId) !== descriptor || map.hasImage?.(imageId)) return;
             map.addImage(imageId, image, { pixelRatio: 1 });
             markerImageLoaded.add(imageId);
-            markerImageFailed.delete(imageId);
+            markerImageFailures.delete(imageId);
+            clearMarkerImageRetry(imageId);
             map.triggerRepaint?.();
+            config.onMarkerImageReady?.(imageId, descriptor);
             }).catch(error => {
-            markerImageFailed.add(imageId);
+            if (removed || markerImageDescriptors.get(imageId) !== descriptor) return;
+            scheduleMarkerImageRetry(imageId, descriptor);
             config.onMarkerImageError?.(error, descriptor);
             }).finally(() => {
             markerImageWorkers = Math.max(0, markerImageWorkers - 1);
+            markerImageLoading.delete(imageId);
             markerImagePending.delete(imageId);
+            queueMarkerImage(imageId);
             drainMarkerImageQueue();
             });
         }
         };
         const queueMarkerImage = imageId => {
         const id = String(imageId || '');
-        if (!id || id === FAST_MAP.markerImageFallbackId || !markerImageDescriptors.has(id) || markerImagePending.has(id) || markerImageFailed.has(id) || map.hasImage?.(id)) return false;
+        if (!id || id === FAST_MAP.markerImageFallbackId || !markerImageDescriptors.has(id) || markerImagePending.has(id) || markerImageRetryTimers.has(id) || map.hasImage?.(id)) return false;
         markerImagePending.add(id);
         markerImageQueue.push(id);
         drainMarkerImageQueue();
         return true;
+        };
+        const retainMarkerImages = imageIds => {
+        markerImageRetained = new Set(Array.from(imageIds || [], value => String(value || '')).filter(Boolean));
+        for (const imageId of Array.from(markerImageDescriptors.keys())) {
+            if (markerImageRetained.has(imageId)) continue;
+            markerImageDescriptors.delete(imageId);
+            markerImageFailures.delete(imageId);
+            clearMarkerImageRetry(imageId);
+        }
+        for (let index = markerImageQueue.length - 1; index >= 0; index -= 1) {
+            const imageId = markerImageQueue[index];
+            if (markerImageDescriptors.has(imageId)) continue;
+            markerImageQueue.splice(index, 1);
+            if (!markerImageLoading.has(imageId)) markerImagePending.delete(imageId);
+        }
+        if (markerImagePruneTimer !== null) return;
+        markerImagePruneTimer = fastMapManagedTimeout(() => {
+            markerImagePruneTimer = null;
+            for (const imageId of Array.from(markerImageLoaded)) {
+            if (markerImageRetained.has(imageId)) continue;
+            try { if (map.hasImage?.(imageId)) map.removeImage?.(imageId); } catch (err) {}
+            markerImageLoaded.delete(imageId);
+            markerImageFailures.delete(imageId);
+            }
+        }, FAST_MAP.syncVisibleMs * 2);
         };
         const onStyleImageMissing = event => { queueMarkerImage(event?.id); };
         map.on('error', onError);
@@ -23895,8 +24032,18 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (removed) return false;
             for (const [imageId, descriptor] of new Map(descriptors || [])) {
             markerImageDescriptors.set(imageId, descriptor);
+            markerImageRetained.add(imageId);
             queueMarkerImage(imageId);
             }
+            return true;
+        },
+        isMarkerImageReady(imageId) {
+            const id = String(imageId || '');
+            return Boolean(id && (markerImageLoaded.has(id) || map.hasImage?.(id)));
+        },
+        retainMarkerImages(imageIds) {
+            if (removed) return false;
+            retainMarkerImages(imageIds);
             return true;
         },
         setPresentation(presentation = {}) {
@@ -23927,7 +24074,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         resize() { try { map.resize(); return true; } catch (err) { return false; } },
         isBaseMapReady() { return baseMapReady && map.isStyleLoaded?.() === true; },
         getMarkerImageStats() {
-            return { available: markerImageDescriptors.size, loaded: markerImageLoaded.size, failed: markerImageFailed.size, pending: markerImagePending.size };
+            return { available: markerImageDescriptors.size, loaded: markerImageLoaded.size, failed: markerImageFailures.size, pending: markerImagePending.size + markerImageRetryTimers.size };
         },
         getRendererCount() { return config.container.querySelectorAll('canvas.maplibregl-canvas, canvas').length; },
         destroy() {
@@ -23937,6 +24084,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (!readySettled) settleReady(new Error('Fast Map startup was cancelled.'));
             markerImageQueue.length = 0;
             markerImagePending.clear();
+            markerImageLoading.clear();
+            runtimeClearTimeout(markerImagePruneTimer);
+            markerImagePruneTimer = null;
+            for (const timer of markerImageRetryTimers.values()) runtimeClearTimeout(timer);
+            markerImageRetryTimers.clear();
             try { map.off('error', onError); map.off('movestart', onMoveStart); map.off('render', onRender); map.off('moveend', onMoveEnd); map.off('styleimagemissing', onStyleImageMissing); } catch (err) {}
             try { map.remove(); } catch (err) {}
         }
@@ -24283,8 +24435,40 @@ Credits only. Each station and native action will be fetched again, purchased on
         for (const [sourceId, collection] of Object.entries(snapshot.collections)) fastMapRuntime.sourceState.set(sourceId, fastMapFeatureIndex(collection));
     }
 
+    function fastMapStabiliseSnapshotImages(snapshot) {
+        const adapter = fastMapRuntime.adapter;
+        const isReady = imageId => {
+        const id = String(imageId || '');
+        if (!id) return false;
+        return typeof adapter?.isMarkerImageReady === 'function' ? adapter.isMarkerImageReady(id) : true;
+        };
+        const retained = new Set(Array.from(snapshot.images?.keys?.() || [], value => String(value || '')).filter(Boolean));
+        for (const [sourceId, collection] of Object.entries(snapshot.collections || {})) {
+        const previous = fastMapRuntime.sourceState.get(sourceId) || new Map();
+        for (const feature of collection?.features || []) {
+            if (feature?.geometry?.type !== 'Point') continue;
+            const properties = feature.properties || {};
+            const ref = String(properties.ref || feature.id || '');
+            const desired = String(properties.iconKey || '');
+            const prior = String(previous.get(ref)?.feature?.properties?.iconKey || '');
+            if (desired && isReady(desired)) {
+            retained.add(desired);
+            continue;
+            }
+            if (prior && isReady(prior)) {
+            properties.iconKey = prior;
+            retained.add(prior);
+            continue;
+            }
+            if (desired) delete properties.iconKey;
+        }
+        }
+        return retained;
+    }
+
     function fastMapApplySnapshot(snapshot, force = false) {
         fastMapRuntime.adapter?.updateImages?.(snapshot.images);
+        const retainedImages = fastMapStabiliseSnapshotImages(snapshot);
         for (const [sourceId, collection] of Object.entries(snapshot.collections)) {
         const previous = fastMapRuntime.sourceState.get(sourceId) || new Map();
         const next = fastMapFeatureIndex(collection);
@@ -24296,6 +24480,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         fastMapRuntime.sourceState.set(sourceId, next);
         }
+        fastMapRuntime.adapter?.retainMarkerImages?.(retainedImages);
         fastMapRuntime.references = snapshot.references;
         fastMapRuntime.featureCounts = snapshot.counts;
     }
@@ -24658,8 +24843,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             collections: snapshot.collections,
             images: snapshot.images,
             loadMarkerImage: fastMapLoadMarkerImage,
+            onMarkerImageReady: () => {
+            if (generation === fastMapRuntime.generation && fastMapIsActive()) scheduleFastMapSync(0);
+            },
             onMarkerImageError: (error, descriptor) => {
-            console.debug(`[${SCRIPT.name}] Fast Map kept the fallback marker for ${descriptor?.id || 'an image'}.`, error);
+            console.debug(`[${SCRIPT.name}] Fast Map retained the last ready marker while retrying ${descriptor?.id || 'an image'}.`, error);
             },
             onFeature: fastMapOpenReference,
             onFps: fps => { fastMapRuntime.lastRenderFps = Number(fps) || 0; updateFastMapHud(); },

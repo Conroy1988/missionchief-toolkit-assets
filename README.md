@@ -165,7 +165,7 @@ The complete experience also includes Complete MissionChief Reskinning, Smart Au
 
 ## Performance without surrender
 
-- **Fast Map** is an opt-in, session-only MapLibre renderer with MissionChief’s native marker pictures and live red vehicle routes, an OpenFreeMap vector base, positive ready-state validation, unobstructed top controls, and exact native Leaflet restoration on exit or failure.
+- **Fast Map** is an opt-in, session-only MapLibre renderer with stable last-ready MissionChief marker pictures, live red vehicle routes, an OpenFreeMap vector base, positive ready-state validation, unobstructed top controls, and exact native Leaflet restoration on exit or failure.
 - **Economy Mode** reduces visual and processing cost when the device or operation needs it.
 - Reduced-motion support keeps the interface calm without removing hierarchy.
 - Large-estate guards prevent expensive alliance views from taking over the session.

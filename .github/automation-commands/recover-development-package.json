@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 772,
-  "expectedMain": "cec656258dd5e9ba9eacc05a0b43d0765e3db6ef",
-  "expectedHead": "a8115a4e48587fbabbdda0cd21339b575dbc7199",
-  "nonce": "toolkit-v10-16-8-perf-layout-20260822a"
+  "prNumber": 775,
+  "expectedMain": "8faa3e9b5e6942f149b03b3e5805543bd04d2f7a",
+  "expectedHead": "a9c245d1b34cce4f75edbc36aa8b7ce96dfb0aff",
+  "nonce": "fast-map-v10-17-0-20260823-e061f57"
 }

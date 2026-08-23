@@ -69,6 +69,7 @@ Examples:
 | Dispatch Recruitment | static and runtime Issue #706 contracts |
 | Expansion & Upgrade Planner | static and runtime Issue #744 contracts |
 | Button 3/native visibility | static and runtime native-visibility bridge contracts |
+| Fast Map/MapLibre renderer | static pin, suspension and rollback contract plus live Desktop/Tablet/iOS Dev Lab runtime proof |
 | Desktop panel sizing | panel, workspace and responsive-menu contracts |
 | Dev Lab | full canonical-source Desktop/Tablet/iOS mount |
 | Canary tooling | deterministic build and loader network/cache/rejection runtime tests |

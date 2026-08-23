@@ -51,7 +51,7 @@ function fixtureHtml() {
   return `<!doctype html><html><body>
     <div id="mc-map-command-toolkit-control">
       ${controlToggles.map(key => `<button data-toggle="${key}"><span class="mcms-float-label-desktop">${key}</span><span class="mcms-control-state"></span></button>`).join("")}
-      <button data-action="open-vehicle-status"><span class="mcms-control-state"></span></button><button data-action="open-pressure-board"><span class="mcms-control-state"></span></button><button class="mcms-economy-btn"><span class="mcms-control-state"></span></button>
+      <button data-action="open-vehicle-status"><span class="mcms-control-state"></span></button><button data-action="open-pressure-board"><span class="mcms-control-state"></span></button><button class="mcms-economy-btn"><span class="mcms-control-state"></span></button><button class="mcms-economy-btn mcms-fast-map-btn"><span class="mcms-control-state"></span></button>
       <button class="mcms-menu-btn"></button>
     </div>
     <div id="mc-map-command-toolkit-panel">
@@ -64,12 +64,13 @@ function fixtureHtml() {
       ${panelToggles.map(key => `<button data-toggle="${key}"><span class="mcms-pill"></span></button>`).join("")}
       <button class="mcms-action-toggle mcms-command-bar-setting"><span class="mcms-pill"></span></button>
       <button class="mcms-action-toggle mcms-economy-setting"><span class="mcms-pill"></span></button>
+      <button class="mcms-action-toggle mcms-fast-map-setting"><span class="mcms-pill"></span></button>
       <button class="mcms-action-toggle mcms-fullscreen-setting"><span class="mcms-pill"></span></button>
       <button class="mcms-action-toggle mcms-pressure-board-toggle"><span class="mcms-pill"></span></button>
       ${settings.map(key => `<input data-setting="${key}">`).join("")}
       <div data-discord-complexity-help></div>
       <div data-discord-min-complexity="informative"></div><div data-discord-min-complexity="wolf"></div>
-      <div class="mcms-economy-status"></div><div class="mcms-nudge-value"></div>
+      <div class="mcms-economy-status"></div><div class="mcms-fast-map-status"></div><div class="mcms-nudge-value"></div>
     </div>
     <div id="mc-map-command-toolkit-vehicle-status"></div>
   </body></html>`;
@@ -186,11 +187,13 @@ export async function measureWriteSuppression() {
   const profiler = { begins: 0, ends: 0, beginRender(name) { assert.equal(name, "updateUI"); this.begins += 1; return this.begins; }, endRender(token) { assert.ok(token); this.ends += 1; } };
   const nestedCalls = {}; const countNested = name => { nestedCalls[name] = (nestedCalls[name] || 0) + 1; };
   const state = baseState();
+  const fastMapRuntime = { phase: "off", error: "" };
   const sandbox = { console, globalThis: null, document: window.document, state, operationalStartupComplete: true,
     SCRIPT: { name: "MissionChief Map Command Toolkit", controlId: "mc-map-command-toolkit-control", panelId: "mc-map-command-toolkit-panel", vehicleStatusId: "mc-map-command-toolkit-vehicle-status", pressureBoardId: "mc-map-command-toolkit-pressure-board", buildingQuickFilterId: "mc-map-command-toolkit-building-quick-filter" }, POSITIONS: { topLeft: {}, topRight: {}, bottomLeft: {}, bottomRight: {} },
     FINANCE_REPORT_COMPLEXITIES: Object.freeze(["simple", "informative", "wolf"]), FINANCE_REPORT_COMPLEXITY_RANK: Object.freeze({ simple: 0, informative: 1, wolf: 2 }), FINANCE_REPORT_COMPLEXITY_COPY: Object.freeze({ simple: "simple", informative: "informative", wolf: "wolf" }),
     COMMAND_SECTION_META: Object.freeze({ map: { label: "Map", title: "Map Controls" }, missions: { label: "Missions", title: "Mission Operations" }, alliance: { label: "Alliance Admin", title: "Alliance Administration" }, dispatch: { label: "Dispatch", title: "Dispatch Administration" }, finance: { label: "Finance", title: "Finance Command" }, locations: { label: "Locations", title: "Saved Locations" }, appearance: { label: "Appearance", title: "Appearance" }, settings: { label: "Settings", title: "Toolkit Settings" } }),
-    commandSearchQuery: "", mobileModeActive: false, mapMeasureRuntime: { active: false }, buildingQuickFilterRuntime: { open: false, popover: null, anchor: null, returnFocus: null },
+    commandSearchQuery: "", mobileModeActive: false, mapMeasureRuntime: { active: false }, buildingQuickFilterRuntime: { open: false, popover: null, anchor: null, returnFocus: null }, fastMapRuntime,
+    fastMapIsActive: () => fastMapRuntime.phase === "active", fastMapPhaseLabel: () => fastMapRuntime.phase.toUpperCase(), fastMapTotalFeatures: () => 0,
     activeDockPosition: () => state.position, quickWheelSlotValue: slot => `${slot.kind}:${slot.id}`,
     renderNativeBuildingQuickFilterPopover: () => countNested("renderNativeBuildingQuickFilterPopover"),
     applyRootAttributes: () => countNested("applyRootAttributes"), scheduleMajorIncidentFeedRender: () => countNested("scheduleMajorIncidentFeedRender"), removeMajorIncidentFeed: () => countNested("removeMajorIncidentFeed"), toolkitApplyCommandBarState: () => countNested("toolkitApplyCommandBarState"), refreshTabletModeUi: () => countNested("refreshTabletModeUi"), updateAllianceMemberManagerMenuControl: () => countNested("updateAllianceMemberManagerMenuControl"), renderTransportSweepPanel: () => countNested("renderTransportSweepPanel"), renderAllianceCoursesPanel: () => countNested("renderAllianceCoursesPanel"), renderDispatchRecruitmentPanel: () => countNested("renderDispatchRecruitmentPanel"), getDiscordWebhookUrl: () => "https://discord.invalid/webhook", setDiscordStatus: () => countNested("setDiscordStatus"), discordFinanceStatus: "ready", discordFinanceStatusTone: "success", setOperationalSitrepStatus: () => countNested("setOperationalSitrepStatus"), operationalSitrepStatus: "ready", operationalSitrepStatusTone: "neutral", operationalPressureBoardOpen: () => false, renderFinanceVaultStatus: () => countNested("renderFinanceVaultStatus"), renderProfiles: () => countNested("renderProfiles"), operationalVisible: false, operationalUiIsVisible: () => sandbox.operationalVisible, renderOperationalPanels: () => countNested("renderOperationalPanels"), __MCMS_PROFILER__: profiler };

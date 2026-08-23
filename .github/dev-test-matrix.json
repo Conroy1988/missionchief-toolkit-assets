@@ -25,6 +25,15 @@
         ["node", ".github/scripts/test_dev_lab_runtime.mjs"]
       ]
     },
+    "fast-map": {
+      "paths": ["docs/fast-map-performance-renderer.md", ".github/scripts/test_fast_map_*"],
+      "anchors": ["FAST_MAP", "fastMap", "Fast Map", "mcms-fast-map", "toggle-fast-map"],
+      "tests": [
+        ["python3", ".github/scripts/test_fast_map_contract.py"],
+        ["node", ".github/scripts/test_fast_map_runtime.mjs"],
+        ["node", ".github/scripts/test_dev_lab_runtime.mjs"]
+      ]
+    },
     "canary": {
       "paths": ["tools/build_canary.py", "tools/publish_canary.py", "tools/canary-loader.user.js"],
       "anchors": [],

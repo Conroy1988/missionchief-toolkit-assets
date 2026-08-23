@@ -123,21 +123,21 @@
   },
   "v10Candidate": {
     "issue": 760,
-    "templateBytes": 861514,
-    "templateLines": 10077,
-    "templateSha256": "ad47d7f9b019809ace54f120f1a04cf1f956376845287fe3cdcdfa7e071ff99f",
-    "canonicalCssSha256": "4998107c7c4913561493e8058609315a245462db24c4a64056ba2e6d502eaede",
-    "maxSourceBytes": 2776757,
-    "maxSourceLines": 41653,
+    "templateBytes": 867943,
+    "templateLines": 10120,
+    "templateSha256": "33299f4ce64251fe43afb08aa71fb56b6ec214b5cbebf98beadc5710f61693b0",
+    "canonicalCssSha256": "1edd20e2e15b66c4de70adb471cd029809713660a754199257da30f051f6d45e",
+    "maxSourceBytes": 2819807,
+    "maxSourceLines": 42402,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 409318,
-      "sourceLines": 6125,
-      "templateBytes": 45977,
-      "templateLines": 543
+      "sourceBytes": 452368,
+      "sourceLines": 6874,
+      "templateBytes": 52406,
+      "templateLines": 586
     },
-    "scope": "Issue #760 plus v10.16.7 first-byte recovery, v10.16.8 performance/layout hardening and v10.16.9 native three-station building filters",
-    "incident": "v10.16.9-native-building-filter-popup"
+    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, and the v10.17.0 opt-in Fast Map replacement renderer",
+    "incident": "fast-map-native-renderer-suspension"
   }
 }

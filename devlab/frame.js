@@ -131,11 +131,15 @@
         this._renderWrites = 0;
       }
       _mountIcon() {
-        if (!this._icon) {
-          this._icon = document.createElement("div");
+        const iconUrl = this.options?.icon?.options?.iconUrl || "";
+        const expectedTag = iconUrl ? "IMG" : "DIV";
+        if (!this._icon || this._icon.tagName !== expectedTag) {
+          this._icon?.remove?.();
+          this._icon = document.createElement(iconUrl ? "img" : "div");
           this._icon.className = "leaflet-marker-icon";
           this._icon.dataset.fixtureMarkerId = String(this._leaflet_id);
         }
+        if (iconUrl) this._icon.src = iconUrl;
         const pane = map.getContainer()?.querySelector?.("[data-fixture-markers]");
         if (pane && this._icon.parentNode !== pane) pane.appendChild(this._icon);
         this.update();
@@ -154,7 +158,7 @@
       bindTooltip() { return this; }
       bindPopup() { return this; }
       openPopup() { this.fire("popupopen"); return this; }
-      setIcon(icon) { this.options.icon = icon; return this; }
+      setIcon(icon) { this.options.icon = icon; if (this._map) this._mountIcon(); return this; }
       setLatLng(latlng) {
         this._latlng = { lat: Number(latlng?.lat ?? latlng?.[0]), lng: Number(latlng?.lng ?? latlng?.[1]) };
         this.update();
@@ -193,6 +197,7 @@
       circle: (latlng, options) => new Marker(latlng, options),
       circleMarker: (latlng, options) => new Marker(latlng, options),
       polyline: () => layer({ getBounds: () => map.getBounds() }),
+      icon: options => ({ options: { ...options } }),
       divIcon: options => ({ options }),
       latLng: (lat, lng) => ({ lat: Number(lat), lng: Number(lng) }),
       latLngBounds: () => map.getBounds(),
@@ -224,12 +229,13 @@
         pointLayer.className = "mcms-fast-map-fixture-points";
         config.container.appendChild(pointLayer);
         const sources = new Map(Object.entries(config.collections || {}).map(([id, collection]) => [id, new Map((collection.features || []).map(feature => [String(feature.properties?.ref || feature.id), feature]))]));
+        const images = new Map(config.images || []);
         let view = { ...config.view };
         let destroyed = false;
 
         const renderPoints = () => {
           pointLayer.replaceChildren();
-          const features = Array.from(sources.values()).flatMap(source => Array.from(source.values())).slice(0, 80);
+          const features = Array.from(sources.values()).flatMap(source => Array.from(source.values())).filter(feature => feature.geometry?.type === "Point").slice(0, 80);
           features.forEach((feature, index) => {
             const point = document.createElement("button");
             point.type = "button";
@@ -274,14 +280,17 @@
             renderPoints();
             return true;
           },
+          updateImages(descriptors) { for (const [id, descriptor] of new Map(descriptors || [])) images.set(id, descriptor); return true; },
           setPresentation(presentation) { this.presentation = { ...presentation }; return true; },
           getView() { return { ...view }; },
           setView(lat, lng, zoom) { view = { lat: Number(lat), lng: Number(lng), zoom: Number(zoom) }; config.onFps?.(60); return true; },
           resize() { this.resizeCount = (this.resizeCount || 0) + 1; return true; },
           isBaseMapReady() { return !destroyed; },
+          getMarkerImageStats() { return { available: images.size, loaded: images.size, failed: 0, pending: 0 }; },
           getRendererCount() { return destroyed ? 0 : config.container.querySelectorAll("canvas").length; },
           triggerFeature(ref) { config.onFeature?.(ref); },
           sourceFeatures(sourceId) { return Array.from(sources.get(sourceId)?.values?.() || []); },
+          imageDescriptor(imageId) { return images.get(imageId) || null; },
           destroy() {
             if (destroyed) return;
             destroyed = true;
@@ -379,7 +388,10 @@
     ];
     const buildingTargets = new Map();
     const buildingMarkers = buildingRecords.map((record, index) => {
-      const marker = window.L.marker({ lat: 55.91 + (index * 0.025), lng: -3.27 + (index * 0.038) });
+      const marker = window.L.marker(
+        { lat: 55.91 + (index * 0.025), lng: -3.27 + (index * 0.038) },
+        { icon: window.L.icon({ iconUrl: `/images/fixture-building-${record.building_type}.png`, iconSize: [32, 37], iconAnchor: [16, 37] }) },
+      );
       Object.assign(marker, { building_id: record.id, user_id: record.user_id, building_type: record.building_type, building: record });
       marker.setOpacity = value => { marker.options.opacity = Number(value); return marker; };
       const key = `${record.user_id}:${record.building_type}`;
@@ -427,7 +439,10 @@
       { id: 1002, mission_id: 1002, user_id: 77, caption: "Road Traffic Collision", created_at: new Date(Date.now() - 90 * 60 * 1000).toISOString(), alliance_id: 44 },
     ];
     const missionMarkers = missionRecords.map((record, index) => {
-      const marker = window.L.marker({ lat: 55.945 + (index * 0.045), lng: -3.22 + (index * 0.075) });
+      const marker = window.L.marker(
+        { lat: 55.945 + (index * 0.045), lng: -3.22 + (index * 0.075) },
+        { icon: window.L.icon({ iconUrl: `/images/fixture-mission-${index + 1}.png`, iconSize: [32, 37], iconAnchor: [16, 37] }) },
+      );
       Object.assign(marker, record);
       marker.options = { ...marker.options, mission_id: record.id, user_id: record.user_id };
       map.addLayer(marker);
@@ -442,12 +457,33 @@
       { id: 703, vehicle_id: 703, user_id: 1988, caption: "Ambulance 3", vehicle_type_caption: "Ambulance", fms_real: 4 },
     ];
     const vehicleMarkers = vehicleRecords.map((record, index) => {
-      const marker = window.L.marker({ lat: 55.925 + (index * 0.022), lng: -3.16 + (index * 0.041) });
+      const marker = window.L.marker(
+        { lat: 55.925 + (index * 0.022), lng: -3.16 + (index * 0.041) },
+        { icon: window.L.icon({ iconUrl: `/images/fixture-vehicle-${index + 1}.png`, iconSize: [28, 32], iconAnchor: [14, 32] }) },
+      );
       Object.assign(marker, record);
       marker.options = { ...marker.options, vehicle_id: record.id, user_id: record.user_id };
       map.addLayer(marker);
       return marker;
     });
+    const fixtureRouteLatLngs = [
+      { lat: vehicleMarkers[1].getLatLng().lat, lng: vehicleMarkers[1].getLatLng().lng },
+      { lat: 55.972, lng: -3.102 },
+      { lat: 55.998, lng: -3.061 },
+    ];
+    const fixtureVehicleRoute = {
+      _leaflet_id: 8702,
+      options: { color: "red", opacity: 1, weight: 3 },
+      getLatLngs() { return fixtureRouteLatLngs.map(point => ({ ...point })); },
+      setLatLngs(points) {
+        fixtureRouteLatLngs.splice(0, fixtureRouteLatLngs.length, ...points.map(point => ({ lat: Number(point.lat ?? point[0]), lng: Number(point.lng ?? point[1]) })));
+        return this;
+      },
+      spliceLatLngs(index, count) { fixtureRouteLatLngs.splice(index, count); return this; },
+    };
+    map.addLayer(fixtureVehicleRoute);
+    vehicleMarkers[1].polyline = fixtureVehicleRoute;
+    window.__MCMS_FIXTURE_VEHICLE_ROUTE__ = fixtureVehicleRoute;
     window.vehicles = vehicleRecords;
     window.vehicle_markers = vehicleMarkers;
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.17.1
+// @version      10.17.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.17.1';
+    const VERSION = '10.17.2';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -824,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.17.1',
+        version: '10.17.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -887,15 +887,15 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.17.1",
-        title: "Fast Map Render and HUD Repair",
+        version: "10.17.2",
+        title: "Fast Map Marker and Route Restoration",
         highlights: Object.freeze([
-            "Replaces the inherited Leaflet raster-tile bridge with OpenFreeMap’s MapLibre-native vector style, removing the blank-grey-map failure shown in the live report.",
-            "Adds a positive activation gate: the base vector source, four operational GeoJSON sources and their WebGL layers must mount and reach an idle render before Fast Map reports ACTIVE.",
-            "Restores the exact native MissionChief Leaflet map when the replacement style is unavailable, incomplete or outside the startup safety timeout.",
-            "Moves the Fast Map health, metrics, zoom and Native controls from the obstructed bottom edge to the clear top-centre map area on Desktop, Tablet and iOS.",
-            "Keeps OpenStreetMap and OpenFreeMap attribution visible directly beneath the relocated controls.",
-            "Extends the static and live Dev Lab contracts with base-map readiness, provider ownership and relocated-attribution assertions, and verifies the exact MapLibre 5.24.0 browser path against the production OpenFreeMap style."
+            "Restores MissionChief’s building, mission and vehicle pictures in Fast Map by bridging the active native Leaflet icon URL, size and current vehicle graphic into MapLibre symbol layers.",
+            "Deduplicates shared graphics into a bounded-concurrency sprite loader with same-origin/CORS loading, an approved MissionChief-storage fallback, byte and dimension limits, and per-image fallback isolation.",
+            "Retains the lightweight coloured point beneath each marker so an unavailable custom image cannot break the rest of Fast Map.",
+            "Restores MissionChief’s red vehicle destination lines from each active vehicle marker’s native polyline, including waypoint progress and automatic removal when the native route disappears.",
+            "Adds a fifth stable-ID GeoJSON source for vehicle routes while preserving clustering, native visibility filters, feature clicks, incremental updates and exact Leaflet rollback.",
+            "Extends the Desktop, Tablet, iOS and 5,000-vehicle runtime contract with native image descriptors, live image additions and in-place route-geometry updates."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1923,11 +1923,15 @@ try {
         readyTimeoutMs: 20000,
         syncVisibleMs: 750,
         syncHiddenMs: 3000,
+        markerImageMaxDimension: 96,
+        markerImageConcurrency: 6,
+        markerImageFallbackId: 'mcms-fast-marker-image-fallback',
         sourceIds: Object.freeze({
         buildings: 'mcms-fast-buildings',
         allianceMissions: 'mcms-fast-alliance-missions',
         personalMissions: 'mcms-fast-personal-missions',
-        vehicles: 'mcms-fast-vehicles'
+        vehicles: 'mcms-fast-vehicles',
+        vehicleRoutes: 'mcms-fast-vehicle-routes'
         })
     });
     const QUICK_WHEEL_SLOT_MIN = 4;
@@ -2382,7 +2386,7 @@ try {
         syncTimer: null,
         sourceState: new Map(),
         references: new Map(),
-        featureCounts: { buildings: 0, allianceMissions: 0, personalMissions: 0, vehicles: 0 },
+        featureCounts: { buildings: 0, allianceMissions: 0, personalMissions: 0, vehicles: 0, vehicleRoutes: 0 },
         syncMs: 0,
         lastRenderFps: 0,
         errorCount: 0,
@@ -23585,6 +23589,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     function fastMapOperationalSources(collections) {
         const ids = FAST_MAP.sourceIds;
         return [
+            [ids.vehicleRoutes, fastMapSourceSpecification(collections[ids.vehicleRoutes], false)],
             [ids.buildings, fastMapSourceSpecification(collections[ids.buildings], true)],
             [ids.allianceMissions, fastMapSourceSpecification(collections[ids.allianceMissions], true)],
             [ids.personalMissions, fastMapSourceSpecification(collections[ids.personalMissions], false)],
@@ -23592,9 +23597,21 @@ Credits only. Each station and native action will be fetched again, purchased on
         ];
     }
 
+    function fastMapMarkerIconLayout() {
+        return {
+        'icon-image': ['coalesce', ['image', ['get', 'iconKey']], ['image', FAST_MAP.markerImageFallbackId]],
+        'icon-anchor': 'bottom',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true
+        };
+    }
+
     function fastMapOperationalLayers() {
         const ids = FAST_MAP.sourceIds;
         return [
+            { id: 'mcms-fast-vehicle-routes', type: 'line', source: ids.vehicleRoutes, paint: {
+            'line-color': '#ff0000', 'line-opacity': ['get', 'opacity'], 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.4, 14, 3]
+            }, layout: { 'line-cap': 'round', 'line-join': 'round' } },
             { id: 'mcms-fast-building-clusters', type: 'circle', source: ids.buildings, filter: ['has', 'point_count'], paint: {
             'circle-color': '#53616e', 'circle-opacity': 0.86, 'circle-stroke-color': '#f5fbff', 'circle-stroke-width': 1.5,
             'circle-radius': ['step', ['get', 'point_count'], 9, 50, 13, 250, 17]
@@ -23618,6 +23635,18 @@ Credits only. Each station and native action will be fetched again, purchased on
             { id: 'mcms-fast-vehicles', type: 'circle', source: ids.vehicles, paint: {
             'circle-color': ['get', 'colour'], 'circle-opacity': 0.96, 'circle-stroke-color': '#e7f5ff', 'circle-stroke-width': 1.2,
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 14, 6.5]
+            } },
+            { id: 'mcms-fast-building-icons', type: 'symbol', source: ids.buildings, filter: ['all', ['!', ['has', 'point_count']], ['has', 'iconKey']], layout: fastMapMarkerIconLayout(), paint: {
+            'icon-opacity': 1
+            } },
+            { id: 'mcms-fast-alliance-mission-icons', type: 'symbol', source: ids.allianceMissions, filter: ['all', ['!', ['has', 'point_count']], ['has', 'iconKey']], layout: fastMapMarkerIconLayout(), paint: {
+            'icon-opacity': 1
+            } },
+            { id: 'mcms-fast-personal-mission-icons', type: 'symbol', source: ids.personalMissions, filter: ['has', 'iconKey'], layout: fastMapMarkerIconLayout(), paint: {
+            'icon-opacity': 1
+            } },
+            { id: 'mcms-fast-vehicle-icons', type: 'symbol', source: ids.vehicles, filter: ['has', 'iconKey'], layout: fastMapMarkerIconLayout(), paint: {
+            'icon-opacity': 1
             } }
         ];
     }
@@ -23633,7 +23662,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         for (const sourceId of Object.values(FAST_MAP.sourceIds)) {
         if (!map.getSource?.(sourceId)) throw new Error(`Fast Map operational source ${sourceId} did not mount.`);
         }
-        for (const layerId of [...fastMapPointLayerIds(), ...fastMapClusterLayerSources().keys()]) {
+        for (const layerId of [...fastMapPointLayerIds(), ...fastMapIconLayerIds(), ...fastMapClusterLayerSources().keys(), 'mcms-fast-vehicle-routes']) {
         if (!map.getLayer?.(layerId)) throw new Error(`Fast Map operational layer ${layerId} did not mount.`);
         }
         return true;
@@ -23643,11 +23672,39 @@ Credits only. Each station and native action will be fetched again, purchased on
         return ['mcms-fast-vehicles', 'mcms-fast-personal-missions', 'mcms-fast-alliance-missions', 'mcms-fast-buildings'];
     }
 
+    function fastMapIconLayerIds() {
+        return ['mcms-fast-vehicle-icons', 'mcms-fast-personal-mission-icons', 'mcms-fast-alliance-mission-icons', 'mcms-fast-building-icons'];
+    }
+
     function fastMapClusterLayerSources() {
         return new Map([
         ['mcms-fast-building-clusters', FAST_MAP.sourceIds.buildings],
         ['mcms-fast-alliance-clusters', FAST_MAP.sourceIds.allianceMissions]
         ]);
+    }
+
+    async function fastMapLoadMarkerImage(descriptor) {
+        const verified = await fetchStationIconImage(descriptor?.url, 'Fast Map marker');
+        const bitmap = await stationIconLoadBitmap(verified.blob);
+        try {
+        const naturalWidth = Math.max(1, Math.round(Number(bitmap?.width || bitmap?.naturalWidth) || 1));
+        const naturalHeight = Math.max(1, Math.round(Number(bitmap?.height || bitmap?.naturalHeight) || 1));
+        const width = Math.max(1, Math.min(FAST_MAP.markerImageMaxDimension, Math.round(Number(descriptor?.width) || naturalWidth)));
+        const height = Math.max(1, Math.min(FAST_MAP.markerImageMaxDimension, Math.round(Number(descriptor?.height) || naturalHeight)));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) throw new Error('Browser could not prepare the marker image for WebGL.');
+        context.clearRect(0, 0, width, height);
+        context.drawImage(bitmap, 0, 0, width, height);
+        return context.getImageData(0, 0, width, height);
+        } finally { try { bitmap?.close?.(); } catch (err) {} }
+    }
+
+    function fastMapTransparentMarkerImage() {
+        const size = 8;
+        return { width: size, height: size, data: new Uint8Array(size * size * 4) };
     }
 
     function createMapLibreFastMapAdapter(library, config) {
@@ -23676,6 +23733,13 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
 
         const clusterLayers = fastMapClusterLayerSources();
+        const markerImageDescriptors = new Map(config.images || []);
+        const markerImageQueue = [];
+        const markerImagePending = new Set();
+        const markerImageLoaded = new Set();
+        const markerImageFailed = new Set();
+        const handledFeatureClicks = new WeakSet();
+        let markerImageWorkers = 0;
         let movementStartedAt = 0;
         let movementFrames = 0;
         let readySettled = false;
@@ -23708,10 +23772,46 @@ Credits only. Each station and native action will be fetched again, purchased on
         movementStartedAt = 0;
         movementFrames = 0;
         };
+        const drainMarkerImageQueue = () => {
+        while (!removed && markerImageWorkers < FAST_MAP.markerImageConcurrency && markerImageQueue.length) {
+            const imageId = markerImageQueue.shift();
+            const descriptor = markerImageDescriptors.get(imageId);
+            if (!descriptor || map.hasImage?.(imageId)) {
+            markerImagePending.delete(imageId);
+            if (map.hasImage?.(imageId)) markerImageLoaded.add(imageId);
+            continue;
+            }
+            markerImageWorkers += 1;
+            Promise.resolve(config.loadMarkerImage?.(descriptor)).then(image => {
+            if (removed || !image || map.hasImage?.(imageId)) return;
+            map.addImage(imageId, image, { pixelRatio: 1 });
+            markerImageLoaded.add(imageId);
+            markerImageFailed.delete(imageId);
+            map.triggerRepaint?.();
+            }).catch(error => {
+            markerImageFailed.add(imageId);
+            config.onMarkerImageError?.(error, descriptor);
+            }).finally(() => {
+            markerImageWorkers = Math.max(0, markerImageWorkers - 1);
+            markerImagePending.delete(imageId);
+            drainMarkerImageQueue();
+            });
+        }
+        };
+        const queueMarkerImage = imageId => {
+        const id = String(imageId || '');
+        if (!id || id === FAST_MAP.markerImageFallbackId || !markerImageDescriptors.has(id) || markerImagePending.has(id) || markerImageFailed.has(id) || map.hasImage?.(id)) return false;
+        markerImagePending.add(id);
+        markerImageQueue.push(id);
+        drainMarkerImageQueue();
+        return true;
+        };
+        const onStyleImageMissing = event => { queueMarkerImage(event?.id); };
         map.on('error', onError);
         map.on('movestart', onMoveStart);
         map.on('render', onRender);
         map.on('moveend', onMoveEnd);
+        map.on('styleimagemissing', onStyleImageMissing);
 
         const ready = new Promise((resolve, reject) => {
         resolveReady = resolve;
@@ -23719,14 +23819,23 @@ Credits only. Each station and native action will be fetched again, purchased on
         readyTimer = fastMapManagedTimeout(() => settleReady(new Error('Fast Map base style did not become ready before its safety timeout.')), FAST_MAP.readyTimeoutMs);
         map.once('load', () => {
             if (readySettled || removed) return;
-            try { fastMapInstallOperationalLayers(map, config.collections); }
+            try {
+            if (!map.hasImage?.(FAST_MAP.markerImageFallbackId)) map.addImage(FAST_MAP.markerImageFallbackId, fastMapTransparentMarkerImage(), { pixelRatio: 1 });
+            fastMapInstallOperationalLayers(map, config.collections);
+            for (const imageId of markerImageDescriptors.keys()) queueMarkerImage(imageId);
+            }
             catch (error) {
             settleReady(error instanceof Error ? error : new Error('Fast Map operational layers could not be mounted.'));
             return;
             }
             try { map.touchZoomRotate?.disableRotation?.(); } catch (err) {}
-            for (const layerId of fastMapPointLayerIds()) {
+            for (const layerId of [...fastMapPointLayerIds(), ...fastMapIconLayerIds()]) {
             map.on('click', layerId, event => {
+                const original = event?.originalEvent;
+                if (original && typeof original === 'object') {
+                if (handledFeatureClicks.has(original)) return;
+                handledFeatureClicks.add(original);
+                }
                 const feature = event?.features?.[0];
                 const ref = String(feature?.properties?.ref || feature?.id || '');
                 if (ref) config.onFeature?.(ref);
@@ -23782,6 +23891,14 @@ Credits only. Each station and native action will be fetched again, purchased on
             source.setData?.(collection);
             return true;
         },
+        updateImages(descriptors) {
+            if (removed) return false;
+            for (const [imageId, descriptor] of new Map(descriptors || [])) {
+            markerImageDescriptors.set(imageId, descriptor);
+            queueMarkerImage(imageId);
+            }
+            return true;
+        },
         setPresentation(presentation = {}) {
             if (removed || !map.isStyleLoaded?.()) return false;
             const focus = Boolean(presentation.markerFocus);
@@ -23791,6 +23908,9 @@ Credits only. Each station and native action will be fetched again, purchased on
             map.setPaintProperty('mcms-fast-buildings', 'circle-opacity', buildingOpacity);
             map.setPaintProperty('mcms-fast-building-clusters', 'circle-opacity', focus ? 0.22 : 0.86);
             map.setPaintProperty('mcms-fast-vehicles', 'circle-opacity', vehicleOpacity);
+            map.setPaintProperty('mcms-fast-building-icons', 'icon-opacity', focus ? 0.18 : 1);
+            map.setPaintProperty('mcms-fast-vehicle-icons', 'icon-opacity', focus ? 0.28 : 1);
+            map.setPaintProperty('mcms-fast-vehicle-routes', 'line-opacity', focus ? 0.28 : ['get', 'opacity']);
             } catch (err) { return false; }
             return true;
         },
@@ -23806,13 +23926,18 @@ Credits only. Each station and native action will be fetched again, purchased on
         },
         resize() { try { map.resize(); return true; } catch (err) { return false; } },
         isBaseMapReady() { return baseMapReady && map.isStyleLoaded?.() === true; },
+        getMarkerImageStats() {
+            return { available: markerImageDescriptors.size, loaded: markerImageLoaded.size, failed: markerImageFailed.size, pending: markerImagePending.size };
+        },
         getRendererCount() { return config.container.querySelectorAll('canvas.maplibregl-canvas, canvas').length; },
         destroy() {
             if (removed) return;
             removed = true;
             baseMapReady = false;
             if (!readySettled) settleReady(new Error('Fast Map startup was cancelled.'));
-            try { map.off('error', onError); map.off('movestart', onMoveStart); map.off('render', onRender); map.off('moveend', onMoveEnd); } catch (err) {}
+            markerImageQueue.length = 0;
+            markerImagePending.clear();
+            try { map.off('error', onError); map.off('movestart', onMoveStart); map.off('render', onRender); map.off('moveend', onMoveEnd); map.off('styleimagemissing', onStyleImageMissing); } catch (err) {}
             try { map.remove(); } catch (err) {}
         }
         };
@@ -23895,12 +24020,110 @@ Credits only. Each station and native action will be fetched again, purchased on
             ?? null;
     }
 
+    function fastMapMarkerImageUrl(marker, record = null) {
+        const iconOptions = marker?.options?.icon?.options || marker?.options?.icon || {};
+        const iconElement = marker?._icon?.tagName === 'IMG' ? marker._icon : marker?._icon?.querySelector?.('img');
+        const backgroundImage = String(marker?._icon?.style?.backgroundImage || '').match(/^url\(["']?(.*?)["']?\)$/u)?.[1] || '';
+        const candidates = [
+        iconOptions.iconUrl,
+        iconElement?.currentSrc,
+        iconElement?.src,
+        backgroundImage,
+        marker?.flavour_url,
+        record?.flavour_url,
+        record?.building_marker_image,
+        record?.vehicle_state_url,
+        record?.app_icon_path
+        ];
+        for (const candidate of candidates) {
+        const href = stationIconSafeUrl(candidate);
+        if (href) return href;
+        }
+        return '';
+    }
+
+    function fastMapMarkerImageDimension(value, axis) {
+        const numeric = Array.isArray(value) ? Number(value[axis]) : Number(axis === 0 ? value?.x ?? value?.width : value?.y ?? value?.height);
+        return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+    }
+
+    function fastMapMarkerImageDescriptor(kind, marker, record = null) {
+        const url = fastMapMarkerImageUrl(marker, record);
+        if (!url) return null;
+        const iconOptions = marker?.options?.icon?.options || marker?.options?.icon || {};
+        const iconElement = marker?._icon?.tagName === 'IMG' ? marker._icon : marker?._icon?.querySelector?.('img');
+        const iconSize = iconOptions.iconSize;
+        const width = Math.max(1, Math.min(FAST_MAP.markerImageMaxDimension, Math.round(
+        fastMapMarkerImageDimension(iconSize, 0) || Number(iconElement?.width || iconElement?.naturalWidth) || 32
+        )));
+        const height = Math.max(1, Math.min(FAST_MAP.markerImageMaxDimension, Math.round(
+        fastMapMarkerImageDimension(iconSize, 1) || Number(iconElement?.height || iconElement?.naturalHeight) || 37
+        )));
+        const identity = `${kind}|${width}x${height}|${url}`;
+        let first = 2166136261;
+        let second = 2246822507;
+        for (let index = 0; index < identity.length; index += 1) {
+        const code = identity.charCodeAt(index);
+        first = Math.imul(first ^ code, 16777619) >>> 0;
+        second = Math.imul(second ^ (code + index), 3266489909) >>> 0;
+        }
+        return {
+        id: `mcms-fast-${kind}-image-${first.toString(16).padStart(8, '0')}${second.toString(16).padStart(8, '0')}`,
+        url,
+        width,
+        height
+        };
+    }
+
+    function fastMapMarkerImageProperties(images, kind, marker, record = null) {
+        const descriptor = fastMapMarkerImageDescriptor(kind, marker, record);
+        if (!descriptor) return {};
+        images.set(descriptor.id, descriptor);
+        return { iconKey: descriptor.id };
+    }
+
+    function fastMapVehicleRouteCoordinates(marker, nativeMap) {
+        const route = marker?.polyline;
+        if (!route || !fastMapLayerPresent(nativeMap, route)) return [];
+        let latLngs = null;
+        try { latLngs = route.getLatLngs?.(); } catch (err) { latLngs = null; }
+        const coordinates = [];
+        const append = value => {
+        if (!value) return;
+        if (Array.isArray(value)) {
+            if (value.length >= 2 && Number.isFinite(Number(value[0])) && Number.isFinite(Number(value[1]))) {
+            const lat = Number(value[0]);
+            const lng = Number(value[1]);
+            if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) coordinates.push([lng, lat]);
+            return;
+            }
+            for (const child of value) append(child);
+            return;
+        }
+        const lat = Number(value.lat);
+        const lng = Number(value.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) coordinates.push([lng, lat]);
+        };
+        append(latLngs);
+        return coordinates.filter((point, index) => index === 0 || point[0] !== coordinates[index - 1][0] || point[1] !== coordinates[index - 1][1]);
+    }
+
     function fastMapFeature(kind, id, point, title, properties = {}) {
         const ref = `${kind}:${id}`;
         return {
         type: 'Feature',
         id: ref,
         geometry: { type: 'Point', coordinates: [point.lng, point.lat] },
+        properties: { ref, kind, recordId: String(id), title: fastMapText(title, `${kind} ${id}`), ...properties }
+        };
+    }
+
+    function fastMapLineFeature(kind, id, coordinates, title, properties = {}) {
+        const ref = `${kind}:${id}`;
+        return {
+        type: 'Feature',
+        id: ref,
+        geometry: { type: 'LineString', coordinates },
         properties: { ref, kind, recordId: String(id), title: fastMapText(title, `${kind} ${id}`), ...properties }
         };
     }
@@ -23914,7 +24137,8 @@ Credits only. Each station and native action will be fetched again, purchased on
     function fastMapDataSnapshot(nativeMap = fastMapRuntime.nativeMap) {
         const collections = Object.fromEntries(Object.values(FAST_MAP.sourceIds).map(id => [id, fastMapFeatureCollection()]));
         const references = new Map();
-        const counts = { buildings: 0, allianceMissions: 0, personalMissions: 0, vehicles: 0 };
+        const images = new Map();
+        const counts = { buildings: 0, allianceMissions: 0, personalMissions: 0, vehicles: 0, vehicleRoutes: 0 };
         const register = (sourceId, feature, reference, countKey) => {
         collections[sourceId].features.push(feature);
         references.set(feature.properties.ref, reference);
@@ -23941,9 +24165,18 @@ Credits only. Each station and native action will be fetched again, purchased on
             const title = commandPaletteRecordValue(record, ['caption', 'name', 'title']) || `Vehicle ${id}`;
             const status = vehicleStatusCode(record);
             const feature = fastMapFeature('vehicle', id, point, title, {
-                colour: fastMapVehicleColour(record), stroke: '#e7f5ff', status: status === null ? '' : String(status)
+                colour: fastMapVehicleColour(record), stroke: '#e7f5ff', status: status === null ? '' : String(status),
+                ...fastMapMarkerImageProperties(images, 'vehicle', marker, record)
             });
             register(FAST_MAP.sourceIds.vehicles, feature, { kind: 'vehicle', id: String(id), title: feature.properties.title, marker, record }, 'vehicles');
+            const routeCoordinates = fastMapVehicleRouteCoordinates(marker, nativeMap);
+            if (routeCoordinates.length >= 2) {
+                const routeOpacity = Number(marker?.polyline?.options?.opacity);
+                collections[FAST_MAP.sourceIds.vehicleRoutes].features.push(fastMapLineFeature('vehicle-route', id, routeCoordinates, `${title} route`, {
+                opacity: Number.isFinite(routeOpacity) ? Math.max(0, Math.min(1, routeOpacity)) : 1
+                }));
+                counts.vehicleRoutes += 1;
+            }
             } catch (err) {}
         }
         }
@@ -23963,7 +24196,8 @@ Credits only. Each station and native action will be fetched again, purchased on
             const title = commandPaletteRecordValue(record, ['caption', 'name', 'title', 'building_name', 'buildingName']) || `Building ${id}`;
             const type = commandPaletteRecordValue(record, ['building_type_caption', 'buildingTypeCaption', 'building_type_name', 'buildingTypeName', 'type_caption', 'typeCaption']);
             const feature = fastMapFeature('building', id, point, title, {
-            colour: fastMapBuildingColour(typeId), stroke: alliance ? '#ffe2a6' : '#f5fbff', type: fastMapText(type, '', 80), alliance: alliance ? 1 : 0
+            colour: fastMapBuildingColour(typeId), stroke: alliance ? '#ffe2a6' : '#f5fbff', type: fastMapText(type, '', 80), alliance: alliance ? 1 : 0,
+            ...fastMapMarkerImageProperties(images, 'building', marker, record)
             });
             register(FAST_MAP.sourceIds.buildings, feature, { kind: 'building', id: String(id), title: feature.properties.title, marker, record }, 'buildings');
         } catch (err) {}
@@ -23985,18 +24219,35 @@ Credits only. Each station and native action will be fetched again, purchased on
             const sourceId = alliance ? FAST_MAP.sourceIds.allianceMissions : FAST_MAP.sourceIds.personalMissions;
             const countKey = alliance ? 'allianceMissions' : 'personalMissions';
             const feature = fastMapFeature('mission', id, point, fastMapMissionTitle(marker, id), {
-            colour: alliance ? '#ee8f25' : '#cf3139', stroke: alliance ? '#fff3d8' : '#ffffff', alliance: alliance ? 1 : 0, personal: personal ? 1 : 0
+            colour: alliance ? '#ee8f25' : '#cf3139', stroke: alliance ? '#fff3d8' : '#ffffff', alliance: alliance ? 1 : 0, personal: personal ? 1 : 0,
+            ...fastMapMarkerImageProperties(images, 'mission', marker, snapshot || marker)
             });
             register(sourceId, feature, { kind: 'mission', id: String(id), title: feature.properties.title, marker, snapshot }, countKey);
         } catch (err) {}
         }
-        return { collections, references, counts };
+        return { collections, references, images, counts };
+    }
+
+    function fastMapGeometrySignature(geometry) {
+        let count = 0;
+        let first = 2166136261;
+        let second = 2246822507;
+        const visit = value => {
+        if (Array.isArray(value)) { for (const child of value) visit(child); return; }
+        const number = Number(value);
+        if (!Number.isFinite(number)) return;
+        const coordinate = Math.round(number * 10000000) | 0;
+        first = Math.imul(first ^ coordinate, 16777619) >>> 0;
+        second = Math.imul(second ^ (coordinate + count), 3266489909) >>> 0;
+        count += 1;
+        };
+        visit(geometry?.coordinates || []);
+        return `${geometry?.type || ''}:${count}:${first.toString(16)}:${second.toString(16)}`;
     }
 
     function fastMapFeatureSignature(feature) {
-        const coordinates = feature?.geometry?.coordinates || [];
         const properties = feature?.properties || {};
-        return `${coordinates[0]}|${coordinates[1]}|${Object.keys(properties).sort().map(key => `${key}:${properties[key]}`).join('|')}`;
+        return `${fastMapGeometrySignature(feature?.geometry)}|${Object.keys(properties).sort().map(key => `${key}:${properties[key]}`).join('|')}`;
     }
 
     function fastMapFeatureIndex(collection) {
@@ -24033,6 +24284,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function fastMapApplySnapshot(snapshot, force = false) {
+        fastMapRuntime.adapter?.updateImages?.(snapshot.images);
         for (const [sourceId, collection] of Object.entries(snapshot.collections)) {
         const previous = fastMapRuntime.sourceState.get(sourceId) || new Map();
         const next = fastMapFeatureIndex(collection);
@@ -24062,8 +24314,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!hud) return;
         const counts = fastMapRuntime.featureCounts;
         const fps = fastMapRuntime.lastRenderFps > 0 ? `${Math.round(fastMapRuntime.lastRenderFps)} FPS` : 'IDLE';
-        const summary = `${fps} · ${fastMapTotalFeatures().toLocaleString()} points · ${fastMapRuntime.syncMs.toFixed(1)} ms sync`;
-        const detail = `${counts.personalMissions} own · ${counts.allianceMissions} alliance · ${counts.vehicles} units · ${counts.buildings} buildings`;
+        const summary = `${fps} · ${fastMapTotalFeatures().toLocaleString()} features · ${fastMapRuntime.syncMs.toFixed(1)} ms sync`;
+        const detail = `${counts.personalMissions} own · ${counts.allianceMissions} alliance · ${counts.vehicles} units · ${counts.vehicleRoutes} routes · ${counts.buildings} buildings`;
         updateUiSetText(hud.querySelector('[data-fast-map-metrics]'), summary);
         updateUiSetText(hud.querySelector('[data-fast-map-counts]'), detail);
         const memory = fastMapFormatMemory();
@@ -24331,6 +24583,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         connectedLeafletPanes: mapOuter?.querySelectorAll?.('.leaflet-map-pane,.leaflet-tile-pane,.leaflet-marker-pane')?.length || 0,
         connectedRenderers: fastMapRuntime.fastElement?.querySelectorAll?.('canvas')?.length || 0,
         adapterRenderers: Number(fastMapRuntime.adapter?.getRendererCount?.()) || 0,
+        markerImages: fastMapRuntime.adapter?.getMarkerImageStats?.() || null,
         featureCounts: { ...fastMapRuntime.featureCounts },
         totalFeatures: fastMapTotalFeatures(),
         syncMs: fastMapRuntime.syncMs,
@@ -24403,6 +24656,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             container: surface,
             view: initialView,
             collections: snapshot.collections,
+            images: snapshot.images,
+            loadMarkerImage: fastMapLoadMarkerImage,
+            onMarkerImageError: (error, descriptor) => {
+            console.debug(`[${SCRIPT.name}] Fast Map kept the fallback marker for ${descriptor?.id || 'an image'}.`, error);
+            },
             onFeature: fastMapOpenReference,
             onFps: fps => { fastMapRuntime.lastRenderFps = Number(fps) || 0; updateFastMapHud(); },
             onError: error => {
@@ -24435,7 +24693,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         adapter.resize?.();
         applyMapFullscreenState();
         fitControlToMap();
-        if (announce) showToast(`Fast Map active · ${fastMapTotalFeatures().toLocaleString()} live points · native Leaflet rendering parked`);
+        if (announce) showToast(`Fast Map active · ${fastMapTotalFeatures().toLocaleString()} live features · native Leaflet rendering parked`);
         return true;
         } catch (error) {
         try { adapter?.destroy?.(); } catch (err) {}

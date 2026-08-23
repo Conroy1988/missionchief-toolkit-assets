@@ -38,19 +38,19 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.17.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.17.2"
 
     validator = load_validator()
     validator.validate_release_briefing(source, metadata.group(1))
     expect_briefing_failure(
         validator,
-        source.replace('version: "10.17.1"', 'version: "10.4.1"', 1),
+        source.replace('version: "10.17.2"', 'version: "10.4.1"', 1),
         metadata.group(1),
     )
     expect_briefing_failure(
         validator,
         source.replace(
-            "Replaces the inherited Leaflet raster-tile bridge with OpenFreeMap’s MapLibre-native vector style, removing the blank-grey-map failure shown in the live report.",
+            "Restores MissionChief’s building, mission and vehicle pictures in Fast Map by bridging the active native Leaflet icon URL, size and current vehicle graphic into MapLibre symbol layers.",
             "This deliberately stale highlight must fail validation.",
             1,
         ),

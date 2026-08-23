@@ -265,11 +265,13 @@
       "features": [
         {
           "name": "Fast Map",
-          "summary": "Replaces connected Leaflet rendering with one validated OpenFreeMap/MapLibre WebGL canvas while preserving MissionChief live data, native filters and exact rollback.",
+          "summary": "Replaces connected Leaflet rendering with one validated OpenFreeMap/MapLibre WebGL canvas while preserving MissionChief marker pictures, vehicle routes, native filters and exact rollback.",
           "details": [
             "Session-only and off by default",
             "Validated vector base style before activation",
             "Zero connected Leaflet panes while active",
+            "Native building, mission and vehicle pictures",
+            "Live red vehicle destination routes",
             "Clustered buildings and alliance missions with incremental live point updates",
             "Top-centre controls clear MissionChief's bottom UI",
             "Exact native element, view and handler restoration on exit or failure"

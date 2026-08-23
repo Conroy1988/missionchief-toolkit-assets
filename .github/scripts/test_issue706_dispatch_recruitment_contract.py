@@ -21,7 +21,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.17.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "10.17.2"
     assert "'dispatchRecruitment'" in source, "Dispatch Recruitment analytics allow-list entry is missing"
     assert "'dispatch'" in source_section(source, "    const COMMAND_SECTION_ORDER", "    const COMMAND_PALETTE_RESULT_LIMIT")
     assert "label: 'Dispatch'" in source and "title: 'Dispatch Administration'" in source

@@ -38,6 +38,12 @@ for fragment, message in [
     ("promoteId: 'ref'", "GeoJSON features do not have stable IDs"),
     ("typeof source.updateData === 'function'", "partial GeoJSON updates are not preferred"),
     ("cluster: true", "large static sources are not clustered"),
+    ("map.on('styleimagemissing', onStyleImageMissing)", "native marker images are not loaded into the MapLibre sprite"),
+    ("fastMapMarkerImageProperties(images, 'vehicle', marker, record)", "vehicle marker pictures are not bridged"),
+    ("fastMapMarkerImageProperties(images, 'building', marker, record)", "building marker pictures are not bridged"),
+    ("fastMapMarkerImageProperties(images, 'mission', marker, snapshot || marker)", "mission marker pictures are not bridged"),
+    ("const route = marker?.polyline", "MissionChief vehicle destination polylines are not bridged"),
+    ("id: 'mcms-fast-vehicle-routes', type: 'line'", "vehicle destination routes are not rendered as MapLibre lines"),
 ]:
     require(fragment, message)
 
@@ -113,6 +119,9 @@ for assertion in [
     "guarded Leaflet marker still wrote",
     "hidden native Fire stations remained in the Fast Map source",
     "live mission added while native events were detached did not reach Fast Map",
+    "native building, mission, or vehicle images were replaced by fallback dots",
+    "active vehicle destination route was not bridged",
+    "vehicle route changed in place but the Fast Map line source did not update",
     "index < 5000",
     "call.update === 1000",
     "movement storm rebuilt the complete vehicle source",

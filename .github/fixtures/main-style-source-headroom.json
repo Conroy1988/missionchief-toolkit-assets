@@ -127,17 +127,17 @@
     "templateLines": 10122,
     "templateSha256": "e66632ea9c8021467c0520828f6b641bde3175b320cd9324a396e45ef23c83c6",
     "canonicalCssSha256": "21cc5850235a4fdaf022cb3a8e6fa44701f91100c8638a049ff803564ff04040",
-    "maxSourceBytes": 2820610,
-    "maxSourceLines": 42407,
+    "maxSourceBytes": 2834262,
+    "maxSourceLines": 42665,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 453171,
-      "sourceLines": 6879,
+      "sourceBytes": 466823,
+      "sourceLines": 7137,
       "templateBytes": 52885,
       "templateLines": 588
     },
-    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, and the v10.17.1 base-map/HUD repair",
-    "incident": "fast-map-base-style-and-hud-repair"
+    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, v10.17.1 base-map/HUD repair, and v10.17.2 native marker/route restoration",
+    "incident": "fast-map-native-markers-and-routes"
   }
 }

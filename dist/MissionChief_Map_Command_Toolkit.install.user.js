@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.9
+// @version      10.17.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -27,6 +27,7 @@
 // @connect      discord.com
 // @connect      discordapp.com
 // @connect      leitstellenspiel.s3.amazonaws.com
+// @connect      cdn.jsdelivr.net
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
 // @run-at       document-start
@@ -50,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.16.9';
+    const VERSION = '10.17.0';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -823,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.9',
+        version: '10.17.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -842,6 +843,8 @@ try {
         contextMenuId: 'mc-map-command-toolkit-context-menu',
         vehicleFollowId: 'mc-map-command-toolkit-vehicle-follow',
         quickWheelId: 'mc-map-command-toolkit-quick-wheel',
+        fastMapHudId: 'mc-map-command-toolkit-fast-map-hud',
+        fastMapNativeId: 'mc-map-command-toolkit-native-map-suspended',
         personalisationStyleId: 'mc-map-command-personalisation-style',
         fullscreenExitId: 'mc-map-command-toolkit-fullscreen-exit',
         cleanExitId: 'mcms-clean-exit',
@@ -884,16 +887,15 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.9",
-        title: "Native Three-Station Building Filters",
+        version: "10.17.0",
+        title: "Fast Map Replacement Renderer",
         highlights: Object.freeze([
-            "Replaces the Buildings toggle with a small popup for Ambulance Stations, Fire Stations and Police Stations.",
-            "Activates MissionChief's exact native building-filter checkboxes so the game's own layers and saved filter state remain authoritative.",
-            "Removes the old building catalogue fetch, marker scans, ownership/type selector, custom layer enforcement and recurring building-visibility task.",
-            "Prevents legacy saved Buildings state and Economy Mode from hiding or restoring building layers outside MissionChief's native filter service.",
-            "Keeps the popup open for multi-selection and supports the dock, settings panel, Quick Wheel, command palette, shortcut, right-click and click-away flows.",
-            "Clamps and scrolls the popup within Desktop, Tablet and iOS viewports while wrapping every label and state badge safely.",
-            "Adds isolated native-control contracts and a mounted iOS regression proving multi-selection without panel closure, overflow or runtime errors."
+            "Adds a session-only Fast Map control directly beside Economy Mode and loads no MapLibre code, worker or WebGL context until the player explicitly selects it.",
+            "Stops native Leaflet rendering by stopping animation, disabling handlers, detaching the exact map DOM and guarding detached marker writes while retaining MissionChief’s live data feed.",
+            "Renders buildings, personal and alliance missions and vehicles through one MapLibre WebGL canvas with clustering, incremental GeoJSON updates and native filter visibility.",
+            "Restores the exact Leaflet element, view and enabled handlers on exit, cancellation, route teardown, Drawing, Coverage or a fatal WebGL, worker or style failure.",
+            "Pins MapLibre 5.24.0 to an exact byte length and SHA-256 and evaluates it only after verification through its tested browser UMD export path.",
+            "Adds contained Desktop, Tablet and iOS controls, live renderer diagnostics and permanent proofs for native Fire filtering, live mission changes, 5,009-point scale, one 1,000-vehicle diff and zero detached Leaflet marker writes."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1896,13 +1898,33 @@ try {
         visibility: Object.freeze({ label: 'Visibility', controls: Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']) }),
         intelligence: Object.freeze({ label: 'Intelligence', controls: Object.freeze(['allianceCredits', 'missionAge', 'transportWatcher', 'unitCommitment', 'stuckDetector']) }),
         dashboard: Object.freeze({ label: 'Dashboard', controls: Object.freeze(['open-vehicle-status', 'open-pressure-board', 'open-command-palette', 'open-map-measure']) }),
-        performance: Object.freeze({ label: 'Performance', controls: Object.freeze(['toggle-economy']) })
+        performance: Object.freeze({ label: 'Performance', controls: Object.freeze(['toggle-economy', 'toggle-fast-map']) })
     });
     const DEFAULT_LAYOUT_GROUP_ORDER = Object.freeze(Object.keys(LAYOUT_CONTROL_GROUPS));
     const LAYOUT_CONTROL_LABELS = Object.freeze({
         myMissions: 'Personal Missions', allianceMissions: 'Alliance Missions', vehicles: 'Vehicles', buildings: 'Buildings',
         allianceCredits: 'Alliance Credits', missionAge: 'Mission Age', transportWatcher: 'Transport Watcher', unitCommitment: 'Unit Count', stuckDetector: 'Stuck Detector',
-        'open-vehicle-status': 'Vehicle Codes', 'open-pressure-board': 'Pressure Board', 'open-command-palette': 'Command Palette', 'open-map-measure': 'Drawing', 'toggle-economy': 'Economy Mode'
+        'open-vehicle-status': 'Vehicle Codes', 'open-pressure-board': 'Pressure Board', 'open-command-palette': 'Command Palette', 'open-map-measure': 'Drawing', 'toggle-economy': 'Economy Mode', 'toggle-fast-map': 'Fast Map'
+    });
+    // <mcms-fast-map>
+    // MapLibre is fetched only after a deliberate opt-in, verified byte-for-byte, and
+    // discarded on any failure before the MissionChief-owned Leaflet map is restored.
+    const FAST_MAP = Object.freeze({
+        engineVersion: '5.24.0',
+        engineUrl: 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js',
+        engineSha256: '45a9b07a9189ce56054c620a947ccf41e291e58c95e9b61533b740aaa65ee5cb',
+        engineBytes: 1056837,
+        engineMaxBytes: 1100000,
+        requestTimeoutMs: 20000,
+        readyTimeoutMs: 12000,
+        syncVisibleMs: 750,
+        syncHiddenMs: 3000,
+        sourceIds: Object.freeze({
+        buildings: 'mcms-fast-buildings',
+        allianceMissions: 'mcms-fast-alliance-missions',
+        personalMissions: 'mcms-fast-personal-missions',
+        vehicles: 'mcms-fast-vehicles'
+        })
     });
     const QUICK_WHEEL_SLOT_MIN = 4;
     const QUICK_WHEEL_SLOT_MAX = 8;
@@ -2341,6 +2363,31 @@ try {
     let dockGestureStart = null;
     let dockGestureConsumed = false;
     let contextCommandTarget = null;
+    const fastMapRuntime = {
+        phase: 'off',
+        generation: 0,
+        error: '',
+        enginePromise: null,
+        engineLibrary: null,
+        adapter: null,
+        nativeMap: null,
+        nativeElement: null,
+        fastElement: null,
+        suspension: null,
+        renderGuard: null,
+        syncTimer: null,
+        sourceState: new Map(),
+        references: new Map(),
+        featureCounts: { buildings: 0, allianceMissions: 0, personalMissions: 0, vehicles: 0 },
+        syncMs: 0,
+        lastRenderFps: 0,
+        errorCount: 0,
+        activatedAt: 0,
+        lastSyncAt: 0,
+        attribution: 'Map data',
+    };
+    const fastMapManagedTimeout = runtimeSetTimeout;
+    const fastMapManagedAnimationFrame = runtimeRequestAnimationFrame;
     const mapMeasureRuntime = {
         active: false,
         mode: 'distance',
@@ -10132,6 +10179,49 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.controlId} .mcms-economy-btn:focus-visible { background:rgba(43,92,38,.88) !important; color:#fff !important; border-color:#9ee58a !important; }#${SCRIPT.controlId} .mcms-economy-btn.mcms-on {
             background:linear-gradient(180deg,#2f8f45,#176329) !important; color:#fff !important; border-color:#b9f5a7 !important;
             box-shadow:0 0 0 2px rgba(155,235,130,.17),0 5px 16px rgba(0,0,0,.25) !important;
+        }#${SCRIPT.controlId} .mcms-fast-map-btn {
+            border-color:rgba(93,199,255,.58) !important; background:rgba(6,24,36,.90) !important; color:#ccefff !important;
+        }#${SCRIPT.controlId} .mcms-fast-map-btn:hover,
+        #${SCRIPT.controlId} .mcms-fast-map-btn:focus-visible { background:rgba(16,78,112,.94) !important; border-color:#8bdeff !important; color:#fff !important;
+        }#${SCRIPT.controlId} .mcms-fast-map-btn.mcms-on {
+            background:linear-gradient(180deg,#1687ba,#075679) !important; border-color:#b8edff !important; color:#fff !important;
+            box-shadow:0 0 0 2px rgba(89,205,255,.18),0 5px 16px rgba(0,0,0,.25) !important;
+        }#${SCRIPT.controlId} .mcms-fast-map-btn[data-mcms-phase="loading"],
+        #${SCRIPT.controlId} .mcms-fast-map-btn[data-mcms-phase="starting"] { border-color:#ffd477 !important; color:#ffe8b2 !important; cursor:progress !important;
+        }#${SCRIPT.controlId} .mcms-fast-map-btn[data-mcms-phase="error"] { border-color:#ff858c !important; background:rgba(75,17,23,.94) !important; color:#ffd9dc !important;
+        }#${SCRIPT.controlId} .mcms-fast-map-btn .mcms-float-copy,
+        #${SCRIPT.controlId} .mcms-fast-map-btn .mcms-float-label { min-width:0 !important; max-width:100% !important; overflow:hidden !important; text-overflow:ellipsis !important;
+        }.mcms-fast-map {
+            position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; min-width:1px !important; min-height:1px !important;
+            overflow:hidden !important; isolation:isolate !important; background:#c9d0c9 !important; touch-action:none !important;
+        }.mcms-fast-map-surface,
+        .mcms-fast-map-surface.maplibregl-map { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; overflow:hidden !important; font:12px/20px system-ui,-apple-system,"Segoe UI",sans-serif !important; -webkit-tap-highlight-color:transparent !important;
+        }.mcms-fast-map .maplibregl-canvas-container { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important;
+        }.mcms-fast-map .maplibregl-canvas { position:absolute !important; left:0 !important; top:0 !important; outline:none !important;
+        }.mcms-fast-map .maplibregl-canvas-container.maplibregl-interactive { cursor:grab !important; user-select:none !important; -webkit-user-select:none !important;
+        }.mcms-fast-map .maplibregl-canvas-container.maplibregl-interactive:active { cursor:grabbing !important;
+        }#${SCRIPT.fastMapHudId} {
+            position:absolute !important; z-index:2147483200 !important; left:50% !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; transform:translateX(-50%) !important;
+            display:grid !important; grid-template-columns:minmax(0,auto) minmax(120px,1fr) auto !important; align-items:center !important; gap:9px !important;
+            width:max-content !important; max-width:min(720px,calc(100% - 18px)) !important; min-height:42px !important; padding:6px 7px 6px 10px !important;
+            overflow:hidden !important; border:1px solid rgba(112,216,255,.62) !important; border-radius:12px !important;
+            background:rgba(5,18,27,.94) !important; color:#edf9ff !important; box-shadow:0 10px 28px rgba(0,0,0,.46) !important;
+            backdrop-filter:blur(8px) !important; -webkit-backdrop-filter:blur(8px) !important; pointer-events:auto !important;
+            font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
+        }#${SCRIPT.fastMapHudId} :is(.mcms-fast-map-brand,.mcms-fast-map-stat) { display:block !important; min-width:0 !important; overflow:hidden !important;
+        }#${SCRIPT.fastMapHudId} :is(strong,b,small) { display:block !important; min-width:0 !important; max-width:100% !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important;
+        }#${SCRIPT.fastMapHudId} strong { color:#6ed7ff !important; font-size:9px !important; letter-spacing:.7px !important;
+        }#${SCRIPT.fastMapHudId} b { color:#fff !important; font-size:9px !important; font-weight:900 !important;
+        }#${SCRIPT.fastMapHudId} small { margin-top:2px !important; color:#9fb8c5 !important; font-size:7.5px !important; line-height:1.15 !important;
+        }#${SCRIPT.fastMapHudId} .mcms-fast-map-actions { display:flex !important; gap:4px !important; min-width:0 !important;
+        }#${SCRIPT.fastMapHudId} button { min-width:30px !important; height:30px !important; padding:0 8px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:8px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font-size:11px !important; font-weight:900 !important; white-space:nowrap !important;
+        }#${SCRIPT.fastMapHudId} button:is(:hover,:focus-visible) { border-color:#75d9ff !important; background:rgba(42,142,188,.34) !important; outline:none !important;
+        }.mcms-fast-map-attribution { position:absolute !important; z-index:2147483100 !important; right:5px !important; bottom:3px !important; max-width:42% !important; padding:1px 4px !important; overflow:hidden !important; border-radius:4px !important; background:rgba(255,255,255,.82) !important; color:#24333b !important; font:600 7px/1.2 system-ui,sans-serif !important; text-overflow:ellipsis !important; white-space:nowrap !important; pointer-events:auto !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} { grid-template-columns:minmax(0,1fr) auto !important; gap:6px !important; bottom:max(5px,env(safe-area-inset-bottom)) !important; width:calc(100% - 10px) !important; max-width:calc(100% - 10px) !important; min-height:40px !important; padding:5px 6px !important; border-radius:10px !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} .mcms-fast-map-brand { display:none !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.fastMapHudId} button { min-width:32px !important; height:32px !important; padding:0 7px !important;
+        }html[data-mcms-mobile-active="true"] .mcms-fast-map-attribution { bottom:50px !important; max-width:65% !important;
+        }@media (prefers-reduced-motion:reduce) { .mcms-fast-map *, #${SCRIPT.controlId} .mcms-fast-map-btn { animation:none !important; transition:none !important; }
         }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} { grid-template-columns:109px minmax(0,1fr) !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row { grid-area:menu !important; width:109px !important; gap:5px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell { grid-area:auto !important; width:52px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-economy-btn { width:52px !important; height:48px !important; border-radius:13px !important; }html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {
             width:109px !important; max-width:109px !important; grid-template-columns:109px !important; grid-template-areas:"menu" !important;
         }html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-launch-row { display:contents !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-economy-btn {
@@ -14704,6 +14794,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-compact-dock', String(Boolean(state.compactDock)));
         setAttributeIfChanged(root, 'data-mcms-command-bar-open', String(state.commandBarOpen !== false));
         setAttributeIfChanged(root, 'data-mcms-economy', String(Boolean(state.economyMode)));
+        setAttributeIfChanged(root, 'data-mcms-fast-map', fastMapRuntime.phase);
         setAttributeIfChanged(root, 'data-mcms-map-fullscreen', String(Boolean(state.fullscreenMap)));
         setAttributeIfChanged(root, 'data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
         activeDeviceLayout = resolveDeviceLayout();
@@ -23371,6 +23462,1006 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (announce) showToast(next ? 'Maximum Economy Mode on · decorative effects stopped and map work minimised' : 'Economy Mode off · full rendering restored');
     }
 
+    function fastMapIsActive() {
+        return fastMapRuntime.phase === 'active' && Boolean(fastMapRuntime.adapter && fastMapRuntime.suspension);
+    }
+
+    function fastMapNativeIsSuspended() {
+        return Boolean(fastMapRuntime.suspension && fastMapRuntime.nativeElement?.isConnected === false);
+    }
+
+    function fastMapPhaseLabel() {
+        if (fastMapRuntime.phase === 'loading') return 'LOAD';
+        if (fastMapRuntime.phase === 'starting') return 'START';
+        if (fastMapRuntime.phase === 'active') return 'ACTIVE';
+        if (fastMapRuntime.phase === 'error') return 'ERROR';
+        return 'OFF';
+    }
+
+    function setFastMapPhase(phase, error = '') {
+        fastMapRuntime.phase = ['off', 'loading', 'starting', 'active', 'error'].includes(phase) ? phase : 'off';
+        fastMapRuntime.error = String(error || '').slice(0, 240);
+        setAttributeIfChanged(document.documentElement, 'data-mcms-fast-map', fastMapRuntime.phase);
+        updateUI();
+        return fastMapRuntime.phase;
+    }
+
+    function fastMapDevelopmentEngineFactory() {
+        let localFixture = false;
+        try {
+        localFixture = pageWindow.__MCMS_DEV_LAB_TEST__ === true || ['127.0.0.1', 'localhost'].includes(String(pageWindow.location?.hostname || ''));
+        } catch (err) {}
+        const factory = localFixture ? pageWindow.__MCMS_FAST_MAP_TEST_ENGINE__ : null;
+        return factory && typeof factory.create === 'function' ? factory : null;
+    }
+
+    function fastMapTextBytes(value) {
+        const Encoder = pageWindow.TextEncoder || globalThis.TextEncoder;
+        if (typeof Encoder !== 'function') throw new Error('This browser cannot verify the Fast Map engine.');
+        return new Encoder().encode(String(value || ''));
+    }
+
+    async function fastMapSha256(bytes) {
+        const subtle = pageWindow.crypto?.subtle || globalThis.crypto?.subtle;
+        if (!subtle?.digest) throw new Error('Secure engine verification is unavailable in this browser.');
+        const digest = await subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function loadFastMapEngine() {
+        const developmentFactory = fastMapDevelopmentEngineFactory();
+        if (developmentFactory) return { kind: 'fixture', create: config => developmentFactory.create(config) };
+        if (fastMapRuntime.engineLibrary) return { kind: 'maplibre', library: fastMapRuntime.engineLibrary };
+        if (fastMapRuntime.enginePromise) return fastMapRuntime.enginePromise;
+
+        const promise = (async () => {
+        const response = await runtimeGmRequest({
+            url: FAST_MAP.engineUrl,
+            timeoutMs: FAST_MAP.requestTimeoutMs,
+            responseType: 'text',
+            anonymous: true,
+            headers: { Accept: 'text/javascript' },
+            messages: {
+            unavailable: 'Fast Map requires Tampermonkey cross-origin requests.',
+            network: 'The pinned Fast Map engine could not be downloaded.',
+            timeout: 'The pinned Fast Map engine download timed out.',
+            abort: 'The Fast Map engine download was cancelled.'
+            }
+        });
+        const status = Number(response?.status || 0);
+        if (status < 200 || status >= 300) throw new Error(`The Fast Map engine returned HTTP ${status || 'error'}.`);
+        const source = String(response?.responseText || '');
+        const bytes = fastMapTextBytes(source);
+        if (bytes.byteLength > FAST_MAP.engineMaxBytes || bytes.byteLength !== FAST_MAP.engineBytes) {
+            throw new Error('The Fast Map engine size did not match the pinned release.');
+        }
+        const digest = await fastMapSha256(bytes);
+        if (digest !== FAST_MAP.engineSha256) throw new Error('The Fast Map engine failed integrity verification.');
+
+        const scope = globalThis;
+        const previousLibrary = scope.maplibregl;
+        let library = null;
+        try {
+            // The only evaluated bytes are the exact, pinned SHA-256 payload above.
+            const evaluate = Function('module', 'exports', 'define', `${source}\n//# sourceURL=mcms-maplibre-gl-${FAST_MAP.engineVersion}.js\nreturn globalThis.maplibregl;`);
+            library = evaluate(undefined, undefined, undefined);
+        } finally {
+            try {
+            if (previousLibrary === undefined) delete scope.maplibregl;
+            else scope.maplibregl = previousLibrary;
+            } catch (err) {}
+        }
+        if (!library || typeof library.Map !== 'function') throw new Error('The verified Fast Map engine did not initialise.');
+        if (typeof library.supported === 'function' && !library.supported()) throw new Error('WebGL is unavailable or blocked in this browser.');
+        fastMapRuntime.engineLibrary = library;
+        return { kind: 'maplibre', library };
+        })();
+        fastMapRuntime.enginePromise = promise;
+        try { return await promise; }
+        catch (error) {
+        fastMapRuntime.enginePromise = null;
+        throw error;
+        }
+    }
+
+    function fastMapPlainAttribution(value) {
+        const wrapper = document.createElement('div');
+        setInnerHtmlIfChanged(wrapper, String(value || ''));
+        return String(wrapper.textContent || '').replace(/\s+/gu, ' ').trim().slice(0, 180);
+    }
+
+    function fastMapTileTemplate(value) {
+        let url = String(value || '').trim();
+        if (!url || !url.includes('{z}') || !url.includes('{x}') || !url.includes('{y}') || url.includes('{-y}')) return '';
+        url = url.replaceAll('{s}', 'a').replaceAll('{r}', '');
+        if (url.startsWith('//')) url = `${location.protocol}${url}`;
+        else if (url.startsWith('/')) url = `${location.origin}${url}`;
+        if (location.protocol === 'https:' && url.startsWith('http:')) url = `https:${url.slice(5)}`;
+        return /^https?:\/\//iu.test(url) ? url : '';
+    }
+
+    function fastMapBaseTiles(map) {
+        let selected = null;
+        try {
+        map?.eachLayer?.(layer => {
+            if (selected) return;
+            const template = fastMapTileTemplate(layer?._url ?? layer?.options?.url);
+            if (!template || typeof layer?.getTileUrl !== 'function') return;
+            const tileSizeValue = Number(layer?.options?.tileSize?.x ?? layer?.options?.tileSize);
+            selected = {
+            url: template,
+            tileSize: [256, 512].includes(tileSizeValue) ? tileSizeValue : 256,
+            minzoom: Math.max(0, Number(layer?.options?.minZoom) || 0),
+            maxzoom: Math.min(22, Math.max(1, Number(layer?.options?.maxZoom) || 19)),
+            attribution: fastMapPlainAttribution(layer?.options?.attribution) || 'MissionChief map data'
+            };
+        });
+        } catch (err) {}
+        return selected || {
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 19,
+        attribution: '© OpenStreetMap contributors'
+        };
+    }
+
+    function fastMapFeatureCollection(features = []) {
+        return { type: 'FeatureCollection', features: Array.from(features || []) };
+    }
+
+    function fastMapSourceSpecification(data, clustered = false) {
+        return {
+        type: 'geojson',
+        data,
+        promoteId: 'ref',
+        ...(clustered ? { cluster: true, clusterMaxZoom: 12, clusterRadius: 42 } : {})
+        };
+    }
+
+    function fastMapStyle(tileSource, collections) {
+        const ids = FAST_MAP.sourceIds;
+        return {
+        version: 8,
+        sources: {
+            'mcms-fast-base': {
+            type: 'raster', tiles: [tileSource.url], tileSize: tileSource.tileSize,
+            minzoom: tileSource.minzoom, maxzoom: tileSource.maxzoom,
+            attribution: tileSource.attribution
+            },
+            [ids.buildings]: fastMapSourceSpecification(collections[ids.buildings], true),
+            [ids.allianceMissions]: fastMapSourceSpecification(collections[ids.allianceMissions], true),
+            [ids.personalMissions]: fastMapSourceSpecification(collections[ids.personalMissions], false),
+            [ids.vehicles]: fastMapSourceSpecification(collections[ids.vehicles], false)
+        },
+        layers: [
+            { id: 'mcms-fast-background', type: 'background', paint: { 'background-color': '#c9d0c9' } },
+            { id: 'mcms-fast-base', type: 'raster', source: 'mcms-fast-base', paint: { 'raster-fade-duration': 0 } },
+            { id: 'mcms-fast-building-clusters', type: 'circle', source: ids.buildings, filter: ['has', 'point_count'], paint: {
+            'circle-color': '#53616e', 'circle-opacity': 0.86, 'circle-stroke-color': '#f5fbff', 'circle-stroke-width': 1.5,
+            'circle-radius': ['step', ['get', 'point_count'], 9, 50, 13, 250, 17]
+            } },
+            { id: 'mcms-fast-buildings', type: 'circle', source: ids.buildings, filter: ['!', ['has', 'point_count']], paint: {
+            'circle-color': ['get', 'colour'], 'circle-opacity': 0.9, 'circle-stroke-color': ['get', 'stroke'], 'circle-stroke-width': 1.4,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 14, 6]
+            } },
+            { id: 'mcms-fast-alliance-clusters', type: 'circle', source: ids.allianceMissions, filter: ['has', 'point_count'], paint: {
+            'circle-color': '#f59b32', 'circle-opacity': 0.9, 'circle-stroke-color': '#fff3d8', 'circle-stroke-width': 1.6,
+            'circle-radius': ['step', ['get', 'point_count'], 10, 50, 14, 250, 19]
+            } },
+            { id: 'mcms-fast-alliance-missions', type: 'circle', source: ids.allianceMissions, filter: ['!', ['has', 'point_count']], paint: {
+            'circle-color': ['get', 'colour'], 'circle-opacity': 0.94, 'circle-stroke-color': '#fff3d8', 'circle-stroke-width': 2,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 4, 14, 8]
+            } },
+            { id: 'mcms-fast-personal-missions', type: 'circle', source: ids.personalMissions, paint: {
+            'circle-color': ['get', 'colour'], 'circle-opacity': 0.96, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2.2,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 4.5, 14, 9]
+            } },
+            { id: 'mcms-fast-vehicles', type: 'circle', source: ids.vehicles, paint: {
+            'circle-color': ['get', 'colour'], 'circle-opacity': 0.96, 'circle-stroke-color': '#e7f5ff', 'circle-stroke-width': 1.2,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 14, 6.5]
+            } }
+        ]
+        };
+    }
+
+    function fastMapPointLayerIds() {
+        return ['mcms-fast-vehicles', 'mcms-fast-personal-missions', 'mcms-fast-alliance-missions', 'mcms-fast-buildings'];
+    }
+
+    function fastMapClusterLayerSources() {
+        return new Map([
+        ['mcms-fast-building-clusters', FAST_MAP.sourceIds.buildings],
+        ['mcms-fast-alliance-clusters', FAST_MAP.sourceIds.allianceMissions]
+        ]);
+    }
+
+    function createMapLibreFastMapAdapter(library, config) {
+        let map = null;
+        let removed = false;
+        const tileSource = config.tileSource;
+        const style = fastMapStyle(tileSource, config.collections);
+        try {
+        map = new library.Map({
+            container: config.container,
+            style,
+            center: [config.view.lng, config.view.lat],
+            zoom: config.view.zoom,
+            minZoom: tileSource.minzoom,
+            maxZoom: tileSource.maxzoom,
+            attributionControl: false,
+            antialias: false,
+            fadeDuration: 0,
+            renderWorldCopies: false,
+            dragRotate: false,
+            pitchWithRotate: false,
+            touchPitch: false,
+            canvasContextAttributes: { antialias: false, powerPreference: 'high-performance' }
+        });
+        } catch (error) {
+        throw error instanceof Error ? error : new Error('MapLibre could not create a WebGL map.');
+        }
+
+        const clusterLayers = fastMapClusterLayerSources();
+        let movementStartedAt = 0;
+        let movementFrames = 0;
+        const clock = () => Number(pageWindow.performance?.now?.()) || Date.now();
+        const onError = event => config.onError?.(event?.error || new Error('MapLibre reported a rendering error.'));
+        const onMoveStart = event => {
+        movementStartedAt = clock();
+        movementFrames = 0;
+        if (event?.originalEvent) config.onUserMoveStart?.(event);
+        };
+        const onRender = () => { if (movementStartedAt) movementFrames += 1; };
+        const onMoveEnd = () => {
+        if (!movementStartedAt) return;
+        const elapsed = Math.max(1, clock() - movementStartedAt);
+        config.onFps?.(Math.min(240, movementFrames * 1000 / elapsed));
+        movementStartedAt = 0;
+        movementFrames = 0;
+        };
+        map.on('error', onError);
+        map.on('movestart', onMoveStart);
+        map.on('render', onRender);
+        map.on('moveend', onMoveEnd);
+
+        const ready = new Promise((resolve, reject) => {
+        let settled = false;
+        const timer = fastMapManagedTimeout(() => {
+            if (settled) return;
+            settled = true;
+            reject(new Error('Fast Map did not become ready before its safety timeout.'));
+        }, FAST_MAP.readyTimeoutMs);
+        map.once('load', () => {
+            if (settled || removed) return;
+            settled = true;
+            runtimeClearTimeout(timer);
+            try { map.touchZoomRotate?.disableRotation?.(); } catch (err) {}
+            for (const layerId of fastMapPointLayerIds()) {
+            map.on('click', layerId, event => {
+                const feature = event?.features?.[0];
+                const ref = String(feature?.properties?.ref || feature?.id || '');
+                if (ref) config.onFeature?.(ref);
+            });
+            map.on('mouseenter', layerId, () => { try { map.getCanvas().style.cursor = 'pointer'; } catch (err) {} });
+            map.on('mouseleave', layerId, () => { try { map.getCanvas().style.cursor = ''; } catch (err) {} });
+            }
+            for (const [layerId, sourceId] of clusterLayers) {
+            map.on('click', layerId, event => {
+                const feature = event?.features?.[0];
+                const clusterId = Number(feature?.properties?.cluster_id);
+                const coordinates = feature?.geometry?.coordinates;
+                const source = map.getSource(sourceId);
+                if (!Number.isFinite(clusterId) || !Array.isArray(coordinates) || typeof source?.getClusterExpansionZoom !== 'function') return;
+                Promise.resolve(source.getClusterExpansionZoom(clusterId)).then(zoom => map.easeTo({ center: coordinates, zoom })).catch(() => {});
+            });
+            map.on('mouseenter', layerId, () => { try { map.getCanvas().style.cursor = 'zoom-in'; } catch (err) {} });
+            map.on('mouseleave', layerId, () => { try { map.getCanvas().style.cursor = ''; } catch (err) {} });
+            }
+            map.on('contextmenu', event => {
+            const original = event?.originalEvent;
+            config.onContextMenu?.({ x: Number(original?.clientX), y: Number(original?.clientY) }, original);
+            });
+            resolve(true);
+        });
+        });
+
+        return {
+        kind: 'maplibre',
+        ready,
+        updateSource(sourceId, collection, diff) {
+            if (removed) return false;
+            const source = map.getSource(sourceId);
+            if (!source) return false;
+            if (diff && typeof source.updateData === 'function') {
+            source.updateData(diff);
+            return true;
+            }
+            source.setData?.(collection);
+            return true;
+        },
+        setPresentation(presentation = {}) {
+            if (removed || !map.isStyleLoaded?.()) return false;
+            const focus = Boolean(presentation.markerFocus);
+            const buildingOpacity = focus ? 0.18 : 0.9;
+            const vehicleOpacity = focus ? 0.28 : 0.96;
+            try {
+            map.setPaintProperty('mcms-fast-buildings', 'circle-opacity', buildingOpacity);
+            map.setPaintProperty('mcms-fast-building-clusters', 'circle-opacity', focus ? 0.22 : 0.86);
+            map.setPaintProperty('mcms-fast-vehicles', 'circle-opacity', vehicleOpacity);
+            map.setPaintProperty('mcms-fast-base', 'raster-contrast', presentation.roadPriority ? 0.28 : 0);
+            map.setPaintProperty('mcms-fast-base', 'raster-saturation', presentation.roadPriority ? -0.35 : 0);
+            } catch (err) { return false; }
+            return true;
+        },
+        getView() {
+            const centre = map.getCenter?.();
+            return { lat: Number(centre?.lat), lng: Number(centre?.lng), zoom: Number(map.getZoom?.()) };
+        },
+        setView(lat, lng, zoom, options = {}) {
+            const target = { center: [Number(lng), Number(lat)], zoom: Number(zoom) };
+            if (options.animate) map.easeTo({ ...target, duration: Math.max(0, Number(options.durationMs) || 280) });
+            else map.jumpTo(target);
+            return true;
+        },
+        resize() { try { map.resize(); return true; } catch (err) { return false; } },
+        getRendererCount() { return config.container.querySelectorAll('canvas.maplibregl-canvas, canvas').length; },
+        destroy() {
+            if (removed) return;
+            removed = true;
+            try { map.off('error', onError); map.off('movestart', onMoveStart); map.off('render', onRender); map.off('moveend', onMoveEnd); } catch (err) {}
+            try { map.remove(); } catch (err) {}
+        }
+        };
+    }
+
+    async function createFastMapAdapter(engine, config) {
+        if (engine.kind === 'fixture') {
+        const adapter = await engine.create(config);
+        if (!adapter || typeof adapter.destroy !== 'function' || typeof adapter.setView !== 'function' || typeof adapter.getView !== 'function') {
+            throw new Error('The Fast Map fixture adapter is invalid.');
+        }
+        try { await Promise.resolve(adapter.ready); }
+        catch (error) { try { adapter.destroy(); } catch (err) {} throw error; }
+        return adapter;
+        }
+        const adapter = createMapLibreFastMapAdapter(engine.library, config);
+        await adapter.ready;
+        return adapter;
+    }
+
+    function fastMapLayerPoint(layer) {
+        let latLng = null;
+        try { latLng = layer?.getLatLng?.() || null; } catch (err) {}
+        const lat = Number(latLng?.lat);
+        const lng = Number(latLng?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+        return { lat, lng };
+    }
+
+    function fastMapText(value, fallback, maximum = 120) {
+        const text = String(value ?? '').replace(/\s+/gu, ' ').trim();
+        return (text || String(fallback || '')).slice(0, maximum);
+    }
+
+    function fastMapMissionTitle(marker, missionId) {
+        const snapshot = liveMissionSnapshots.get(String(missionId));
+        const overlay = missionOverlayData.get(String(missionId));
+        const panel = getMissionPanelElement(missionId);
+        return fastMapText(
+        snapshot?.caption ?? overlay?.caption ?? marker?.caption ?? marker?.name ?? marker?.title
+            ?? marker?.options?.caption ?? panel?.querySelector?.('strong, .mission_caption, .mission-title')?.textContent,
+        `Mission ${missionId}`
+        );
+    }
+
+    function fastMapMissionMarkerLayers(nativeMap = fastMapRuntime.nativeMap) {
+        const byId = new Map();
+        for (const marker of getMissionMarkerLayers()) {
+        const id = missionIdFromMarker(marker);
+        if (id === null) continue;
+        const existing = byId.get(id);
+        if (!existing || (!fastMapLayerPresent(nativeMap, existing) && fastMapLayerPresent(nativeMap, marker))) byId.set(id, marker);
+        }
+        return Array.from(byId.values());
+    }
+
+    function fastMapVehicleColour(record) {
+        const bucket = vehicleStatusBucket(record);
+        if (bucket === 'available') return '#35a857';
+        if (bucket === 'travelling') return '#2788d8';
+        if (bucket === 'scene') return '#7857c7';
+        if (bucket === 'transport') return '#e2a21a';
+        return '#65798a';
+    }
+
+    function fastMapBuildingColour(typeId) {
+        if (Number(typeId) === 2) return '#d43b42';
+        if (Number(typeId) === 6) return '#287bc1';
+        if (Number(typeId) === 22) return '#2b9a65';
+        return '#687480';
+    }
+
+    function fastMapBuildingTypeId(marker, record = getBuildingRecordForLayer(marker)) {
+        return record?.building_type
+            ?? record?.buildingType
+            ?? marker?.building_type
+            ?? marker?.buildingType
+            ?? marker?.options?.building_type
+            ?? marker?.options?.buildingType
+            ?? null;
+    }
+
+    function fastMapFeature(kind, id, point, title, properties = {}) {
+        const ref = `${kind}:${id}`;
+        return {
+        type: 'Feature',
+        id: ref,
+        geometry: { type: 'Point', coordinates: [point.lng, point.lat] },
+        properties: { ref, kind, recordId: String(id), title: fastMapText(title, `${kind} ${id}`), ...properties }
+        };
+    }
+
+    function fastMapLayerPresent(map, layer, economySet = null) {
+        if (economySet?.has?.(layer)) return true;
+        try { return typeof map?.hasLayer === 'function' ? Boolean(map.hasLayer(layer)) : layer?._map === map; }
+        catch (err) { return layer?._map === map; }
+    }
+
+    function fastMapDataSnapshot(nativeMap = fastMapRuntime.nativeMap) {
+        const collections = Object.fromEntries(Object.values(FAST_MAP.sourceIds).map(id => [id, fastMapFeatureCollection()]));
+        const references = new Map();
+        const counts = { buildings: 0, allianceMissions: 0, personalMissions: 0, vehicles: 0 };
+        const register = (sourceId, feature, reference, countKey) => {
+        collections[sourceId].features.push(feature);
+        references.set(feature.properties.ref, reference);
+        counts[countKey] += 1;
+        };
+
+        const vehicleRecords = new Map();
+        try {
+        for (const record of getPersonalVehicleRecords()) {
+            const id = vehicleRecordId(record);
+            if (id !== null) vehicleRecords.set(String(id), record);
+        }
+        } catch (err) {}
+        const nativeVehicleState = readNativeVisibilityState('vehicles');
+        const vehiclesAllowed = state.visibility.vehicles !== false && (!nativeVehicleState.available || nativeVehicleState.value);
+
+        if (vehiclesAllowed) {
+        for (const marker of getVehicleMarkerLayers()) {
+            try {
+            const id = vehicleRecordId(marker);
+            const point = fastMapLayerPoint(marker);
+            if (id === null || !point || !fastMapLayerPresent(nativeMap, marker, economyHiddenVehicleLayers)) continue;
+            const record = vehicleRecords.get(String(id)) || marker;
+            const title = commandPaletteRecordValue(record, ['caption', 'name', 'title']) || `Vehicle ${id}`;
+            const status = vehicleStatusCode(record);
+            const feature = fastMapFeature('vehicle', id, point, title, {
+                colour: fastMapVehicleColour(record), stroke: '#e7f5ff', status: status === null ? '' : String(status)
+            });
+            register(FAST_MAP.sourceIds.vehicles, feature, { kind: 'vehicle', id: String(id), title: feature.properties.title, marker, record }, 'vehicles');
+            } catch (err) {}
+        }
+        }
+
+        for (const marker of getBuildingMarkerLayers()) {
+        try {
+            const id = getBuildingLayerId(marker);
+            const point = fastMapLayerPoint(marker);
+            const record = getBuildingRecordForLayer(marker) || marker;
+            // v10.16.9 made MissionChief's native filter service the sole owner of building
+            // visibility. Layer membership therefore is the authoritative per-type signal;
+            // Fast Map must not revive the retired Toolkit building selector or Economy mask.
+            if (id === null || !point || !fastMapLayerPresent(nativeMap, marker)) continue;
+            if (isAllianceBuildingLayer(marker, record) && !nativeAllianceBuildingLayerAllowed(nativeMap, marker)) continue;
+            const typeId = fastMapBuildingTypeId(marker, record);
+            const alliance = isAllianceBuildingLayer(marker, record);
+            const title = commandPaletteRecordValue(record, ['caption', 'name', 'title', 'building_name', 'buildingName']) || `Building ${id}`;
+            const type = commandPaletteRecordValue(record, ['building_type_caption', 'buildingTypeCaption', 'building_type_name', 'buildingTypeName', 'type_caption', 'typeCaption']);
+            const feature = fastMapFeature('building', id, point, title, {
+            colour: fastMapBuildingColour(typeId), stroke: alliance ? '#ffe2a6' : '#f5fbff', type: fastMapText(type, '', 80), alliance: alliance ? 1 : 0
+            });
+            register(FAST_MAP.sourceIds.buildings, feature, { kind: 'building', id: String(id), title: feature.properties.title, marker, record }, 'buildings');
+        } catch (err) {}
+        }
+
+        // Read the live registry directly. Toolkit detaches its Leaflet listeners while the
+        // native renderer is parked, so the shared mission-index revision is intentionally
+        // not used as the Fast Map change signal.
+        for (const marker of fastMapMissionMarkerLayers(nativeMap)) {
+        try {
+            const id = missionIdFromMarker(marker);
+            const point = fastMapLayerPoint(marker);
+            if (id === null || !point || !fastMapLayerPresent(nativeMap, marker)) continue;
+            const snapshot = liveMissionSnapshots.get(String(id));
+            const alliance = isAllianceMissionLayer(marker, id, snapshot);
+            const personal = !alliance && (isPersonalMissionLayer(marker, id) || missionKnownPersonal(marker, id) || snapshot?.source === 'personal');
+            if (alliance && !state.visibility.allianceMissions) continue;
+            if (!alliance && !state.visibility.myMissions) continue;
+            const sourceId = alliance ? FAST_MAP.sourceIds.allianceMissions : FAST_MAP.sourceIds.personalMissions;
+            const countKey = alliance ? 'allianceMissions' : 'personalMissions';
+            const feature = fastMapFeature('mission', id, point, fastMapMissionTitle(marker, id), {
+            colour: alliance ? '#ee8f25' : '#cf3139', stroke: alliance ? '#fff3d8' : '#ffffff', alliance: alliance ? 1 : 0, personal: personal ? 1 : 0
+            });
+            register(sourceId, feature, { kind: 'mission', id: String(id), title: feature.properties.title, marker, snapshot }, countKey);
+        } catch (err) {}
+        }
+        return { collections, references, counts };
+    }
+
+    function fastMapFeatureSignature(feature) {
+        const coordinates = feature?.geometry?.coordinates || [];
+        const properties = feature?.properties || {};
+        return `${coordinates[0]}|${coordinates[1]}|${Object.keys(properties).sort().map(key => `${key}:${properties[key]}`).join('|')}`;
+    }
+
+    function fastMapFeatureIndex(collection) {
+        return new Map((collection?.features || []).map(feature => [String(feature.properties?.ref || feature.id), {
+        feature, signature: fastMapFeatureSignature(feature)
+        }]));
+    }
+
+    function fastMapSourceDiff(previous, next) {
+        const remove = [];
+        const add = [];
+        const update = [];
+        for (const id of previous.keys()) if (!next.has(id)) remove.push(id);
+        for (const [id, entry] of next) {
+        const prior = previous.get(id);
+        if (!prior) { add.push(entry.feature); continue; }
+        if (prior.signature === entry.signature) continue;
+        update.push({
+            id,
+            newGeometry: entry.feature.geometry,
+            removeAllProperties: true,
+            addOrUpdateProperties: Object.entries(entry.feature.properties || {}).map(([key, value]) => ({ key, value }))
+        });
+        }
+        if (!remove.length && !add.length && !update.length) return null;
+        return { remove, add, update };
+    }
+
+    function fastMapAdoptInitialSnapshot(snapshot) {
+        fastMapRuntime.references = snapshot.references;
+        fastMapRuntime.featureCounts = snapshot.counts;
+        fastMapRuntime.sourceState.clear();
+        for (const [sourceId, collection] of Object.entries(snapshot.collections)) fastMapRuntime.sourceState.set(sourceId, fastMapFeatureIndex(collection));
+    }
+
+    function fastMapApplySnapshot(snapshot, force = false) {
+        for (const [sourceId, collection] of Object.entries(snapshot.collections)) {
+        const previous = fastMapRuntime.sourceState.get(sourceId) || new Map();
+        const next = fastMapFeatureIndex(collection);
+        const diff = force ? null : fastMapSourceDiff(previous, next);
+        if (force || diff) {
+            const changeCount = diff ? diff.remove.length + diff.add.length + diff.update.length : next.size;
+            const replacement = force || changeCount > Math.max(2000, Math.ceil(Math.max(previous.size, next.size) * 0.55));
+            fastMapRuntime.adapter?.updateSource?.(sourceId, collection, replacement ? null : diff);
+        }
+        fastMapRuntime.sourceState.set(sourceId, next);
+        }
+        fastMapRuntime.references = snapshot.references;
+        fastMapRuntime.featureCounts = snapshot.counts;
+    }
+
+    function fastMapTotalFeatures() {
+        return Object.values(fastMapRuntime.featureCounts).reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+    }
+
+    function fastMapFormatMemory() {
+        const bytes = Number(pageWindow.performance?.memory?.usedJSHeapSize);
+        return Number.isFinite(bytes) && bytes > 0 ? `${Math.round(bytes / 1048576)} MB` : '';
+    }
+
+    function updateFastMapHud() {
+        const hud = toolkitElementById(SCRIPT.fastMapHudId);
+        if (!hud) return;
+        const counts = fastMapRuntime.featureCounts;
+        const fps = fastMapRuntime.lastRenderFps > 0 ? `${Math.round(fastMapRuntime.lastRenderFps)} FPS` : 'IDLE';
+        const summary = `${fps} · ${fastMapTotalFeatures().toLocaleString()} points · ${fastMapRuntime.syncMs.toFixed(1)} ms sync`;
+        const detail = `${counts.personalMissions} own · ${counts.allianceMissions} alliance · ${counts.vehicles} units · ${counts.buildings} buildings`;
+        updateUiSetText(hud.querySelector('[data-fast-map-metrics]'), summary);
+        updateUiSetText(hud.querySelector('[data-fast-map-counts]'), detail);
+        const memory = fastMapFormatMemory();
+        const health = hud.querySelector('[data-fast-map-health]');
+        updateUiSetText(health, `Leaflet parked · one renderer${memory ? ` · ${memory}` : ''}${fastMapRuntime.errorCount ? ` · ${fastMapRuntime.errorCount} warning${fastMapRuntime.errorCount === 1 ? '' : 's'}` : ''}`);
+        updateUiSetProperty(hud, 'title', `${summary}. ${detail}. Native Leaflet rendering is suspended.`);
+    }
+
+    function scheduleFastMapSync(delay = null) {
+        runtimeClearTimeout(fastMapRuntime.syncTimer);
+        fastMapRuntime.syncTimer = null;
+        if (!fastMapIsActive()) return;
+        const wait = delay === null ? (document.hidden ? FAST_MAP.syncHiddenMs : FAST_MAP.syncVisibleMs) : Math.max(0, Number(delay) || 0);
+        fastMapRuntime.syncTimer = fastMapManagedTimeout(() => {
+        fastMapRuntime.syncTimer = null;
+        synchroniseFastMapData();
+        scheduleFastMapSync();
+        }, wait);
+    }
+
+    function synchroniseFastMapData(force = false) {
+        if (!fastMapIsActive()) return false;
+        const started = Number(pageWindow.performance?.now?.()) || Date.now();
+        try {
+        const snapshot = fastMapDataSnapshot(fastMapRuntime.nativeMap);
+        fastMapApplySnapshot(snapshot, force);
+        fastMapRuntime.adapter?.setPresentation?.({ markerFocus: state.markerFocus, roadPriority: state.roadPriority, theme: state.theme });
+        fastMapRuntime.lastSyncAt = Date.now();
+        } catch (error) {
+        fastMapRuntime.errorCount += 1;
+        console.debug(`[${SCRIPT.name}] Fast Map data sync skipped.`, error);
+        }
+        const finished = Number(pageWindow.performance?.now?.()) || Date.now();
+        fastMapRuntime.syncMs = Math.max(0, finished - started);
+        updateFastMapHud();
+        return true;
+    }
+
+    function fastMapOpenReference(ref) {
+        const record = fastMapRuntime.references.get(String(ref || ''));
+        if (!record) { showToast('That map item is no longer available'); return false; }
+        const plural = record.kind === 'mission' ? 'missions' : record.kind === 'vehicle' ? 'vehicles' : 'buildings';
+        const path = `/${plural}/${encodeURIComponent(record.id)}`;
+        try {
+        if (typeof pageWindow.lightboxOpen === 'function') pageWindow.lightboxOpen(path);
+        else if (typeof record.marker?.fire === 'function') record.marker.fire('click');
+        else pageWindow.location.href = path;
+        return true;
+        } catch (err) {
+        showToast(`${record.title || record.kind} could not be opened`);
+        return false;
+        }
+    }
+
+    function fastMapInstallLeafletRenderGuard(nativeMap) {
+        const prototype = pageWindow.L?.Marker?.prototype;
+        if (!prototype) return { patches: [], dirty: new Set(), opacityDirty: new Set() };
+        const guard = { patches: [], dirty: new Set(), opacityDirty: new Set() };
+        const applies = marker => fastMapRuntime.nativeMap === nativeMap && fastMapNativeIsSuspended() && marker?._map === nativeMap;
+        const patch = (name, create) => {
+        const original = prototype[name];
+        if (typeof original !== 'function') return;
+        const wrapped = create(original);
+        try {
+            prototype[name] = wrapped;
+            if (prototype[name] === wrapped) guard.patches.push({ prototype, name, original, wrapped });
+        } catch (err) {}
+        };
+        patch('update', original => function (...args) {
+        if (applies(this)) { guard.dirty.add(this); return this; }
+        return original.apply(this, args);
+        });
+        patch('_animateZoom', original => function (...args) {
+        if (applies(this)) { guard.dirty.add(this); return undefined; }
+        return original.apply(this, args);
+        });
+        patch('_setPos', original => function (...args) {
+        if (applies(this)) { guard.dirty.add(this); return undefined; }
+        return original.apply(this, args);
+        });
+        patch('_updateOpacity', original => function (...args) {
+        if (applies(this)) { guard.opacityDirty.add(this); return undefined; }
+        return original.apply(this, args);
+        });
+        return guard;
+    }
+
+    function fastMapRestoreLeafletRenderGuard(guard = fastMapRuntime.renderGuard) {
+        if (!guard) return { dirty: [], opacityDirty: [] };
+        for (const patch of guard.patches.slice().reverse()) {
+        try { if (patch.prototype[patch.name] === patch.wrapped) patch.prototype[patch.name] = patch.original; } catch (err) {}
+        }
+        return { dirty: Array.from(guard.dirty), opacityDirty: Array.from(guard.opacityDirty) };
+    }
+
+    function fastMapRefreshRestoredMarkers(markers, opacityMarkers) {
+        const queue = Array.from(new Set([...(markers || []), ...(opacityMarkers || [])]));
+        let index = 0;
+        const opacitySet = new Set(opacityMarkers || []);
+        const refresh = () => {
+        if (fastMapNativeIsSuspended() || runtime.destroyed) return;
+        const stop = Math.min(queue.length, index + 350);
+        for (; index < stop; index += 1) {
+            const marker = queue[index];
+            try { marker.update?.(); } catch (err) {}
+            if (opacitySet.has(marker)) try { marker._updateOpacity?.(); } catch (err) {}
+        }
+        if (index < queue.length) fastMapManagedAnimationFrame(refresh);
+        };
+        refresh();
+    }
+
+    function fastMapCreateShell(nativeElement, canonicalId) {
+        const shell = document.createElement('div');
+        shell.id = canonicalId;
+        shell.className = 'mcms-fast-map';
+        shell.dataset.mcmsFastMap = 'true';
+        shell.setAttribute('role', 'application');
+        shell.setAttribute('aria-label', 'Fast Map performance renderer');
+        setInnerHtmlIfChanged(shell, `
+        <div class="mcms-fast-map-surface" data-fast-map-surface></div>
+        <div id="${SCRIPT.fastMapHudId}" class="mcms-fast-map-hud" role="status" aria-live="polite">
+            <span class="mcms-fast-map-brand"><strong>FAST MAP</strong><small data-fast-map-health>Leaflet parked · one renderer</small></span>
+            <span class="mcms-fast-map-stat"><b data-fast-map-metrics>STARTING</b><small data-fast-map-counts>Reading MissionChief markers…</small></span>
+            <span class="mcms-fast-map-actions">
+            <button type="button" data-fast-map-zoom="out" title="Zoom out" aria-label="Zoom Fast Map out">−</button>
+            <button type="button" data-fast-map-zoom="in" title="Zoom in" aria-label="Zoom Fast Map in">+</button>
+            <button type="button" data-fast-map-exit title="Restore MissionChief native map">Native</button>
+            </span>
+        </div>
+        <a class="mcms-fast-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">${escapeHtml(fastMapRuntime.attribution)}</a>`);
+        const rect = nativeElement.getBoundingClientRect?.();
+        if (Number(rect?.height) > 0) shell.style.minHeight = `${Math.round(rect.height)}px`;
+        shell.onclick = event => {
+        const exit = event.target?.closest?.('[data-fast-map-exit]');
+        if (exit) { event.preventDefault(); disableFastMap({ announce: true }); return; }
+        const zoom = event.target?.closest?.('[data-fast-map-zoom]');
+        if (!zoom || !fastMapIsActive()) return;
+        event.preventDefault();
+        const view = fastMapRuntime.adapter?.getView?.();
+        if (!view) return;
+        const delta = zoom.dataset.fastMapZoom === 'in' ? 1 : -1;
+        fastMapRuntime.adapter.setView(view.lat, view.lng, Math.max(1, Math.min(22, view.zoom + delta)), { animate: true, durationMs: 180 });
+        };
+        return shell;
+    }
+
+    function suspendNativeMapForFastMap(nativeMap, nativeElement) {
+        if (!nativeMap || !nativeElement || nativeElement.id !== 'map' || !nativeElement.parentNode) {
+        throw new Error('The canonical MissionChief map could not be safely suspended.');
+        }
+        const parent = nativeElement.parentNode;
+        const nextSibling = nativeElement.nextSibling;
+        const originalId = nativeElement.id;
+        const control = toolkitElementById(SCRIPT.controlId);
+        const controlParent = control?.parentNode || null;
+        const controlNextSibling = control?.nextSibling || null;
+        const view = {
+        lat: Number(nativeMap.getCenter?.()?.lat),
+        lng: Number(nativeMap.getCenter?.()?.lng),
+        zoom: Number(nativeMap.getZoom?.())
+        };
+        if (![view.lat, view.lng, view.zoom].every(Number.isFinite)) throw new Error('The native map view could not be captured.');
+        const enabledHandlers = [];
+        for (const handler of Array.from(nativeMap._handlers || [])) {
+        let enabled = false;
+        try { enabled = typeof handler.enabled === 'function' ? handler.enabled() : Boolean(handler._enabled); } catch (err) {}
+        if (!enabled) continue;
+        enabledHandlers.push(handler);
+        try { handler.disable?.(); } catch (err) {}
+        }
+        try { nativeMap.stop?.(); } catch (err) {}
+        detachMapEvents(nativeMap);
+        stopMapMeasure(false);
+        clearMissionLockOnEffect();
+        clearCoverageRings();
+        clearAllianceCreditLabels();
+        clearMissionAgeLabels();
+        clearUnitCommitmentLabels();
+        clearTransportWatcherLabels();
+        clearResourceGapLabels();
+        clearStuckMissionLabels();
+
+        const originalAriaHidden = nativeElement.getAttribute('aria-hidden');
+        nativeElement.id = SCRIPT.fastMapNativeId;
+        nativeElement.setAttribute('aria-hidden', 'true');
+        const shell = fastMapCreateShell(nativeElement, originalId);
+        parent.insertBefore(shell, nativeElement);
+        if (control) shell.appendChild(control);
+        const parking = document.createDocumentFragment();
+        parking.appendChild(nativeElement);
+        const suspension = {
+        parent, nextSibling, parking, control, controlParent, controlNextSibling,
+        originalId, originalAriaHidden, enabledHandlers, initialView: view
+        };
+        fastMapRuntime.nativeMap = nativeMap;
+        fastMapRuntime.nativeElement = nativeElement;
+        fastMapRuntime.fastElement = shell;
+        fastMapRuntime.suspension = suspension;
+        fastMapRuntime.renderGuard = fastMapInstallLeafletRenderGuard(nativeMap);
+        cachedMap = null;
+        cachedMapElement = shell;
+        cachedMapElementCheckedAt = 0;
+        applyRootAttributes();
+        fitControlToMap();
+        return suspension;
+    }
+
+    function restoreNativeMapAfterFastMap(view = null) {
+        const suspension = fastMapRuntime.suspension;
+        const nativeMap = fastMapRuntime.nativeMap;
+        const nativeElement = fastMapRuntime.nativeElement;
+        if (!suspension || !nativeElement) return false;
+        runtimeUnlistenTarget(fastMapRuntime.fastElement, true);
+        const restoredMarkers = fastMapRestoreLeafletRenderGuard(fastMapRuntime.renderGuard);
+        fastMapRuntime.renderGuard = null;
+        const control = suspension.control;
+        if (control) {
+        const destination = suspension.controlParent === nativeElement ? nativeElement : suspension.controlParent;
+        if (destination) {
+            const anchor = suspension.controlNextSibling?.parentNode === destination ? suspension.controlNextSibling : null;
+            try { destination.insertBefore(control, anchor); } catch (err) { nativeElement.appendChild(control); }
+        } else nativeElement.appendChild(control);
+        }
+        fastMapRuntime.fastElement?.remove();
+        nativeElement.id = suspension.originalId;
+        if (suspension.originalAriaHidden === null) nativeElement.removeAttribute('aria-hidden');
+        else nativeElement.setAttribute('aria-hidden', suspension.originalAriaHidden);
+        const destinationParent = suspension.parent?.isConnected ? suspension.parent : document.querySelector('#map_outer');
+        if (destinationParent) {
+        const anchor = suspension.nextSibling?.parentNode === destinationParent ? suspension.nextSibling : null;
+        try { destinationParent.insertBefore(nativeElement, anchor); } catch (err) { destinationParent.appendChild(nativeElement); }
+        }
+        for (const handler of suspension.enabledHandlers) try { handler.enable?.(); } catch (err) {}
+        cachedMap = nativeMap;
+        cachedMapElement = nativeElement;
+        cachedMapElementCheckedAt = Date.now();
+        mapDiscoveryLastAttempt = 0;
+        fastMapRuntime.suspension = null;
+        fastMapRuntime.nativeElement = null;
+        fastMapRuntime.fastElement = null;
+        fastMapRuntime.nativeMap = null;
+        invalidateMapElementCache();
+        try {
+        const target = view && [view.lat, view.lng, view.zoom].every(Number.isFinite) ? view : suspension.initialView;
+        nativeMap?.setView?.([target.lat, target.lng], target.zoom, { animate: false });
+        nativeMap?.invalidateSize?.({ animate: false });
+        } catch (err) {}
+        attachMapEvents(nativeMap);
+        fastMapRefreshRestoredMarkers(restoredMarkers.dirty, restoredMarkers.opacityDirty);
+        return nativeElement.isConnected;
+    }
+
+    function fastMapDiagnosticsSnapshot() {
+        const mapOuter = document.querySelector('#map_outer');
+        return {
+        phase: fastMapRuntime.phase,
+        active: fastMapIsActive(),
+        nativeRenderingSuspended: fastMapNativeIsSuspended(),
+        nativeMapConnected: Boolean(fastMapRuntime.nativeElement?.isConnected),
+        connectedLeafletPanes: mapOuter?.querySelectorAll?.('.leaflet-map-pane,.leaflet-tile-pane,.leaflet-marker-pane')?.length || 0,
+        connectedRenderers: fastMapRuntime.fastElement?.querySelectorAll?.('canvas')?.length || 0,
+        adapterRenderers: Number(fastMapRuntime.adapter?.getRendererCount?.()) || 0,
+        featureCounts: { ...fastMapRuntime.featureCounts },
+        totalFeatures: fastMapTotalFeatures(),
+        syncMs: fastMapRuntime.syncMs,
+        fps: fastMapRuntime.lastRenderFps,
+        errors: fastMapRuntime.errorCount,
+        engineVersion: FAST_MAP.engineVersion,
+        engineLoaded: Boolean(fastMapRuntime.engineLibrary || fastMapDevelopmentEngineFactory()),
+        error: fastMapRuntime.error
+        };
+    }
+
+    function disableFastMap({ announce = false, error = '', reason = '' } = {}) {
+        const previousPhase = fastMapRuntime.phase;
+        fastMapRuntime.generation += 1;
+        runtimeClearTimeout(fastMapRuntime.syncTimer);
+        fastMapRuntime.syncTimer = null;
+        let view = null;
+        try { view = fastMapRuntime.adapter?.getView?.() || null; } catch (err) {}
+        try { fastMapRuntime.adapter?.destroy?.(); } catch (err) {}
+        fastMapRuntime.adapter = null;
+        const restored = restoreNativeMapAfterFastMap(view);
+        fastMapRuntime.sourceState.clear();
+        fastMapRuntime.references.clear();
+        fastMapRuntime.lastRenderFps = 0;
+        fastMapRuntime.syncMs = 0;
+        fastMapRuntime.activatedAt = 0;
+        setFastMapPhase(error ? 'error' : 'off', error);
+        if (!runtime.destroyed) {
+        applyRootAttributes();
+        applyMapFullscreenState();
+        fitControlToMap();
+        scheduleMarkerStateSync(0, true);
+        reconcileFeatureRefreshes({ includeSnapshots: true, positionPanel: true });
+        }
+        if (announce && previousPhase !== 'off') {
+        if (error) showToast(`Fast Map stopped safely · ${fastMapText(error, 'startup failed', 100)}`);
+        else showToast(restored ? 'Fast Map off · native MissionChief map restored' : 'Fast Map cancelled');
+        }
+        if (reason && !['off', 'error'].includes(previousPhase)) console.debug(`[${SCRIPT.name}] Fast Map stopped: ${reason}`);
+        return restored || previousPhase === 'loading' || previousPhase === 'error';
+    }
+
+    async function enableFastMap({ announce = true } = {}) {
+        if (fastMapIsActive()) return true;
+        if (state.safeMode.enabled) { showToast('Exit Toolkit Safe Mode before starting Fast Map'); return false; }
+        if (!toolkitCommandShellContextActive()) { showToast('Fast Map is available on the main MissionChief map'); return false; }
+        const generation = ++fastMapRuntime.generation;
+        fastMapRuntime.errorCount = 0;
+        setFastMapPhase('loading');
+        if (announce) showToast('Verifying Fast Map engine… native map remains available');
+        let adapter = null;
+        try {
+        const engine = await loadFastMapEngine();
+        if (runtime.destroyed || generation !== fastMapRuntime.generation) return false;
+        const nativeMap = findLeafletMapInstance(true);
+        const nativeElement = nativeMap?.getContainer?.();
+        if (!nativeMap || !nativeElement || toolkitPrimaryMapElement(nativeElement, document) !== nativeElement) {
+            throw new Error('MissionChief native map was not ready.');
+        }
+        const initialView = { lat: Number(nativeMap.getCenter()?.lat), lng: Number(nativeMap.getCenter()?.lng), zoom: Number(nativeMap.getZoom?.()) };
+        if (![initialView.lat, initialView.lng, initialView.zoom].every(Number.isFinite)) throw new Error('MissionChief native map view was invalid.');
+        const tileSource = fastMapBaseTiles(nativeMap);
+        fastMapRuntime.attribution = tileSource.attribution;
+        const snapshot = fastMapDataSnapshot(nativeMap);
+        fastMapAdoptInitialSnapshot(snapshot);
+        setFastMapPhase('starting');
+        suspendNativeMapForFastMap(nativeMap, nativeElement);
+        const surface = fastMapRuntime.fastElement?.querySelector?.('[data-fast-map-surface]');
+        if (!surface) throw new Error('Fast Map surface could not be mounted.');
+        const config = {
+            container: surface,
+            view: initialView,
+            tileSource,
+            collections: snapshot.collections,
+            onFeature: fastMapOpenReference,
+            onFps: fps => { fastMapRuntime.lastRenderFps = Number(fps) || 0; updateFastMapHud(); },
+            onError: error => {
+            fastMapRuntime.errorCount += 1;
+            const message = String(error?.message || error || 'rendering warning');
+            console.debug(`[${SCRIPT.name}] Fast Map renderer warning: ${message}`);
+            updateFastMapHud();
+            if (fastMapIsActive() && /(webgl context|worker.*(?:failed|terminated)|style.*(?:invalid|failed))/iu.test(message)) {
+                fastMapManagedTimeout(() => disableFastMap({ announce: true, error: message, reason: 'fatal renderer error' }), 0);
+            }
+            },
+            onUserMoveStart: () => { if (followedVehicleId && !vehicleFollowRecentering) stopVehicleFollow(true); },
+            onContextMenu: point => {
+            if (activeDeviceLayout === 'tablet' && state.quickWheel.enabled && !state.safeMode.enabled) openTabletQuickWheel(point);
+            }
+        };
+        adapter = await createFastMapAdapter(engine, config);
+        if (runtime.destroyed || generation !== fastMapRuntime.generation) {
+            try { adapter.destroy?.(); } catch (err) {}
+            if (fastMapRuntime.suspension) restoreNativeMapAfterFastMap(initialView);
+            return false;
+        }
+        fastMapRuntime.adapter = adapter;
+        fastMapRuntime.activatedAt = Date.now();
+        fastMapRuntime.lastSyncAt = Date.now();
+        adapter.setPresentation?.({ markerFocus: state.markerFocus, roadPriority: state.roadPriority, theme: state.theme });
+        setFastMapPhase('active');
+        updateFastMapHud();
+        scheduleFastMapSync();
+        adapter.resize?.();
+        applyMapFullscreenState();
+        fitControlToMap();
+        if (announce) showToast(`Fast Map active · ${fastMapTotalFeatures().toLocaleString()} live points · native Leaflet rendering parked`);
+        return true;
+        } catch (error) {
+        try { adapter?.destroy?.(); } catch (err) {}
+        if (generation !== fastMapRuntime.generation) return false;
+        const message = fastMapText(error?.message || error, 'Fast Map could not start', 160);
+        disableFastMap({ announce, error: message, reason: 'activation failure' });
+        return false;
+        }
+    }
+
+    function toggleFastMap() {
+        if (fastMapRuntime.phase === 'loading' || fastMapRuntime.phase === 'starting') {
+        disableFastMap({ announce: true, reason: 'user cancelled startup' });
+        return Promise.resolve(false);
+        }
+        if (fastMapIsActive()) {
+        disableFastMap({ announce: true, reason: 'user restored native map' });
+        return Promise.resolve(false);
+        }
+        return enableFastMap({ announce: true });
+    }
+
+    try {
+        pageWindow.__MCMS_FAST_MAP_DIAGNOSTICS__ = fastMapDiagnosticsSnapshot;
+    } catch (err) {}
+    runtimeOnCleanup(() => {
+        disableFastMap({ announce: false, reason: 'toolkit runtime cleanup' });
+        try { if (pageWindow.__MCMS_FAST_MAP_DIAGNOSTICS__ === fastMapDiagnosticsSnapshot) delete pageWindow.__MCMS_FAST_MAP_DIAGNOSTICS__; } catch (err) {}
+    });
+    // </mcms-fast-map>
+
     function normaliseNativeVisibilityToken(value) {
         return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/gu, '_').replace(/^_+|_+$/gu, '');
     }
@@ -23991,6 +25082,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         return false;
         }
         invalidateMarkerRegistryCaches('building');
+        if (typeof fastMapIsActive === 'function'
+            && fastMapIsActive()
+            && typeof scheduleFastMapSync === 'function') scheduleFastMapSync(0);
         toolkitAnalyticsRecordFeature('buildingVisibility', 'native_building_filter');
         showToast(`${descriptor.label} ${desired ? 'shown' : 'hidden'} · MissionChief filter`);
         return true;
@@ -24134,6 +25228,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         updateUI();
         if (state.economyMode && economyVisibilityChanged) scheduleEconomyLayerSync(0);
         reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
+        if (typeof fastMapIsActive === 'function'
+            && fastMapIsActive()
+            && typeof scheduleFastMapSync === 'function') scheduleFastMapSync(0);
         }
     }
 
@@ -24786,6 +25883,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function findLeafletMapInstance(showStatus = true) {
+        if (fastMapNativeIsSuspended()) return null;
         const mapEl = getLargestLeafletMap();
         if (!mapEl) {
         detachMapEvents(cachedMap);
@@ -24987,6 +26085,15 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function setMapView(lat, lng, zoom) {
+        if (fastMapIsActive()) {
+        try {
+            fastMapRuntime.adapter.setView(Number(lat), Number(lng), Number(zoom), { animate: false });
+            return true;
+        } catch (err) {
+            showToast('Fast Map jump failed');
+            return false;
+        }
+        }
         const map = findLeafletMapInstance(true);
         if (!map || typeof map.setView !== 'function') {
         showToast('Map jump unavailable');
@@ -28962,7 +30069,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         let latLng = null;
         try { latLng = marker.getLatLng?.() || null; } catch (err) {}
         const map = findLeafletMapInstance(false);
-        if (map && latLng) animateMissionFocus(marker, id, latLng, map);
+        if (fastMapIsActive() && latLng) {
+            const view = fastMapRuntime.adapter?.getView?.();
+            fastMapRuntime.adapter?.setView?.(Number(latLng.lat), Number(latLng.lng), Math.max(13, Number(view?.zoom) || 13), { animate: true, durationMs: 320 });
+        }
+        else if (map && latLng) animateMissionFocus(marker, id, latLng, map);
         else if (marker._icon?.classList) {
             marker._icon.classList.add('mcms-mission-focus');
             runtimeSetTimeout(() => marker._icon?.classList?.remove('mcms-mission-focus'), 1800);
@@ -29371,6 +30482,12 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function currentMapViewSnapshot() {
+        if (fastMapIsActive()) {
+        try {
+            const view = fastMapRuntime.adapter?.getView?.();
+            if (view && [view.lat, view.lng, view.zoom].every(Number.isFinite)) return { lat: view.lat, lng: view.lng, zoom: view.zoom };
+        } catch (err) {}
+        }
         const map = findLeafletMapInstance(false);
         try {
             const centre = map?.getCenter?.();
@@ -29590,6 +30707,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         changed = setAttributeIfChanged(document.documentElement, 'data-mcms-map-fullscreen', String(enabled)) || changed;
         if (changed) {
         try { findLeafletMapInstance(false)?.invalidateSize?.({ animate: false }); } catch (err) {}
+        try { fastMapRuntime.adapter?.resize?.(); } catch (err) {}
         }
     }
 
@@ -29635,6 +30753,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         toolkitAnalyticsRecordFeature('safeMode');
         captureSettingsSnapshot(state, { reason: next ? 'Before entering Toolkit Safe Mode' : 'Before leaving Toolkit Safe Mode', force: true });
         if (next) {
+        if (fastMapRuntime.phase !== 'off' && fastMapRuntime.phase !== 'error') disableFastMap({ announce: false, reason: 'Toolkit Safe Mode entered' });
         state.safeMode = { enabled: true, since: Date.now(), previousTab: state.activeTab };
         state.activeTab = 'settings';
         autoHideDockRevealed = true;
@@ -35475,6 +36594,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         return Boolean(toolkitPrimaryMapElement(discoveredMap, doc));
     }
     function teardownToolkitCommandShell(reason = 'ineligible command-shell context') {
+        if (typeof fastMapRuntime !== 'undefined'
+            && fastMapRuntime.phase !== 'off'
+            && fastMapRuntime.phase !== 'error') {
+            disableFastMap({ announce: false, reason });
+        }
         disposeVersionStatus();
         stopMapMeasure(false);
         const nodeIds = [
@@ -35609,6 +36733,11 @@ Credits only. Each station and native action will be fetched again, purchased on
             const verified = await submitNativeVehicleSetting(desired, snapshot.value);
             applyNativeVehicleRuntimeSetting(verified.value);
             mirrorNativeVehicleSetting(verified.value);
+            if (typeof fastMapIsActive === 'function'
+                && fastMapIsActive()
+                && typeof scheduleFastMapSync === 'function') {
+                scheduleFastMapSync(0);
+            }
             showToast(verified.value ? 'MissionChief vehicles on' : 'MissionChief vehicles off');
             return true;
         } catch (err) {
@@ -35624,6 +36753,12 @@ Credits only. Each station and native action will be fetched again, purchased on
     function applyMapVisibilityToggleEffects(feature) {
         const visibilityFeature = nativeVisibilityDescriptor(feature);
         if (visibilityFeature) applyNativeVisibilityPreference(feature, state.visibility[feature]);
+        if (typeof fastMapIsActive === 'function'
+            && fastMapIsActive()
+            && typeof scheduleFastMapSync === 'function'
+            && ['allianceMissions', 'myMissions', 'buildings', 'markerFocus', 'roadPriority'].includes(feature)) {
+            scheduleFastMapSync(0);
+        }
         if (state.economyMode && feature === 'vehicles') scheduleEconomyLayerSync(0);
         if (feature === 'missionAge') {
         runtimeClearTimeout(missionAgeTimer);
@@ -35673,6 +36808,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (feature === 'buildings') {
             toggleNativeBuildingQuickFilter(anchor);
             return;
+        }
+        if (feature === 'coverage' && fastMapIsActive() && !state.coverage.enabled) {
+            disableFastMap({ announce: false, reason: 'Coverage rings require the native Leaflet workspace' });
         }
         if (feature === 'vehicles') {
             void toggleNativeVehicleVisibility();
@@ -36273,6 +37411,14 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function commandPaletteFocusMapRecord(kind, id, source, title) {
         const point = commandPalettePoint(source);
+        if (fastMapIsActive() && point) {
+        try {
+            const view = fastMapRuntime.adapter.getView();
+            fastMapRuntime.adapter.setView(point.lat, point.lng, Math.max(13, Number(view?.zoom) || 13), { animate: true, durationMs: 280 });
+            showToast(title || `${kind} located`);
+            return true;
+        } catch (err) {}
+        }
         const map = findLeafletMapInstance(false);
         if (map && point) {
             try {
@@ -36397,7 +37543,17 @@ Credits only. Each station and native action will be fetched again, purchased on
         const map = findLeafletMapInstance(false);
         let latLng = null;
         try { latLng = marker.getLatLng?.() || null; } catch (err) {}
-        if (!map || !latLng) return false;
+        if (!latLng) return false;
+        if (fastMapIsActive()) {
+        vehicleFollowRecentering = true;
+        try {
+            const view = fastMapRuntime.adapter.getView();
+            fastMapRuntime.adapter.setView(Number(latLng.lat), Number(latLng.lng), Math.max(13, Number(view?.zoom) || 13), { animate: !initial, durationMs: 280 });
+            return true;
+        } catch (err) { return false; }
+        finally { vehicleFollowRecentering = false; }
+        }
+        if (!map) return false;
         vehicleFollowRecentering = true;
         try {
         const zoom = Math.max(13, Number(map.getZoom?.()) || 13);
@@ -36501,6 +37657,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         add('quick-wheel', 'Open Tablet Quick Wheel', `Show the configured ${state.quickWheel.slotCount}-slot touch command wheel`, 'tablet touch long press radial wheel', () => openTabletQuickWheel(null, { manual: true }));
         add('command-bar', `${state.commandBarOpen === false ? 'Show' : 'Hide'} Map Command Bar`, `Persistent map command controls · currently ${state.commandBarOpen === false ? 'hidden' : 'shown'}`, 'dock toolbar collapse expand', () => toggleCommandBar());
         add('economy', `${state.economyMode ? 'Disable' : 'Enable'} Economy Mode`, `Performance mode · currently ${state.economyMode ? 'on' : 'off'}`, 'performance cpu gpu low power', () => setEconomyMode(!state.economyMode, true), true);
+        add('fast-map', `${fastMapIsActive() ? 'Restore Native Map' : ['loading', 'starting'].includes(fastMapRuntime.phase) ? 'Cancel' : 'Start'} Fast Map`, `WebGL performance renderer · currently ${fastMapRuntime.phase}`, 'performance maplibre webgl gpu native leaflet renderer', () => { void toggleFastMap(); }, true);
 
         toggle('personal-missions', 'Personal Missions', state.visibility.myMissions, 'myMissions', 'mine visibility markers');
         toggle('alliance-missions', 'Alliance Missions', state.visibility.allianceMissions, 'allianceMissions', 'shared visibility markers');
@@ -37598,6 +38755,11 @@ Credits only. Each station and native action will be fetched again, purchased on
                         <span class="mcms-float-icon" aria-hidden="true">${MAP_CONTROL_ICONS.economyMode}</span>
                         <span class="mcms-float-copy"><span class="mcms-float-label mcms-float-label-desktop">Economy Mode</span><span class="mcms-float-label mcms-float-label-tablet">Eco</span><span class="mcms-float-label mcms-float-label-mobile">Eco</span><span class="mcms-control-state">OFF</span></span>
                     </button>
+                    <button class="mcms-economy-btn mcms-fast-map-btn" type="button" data-action="toggle-fast-map" title="Start Fast Map" aria-label="Start Fast Map performance renderer" aria-pressed="false" data-mcms-phase="off">
+                        <span class="mcms-float-key" aria-hidden="true">GL</span>
+                        <span class="mcms-float-icon" aria-hidden="true">⚡</span>
+                        <span class="mcms-float-copy"><span class="mcms-float-label mcms-float-label-desktop">Fast Map</span><span class="mcms-float-label mcms-float-label-tablet">Fast</span><span class="mcms-float-label mcms-float-label-mobile">Fast</span><span class="mcms-control-state">OFF</span></span>
+                    </button>
                 </div>
             </div>
             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
@@ -38208,8 +39370,10 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <div class="mcms-section-label">Economy Mode</div>
                 <div class="mcms-grid-2">
                     ${makeActionToggleButton('toggle-economy', '♻', 'Economy Mode', 'Reduce decorative animation, map-layer pressure and background refresh frequency without disabling operational modules.', 'mcms-economy-setting')}
+                    ${makeActionToggleButton('toggle-fast-map', '⚡', 'Fast Map', 'Opt into the WebGL performance renderer. MissionChief Leaflet is disconnected while active and restored on exit or failure.', 'mcms-fast-map-setting')}
                 </div>
                 <div class="mcms-status mcms-economy-status">Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
+                <div class="mcms-status mcms-fast-map-status">Fast Map is OFF. It is session-only and never replaces MissionChief’s native map unless you explicitly start it.</div>
                 <div class="mcms-section-label">Maintenance &amp; guidance</div>
                 <div class="mcms-grid-2">
                     <button class="mcms-small-btn" type="button" data-action="toolkit-doctor">Run Toolkit Doctor</button>
@@ -38457,7 +39621,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         if (action === 'open-help-center') { openHelpCenter(); return; }
         if (action === 'open-command-palette') { openCommandPalette({ returnFocus: button }); return; }
-        if (action === 'open-map-measure') { startMapMeasure(); return; }
+        if (action === 'open-map-measure') {
+            if (fastMapRuntime.phase !== 'off' && fastMapRuntime.phase !== 'error') disableFastMap({ announce: false, reason: 'Drawing requires the native Leaflet workspace' });
+            startMapMeasure();
+            return;
+        }
         if (action === 'open-personalisation-studio') { openPersonalisationStudio('layout'); return; }
         if (action === 'open-layout-studio') { openPersonalisationStudio('layout'); return; }
         if (action === 'open-theme-studio') { openPersonalisationStudio('theme'); return; }
@@ -38469,6 +39637,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (action === 'open-setup-wizard') { openSetupWizard(0, { manual: true }); return; }
         if (action === 'toggle-command-bar') { toggleCommandBar(); return; }
         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
+        if (action === 'toggle-fast-map') { void toggleFastMap(); return; }
         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
         if (action === 'open-pressure-board') { toggleOperationalPressureBoard(); return; }
         if (action === 'open-procurement-brain') { openOperationalIntelligenceView('procurement'); return; }
@@ -39113,6 +40282,20 @@ Credits only. Each station and native action will be fetched again, purchased on
                 updateUiSetDataset(economyButton, 'mcmsState', on ? 'on' : 'off');
                 updateUiSetText(economyButton.querySelector('.mcms-control-state'), on ? 'ACTIVE' : 'OFF');
             }
+            const fastMapButton = control.querySelector('.mcms-fast-map-btn');
+            if (fastMapButton) {
+                const on = fastMapIsActive();
+                const busy = ['loading', 'starting'].includes(fastMapRuntime.phase);
+                const label = on ? 'Restore MissionChief native map' : busy ? 'Cancel Fast Map startup' : fastMapRuntime.phase === 'error' ? 'Retry Fast Map' : 'Start Fast Map performance renderer';
+                updateUiToggleClass(fastMapButton, 'mcms-on', on);
+                updateUiSetAttribute(fastMapButton, 'aria-pressed', String(on));
+                updateUiSetAttribute(fastMapButton, 'aria-busy', String(busy));
+                updateUiSetAttribute(fastMapButton, 'aria-label', label);
+                updateUiSetProperty(fastMapButton, 'title', label);
+                updateUiSetDataset(fastMapButton, 'mcmsState', on ? 'on' : 'off');
+                updateUiSetDataset(fastMapButton, 'mcmsPhase', fastMapRuntime.phase);
+                updateUiSetText(fastMapButton.querySelector('.mcms-control-state'), fastMapPhaseLabel());
+            }
         }
         if (!panel) return;
         const panelSettings = new Map(Array.from(panel.querySelectorAll('[data-setting]'), setting => [setting.dataset.setting, setting]));
@@ -39200,6 +40383,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         for (const [selector, on] of [
             ['.mcms-command-bar-setting', state.commandBarOpen !== false],
             ['.mcms-economy-setting', state.economyMode],
+            ['.mcms-fast-map-setting', fastMapIsActive()],
             ['.mcms-fullscreen-setting', state.fullscreenMap],
         ]) {
             const button = panel.querySelector(selector);
@@ -39299,6 +40483,15 @@ Credits only. Each station and native action will be fetched again, purchased on
         updateUiSetText(economyStatus, state.economyMode
             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
             : 'Economy Mode is OFF. Enable it here or from the Performance group on the map command bar to reduce CPU, GPU and marker workload.');
+        const fastMapStatus = panel.querySelector('.mcms-fast-map-status');
+        const fastMapStatusText = fastMapIsActive()
+            ? `Fast Map is ACTIVE: ${fastMapTotalFeatures().toLocaleString()} live points use one WebGL renderer; MissionChief Leaflet is disconnected and parked. Drawing or Coverage automatically restores the native map.`
+            : ['loading', 'starting'].includes(fastMapRuntime.phase)
+                ? 'Fast Map is starting. Press the same control again to cancel and keep the native map.'
+                : fastMapRuntime.phase === 'error'
+                    ? `Fast Map stopped safely: ${fastMapRuntime.error || 'startup failed'}. The native map is active and unchanged; press Fast Map to retry.`
+                    : 'Fast Map is OFF. It is session-only, loads nothing until selected, and restores the exact native map on exit or failure.';
+        updateUiSetText(fastMapStatus, fastMapStatusText);
         const nudge = panel.querySelector('.mcms-nudge-value');
         updateUiSetText(nudge, `X ${state.nudge.x} / Y ${state.nudge.y}`);
         if (panelOpen && state.activeTab === 'settings') renderProfiles();
@@ -40175,6 +41368,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         runtimeListen(document, 'pointerdown', () => { unlockPayoutAudio(); if (state.notifications.enabled) unlockNotificationAudio(); }, { once: true, capture: true });
         runtimeListen(document, 'click', event => {
             const nativeVisibilityFeature = handleNativeVisibilityControlEvent(event);
+            const nativeVisibilityControl = event?.target?.closest?.('input[type="checkbox"], button[role="switch"], [role="checkbox"], button[aria-pressed]');
+            const nativeBuildingFilterChanged = fastMapIsActive()
+                && Object.values(NATIVE_BUILDING_QUICK_FILTERS).some(descriptor => nativeBuildingQuickFilterControlMatches(nativeVisibilityControl, descriptor));
             const nativeVisibilityWriteInProgress = nativeVisibilityWriteDepth > 0;
             if (handleCommandExperienceAction(event)) return;
             const contextMenu = commandExperienceElement(SCRIPT.contextMenuId);
@@ -40182,6 +41378,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             runtimeSetTimeout(() => {
                 refreshSuppression();
                 if (nativeVisibilityFeature && !nativeVisibilityWriteInProgress && nativeVisibilityWriteDepth === 0) adoptNativeVisibilityFeature(nativeVisibilityFeature);
+                if (nativeBuildingFilterChanged && !nativeVisibilityWriteInProgress && nativeVisibilityWriteDepth === 0) scheduleFastMapSync(0);
             }, 0);
             if (suppressNextOutsideClick) {
                 event.preventDefault();
@@ -40196,12 +41393,14 @@ Credits only. Each station and native action will be fetched again, purchased on
                 const closeButton = closestEventTarget(event, '[data-native-building-close]');
                 if (closeButton) {
                     event.preventDefault();
+                    event.stopImmediatePropagation();
                     setNativeBuildingQuickFilterOpen(false, { restoreFocus: true });
                     return;
                 }
                 const filterButton = closestEventTarget(event, '[data-native-building-filter]');
                 if (filterButton) {
                     event.preventDefault();
+                    event.stopImmediatePropagation();
                     activateNativeBuildingQuickFilter(filterButton.dataset.nativeBuildingFilter);
                 }
                 return;
@@ -40221,6 +41420,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         }, true);
         runtimeListen(pageWindow, 'resize', () => {
             invalidateMapElementCache();
+            fastMapRuntime.adapter?.resize?.();
             applyRootAttributes();
             refreshTabletModeUi();
             scheduleVisualViewportStabilisation('window-resize');
@@ -40286,6 +41486,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             refreshSuppression();
             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
             if (state.economyMode) scheduleEconomyLayerSync(0);
+            if (fastMapIsActive()) scheduleFastMapSync(0);
             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
             scheduleMajorIncidentFeedRender(80);
         });
@@ -40294,6 +41495,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
         }, 2200);
         runtimeOnCleanup(() => {
+            disableFastMap({ announce: false, reason: 'toolkit runtime cleanup' });
             stopAutoLoadAllVehicles();
             transportSweepRuntime.stopRequested = true;
             document.removeEventListener('mousemove', movePanelDrag, true);
@@ -40370,7 +41572,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             buildingQuickFilterRuntime.anchor = null;
             buildingQuickFilterRuntime.returnFocus = null;
             const root = document.documentElement;
-            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mcms-missionchief-reskin', 'data-mcms-dock-auto-hide', 'data-mcms-auto-hide-axis', 'data-mcms-auto-hide-revealed', 'data-mcms-safe-mode', 'data-mcms-panel-open', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open', 'data-mcms-native-building-filter-open']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mcms-missionchief-reskin', 'data-mcms-dock-auto-hide', 'data-mcms-auto-hide-axis', 'data-mcms-auto-hide-revealed', 'data-mcms-safe-mode', 'data-mcms-panel-open', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-fast-map', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open', 'data-mcms-native-building-filter-open']) root.removeAttribute(attribute);
         });
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

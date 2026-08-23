@@ -31,7 +31,7 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 28
+    assert apply_root.count("setAttributeIfChanged(root,") == 29
     for legacy_attribute in ("data-mcms-show-buildings", "data-mcms-building-scope", "data-mcms-building-mode"):
         assert f"root?.removeAttribute('{legacy_attribute}')" in apply_root
     assert "data-mcms-critical-view" not in apply_root
@@ -60,6 +60,7 @@ let mobileModeActive = false;
 let autoHideDockRevealed = false;
 let nextLayout = "desktop";
 let orientation = "landscape";
+const fastMapRuntime = {{ phase: "off" }};
 const calculations = {{ layout: 0, tablet: 0, mobile: 0, viewport: 0 }};
 const state = {{
     uiTheme: "mapCommand", theme: "nightshift", cleanMode: false, markerFocus: true,
@@ -84,6 +85,7 @@ const expected = {{
     "data-mcms-ui-theme": "mapCommand", "data-mc-map-skin": "nightshift", "data-mcms-clean": "false",
     "data-mcms-marker-focus": "true", "data-mcms-mission-pulse": "false", "data-mcms-road-priority": "true",
     "data-mcms-compact-dock": "false", "data-mcms-command-bar-open": "true", "data-mcms-economy": "false",
+    "data-mcms-fast-map": "off",
     "data-mcms-map-fullscreen": "false", "data-mcms-density": "compact", "data-mcms-custom-theme": "false",
     "data-mcms-missionchief-reskin": "false", "data-mcms-dock-auto-hide": "false",
     "data-mcms-auto-hide-axis": "vertical", "data-mcms-auto-hide-revealed": "false",
@@ -94,7 +96,7 @@ const expected = {{
     "data-mcms-show-alliance-missions": "true", "data-mcms-show-my-missions": "false"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 28, "first call writes every current missing attribute");
+assert.equal(root.calls.length, 29, "first call writes every current missing attribute");
 assert.deepEqual(root.removals, ["data-mcms-show-buildings", "data-mcms-building-scope", "data-mcms-building-mode"], "first call removes legacy building visibility attributes");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
@@ -129,6 +131,10 @@ state.commandBarOpen = false;
 root.clearCalls();
 applyRootAttributes();
 assert.deepEqual(root.calls, [["data-mcms-command-bar-open", "false"]]);
+fastMapRuntime.phase = "active";
+root.clearCalls();
+applyRootAttributes();
+assert.deepEqual(root.calls, [["data-mcms-fast-map", "active"]], "Fast Map phase writes only its root attribute");
 root.clearCalls();
 assert.equal(setAttributeIfChanged(root, "data-mcms-command-bar-open", false), false);
 assert.equal(root.calls.length, 0);

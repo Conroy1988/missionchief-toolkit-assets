@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.9
+// @version      10.17.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -27,6 +27,7 @@
 // @connect      discord.com
 // @connect      discordapp.com
 // @connect      leitstellenspiel.s3.amazonaws.com
+// @connect      cdn.jsdelivr.net
 // @connect      raw.githubusercontent.com
 // @connect      tkb-gaming.scot
 // @run-at       document-start

@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.17.0] - 2026-08-23
+
+### Fast Map Replacement Renderer
+
+- Adds a session-only Fast Map control directly beside Economy Mode and loads no MapLibre code, worker or WebGL context until the player explicitly selects it.
+- Stops native Leaflet rendering by stopping animation, disabling handlers, detaching the exact map DOM and guarding detached marker writes while retaining MissionChief’s live data feed.
+- Renders buildings, personal and alliance missions and vehicles through one MapLibre WebGL canvas with clustering, incremental GeoJSON updates and native filter visibility.
+- Restores the exact Leaflet element, view and enabled handlers on exit, cancellation, route teardown, Drawing, Coverage or a fatal WebGL, worker or style failure.
+- Pins MapLibre 5.24.0 to an exact byte length and SHA-256 and evaluates it only after verification through its tested browser UMD export path.
+- Adds contained Desktop, Tablet and iOS controls, live renderer diagnostics and permanent proofs for native Fire filtering, live mission changes, 5,009-point scale, one 1,000-vehicle diff and zero detached Leaflet marker writes.
+
 ## [10.16.9] - 2026-08-22
 
 ### Native Three-Station Building Filters

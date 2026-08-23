@@ -165,6 +165,7 @@ The complete experience also includes Complete MissionChief Reskinning, Smart Au
 
 ## Performance without surrender
 
+- **Fast Map** is an opt-in, session-only MapLibre renderer that disconnects native Leaflet rendering while active and restores the exact native map on exit or failure.
 - **Economy Mode** reduces visual and processing cost when the device or operation needs it.
 - Reduced-motion support keeps the interface calm without removing hierarchy.
 - Large-estate guards prevent expensive alliance views from taking over the session.
@@ -302,6 +303,7 @@ For product information before installation, use the **[TKB Scripts Toolkit page
 - Smart Auto-Hiding Dock
 - Hotkey & Gesture Studio
 - Eight complete interface systems
+- Fast Map replacement rendering with exact native rollback
 - Economy Mode and reduced-motion support
 
 </details>

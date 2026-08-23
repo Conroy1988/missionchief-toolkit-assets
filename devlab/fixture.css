@@ -19,6 +19,12 @@ html[data-mcms-device-fixture="ios"] .game-header nav, html[data-mcms-device-fix
 html[data-mcms-device-fixture="ios"] .game-header { height: 52px; }
 html[data-mcms-device-fixture="ios"] #map_outer { inset-block-start: 52px; }
 
+.mcms-fast-map-fixture-points { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.mcms-fast-map-fixture-point { position:absolute; width:12px; height:12px; margin:-6px 0 0 -6px; padding:0; border:2px solid #fff; border-radius:50%; background:var(--mcms-fixture-colour,#6ed7ff); box-shadow:0 2px 7px rgba(0,0,0,.48); pointer-events:auto; }
+.mcms-fast-map-fixture-building { width:10px; height:10px; border-radius:3px; }
+.mcms-fast-map-fixture-vehicle { width:9px; height:9px; }
+.mcms-fast-map-fixture-mission { width:15px; height:15px; }
+
 #mcms-dev-lab-error {
   position: fixed;
   z-index: 2147483647;

@@ -211,6 +211,7 @@
       destroyCount: 0,
       failNext: false,
       readyDelayMs: 0,
+      imageLoadDelayMs: 0,
       adapters: [],
       lastConfig: null,
     };
@@ -230,6 +231,9 @@
         config.container.appendChild(pointLayer);
         const sources = new Map(Object.entries(config.collections || {}).map(([id, collection]) => [id, new Map((collection.features || []).map(feature => [String(feature.properties?.ref || feature.id), feature]))]));
         const images = new Map(config.images || []);
+        const loadedImages = new Set(images.keys());
+        const pendingImages = new Set();
+        const imageTimers = new Map();
         let view = { ...config.view };
         let destroyed = false;
 
@@ -280,20 +284,51 @@
             renderPoints();
             return true;
           },
-          updateImages(descriptors) { for (const [id, descriptor] of new Map(descriptors || [])) images.set(id, descriptor); return true; },
+          updateImages(descriptors) {
+            for (const [id, descriptor] of new Map(descriptors || [])) {
+              images.set(id, descriptor);
+              if (loadedImages.has(id) || pendingImages.has(id)) continue;
+              pendingImages.add(id);
+              const timer = window.setTimeout(() => {
+                imageTimers.delete(id);
+                pendingImages.delete(id);
+                if (destroyed || images.get(id) !== descriptor) return;
+                loadedImages.add(id);
+                config.onMarkerImageReady?.(id, descriptor);
+              }, Math.max(0, Number(state.imageLoadDelayMs) || 0));
+              imageTimers.set(id, timer);
+            }
+            return true;
+          },
+          isMarkerImageReady(imageId) { return loadedImages.has(String(imageId || "")); },
+          retainMarkerImages(imageIds) {
+            const retained = new Set(Array.from(imageIds || [], value => String(value || "")));
+            for (const id of Array.from(images.keys())) {
+              if (retained.has(id)) continue;
+              images.delete(id);
+              loadedImages.delete(id);
+              pendingImages.delete(id);
+              window.clearTimeout(imageTimers.get(id));
+              imageTimers.delete(id);
+            }
+            return true;
+          },
           setPresentation(presentation) { this.presentation = { ...presentation }; return true; },
           getView() { return { ...view }; },
           setView(lat, lng, zoom) { view = { lat: Number(lat), lng: Number(lng), zoom: Number(zoom) }; config.onFps?.(60); return true; },
           resize() { this.resizeCount = (this.resizeCount || 0) + 1; return true; },
           isBaseMapReady() { return !destroyed; },
-          getMarkerImageStats() { return { available: images.size, loaded: images.size, failed: 0, pending: 0 }; },
+          getMarkerImageStats() { return { available: images.size, loaded: loadedImages.size, failed: 0, pending: pendingImages.size }; },
           getRendererCount() { return destroyed ? 0 : config.container.querySelectorAll("canvas").length; },
           triggerFeature(ref) { config.onFeature?.(ref); },
           sourceFeatures(sourceId) { return Array.from(sources.get(sourceId)?.values?.() || []); },
           imageDescriptor(imageId) { return images.get(imageId) || null; },
+          imageDescriptors() { return Array.from(images.values()); },
           destroy() {
             if (destroyed) return;
             destroyed = true;
+            for (const timer of imageTimers.values()) window.clearTimeout(timer);
+            imageTimers.clear();
             state.destroyCount += 1;
             canvas.remove();
             pointLayer.remove();

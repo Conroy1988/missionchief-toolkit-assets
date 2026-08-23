@@ -108,6 +108,38 @@ async function exerciseDevice(device, deep = false) {
     assert.ok(descriptor?.url && descriptor.width > 0 && descriptor.height > 0, `${device}: marker image descriptor is incomplete`);
   }
   assert.equal(active.markerImages?.available, 8, `${device}: native marker images were not deduplicated into the Fast Map sprite bridge`);
+  if (deep) {
+    const engineState = window.__MCMS_FAST_MAP_TEST_ENGINE_STATE__;
+    const liveVehicleFeature = () => adapter.sourceFeatures("mcms-fast-vehicles").find(feature => feature.properties?.recordId === "701");
+    const stableIconKey = liveVehicleFeature()?.properties?.iconKey;
+    assert.ok(stableIconKey && adapter.isMarkerImageReady(stableIconKey), `${device}: the starting vehicle icon was not ready for stability testing`);
+    engineState.imageLoadDelayMs = 350;
+    vehicleMarker.setIcon(window.L.icon({ iconUrl: "/images/fixture-vehicle-refresh-a.webp?cache=1", iconSize: [28, 32], iconAnchor: [14, 32] }));
+    await waitFor(
+      () => adapter.imageDescriptors().some(descriptor => descriptor.url.includes("fixture-vehicle-refresh-a.webp")),
+      `${device}: a refreshed native vehicle icon did not enter the asynchronous image queue`,
+    );
+    assert.equal(liveVehicleFeature()?.properties?.iconKey, stableIconKey, `${device}: Fast Map exposed an unloaded replacement icon instead of retaining the last ready image`);
+    vehicleMarker.setIcon(window.L.divIcon({ className: "fixture-transient-missing-icon" }));
+    await waitFor(
+      () => !adapter.imageDescriptors().some(descriptor => descriptor.url.includes("fixture-vehicle-refresh-a.webp")),
+      `${device}: a superseded vehicle image remained queued after its native URL disappeared`,
+    );
+    assert.equal(liveVehicleFeature()?.properties?.iconKey, stableIconKey, `${device}: a transiently missing native URL erased the last ready vehicle icon`);
+    vehicleMarker.setIcon(window.L.icon({ iconUrl: "/images/fixture-vehicle-refresh-b.png?cache=2", iconSize: [28, 32], iconAnchor: [14, 32] }));
+    await waitFor(
+      () => adapter.imageDescriptors().some(descriptor => descriptor.url.includes("fixture-vehicle-refresh-b.png")),
+      `${device}: the final native vehicle icon did not enter the asynchronous image queue`,
+    );
+    assert.equal(liveVehicleFeature()?.properties?.iconKey, stableIconKey, `${device}: Fast Map flashed to fallback while the final vehicle icon decoded`);
+    await waitFor(() => {
+      const iconKey = liveVehicleFeature()?.properties?.iconKey;
+      return iconKey && iconKey !== stableIconKey && adapter.isMarkerImageReady(iconKey)
+        && adapter.imageDescriptor(iconKey)?.url.includes("fixture-vehicle-refresh-b.png");
+    }, `${device}: Fast Map did not atomically promote the decoded replacement vehicle icon`);
+    await waitFor(() => adapter.getMarkerImageStats().available === 8, `${device}: superseded icon descriptors were not pruned after promotion`);
+    engineState.imageLoadDelayMs = 0;
+  }
   const routeFeature = adapter.sourceFeatures("mcms-fast-vehicle-routes").find(feature => feature.properties?.recordId === "702");
   assert.equal(routeFeature?.geometry?.type, "LineString", `${device}: active vehicle destination route was not bridged`);
   assert.equal(JSON.stringify(routeFeature?.geometry?.coordinates?.at(-1)), JSON.stringify([-3.061, 55.998]), `${device}: vehicle destination route lost its final waypoint`);
@@ -149,8 +181,10 @@ async function exerciseDevice(device, deep = false) {
       () => adapter.sourceFeatures("mcms-fast-personal-missions").some(feature => feature.properties?.recordId === "1003"),
       `${device}: live mission added while native events were detached did not reach Fast Map`,
     );
-    const liveMissionFeature = adapter.sourceFeatures("mcms-fast-personal-missions").find(feature => feature.properties?.recordId === "1003");
-    assert.ok(adapter.imageDescriptor(liveMissionFeature?.properties?.iconKey)?.url.endsWith("/images/fixture-mission-live.png"), `${device}: a live mission image did not join the sprite bridge`);
+    await waitFor(() => {
+      const liveMissionFeature = adapter.sourceFeatures("mcms-fast-personal-missions").find(feature => feature.properties?.recordId === "1003");
+      return adapter.imageDescriptor(liveMissionFeature?.properties?.iconKey)?.url.endsWith("/images/fixture-mission-live.png");
+    }, `${device}: a live mission image did not join the sprite bridge after decoding`);
     assert.equal(liveMission._renderWrites, 0, `${device}: newly added native mission rendered inside the parked Leaflet map`);
     nativeMap.removeLayer(liveMission);
     window.mission_markers.splice(window.mission_markers.indexOf(liveMission), 1);

@@ -1,5 +1,15 @@
 # Changelog
 
+## [10.17.3] - 2026-08-23
+
+### Fast Map Icon Stability Hotfix
+
+- Keeps each last successfully decoded building, mission or vehicle picture visible while MissionChief refreshes, removes or replaces its native icon URL.
+- Promotes replacement sprites only after their pixels are ready, eliminating the loaded-image-to-fallback-dot flash during asynchronous refreshes.
+- Accepts MissionChief PNG/APNG, JPEG, GIF and WebP marker assets through a signature-verified, byte-bounded decoder before scaling them for WebGL.
+- Retries transient image failures with capped backoff and prunes superseded descriptors so a temporary network error or rapidly changing vehicle graphic cannot permanently blank or grow the sprite bridge.
+- Adds a delayed icon-churn regression across Desktop, Tablet and iOS while retaining the 5,010-feature incremental Fast Map stress proof and exact native rollback.
+
 ## [10.17.2] - 2026-08-23
 
 ### Fast Map Marker and Route Restoration

@@ -318,7 +318,7 @@ function compileInSandbox(source, sandbox) {
     return Function("sandbox", `with (sandbox) { return (${source}); }`)(sandbox);
 }
 
-function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, buildingVisibility = true } = {}) {
+function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true } = {}) {
     const calls = [];
     const target = {
         undefined,
@@ -332,7 +332,6 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         state: {
             autoLoadAllVehicles: false,
             economyMode: false,
-            visibility: { buildings: buildingVisibility },
             majorIncidentFeed: { enabled: false },
             autoNight: { enabled: false },
             stuckDetector: { enabled: false },
@@ -344,7 +343,7 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         SCRIPT: {
             name: "MissionChief Map Command Toolkit", version: "fixture",
             panelId: "panel", controlId: "control", payoutFlashId: "payout",
-            criticalDrawerId: "critical"
+            criticalDrawerId: "critical", buildingQuickFilterId: "building-filter"
         },
         STARTUP_SETTLE_WINDOW_MS: 10000,
         STARTUP_MUTATION_DEBOUNCE_MS: 500,
@@ -353,7 +352,6 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         STARTUP_IDLE_TIMEOUT_MS: fixtures.startupIdleTimeoutMs,
         VEHICLE_API_REFRESH_MS: 120000,
         FALLBACK_MISSION_REFRESH_MS: 30000,
-        BUILDING_VISIBILITY_RECHECK_MS: 10000,
         CRITICAL_PROGRESS_REFRESH_ACTIVE_MS: 1000,
         CRITICAL_PROGRESS_REFRESH_IDLE_MS: 10000,
         mapInteractionMoving: false,
@@ -368,6 +366,7 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         settingsPanelActivated: false,
         mainMutationObserverFallbackActive: false,
         suppressNextOutsideClick: false,
+        buildingQuickFilterRuntime: { open: true, popover: {}, anchor: {}, returnFocus: {} },
         transportSweepRuntime: { stopRequested: false },
         coverageGroup: null,
         payoutAudioContext: null,
@@ -482,7 +481,6 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
     for (const name of fixtures.requiredCleanupCalls) {
         target[name] = (...args) => { calls.push({ name, args }); return undefined; };
     }
-    target.synchronisePersonalBuildingVisibility = (...args) => calls.push({ name: "synchronisePersonalBuildingVisibility", args });
     target.calls = calls;
 
     const sandbox = new Proxy(target, {
@@ -594,11 +592,11 @@ function testBootLifecycle() {
     assert.equal(callCount(visibility, "runtimeWakeTaskScheduler"), 1);
     assert.equal(visibility.getEnsureCalls(), ensureCallsAfterBoot + 1, "visible-tab resume must perform exactly one readiness check");
 
-    const cleanup = createBootEnvironment({ buildingVisibility: false });
+    const cleanup = createBootEnvironment();
     cleanup.boot();
     cleanup.runtime.cleanupCallbacks[0]("fixture teardown");
     assert.equal(cleanup.transportSweepRuntime.stopRequested, true);
-    assert.equal(cleanup.state.visibility.buildings, false, "teardown must restore the stored building preference");
+    assert.deepEqual(cleanup.buildingQuickFilterRuntime, { open: false, popover: null, anchor: null, returnFocus: null }, "teardown must release the native station-filter popup runtime");
     for (const name of fixtures.cleanupCaches) assert.equal(cleanup[name].size, 0, `${name} must clear`);
     assert.deepEqual(new Set(cleanup.removedAttributes), new Set(fixtures.cleanupRootAttributes));
     for (const name of fixtures.requiredCleanupCalls) assert.ok(callCount(cleanup, name) >= 1, `Missing cleanup call ${name}`);

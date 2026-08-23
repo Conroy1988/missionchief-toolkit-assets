@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.16.8
+// @version      10.16.9
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -50,7 +50,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.16.8';
+    const VERSION = '10.16.9';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -823,7 +823,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.16.8',
+        version: '10.16.9',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -837,6 +837,7 @@ try {
         helpCenterId: 'mc-map-command-toolkit-help-center',
         commandPaletteId: 'mc-map-command-toolkit-command-palette',
         commandExperienceModalId: 'mc-map-command-toolkit-command-experience',
+        buildingQuickFilterId: 'mc-map-command-toolkit-building-quick-filter',
         mapMeasureHudId: 'mc-map-command-toolkit-map-measure',
         contextMenuId: 'mc-map-command-toolkit-context-menu',
         vehicleFollowId: 'mc-map-command-toolkit-vehicle-follow',
@@ -883,15 +884,16 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.16.8",
-        title: "Performance and Responsive Layout Hardening",
+        version: "10.16.9",
+        title: "Native Three-Station Building Filters",
         highlights: Object.freeze([
-            "Reduces direct mission-list mutation selector work from about 3,000 scans to 2–21 in audited 250-row storms by fast-pathing direct sidebar batches across observers.",
-            "Caches frequently reused UI controls and settings and suppresses unchanged DOM writes during refreshes without changing stored settings or actions.",
-            "Restores tablet panel sizing after dock-fit passes so the command surface clears MissionChief navigation and remains within the visual viewport.",
-            "Reflows tablet command cards into full-width readable rows and fixes iOS tab flow so controls never render under the navigation grid.",
-            "Uses breakpoint-safe dock labels, word-boundary theme wrapping and readable summaries and bookmark actions across all eight themes.",
-            "Adds portable stress metrics and focused permanent regression coverage; the 192-state Desktop, Tablet and iOS audit measured zero text or viewport overflows."
+            "Replaces the Buildings toggle with a small popup for Ambulance Stations, Fire Stations and Police Stations.",
+            "Activates MissionChief's exact native building-filter checkboxes so the game's own layers and saved filter state remain authoritative.",
+            "Removes the old building catalogue fetch, marker scans, ownership/type selector, custom layer enforcement and recurring building-visibility task.",
+            "Prevents legacy saved Buildings state and Economy Mode from hiding or restoring building layers outside MissionChief's native filter service.",
+            "Keeps the popup open for multi-selection and supports the dock, settings panel, Quick Wheel, command palette, shortcut, right-click and click-away flows.",
+            "Clamps and scrolls the popup within Desktop, Tablet and iOS viewports while wrapping every label and state badge safely.",
+            "Adds isolated native-control contracts and a mounted iOS regression proving multi-selection without panel closure, overflow or runtime errors."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1688,7 +1690,6 @@ try {
     const STARTUP_OBSERVER_DELAY_MS = 900;
     const STARTUP_SETTLE_WINDOW_MS = 8000;
     const STARTUP_MUTATION_DEBOUNCE_MS = 520;
-    const BUILDING_VISIBILITY_RECHECK_MS = 4000;
     const BUILDING_VISIBILITY_SCOPES = Object.freeze(['own', 'alliance', 'both']);
     const BUILDING_VISIBILITY_MODES = Object.freeze(['all', 'selected']);
     const NATIVE_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([0, 180, 700, 1800, 4200]);
@@ -1697,7 +1698,27 @@ try {
     const NATIVE_VEHICLE_SETTINGS_PATH_PREFIX = '/settings';
     const NATIVE_VEHICLE_SETTINGS_SEED_PATHS = Object.freeze(['/settings/index', '/settings']);
     const NATIVE_VEHICLE_SETTINGS_DISCOVERY_LIMIT = 12;
-    const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings']);
+    const NATIVE_VISIBILITY_FEATURES = Object.freeze(['myMissions', 'allianceMissions', 'vehicles']);
+    const NATIVE_BUILDING_QUICK_FILTERS = Object.freeze({
+        ambulance: Object.freeze({
+        label: 'Ambulance Stations',
+        icon: '✚',
+        labels: Object.freeze(['Ambulance Station', 'Ambulance Stations']),
+        tokens: Object.freeze(['ambulance_station', 'ambulance_stations'])
+        }),
+        fire: Object.freeze({
+        label: 'Fire Stations',
+        icon: '◆',
+        labels: Object.freeze(['Fire Station', 'Fire Stations']),
+        tokens: Object.freeze(['fire_station', 'fire_stations'])
+        }),
+        police: Object.freeze({
+        label: 'Police Stations',
+        icon: '★',
+        labels: Object.freeze(['Police Station', 'Police Stations']),
+        tokens: Object.freeze(['police_station', 'police_stations'])
+        })
+    });
     const NATIVE_VISIBILITY_FILTERS = Object.freeze({
         myMissions: Object.freeze({
         filterId: 'user_missions',
@@ -1716,12 +1737,6 @@ try {
         aliases: Object.freeze(['vehicles', 'vehicle_markers', 'show_vehicle', 'show_vehicles']),
         labels: Object.freeze(['Vehicles', 'Show vehicles', 'Show vehicles on map']),
         i18n: Object.freeze(['common.vehicles', 'map.vehicles', 'settings.show_vehicle'])
-        }),
-        buildings: Object.freeze({
-        filterId: 'user_buildings',
-        aliases: Object.freeze(['user_buildings', 'my_buildings', 'personal_buildings', 'own_buildings']),
-        labels: Object.freeze(['My buildings', 'Personal buildings', 'Own buildings']),
-        i18n: Object.freeze(['map_filters.user_buildings'])
         })
     });
     const MAP_DISCOVERY_RETRY_MS = 2000;
@@ -1958,7 +1973,6 @@ try {
     let cachedUserIdReadAt = 0;
     let personalBuildingIdsCache = { revision: -1, userId: null, createdAt: 0, values: new Set() };
     let buildingRecordIndexCache = { revision: -1, userId: null, recordsById: new Map(), allianceRecords: [] };
-    let buildingVisibilityTargetCache = { revision: -1, service: null, createdAt: 0, entries: [] };
     let missionIconMarkerCache = new WeakMap();
     let panelPositionTimer = null;
     let coverageRenderSignature = '';
@@ -1994,18 +2008,10 @@ try {
     let nativeVisibilityWriteDepth = 0;
     let nativeVisibilityBridgeInstalled = false;
     let nativeVehicleTogglePromise = null;
-    const hiddenPersonalBuildingLayers = new Set();
-    const personalBuildingLayerOpacity = new Map();
-    let enforcingPersonalBuildingVisibility = false;
     const hiddenNativeAllianceBuildingLayers = new Set();
     const nativeAllianceBuildingLayerTargets = new WeakMap();
     let enforcingNativeAllianceBuildingVisibility = false;
-    const hiddenBuildingVisibilityLayers = new Set();
-    const buildingVisibilityLayerOpacity = new Map();
-    const buildingVisibilityManagedTargets = new Map();
-    let enforcingBuildingVisibility = false;
     const economyHiddenVehicleLayers = new Set();
-    const economyHiddenBuildingLayers = new Set();
     const economyLeafletOptionSnapshots = new Map();
     let economyLayerSyncTimer = null;
     let economyLayerEnforcement = false;
@@ -2212,18 +2218,11 @@ try {
         errors: 0,
         log: []
     };
-    const buildingVisibilityRuntime = {
+    const buildingQuickFilterRuntime = {
         open: false,
-        search: '',
-        loading: false,
-        error: '',
-        catalogPromise: null,
-        catalogAt: 0,
-        typeLabels: {},
-        restoreSnapshot: null,
-        panel: null,
-        selector: null,
-        launcher: null
+        popover: null,
+        anchor: null,
+        returnFocus: null
     };
     const stationIconCopierRuntime = {
         running: false,
@@ -3341,7 +3340,7 @@ try {
     }
 
     function removeOldInstances() {
-        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandPaletteId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.mapMeasureHudId}, #${SCRIPT.contextMenuId}, #${SCRIPT.quickWheelId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.vehicleFollowId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandPaletteId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.mapMeasureHudId}, #${SCRIPT.contextMenuId}, #${SCRIPT.quickWheelId}, #${SCRIPT.buildingQuickFilterId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.vehicleFollowId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
         .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
@@ -3381,8 +3380,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             filter: grayscale(35%) brightness(.82) !important;}html[data-mcms-marker-focus="true"] .leaflet-marker-icon.mcms-marker-mission {
             opacity: 1 !important;
             filter: drop-shadow(0 0 5px rgba(255,75,75,.75)) brightness(1.12) !important;
-            z-index: 999 !important;}html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }html[data-mcms-show-buildings="false"] .leaflet-marker-icon.mcms-marker-personal-building,
-        html[data-mcms-show-buildings="false"] .leaflet-marker-icon[data-mcms-personal-building-marker="true"] { display: none !important; }.leaflet-marker-icon.mcms-mission-focus {
+            z-index: 999 !important;}html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }.leaflet-marker-icon.mcms-mission-focus {
             filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #ff5252) brightness(1.22) !important;
             z-index: 1000 !important;}.mcms-mission-lock-travel-overlay,
         .mcms-mission-lock-dom,
@@ -3793,41 +3791,43 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.panelId} .mcms-small-btn:hover,
         #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
         #${SCRIPT.panelId} .mcms-pin-btn:hover { background: rgba(255,255,255,.14) !important; }
-        #${SCRIPT.panelId} .mcms-building-launcher { width:100% !important; margin-top:8px !important; min-height:36px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; padding:7px 9px !important; border:1px solid rgba(88,166,255,.28) !important; border-radius:10px !important; background:linear-gradient(135deg,rgba(88,166,255,.09),rgba(124,77,255,.07)) !important; color:#f4f8ff !important; cursor:pointer !important; text-align:left !important; }
-        #${SCRIPT.panelId} .mcms-building-launcher:hover,#${SCRIPT.panelId} .mcms-building-launcher.mcms-on { border-color:rgba(120,190,255,.72) !important; background:rgba(50,130,220,.19) !important; }
-        #${SCRIPT.panelId} .mcms-building-launcher span { min-width:0 !important; font-size:10px !important; font-weight:900 !important; }
-        #${SCRIPT.panelId} .mcms-building-launcher strong { flex:0 1 auto !important; max-width:58% !important; padding:3px 7px !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; color:#bfe1ff !important; font-size:8px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
-        #${SCRIPT.panelId} .mcms-building-selector[hidden] { display:none !important; }
-        #${SCRIPT.panelId} .mcms-building-selector { margin-top:7px !important; padding:9px !important; border:1px solid rgba(88,166,255,.30) !important; border-radius:11px !important; background:linear-gradient(145deg,rgba(15,23,34,.96),rgba(11,16,25,.98)) !important; box-shadow:inset 0 1px rgba(255,255,255,.04) !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-head { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:8px !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-head strong { display:block !important; color:#fff !important; font-size:11px !important; font-weight:950 !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-head small { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.54) !important; font-size:7.5px !important; line-height:1.3 !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-head button { width:25px !important; height:25px !important; flex:0 0 25px !important; padding:0 !important; border:1px solid rgba(255,255,255,.13) !important; border-radius:8px !important; background:rgba(255,255,255,.07) !important; color:#fff !important; cursor:pointer !important; font-size:14px !important; }
-        #${SCRIPT.panelId} .mcms-building-scope { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; margin-top:8px !important; }
-        #${SCRIPT.panelId} .mcms-building-scope button { min-width:0 !important; min-height:29px !important; padding:4px 5px !important; border:1px solid rgba(255,255,255,.12) !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; color:rgba(255,255,255,.72) !important; cursor:pointer !important; font-size:8px !important; font-weight:900 !important; }
-        #${SCRIPT.panelId} .mcms-building-scope button.mcms-on { border-color:rgba(120,190,255,.72) !important; background:rgba(25,118,210,.35) !important; color:#fff !important; }
-        #${SCRIPT.panelId} .mcms-building-search { height:32px !important; margin-top:7px !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-actions { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; margin-top:6px !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-actions button:disabled { opacity:.38 !important; cursor:not-allowed !important; }
-        #${SCRIPT.panelId} .mcms-building-type-list { display:grid !important; gap:4px !important; max-height:250px !important; margin-top:7px !important; padding-right:2px !important; overflow-y:auto !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row { display:grid !important; grid-template-columns:minmax(0,1fr) 42px !important; gap:5px !important; align-items:stretch !important; min-width:0 !important; padding:5px !important; border:1px solid rgba(255,255,255,.08) !important; border-radius:8px !important; background:rgba(255,255,255,.035) !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row:hover { border-color:rgba(120,190,255,.32) !important; background:rgba(88,166,255,.07) !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row label { display:grid !important; grid-template-columns:18px minmax(0,1fr) !important; gap:5px !important; align-items:center !important; min-width:0 !important; cursor:pointer !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row input { width:16px !important; height:16px !important; margin:0 !important; accent-color:#4aa8ff !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row span { min-width:0 !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row strong { display:block !important; color:#f5f8ff !important; font-size:8.5px !important; line-height:1.2 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
-        #${SCRIPT.panelId} .mcms-building-type-row small { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.48) !important; font-size:6.8px !important; line-height:1.2 !important; }
-        #${SCRIPT.panelId} .mcms-building-only-btn { min-width:0 !important; border:1px solid rgba(88,166,255,.22) !important; border-radius:7px !important; background:rgba(88,166,255,.08) !important; color:#bfe1ff !important; cursor:pointer !important; font-size:7px !important; font-weight:950 !important; }
-        #${SCRIPT.panelId} .mcms-building-only-btn:hover { background:rgba(88,166,255,.20) !important; color:#fff !important; }
-        #${SCRIPT.panelId} .mcms-building-empty { padding:14px 8px !important; border:1px dashed rgba(255,255,255,.12) !important; border-radius:8px !important; color:rgba(255,255,255,.52) !important; font-size:8px !important; text-align:center !important; }
-        #${SCRIPT.panelId} .mcms-building-selector-status { margin-top:7px !important; color:rgba(255,255,255,.52) !important; font-size:7.5px !important; line-height:1.3 !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-launcher { min-height:48px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-scope button { min-height:44px !important; font-size:10px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-search { height:44px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-type-row { grid-template-columns:minmax(0,1fr) 50px !important; min-height:54px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-only-btn { min-height:44px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-type-row strong { font-size:10px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-building-type-row small { font-size:8px !important; }
+        #${SCRIPT.buildingQuickFilterId}[hidden] { display:none !important; }
+        #${SCRIPT.buildingQuickFilterId} {
+            position:fixed !important; z-index:2147483300 !important; box-sizing:border-box !important; width:min(310px,calc(100vw - 16px)) !important;
+            max-width:calc(100vw - 16px) !important; max-height:calc(100dvh - 16px) !important; margin:0 !important; padding:10px !important;
+            border:1px solid rgba(126,192,255,.48) !important; border-radius:14px !important; background:linear-gradient(145deg,rgba(17,25,37,.99),rgba(8,13,22,.99)) !important;
+            color:#f7faff !important; box-shadow:0 18px 46px rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.07) !important;
+            font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important; overflow-x:hidden !important; overflow-y:auto !important;
+            overscroll-behavior:contain !important; scrollbar-width:thin !important; pointer-events:auto !important; touch-action:manipulation !important;
+        }
+        #${SCRIPT.buildingQuickFilterId},#${SCRIPT.buildingQuickFilterId} * { box-sizing:border-box !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-head { display:grid !important; grid-template-columns:minmax(0,1fr) 30px !important; gap:10px !important; align-items:start !important; min-width:0 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-head > div { min-width:0 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-head strong { display:block !important; color:#fff !important; font-size:13px !important; line-height:1.2 !important; font-weight:950 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-head small { display:block !important; margin-top:3px !important; color:rgba(232,241,255,.68) !important; font-size:9px !important; line-height:1.35 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.buildingQuickFilterId} [data-native-building-close] { width:30px !important; height:30px !important; padding:0 !important; border:1px solid rgba(255,255,255,.16) !important; border-radius:9px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font:800 18px/28px system-ui,-apple-system,"Segoe UI",sans-serif !important; text-align:center !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-list { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:7px !important; min-width:0 !important; margin-top:10px !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { display:grid !important; grid-template-columns:36px minmax(0,1fr) minmax(50px,auto) !important; gap:8px !important; align-items:center !important; width:100% !important; min-width:0 !important; min-height:54px !important; padding:7px 8px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:11px !important; background:rgba(255,255,255,.055) !important; color:#f7faff !important; cursor:pointer !important; text-align:left !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter:hover { border-color:rgba(139,205,255,.62) !important; background:rgba(88,166,255,.14) !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter.mcms-on { border-color:rgba(111,222,162,.76) !important; background:rgba(34,150,94,.20) !important; box-shadow:inset 3px 0 #55d991 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter:disabled { opacity:.55 !important; cursor:not-allowed !important; filter:saturate(.55) !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-icon { display:flex !important; align-items:center !important; justify-content:center !important; width:36px !important; height:36px !important; border-radius:10px !important; background:rgba(255,255,255,.10) !important; color:#fff !important; font-size:16px !important; line-height:1 !important; font-weight:950 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter-ambulance .mcms-native-building-icon { background:rgba(39,174,96,.28) !important; color:#8ff0b8 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter-fire .mcms-native-building-icon { background:rgba(231,76,60,.26) !important; color:#ffaca3 !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter-police .mcms-native-building-icon { background:rgba(52,152,219,.28) !important; color:#a9dcff !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy { display:block !important; min-width:0 !important; max-width:100% !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy strong { display:block !important; min-width:0 !important; color:#fff !important; font-size:11px !important; line-height:1.2 !important; font-weight:900 !important; white-space:normal !important; overflow-wrap:anywhere !important; word-break:normal !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy small { display:block !important; min-width:0 !important; margin-top:3px !important; color:rgba(232,241,255,.60) !important; font-size:8px !important; line-height:1.25 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-state { display:block !important; min-width:50px !important; max-width:74px !important; padding:4px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; color:#dcecff !important; font-size:7px !important; line-height:1.15 !important; font-weight:950 !important; text-align:center !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter.mcms-on .mcms-native-building-state { background:rgba(64,219,135,.17) !important; color:#a8f5c9 !important; }
+        #${SCRIPT.buildingQuickFilterId} p { margin:9px 1px 0 !important; color:rgba(232,241,255,.65) !important; font-size:8.5px !important; line-height:1.4 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+        #${SCRIPT.buildingQuickFilterId} button:focus-visible { outline:2px solid #84c9ff !important; outline-offset:2px !important; }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.buildingQuickFilterId} { padding:11px !important; }
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { min-height:60px !important; padding:8px !important; }
+        @media (max-width:360px) {
+            #${SCRIPT.buildingQuickFilterId} .mcms-native-building-filter { grid-template-columns:34px minmax(0,1fr) !important; }
+            #${SCRIPT.buildingQuickFilterId} .mcms-native-building-state { grid-column:2 !important; justify-self:start !important; max-width:100% !important; }
+        }
         #${SCRIPT.panelId} .mcms-quick-row { display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; gap: 6px !important; margin-bottom: 6px !important; }#${SCRIPT.panelId} .mcms-bookmark-row { display: grid !important; grid-template-columns: minmax(0,1fr) 32px 38px 36px 26px !important; gap: 5px !important; align-items: center !important; margin-bottom: 5px !important; }#${SCRIPT.panelId} .mcms-bookmark-name { color: rgba(255,255,255,.86) !important; font-size: 10px !important; font-weight: 850 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }#${SCRIPT.panelId} .mcms-status { margin-top: 8px !important; padding: 7px !important; border-radius: 9px !important; border: 1px solid rgba(255,255,255,.12) !important; background: rgba(255,255,255,.055) !important; color: rgba(255,255,255,.68) !important; font-size: 9px !important; line-height: 1.25 !important; }#${SCRIPT.panelId} .mcms-input,
         #${SCRIPT.panelId} .mcms-select { user-select: text !important; }#${SCRIPT.panelId} .mcms-discord-wide { grid-template-columns: 92px minmax(0,1fr) !important; }#${SCRIPT.panelId} .mcms-discord-preview { margin-top:8px !important; min-height:72px !important; }#${SCRIPT.panelId} .mcms-discord-empty { padding:14px 10px !important; border:1px dashed rgba(88,166,255,.28) !important; border-radius:10px !important; background:linear-gradient(135deg,rgba(88,166,255,.06),rgba(124,77,255,.05)) !important; color:rgba(255,255,255,.58) !important; font-size:9px !important; line-height:1.35 !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-discord-card { padding:10px !important; border-radius:12px !important; border:1px solid rgba(255,255,255,.14) !important; background:linear-gradient(145deg,rgba(22,28,38,.96),rgba(11,15,22,.98)) !important; box-shadow:inset 0 1px rgba(255,255,255,.04),0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="positive"] { border-color:rgba(46,204,113,.48) !important; box-shadow:inset 3px 0 #2ecc71,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="negative"] { border-color:rgba(231,76,60,.52) !important; box-shadow:inset 3px 0 #e74c3c,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-card[data-tone="neutral"] { border-color:rgba(241,196,15,.42) !important; box-shadow:inset 3px 0 #f1c40f,0 8px 18px rgba(0,0,0,.22) !important; }#${SCRIPT.panelId} .mcms-discord-head { display:flex !important; justify-content:space-between !important; align-items:flex-start !important; gap:8px !important; margin-bottom:8px !important; }#${SCRIPT.panelId} .mcms-discord-title { color:#fff !important; font-size:10px !important; font-weight:950 !important; letter-spacing:.35px !important; }#${SCRIPT.panelId} .mcms-discord-date { margin-top:2px !important; color:rgba(255,255,255,.54) !important; font-size:8px !important; font-weight:800 !important; }#${SCRIPT.panelId} .mcms-discord-result { padding:3px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; font-size:8px !important; font-weight:950 !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-stats { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; }#${SCRIPT.panelId} .mcms-discord-stat { min-width:0 !important; padding:7px 5px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-discord-stat span { display:block !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:900 !important; text-transform:uppercase !important; letter-spacing:.5px !important; }#${SCRIPT.panelId} .mcms-discord-stat strong { display:block !important; margin-top:3px !important; color:#fff !important; font-size:10px !important; font-weight:950 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.panelId} .mcms-discord-breakdowns { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-discord-breakdown { min-width:0 !important; padding:7px !important; border-radius:8px !important; background:rgba(255,255,255,.04) !important; }#${SCRIPT.panelId} .mcms-discord-breakdown b { display:block !important; margin-bottom:4px !important; color:#bbdefb !important; font-size:7.5px !important; text-transform:uppercase !important; letter-spacing:.55px !important; }#${SCRIPT.panelId} .mcms-discord-line { display:flex !important; justify-content:space-between !important; gap:5px !important; margin-top:3px !important; color:rgba(255,255,255,.68) !important; font-size:7.5px !important; }#${SCRIPT.panelId} .mcms-discord-line span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-line strong { color:#fff !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-foot { margin-top:7px !important; padding-top:6px !important; border-top:1px solid rgba(255,255,255,.08) !important; color:rgba(255,255,255,.48) !important; font-size:7.5px !important; line-height:1.3 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="good"] { border-color:rgba(46,204,113,.38) !important; color:#9be8b8 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="bad"] { border-color:rgba(231,76,60,.42) !important; color:#ffaaa1 !important; }#${SCRIPT.panelId} .mcms-discord-status[data-tone="busy"] { border-color:rgba(52,152,219,.42) !important; color:#9bd5ff !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:6px !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats span { min-width:0 !important; padding:5px 4px !important; border-radius:7px !important; background:rgba(88,166,255,.07) !important; color:rgba(255,255,255,.52) !important; font-size:6.8px !important; font-weight:850 !important; text-align:center !important; text-transform:uppercase !important; letter-spacing:.3px !important; }#${SCRIPT.panelId} .mcms-discord-mini-stats b { display:block !important; margin-top:2px !important; color:#fff !important; font-size:7.8px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-discord-chart { display:block !important; width:100% !important; margin-top:8px !important; border-radius:9px !important; border:1px solid rgba(255,255,255,.11) !important; background:#0b1018 !important; }#${SCRIPT.panelId} .mcms-discord-date-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; }#${SCRIPT.panelId} .mcms-discord-date-grid .mcms-row { grid-template-columns:56px minmax(0,1fr) !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin:7px 0 !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary span { min-width:0 !important; padding:7px 5px !important; border:1px solid rgba(88,166,255,.18) !important; border-radius:8px !important; background:rgba(88,166,255,.055) !important; color:rgba(255,255,255,.54) !important; font-size:6.8px !important; font-weight:850 !important; text-align:center !important; text-transform:uppercase !important; letter-spacing:.3px !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary b { display:block !important; margin-bottom:2px !important; color:#fff !important; font-size:8px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-finance-vault-summary small { grid-column:1/-1 !important; padding:5px 7px !important; border-radius:7px !important; background:rgba(255,255,255,.035) !important; color:rgba(255,255,255,.48) !important; font-size:7.2px !important; line-height:1.35 !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-finance-private-note { border-color:rgba(241,196,15,.34) !important; color:#f5d984 !important; }#${SCRIPT.panelId} .mcms-sweep-card { margin-top:8px !important; padding:8px !important; border-radius:9px !important; border:1px solid rgba(255,183,72,.28) !important; background:rgba(88,46,4,.13) !important; }#${SCRIPT.panelId} .mcms-sweep-head { display:flex !important; justify-content:space-between !important; align-items:center !important; gap:8px !important; color:#ffe0a3 !important; font-size:9px !important; font-weight:950 !important; }#${SCRIPT.panelId} .mcms-sweep-state { padding:2px 6px !important; border-radius:999px !important; background:rgba(255,255,255,.10) !important; color:rgba(255,255,255,.78) !important; font-size:7px !important; letter-spacing:.35px !important; }#${SCRIPT.panelId} .mcms-sweep-state.mcms-running { background:rgba(255,145,24,.28) !important; color:#fff1cf !important; }#${SCRIPT.panelId} .mcms-sweep-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-stat { min-width:0 !important; padding:5px 3px !important; border-radius:7px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.panelId} .mcms-sweep-stat b { display:block !important; color:#fff !important; font-size:11px !important; line-height:1 !important; }#${SCRIPT.panelId} .mcms-sweep-stat span { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.50) !important; font-size:6.5px !important; font-weight:900 !important; text-transform:uppercase !important; }#${SCRIPT.panelId} .mcms-sweep-queue { display:grid !important; gap:4px !important; max-height:128px !important; overflow-y:auto !important; margin-top:7px !important; padding-right:2px !important; overscroll-behavior:contain !important; scrollbar-width:thin !important; }#${SCRIPT.panelId} .mcms-sweep-entry { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:6px !important; padding:6px !important; border-radius:7px !important; border:1px solid rgba(255,255,255,.08) !important; background:rgba(255,255,255,.04) !important; }#${SCRIPT.panelId} .mcms-sweep-entry.mcms-current { border-color:rgba(255,177,57,.62) !important; background:rgba(255,145,24,.11) !important; }#${SCRIPT.panelId} .mcms-sweep-title { min-width:0 !important; color:#f7f8fb !important; font-size:8.5px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.panelId} .mcms-sweep-meta { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:800 !important; }#${SCRIPT.panelId} .mcms-sweep-count { color:#ffc86b !important; font-size:9px !important; font-weight:950 !important; white-space:nowrap !important; }#${SCRIPT.panelId} .mcms-sweep-log { max-height:72px !important; overflow-y:auto !important; margin-top:7px !important; padding:6px !important; border-radius:7px !important; background:rgba(0,0,0,.18) !important; color:rgba(255,255,255,.64) !important; font:700 7px/1.35 Arial,Helvetica,sans-serif !important; white-space:normal !important; }#${SCRIPT.transportSweepHudId} { position:fixed !important; top:max(12px,env(safe-area-inset-top)) !important; right:max(12px,env(safe-area-inset-right)) !important; z-index:2147482000 !important; width:min(340px,calc(100vw - 24px)) !important; padding:11px !important; border:1px solid rgba(255,184,72,.72) !important; border-radius:12px !important; background:linear-gradient(145deg,rgba(18,23,31,.97),rgba(34,22,8,.97)) !important; color:#f8fbff !important; box-shadow:0 18px 55px rgba(0,0,0,.55),0 0 0 1px rgba(255,184,72,.08) inset !important; font:800 11px/1.25 Arial,Helvetica,sans-serif !important; pointer-events:none !important; touch-action:none !important; user-select:none !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; }#${SCRIPT.transportSweepHudId}[data-state="complete"] { border-color:rgba(70,229,139,.78) !important; background:linear-gradient(145deg,rgba(12,29,25,.98),rgba(8,47,31,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-state="error"] { border-color:rgba(255,100,108,.82) !important; background:linear-gradient(145deg,rgba(35,17,21,.98),rgba(54,12,18,.97)) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head span { min-width:0 !important; display:flex !important; align-items:center !important; gap:7px !important; color:#ffe3ad !important; font-size:11px !important; font-weight:950 !important; letter-spacing:.15px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head i { width:8px !important; height:8px !important; flex:0 0 8px !important; border-radius:50% !important; background:#ffb648 !important; box-shadow:0 0 0 4px rgba(255,182,72,.13),0 0 12px rgba(255,182,72,.58) !important; }#${SCRIPT.transportSweepHudId}[data-state="complete"] .mcms-sweep-hud-head i { background:#46e58b !important; box-shadow:0 0 0 4px rgba(70,229,139,.13),0 0 12px rgba(70,229,139,.58) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head b { flex:0 0 auto !important; padding:3px 7px !important; border-radius:999px !important; background:rgba(255,255,255,.09) !important; color:rgba(255,255,255,.74) !important; font-size:7px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.45px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-status { margin-top:9px !important; color:#fff !important; font-size:10px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { margin-top:3px !important; color:rgba(255,255,255,.58) !important; font-size:8px !important; font-weight:750 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin-top:9px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats span { min-width:0 !important; padding:7px 4px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats b { display:block !important; color:#fff !important; font-size:13px !important; line-height:1 !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats small { display:block !important; margin-top:4px !important; color:rgba(255,255,255,.48) !important; font-size:6.4px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.25px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared { background:rgba(70,229,139,.15) !important; box-shadow:0 0 0 1px rgba(70,229,139,.24) inset !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared b { color:#73f2ab !important; font-size:17px !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-foot { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:7px !important; border-top:1px solid rgba(255,255,255,.09) !important; color:rgba(255,255,255,.42) !important; font-size:7px !important; font-weight:850 !important; text-transform:uppercase !important; letter-spacing:.25px !important; }
         #${SCRIPT.panelId} .mcms-sweep-last-report { margin-top:8px !important; padding:9px !important; border:1px solid rgba(70,229,139,.42) !important; border-radius:10px !important; background:linear-gradient(145deg,rgba(14,40,31,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="partial"] { border-color:rgba(255,182,72,.46) !important; background:linear-gradient(145deg,rgba(49,32,10,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="error"] { border-color:rgba(255,100,108,.48) !important; background:linear-gradient(145deg,rgba(49,17,22,.38),rgba(12,23,29,.54)) !important; }#${SCRIPT.panelId} .mcms-sweep-last-report[data-tone="stopped"] { border-color:rgba(149,165,166,.45) !important; }#${SCRIPT.panelId} .mcms-sweep-report-summary { margin-top:7px !important; color:#f7fbff !important; font-size:9px !important; font-weight:900 !important; line-height:1.3 !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:4px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid span { min-width:0 !important; padding:6px 3px !important; border-radius:7px !important; background:rgba(255,255,255,.055) !important; color:rgba(255,255,255,.50) !important; font-size:6.5px !important; font-weight:900 !important; text-align:center !important; text-transform:uppercase !important; }#${SCRIPT.panelId} .mcms-sweep-report-grid b { display:block !important; margin-bottom:3px !important; color:#fff !important; font-size:11px !important; line-height:1 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:7px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:850 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="good"] { color:#73f2ab !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="bad"] { color:#ff8b92 !important; }#${SCRIPT.panelId} .mcms-sweep-report-meta span[data-tone="busy"] { color:#8bd3ff !important; }#${SCRIPT.panelId} .mcms-sweep-report-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:5px !important; margin-top:7px !important; }#${SCRIPT.panelId} .mcms-sweep-report-actions > :only-child { grid-column:1/-1 !important; }#${SCRIPT.transportSweepHudId}[data-state="partial"] { border-color:rgba(255,182,72,.82) !important; background:linear-gradient(145deg,rgba(35,25,10,.98),rgba(54,31,8,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-state="stopped"] { border-color:rgba(149,165,166,.78) !important; background:linear-gradient(145deg,rgba(24,29,31,.98),rgba(34,39,41,.97)) !important; }#${SCRIPT.transportSweepHudId}[data-final="true"] { pointer-events:auto !important; touch-action:auto !important; user-select:auto !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:8px !important; border-top:1px solid rgba(255,255,255,.09) !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span { min-width:0 !important; color:rgba(255,255,255,.58) !important; font-size:7px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="good"] { color:#73f2ab !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="bad"] { color:#ff8b92 !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > span[data-tone="busy"] { color:#8bd3ff !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions > div { display:flex !important; gap:5px !important; flex:0 0 auto !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions button { min-height:26px !important; padding:4px 8px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:7px !important; background:rgba(255,255,255,.08) !important; color:#fff !important; cursor:pointer !important; font:900 7px/1 Arial,Helvetica,sans-serif !important; }#${SCRIPT.transportSweepHudId} .mcms-sweep-hud-actions button:hover { background:rgba(255,255,255,.16) !important; }
@@ -13363,22 +13363,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-bookmark-btn[data-action="bookmark-save"] {
             padding-inline:5px !important;
         }
-        html[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher strong {
-            white-space:normal !important;
-            overflow:visible !important;
-            text-overflow:clip !important;
-            line-height:1.25 !important;
-        }
-        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher {
-            flex-wrap:wrap !important;
-            align-items:stretch !important;
-        }
-        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher > span,
-        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"])[data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-building-launcher > strong {
-            flex:1 1 100% !important;
-            max-width:100% !important;
-            text-align:left !important;
-        }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window .mcms-sweep-log { font:700 var(--mcms-workspace-meta-size)/1.45 system-ui,-apple-system,"Segoe UI",sans-serif !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-discord-stat strong,.mcms-finance-vault-summary b,.mcms-sweep-stat b,.mcms-sweep-count,.mcms-ops-stat-value,.mcms-ops-entry-value,.mcms-sweep-report-grid b) { font-size:14px !important; line-height:1.2 !important; }
         html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-workspace-window :is(.mcms-input,.mcms-select,.mcms-small-btn,.mcms-position-btn,.mcms-bookmark-btn,.mcms-pin-btn) {
@@ -13520,7 +13504,6 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         buildingRegistryRevision += 1;
         personalBuildingIdsCache.createdAt = 0;
         buildingRecordIndexCache.revision = -1;
-        buildingVisibilityTargetCache.createdAt = 0;
         }
     }
 
@@ -13597,7 +13580,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
     function setRootStylePropertyIfChanged(root,name,value){if(!root?.style||root.style.getPropertyValue(name)===value)return false;root.style.setProperty(name,value);return true;}
     function applyVisualViewportGeometry(root=document.documentElement,viewport=getViewportMetrics()){if(!root)return viewport;const layoutWidth=Math.max(viewport.width,Number(pageWindow.innerWidth)||Number(root.clientWidth)||viewport.width),layoutHeight=Math.max(viewport.height,Number(pageWindow.innerHeight)||Number(root.clientHeight)||viewport.height),rightGap=Math.max(0,layoutWidth-(viewport.offsetLeft+viewport.width)),bottomGap=Math.max(0,layoutHeight-(viewport.offsetTop+viewport.height)),keyboardLoss=Math.max(0,layoutHeight-viewport.height),keyboardOpen=isTouchLayoutActive()&&keyboardLoss>=Math.max(120,layoutHeight*.18),px=value=>`${Math.round(Math.max(0,Number(value)||0)*100)/100}px`;
     for(const [name,value] of [['--mcms-visual-offset-left',viewport.offsetLeft],['--mcms-visual-offset-top',viewport.offsetTop],['--mcms-visual-gap-right',rightGap],['--mcms-visual-gap-bottom',bottomGap],['--mcms-visual-width',viewport.width],['--mcms-visual-height',viewport.height]])setRootStylePropertyIfChanged(root,name,px(value));setAttributeIfChanged(root,'data-mcms-keyboard-open',String(Boolean(keyboardOpen)));return{...viewport,layoutWidth,layoutHeight,rightGap,bottomGap,keyboardOpen};}
-    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))positionPanelOverlay(true);if(operationalPressureBoardOpen())positionOperationalPressureBoard();scheduleMajorIncidentFeedLayout();}
+    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))positionPanelOverlay(true);positionNativeBuildingQuickFilterPopover();if(operationalPressureBoardOpen())positionOperationalPressureBoard();scheduleMajorIncidentFeedLayout();}
     function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
     function hasCoarsePointer() {
         try {
@@ -14744,9 +14727,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-mobile-orientation', tabletViewport.orientation);
         setAttributeIfChanged(root, 'data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
         setAttributeIfChanged(root, 'data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
-        setAttributeIfChanged(root, 'data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
-        setAttributeIfChanged(root, 'data-mcms-building-scope', state.buildingVisibility?.scope || 'both');
-        setAttributeIfChanged(root, 'data-mcms-building-mode', state.buildingVisibility?.mode || 'all');
+        // Legacy building visibility attributes could still hide native-filtered markers after
+        // an upgrade. MissionChief now owns all building visibility state, so clear them.
+        root?.removeAttribute('data-mcms-show-buildings');
+        root?.removeAttribute('data-mcms-building-scope');
+        root?.removeAttribute('data-mcms-building-mode');
         applyPersonalisationStyle();
         applyLayoutBuilderControl();
     }
@@ -23241,10 +23226,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const bounds = economyPaddedBounds(map, 0.12);
         if (!bounds) return;
         const vehicleLayers = getVehicleMarkerLayers().filter(Boolean);
-        const buildingLayers = getBuildingMarkerLayers().filter(Boolean);
         const vehicleSet = new Set(vehicleLayers);
-        const buildingSet = new Set(buildingLayers);
-        const personalBuildingIds = getPersonalBuildingIds();
         const nativeVehicleSnapshot = readNativeVisibilityState('vehicles');
         const vehiclesAllowedByNativeSetting = nativeVehicleSnapshot.available ? nativeVehicleSnapshot.value : true;
 
@@ -23258,16 +23240,8 @@ Credits only. Each station and native action will be fetched again, purchased on
             setEconomyLayerPresence(map, layer, visible, economyHiddenVehicleLayers);
         }
 
-        for (const layer of Array.from(economyHiddenBuildingLayers)) {
-            if (!buildingSet.has(layer)) economyHiddenBuildingLayers.delete(layer);
-        }
-        for (const layer of buildingLayers) {
-            const personal = isPersonalBuildingLayer(layer, personalBuildingIds);
-            const allowedByUser = !personal || state.visibility.buildings;
-            const allowedByNativeFilter = nativeAllianceBuildingLayerAllowed(map, layer);
-            const visible = allowedByUser && allowedByNativeFilter && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
-            setEconomyLayerPresence(map, layer, visible, economyHiddenBuildingLayers);
-        }
+        // Building layers stay entirely under MissionChief's native filter service. Economy
+        // Mode must not detach or restore them independently of the selected station types.
         } catch (err) {
         console.debug(`[${SCRIPT.name}] Economy marker culling skipped.`, err);
         } finally {
@@ -23284,14 +23258,12 @@ Credits only. Each station and native action will be fetched again, purchased on
         runtimeClearTimeout(economyLayerSyncTimer);
         economyLayerSyncTimer = null;
         if (!map) {
-        if (runtime.destroyed) { economyHiddenVehicleLayers.clear(); economyHiddenBuildingLayers.clear(); }
+        if (runtime.destroyed) economyHiddenVehicleLayers.clear();
         else runtimeSetTimeout(() => restoreEconomyLayers(findLeafletMapInstance(false)), 220);
         return;
         }
         if (economyLayerEnforcement) return;
         const vehicleSet = new Set(getVehicleMarkerLayers().filter(Boolean));
-        const buildingSet = new Set(getBuildingMarkerLayers().filter(Boolean));
-        const personalBuildingIds = getPersonalBuildingIds();
         const nativeVehicleSnapshot = readNativeVisibilityState('vehicles');
         const vehiclesAllowedByNativeSetting = nativeVehicleSnapshot.available ? nativeVehicleSnapshot.value : true;
         economyLayerEnforcement = true;
@@ -23299,17 +23271,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         for (const layer of Array.from(economyHiddenVehicleLayers)) {
             economyHiddenVehicleLayers.delete(layer);
             if (!vehiclesAllowedByNativeSetting || !vehicleSet.has(layer)) continue;
-            const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-            if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
-        }
-        for (const layer of Array.from(economyHiddenBuildingLayers)) {
-            economyHiddenBuildingLayers.delete(layer);
-            if (!buildingSet.has(layer)) continue;
-            if (isPersonalBuildingLayer(layer, personalBuildingIds) && !state.visibility.buildings) continue;
-            if (!nativeAllianceBuildingLayerAllowed(map, layer)) {
-                suppressLeakedAllianceBuildingLayer(map, layer);
-                continue;
-            }
             const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
             if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
         }
@@ -23855,6 +23816,186 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
     }
 
+    function nativeBuildingQuickFilterDescriptor(key) {
+        return NATIVE_BUILDING_QUICK_FILTERS[String(key || '')] || null;
+    }
+
+    function nativeBuildingQuickFilterControlMatches(control, descriptor) {
+        if (!control || !descriptor || nativeVisibilityControlBelongsToToolkit(control)) return false;
+        const wrapper = control.closest?.('.building-filter') || control.parentElement?.querySelector?.('.building-filter') || null;
+        const tokens = nativeVisibilityControlTokens(control);
+        const tokenAliases = descriptor.tokens.map(normaliseNativeVisibilityToken);
+        const tokenMatch = tokens.some(token => tokenAliases.some(alias => (
+        token === alias || token.endsWith(`_${alias}`) || token.startsWith(`${alias}_`)
+        )));
+        const label = nativeVisibilityControlLabel(control);
+        const labelMatch = descriptor.labels.map(normaliseNativeVisibilityLabel).some(candidate => (
+        label === candidate || label.startsWith(`${candidate} `) || label.endsWith(` ${candidate}`)
+        ));
+        return Boolean((wrapper && labelMatch) || tokenMatch);
+    }
+
+    function findNativeBuildingQuickFilterControl(key) {
+        const descriptor = nativeBuildingQuickFilterDescriptor(key);
+        if (!descriptor) return null;
+        const controls = [];
+        const seen = new Set();
+        for (const root of nativeVisibilityControlRoots()) {
+        for (const control of nativeVisibilityInteractiveControls(root)) {
+            if (!control || seen.has(control)) continue;
+            seen.add(control);
+            controls.push(control);
+        }
+        }
+        return controls.find(control => nativeBuildingQuickFilterControlMatches(control, descriptor)) || null;
+    }
+
+    function nativeBuildingQuickFilterSnapshot(key) {
+        const control = findNativeBuildingQuickFilterControl(key);
+        const enabled = nativeVisibilityControlState(control);
+        return {
+        available: Boolean(control && enabled !== null && !control.disabled && control.getAttribute?.('aria-disabled') !== 'true'),
+        enabled: enabled === true,
+        control
+        };
+    }
+
+    function nativeBuildingQuickFilterMarkup() {
+        const rows = Object.entries(NATIVE_BUILDING_QUICK_FILTERS).map(([key, descriptor]) => {
+        const snapshot = nativeBuildingQuickFilterSnapshot(key);
+        const stateLabel = !snapshot.available ? 'UNAVAILABLE' : snapshot.enabled ? 'SHOWN' : 'HIDDEN';
+        return `<button class="mcms-native-building-filter mcms-native-building-filter-${escapeHtml(key)}${snapshot.enabled ? ' mcms-on' : ''}" type="button" data-native-building-filter="${escapeHtml(key)}" aria-pressed="${snapshot.enabled}"${snapshot.available ? '' : ' disabled'}>
+            <span class="mcms-native-building-icon" aria-hidden="true">${escapeHtml(descriptor.icon)}</span>
+            <span class="mcms-native-building-copy"><strong>${escapeHtml(descriptor.label)}</strong><small>MissionChief native filter</small></span>
+            <span class="mcms-native-building-state">${stateLabel}</span>
+        </button>`;
+        }).join('');
+        return `<div class="mcms-native-building-head"><div><strong>Station filters</strong><small>Direct MissionChief controls · no Toolkit layer scan</small></div><button type="button" data-native-building-close aria-label="Close station filters">×</button></div>
+        <div class="mcms-native-building-list">${rows}</div>
+        <p>Need another building type? Use MissionChief’s own Filters menu.</p>`;
+    }
+
+    function ensureNativeBuildingQuickFilterPopover() {
+        let popover = buildingQuickFilterRuntime.popover;
+        if (popover?.isConnected) return popover;
+        popover = document.createElement('div');
+        popover.id = SCRIPT.buildingQuickFilterId;
+        popover.className = 'mcms-native-building-popover';
+        popover.hidden = true;
+        popover.setAttribute('role', 'dialog');
+        popover.setAttribute('aria-modal', 'false');
+        popover.setAttribute('aria-label', 'MissionChief station filters');
+        document.body.appendChild(popover);
+        buildingQuickFilterRuntime.popover = popover;
+        return popover;
+    }
+
+    function renderNativeBuildingQuickFilterPopover() {
+        const popover = ensureNativeBuildingQuickFilterPopover();
+        updateUiSetProperty(popover, 'hidden', !buildingQuickFilterRuntime.open);
+        if (!buildingQuickFilterRuntime.open) return popover;
+        const focusedFilterKey = popover.contains?.(document.activeElement)
+        ? document.activeElement?.closest?.('[data-native-building-filter]')?.dataset?.nativeBuildingFilter || ''
+        : '';
+        const closeWasFocused = Boolean(popover.contains?.(document.activeElement) && document.activeElement?.matches?.('[data-native-building-close]'));
+        const changed = setInnerHtmlIfChanged(popover, nativeBuildingQuickFilterMarkup());
+        positionNativeBuildingQuickFilterPopover();
+        if (changed && (focusedFilterKey || closeWasFocused)) {
+        const focusTarget = focusedFilterKey
+            ? popover.querySelector?.(`[data-native-building-filter="${focusedFilterKey}"]:not(:disabled)`)
+            : popover.querySelector?.('[data-native-building-close]');
+        focusTarget?.focus?.({ preventScroll: true });
+        }
+        return popover;
+    }
+
+    function nativeBuildingQuickFilterAnchor(anchor = null) {
+        const explicit = anchor?.closest?.('[data-toggle="buildings"]') || anchor;
+        if (explicit?.isConnected && typeof explicit.getBoundingClientRect === 'function') return explicit;
+        const focused = document.activeElement?.closest?.('[data-toggle="buildings"]');
+        if (focused?.isConnected) return focused;
+        return document.querySelector?.(`#${SCRIPT.controlId} [data-toggle="buildings"], #${SCRIPT.panelId} [data-toggle="buildings"]`) || null;
+    }
+
+    function positionNativeBuildingQuickFilterPopover(anchor = buildingQuickFilterRuntime.anchor) {
+        const popover = buildingQuickFilterRuntime.popover;
+        const target = nativeBuildingQuickFilterAnchor(anchor);
+        if (!buildingQuickFilterRuntime.open || !popover || !target) return false;
+        buildingQuickFilterRuntime.anchor = target;
+        const viewport = pageWindow.visualViewport;
+        const viewportLeft = Number(viewport?.offsetLeft || 0);
+        const viewportTop = Number(viewport?.offsetTop || 0);
+        const viewportWidth = Math.max(160, Number(viewport?.width || pageWindow.innerWidth || 1024));
+        const viewportHeight = Math.max(180, Number(viewport?.height || pageWindow.innerHeight || 768));
+        const margin = 8;
+        const width = Math.max(144, Math.min(310, viewportWidth - margin * 2));
+        const targetRect = target.getBoundingClientRect();
+        popover.style.setProperty('width', `${width}px`, 'important');
+        popover.style.setProperty('max-height', `${Math.max(164, viewportHeight - margin * 2)}px`, 'important');
+        const height = Math.max(160, popover.getBoundingClientRect().height || 260);
+        let left = targetRect.right + 8;
+        if (left + width > viewportLeft + viewportWidth - margin) left = targetRect.left - width - 8;
+        left = Math.max(viewportLeft + margin, Math.min(left, viewportLeft + viewportWidth - width - margin));
+        let top = targetRect.top;
+        if (top + height > viewportTop + viewportHeight - margin) top = viewportTop + viewportHeight - height - margin;
+        top = Math.max(viewportTop + margin, top);
+        popover.style.left = `${Math.round(left)}px`;
+        popover.style.top = `${Math.round(top)}px`;
+        return true;
+    }
+
+    function setNativeBuildingQuickFilterOpen(open, { anchor = null, focus = true, restoreFocus = false } = {}) {
+        const next = Boolean(open);
+        if (next) {
+        const target = nativeBuildingQuickFilterAnchor(anchor);
+        buildingQuickFilterRuntime.anchor = target;
+        buildingQuickFilterRuntime.returnFocus = target;
+        buildingQuickFilterRuntime.open = true;
+        document.documentElement?.setAttribute('data-mcms-native-building-filter-open', 'true');
+        const popover = renderNativeBuildingQuickFilterPopover();
+        updateUI();
+        if (focus) popover.querySelector?.('[data-native-building-filter]:not(:disabled), [data-native-building-close]')?.focus?.({ preventScroll: true });
+        return true;
+        }
+        const wasOpen = buildingQuickFilterRuntime.open;
+        buildingQuickFilterRuntime.open = false;
+        document.documentElement?.removeAttribute('data-mcms-native-building-filter-open');
+        if (buildingQuickFilterRuntime.popover) updateUiSetProperty(buildingQuickFilterRuntime.popover, 'hidden', true);
+        updateUI();
+        const returnFocus = buildingQuickFilterRuntime.returnFocus;
+        buildingQuickFilterRuntime.anchor = null;
+        buildingQuickFilterRuntime.returnFocus = null;
+        if (restoreFocus && returnFocus?.isConnected) returnFocus.focus?.({ preventScroll: true });
+        return wasOpen;
+    }
+
+    function toggleNativeBuildingQuickFilter(anchor = null) {
+        return setNativeBuildingQuickFilterOpen(!buildingQuickFilterRuntime.open, { anchor, focus: true, restoreFocus: buildingQuickFilterRuntime.open });
+    }
+
+    function activateNativeBuildingQuickFilter(key) {
+        const descriptor = nativeBuildingQuickFilterDescriptor(key);
+        const snapshot = nativeBuildingQuickFilterSnapshot(key);
+        if (!descriptor || !snapshot.available) {
+        showToast(`${descriptor?.label || 'Station filter'} unavailable · use MissionChief Filters`);
+        renderNativeBuildingQuickFilterPopover();
+        return false;
+        }
+        const desired = !snapshot.enabled;
+        const changed = dispatchNativeVisibilityControl(snapshot.control, desired);
+        const verified = nativeBuildingQuickFilterSnapshot(key);
+        renderNativeBuildingQuickFilterPopover();
+        positionNativeBuildingQuickFilterPopover();
+        if (!changed || !verified.available || verified.enabled !== desired) {
+        showToast(`${descriptor.label} unchanged · MissionChief filter did not confirm`);
+        return false;
+        }
+        invalidateMarkerRegistryCaches('building');
+        toolkitAnalyticsRecordFeature('buildingVisibility', 'native_building_filter');
+        showToast(`${descriptor.label} ${desired ? 'shown' : 'hidden'} · MissionChief filter`);
+        return true;
+    }
+
     function writeNativeVisibilityState(feature, desired) {
         const wanted = Boolean(desired);
         if (feature === 'vehicles') return { handled: false, verified: false, source: 'native-settings-form' };
@@ -23881,20 +24022,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         return { handled: false, verified: false, source: 'fallback' };
     }
 
-    function releasePersonalBuildingVisibilityFallback() {
-        const layers = new Set([...hiddenPersonalBuildingLayers, ...personalBuildingLayerOpacity.keys()]);
-        if (!layers.size) return;
-        if (state.visibility.buildings) {
-        const map = findLeafletMapInstance(false);
-        if (map) {
-            synchronisePersonalBuildingVisibility(map);
-            return;
-        }
-        }
-        hiddenPersonalBuildingLayers.clear();
-        for (const layer of layers) restorePersonalBuildingLayerOpacity(layer);
-    }
-
     function nativeVisibilityFeatureMigrated(feature) {
         return state.nativeVisibility.migratedFeatures.includes(feature);
     }
@@ -23910,6 +24037,9 @@ Credits only. Each station and native action will be fetched again, purchased on
         // Button 3 mirrors the persisted MissionChief Show vehicles on map setting. It must
         // never fall back to a second Toolkit-owned vehicle mask when that control is absent.
         if (feature === 'vehicles') return false;
+        // Building quick filters delegate exclusively to MissionChief native checkboxes.
+        // Never reactivate the legacy Toolkit marker fallback for this feature.
+        if (feature === 'buildings') return false;
         return !nativeVisibilityBoundFeatures.has(feature);
     }
 
@@ -23926,7 +24056,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         nativeVisibilitySessionInitialised.add(feature);
         nativeVisibilityPendingFeatures.delete(feature);
         const migrated = markNativeVisibilityFeatureMigrated(feature);
-        if (feature === 'buildings') releasePersonalBuildingVisibilityFallback();
         if (migrated && persistMigration) saveState();
         return true;
     }
@@ -23934,34 +24063,18 @@ Credits only. Each station and native action will be fetched again, purchased on
     function adoptNativeVisibilityFeature(feature, { persist = true, refresh = true } = {}) {
         const snapshot = readNativeVisibilityState(feature);
         if (!snapshot.available) return { handled: false, changed: false, migrated: false };
-        if (feature === 'buildings' && state?.buildingVisibility) {
-        const wanted = nativeBuildingVisibilityDesired();
-        const wasMigrated = nativeVisibilityFeatureMigrated(feature);
-        const handled = snapshot.value === wanted || applyNativeVisibilityPreference(feature, wanted, { persistMigration: persist });
-        if (handled) {
-            nativeVisibilityBoundFeatures.add(feature);
-            nativeVisibilitySessionInitialised.add(feature);
-            nativeVisibilityPendingFeatures.delete(feature);
-        }
-        const migrated = !wasMigrated && nativeVisibilityFeatureMigrated(feature);
-        synchroniseBuildingVisibilitySelector();
-        if (migrated && persist) saveState();
-        if (refresh) updateUI();
-        return { handled, changed: false, migrated };
-        }
         nativeVisibilityBoundFeatures.add(feature);
         nativeVisibilitySessionInitialised.add(feature);
         nativeVisibilityPendingFeatures.delete(feature);
         const changed = state.visibility[feature] !== snapshot.value;
         state.visibility[feature] = snapshot.value;
         const migrated = markNativeVisibilityFeatureMigrated(feature);
-        if (feature === 'buildings') releasePersonalBuildingVisibilityFallback();
         if (changed || migrated) {
         if (persist) saveState();
         if (refresh) {
             applyRootAttributes();
             updateUI();
-            if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+            if (state.economyMode && feature === 'vehicles') scheduleEconomyLayerSync(0);
             reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
         }
         }
@@ -23975,33 +24088,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         let economyVisibilityChanged = false;
         for (const feature of NATIVE_VISIBILITY_FEATURES) {
         const snapshot = readNativeVisibilityState(feature);
-        if (feature === 'buildings' && state?.buildingVisibility) {
-            if (!snapshot.available) {
-            nativeVisibilityBoundFeatures.delete(feature);
-            nativeVisibilitySessionInitialised.delete(feature);
-            nativeVisibilityPendingFeatures.add(feature);
-            synchroniseBuildingVisibilitySelector();
-            continue;
-            }
-            const wasMigrated = nativeVisibilityFeatureMigrated(feature);
-            const wanted = nativeBuildingVisibilityDesired();
-            const needsWrite = snapshot.value !== wanted || nativeVisibilityPendingFeatures.has(feature) || !nativeVisibilitySessionInitialised.has(feature);
-            if (needsWrite) applyNativeVisibilityPreference(feature, wanted, { persistMigration: false });
-            else {
-            nativeVisibilityBoundFeatures.add(feature);
-            nativeVisibilitySessionInitialised.add(feature);
-            nativeVisibilityPendingFeatures.delete(feature);
-            markNativeVisibilityFeatureMigrated(feature);
-            }
-            stateChanged ||= !wasMigrated && nativeVisibilityFeatureMigrated(feature);
-            synchroniseBuildingVisibilitySelector();
-            continue;
-        }
         if (!snapshot.available) {
             const wasBound = nativeVisibilityBoundFeatures.delete(feature);
             nativeVisibilitySessionInitialised.delete(feature);
             if (wasBound && !state.visibility[feature]) {
-            if (feature === 'buildings') synchronisePersonalBuildingVisibility();
             if (feature === 'myMissions' || feature === 'allianceMissions') scheduleMarkerClassification();
             }
             continue;
@@ -24017,7 +24107,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (toolkitFreshInstallAtLoad || feature === 'vehicles') {
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
-            economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
+            economyVisibilityChanged ||= adopted.changed && feature === 'vehicles';
             continue;
             }
             const wasMigrated = nativeVisibilityFeatureMigrated(feature);
@@ -24029,13 +24119,13 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!nativeVisibilitySessionInitialised.has(feature)) {
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
-            economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
+            economyVisibilityChanged ||= adopted.changed && feature === 'vehicles';
             continue;
         }
         if (nativeVisibilityWriteDepth === 0 && state.visibility[feature] !== snapshot.value) {
             const adopted = adoptNativeVisibilityFeature(feature, { persist: false, refresh: false });
             stateChanged ||= adopted.changed || adopted.migrated;
-            economyVisibilityChanged ||= adopted.changed && (feature === 'vehicles' || feature === 'buildings');
+            economyVisibilityChanged ||= adopted.changed && feature === 'vehicles';
         }
         }
         if (stateChanged) {
@@ -24163,450 +24253,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
     }
 
-    function buildingVisibilityTypeId(layer, record = getBuildingRecordForLayer(layer)) {
-        const value = record?.building_type ?? record?.buildingType ?? layer?.building_type ?? layer?.buildingType ?? layer?.options?.building_type ?? layer?.options?.buildingType;
-        const typeId = String(value ?? '').trim();
-        return /^\d+$/u.test(typeId) ? typeId : '';
-    }
-
-    function buildingVisibilityOwnerScope(layer, record = getBuildingRecordForLayer(layer)) {
-        const currentUserId = currentUserIdCached();
-        const ownerId = record?.user_id ?? record?.userId ?? layer?.user_id ?? layer?.userId ?? layer?.options?.user_id ?? layer?.options?.userId;
-        if (currentUserId !== null && ownerId !== undefined && ownerId !== null && ownerId !== '') {
-        return String(ownerId) === currentUserId ? 'own' : 'alliance';
-        }
-        if (isAllianceBuildingLayer(layer, record)) return 'alliance';
-        return 'own';
-    }
-
-    function buildingVisibilityLayerAllowed(layer, record = getBuildingRecordForLayer(layer)) {
-        if (!state.visibility.buildings) return false;
-        const config = state.buildingVisibility || { scope: 'both', mode: 'all', selectedTypeIds: [] };
-        const scope = buildingVisibilityOwnerScope(layer, record);
-        if (config.scope !== 'both' && config.scope !== scope) return false;
-        if (config.mode === 'all') return true;
-        const typeId = buildingVisibilityTypeId(layer, record);
-        return Boolean(typeId && config.selectedTypeIds.includes(typeId));
-    }
-
-    function buildingVisibilityTypeLabel(typeId, record = null) {
-        const id = String(typeId || '');
-        const candidates = [
-        buildingVisibilityRuntime.typeLabels[id],
-        dispatchRecruitmentRuntime.typeLabels[id],
-        stationIconCopierRuntime.typeLabels[id],
-        expansionPlannerRuntime.typeLabels[id],
-        record?.building_type_caption,
-        record?.buildingTypeCaption,
-        record?.building_type_name,
-        record?.buildingTypeName,
-        record?.type_caption,
-        record?.typeCaption
-        ];
-        const label = candidates.map(dispatchRecruitmentText).find(Boolean);
-        return label || `Building type ${id || '?'}`;
-    }
-
-    function buildingVisibilityTypeEntries() {
-        const entries = new Map();
-        const ensure = (typeId, record = null) => {
-        const id = String(typeId || '');
-        if (!/^\d+$/u.test(id)) return null;
-        if (!entries.has(id)) entries.set(id, { id, label: buildingVisibilityTypeLabel(id, record), own: 0, alliance: 0, total: 0 });
-        const entry = entries.get(id);
-        const nextLabel = buildingVisibilityTypeLabel(id, record);
-        if (!/^Building type \d+$/u.test(nextLabel)) entry.label = nextLabel;
-        return entry;
-        };
-        for (const labels of [buildingVisibilityRuntime.typeLabels, dispatchRecruitmentRuntime.typeLabels, stationIconCopierRuntime.typeLabels, expansionPlannerRuntime.typeLabels]) {
-        for (const typeId of Object.keys(labels || {})) ensure(typeId);
-        }
-        for (const typeId of state.buildingVisibility.selectedTypeIds) ensure(typeId);
-
-        const countedBuildingIds = new Set();
-        const layersById = new Map(getBuildingMarkerLayers().map(layer => [getBuildingLayerId(layer), layer]).filter(([id]) => id !== null));
-        const countRecord = (layer, record) => {
-        const buildingId = getBuildingLayerId(layer) ?? String(record?.id ?? record?.building_id ?? '');
-        if (buildingId && countedBuildingIds.has(buildingId)) return;
-        const typeId = buildingVisibilityTypeId(layer, record);
-        const entry = ensure(typeId, record);
-        if (!entry) return;
-        if (buildingId) countedBuildingIds.add(buildingId);
-        const ownerScope = buildingVisibilityOwnerScope(layer, record);
-        entry[ownerScope] += 1;
-        entry.total += 1;
-        };
-        for (const [buildingId, record] of getBuildingRecordIndex().recordsById.entries()) {
-        countRecord(layersById.get(String(buildingId)) || { building_id: buildingId }, record);
-        }
-        for (const layer of getBuildingMarkerLayers()) countRecord(layer, getBuildingRecordForLayer(layer) || layer);
-        return Array.from(entries.values()).sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base', numeric: true }));
-    }
-
-    function buildingVisibilityNativeTargetEntries(map) {
-        const service = pageWindow.map_filters_service || null;
-        const now = Date.now();
-        if (
-        buildingVisibilityTargetCache.revision === buildingRegistryRevision &&
-        buildingVisibilityTargetCache.service === service &&
-        now - buildingVisibilityTargetCache.createdAt <= BUILDING_VISIBILITY_RECHECK_MS
-        ) return buildingVisibilityTargetCache.entries;
-        const entries = [];
-        const seenParams = new Set();
-        const register = (layer, record) => {
-        const userId = record?.user_id ?? record?.userId ?? layer?.user_id ?? layer?.userId ?? layer?.options?.user_id ?? layer?.options?.userId;
-        const typeId = buildingVisibilityTypeId(layer, record);
-        if (userId === undefined || userId === null || !typeId) return;
-        const key = `${String(userId)}:${typeId}`;
-        if (seenParams.has(key)) return;
-        seenParams.add(key);
-        const target = resolveNativeBuildingFilterTarget(layer, record);
-        if (target && target !== map) entries.push({ target, layer, record, typeId, scope: buildingVisibilityOwnerScope(layer, record) });
-        };
-        for (const [buildingId, record] of getBuildingRecordIndex().recordsById.entries()) {
-        register({ building_id: buildingId, user_id: record?.user_id, building_type: record?.building_type }, record);
-        }
-        for (const layer of getBuildingMarkerLayers()) register(layer, getBuildingRecordForLayer(layer) || layer);
-        buildingVisibilityTargetCache = { revision: buildingRegistryRevision, service, createdAt: now, entries };
-        return entries;
-    }
-
-    function buildingVisibilitySelectionSnapshot() {
-        return {
-        enabled: Boolean(state.visibility.buildings),
-        scope: state.buildingVisibility.scope,
-        mode: state.buildingVisibility.mode,
-        selectedTypeIds: [...state.buildingVisibility.selectedTypeIds]
-        };
-    }
-
-    function buildingVisibilitySnapshotsEqual(left, right) {
-        if (!left || !right) return false;
-        return left.enabled === right.enabled && left.scope === right.scope && left.mode === right.mode &&
-        left.selectedTypeIds.length === right.selectedTypeIds.length && left.selectedTypeIds.every((value, index) => value === right.selectedTypeIds[index]);
-    }
-
-    function buildingVisibilityScopeLabel(scope = state.buildingVisibility?.scope || 'both') {
-        if (scope === 'own') return 'Own';
-        if (scope === 'alliance') return 'Alliance';
-        return 'Own + Alliance';
-    }
-
-    function buildingVisibilityStatusLabel({ compact = false } = {}) {
-        if (!state.visibility.buildings) return compact ? 'HIDDEN' : 'Hidden · selection saved';
-        const config = state.buildingVisibility || { scope: 'both', mode: 'all', selectedTypeIds: [] };
-        const scope = buildingVisibilityScopeLabel();
-        if (config.mode === 'all') return compact ? (config.scope === 'both' ? 'ALL' : scope.toUpperCase()) : `All types · ${scope}`;
-        const selected = config.selectedTypeIds;
-        if (!selected.length) return compact ? 'NONE' : `No types · ${scope}`;
-        if (selected.length === 1) {
-        const label = buildingVisibilityTypeLabel(selected[0]);
-        return compact ? label.toUpperCase().slice(0, 12) : `${label} · ${scope}`;
-        }
-        return compact ? `${selected.length} TYPES` : `${selected.length} types · ${scope}`;
-    }
-
-    function nativeBuildingVisibilityDesired() {
-        return Boolean(state.visibility.buildings && (state.buildingVisibility?.scope || 'both') !== 'alliance');
-    }
-
-    function setBuildingVisibilityTarget(map, target, visible, metadata = {}) {
-        if (!map || !target || target === map) return false;
-        if (!buildingVisibilityManagedTargets.has(target)) {
-        buildingVisibilityManagedTargets.set(target, { ...metadata, visible: nativeBuildingFilterTargetIsVisible(map, target) });
-        }
-        const current = nativeBuildingFilterTargetIsVisible(map, target);
-        if (current === Boolean(visible)) return false;
-        try {
-        if (visible) map.addLayer?.(target);
-        else map.removeLayer?.(target);
-        return true;
-        } catch (err) {
-        return false;
-        }
-    }
-
-    function hideBuildingVisibilityLayer(map, layer, record = getBuildingRecordForLayer(layer)) {
-        if (!map || !layer) return false;
-        hiddenBuildingVisibilityLayers.add(layer);
-        if (!buildingVisibilityLayerOpacity.has(layer)) {
-        const opacity = Number(layer.options?.opacity);
-        buildingVisibilityLayerOpacity.set(layer, Number.isFinite(opacity) ? opacity : 1);
-        }
-        try { if (typeof layer.setOpacity === 'function') layer.setOpacity(0); } catch (err) {}
-        const target = resolveNativeBuildingFilterTarget(layer, record);
-        attachAllianceBuildingToNativeFilterTarget(layer, target);
-        try {
-        const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-        if (onMap) map.removeLayer?.(layer);
-        } catch (err) {}
-        return true;
-    }
-
-    function restoreBuildingVisibilityLayer(map, layer, record = getBuildingRecordForLayer(layer)) {
-        if (!map || !layer) return false;
-        const wasHidden = hiddenBuildingVisibilityLayers.delete(layer);
-        const opacity = buildingVisibilityLayerOpacity.get(layer);
-        buildingVisibilityLayerOpacity.delete(layer);
-        try { if (typeof layer.setOpacity === 'function') layer.setOpacity(Number.isFinite(opacity) ? opacity : 1); } catch (err) {}
-        if (!wasHidden) return false;
-        const target = resolveNativeBuildingFilterTarget(layer, record);
-        attachAllianceBuildingToNativeFilterTarget(layer, target);
-        try {
-        const targetVisible = !target || target === map || nativeBuildingFilterTargetIsVisible(map, target);
-        const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-        if (targetVisible && !onMap) map.addLayer?.(layer);
-        } catch (err) {}
-        return true;
-    }
-
-    function synchroniseBuildingVisibilitySelector(map = findLeafletMapInstance(false)) {
-        if (!map || enforcingBuildingVisibility) return;
-        enforcingBuildingVisibility = true;
-        try {
-        const layers = getBuildingMarkerLayers().filter(Boolean);
-        const currentLayers = new Set(layers);
-        for (const layer of Array.from(hiddenBuildingVisibilityLayers)) {
-            if (currentLayers.has(layer)) continue;
-            hiddenBuildingVisibilityLayers.delete(layer);
-            const opacity = buildingVisibilityLayerOpacity.get(layer);
-            buildingVisibilityLayerOpacity.delete(layer);
-            try { if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(opacity) ? opacity : 1); } catch (err) {}
-        }
-
-        const targetDecisions = new Map();
-        const registerTarget = ({ target, layer, record, typeId, scope }) => {
-            const allowed = buildingVisibilityLayerAllowed(layer, record);
-            const current = targetDecisions.get(target);
-            targetDecisions.set(target, current ? { ...current, visible: current.visible || allowed } : {
-            visible: allowed,
-            typeId,
-            scope
-            });
-        };
-        for (const entry of buildingVisibilityNativeTargetEntries(map)) registerTarget(entry);
-        for (const [target, decision] of targetDecisions.entries()) setBuildingVisibilityTarget(map, target, decision.visible, decision);
-
-        for (const layer of layers) {
-            const record = getBuildingRecordForLayer(layer) || layer;
-            if (buildingVisibilityLayerAllowed(layer, record)) restoreBuildingVisibilityLayer(map, layer, record);
-            else hideBuildingVisibilityLayer(map, layer, record);
-        }
-        } finally {
-        enforcingBuildingVisibility = false;
-        }
-    }
-
-    function buildingVisibilityFilterIsCustom() {
-        const config = state.buildingVisibility || { scope: 'both', mode: 'all' };
-        return !state.visibility.buildings || config.scope !== 'both' || config.mode !== 'all';
-    }
-
-    function releaseBuildingVisibilitySelector(map = findLeafletMapInstance(false)) {
-        if (!map) {
-        for (const [layer, opacity] of buildingVisibilityLayerOpacity.entries()) {
-            try { if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(opacity) ? opacity : 1); } catch (err) {}
-        }
-        hiddenBuildingVisibilityLayers.clear();
-        buildingVisibilityLayerOpacity.clear();
-        buildingVisibilityManagedTargets.clear();
-        return;
-        }
-        const previous = enforcingBuildingVisibility;
-        enforcingBuildingVisibility = true;
-        try {
-        for (const layer of Array.from(hiddenBuildingVisibilityLayers)) restoreBuildingVisibilityLayer(map, layer);
-        for (const [target, original] of buildingVisibilityManagedTargets.entries()) {
-            const visible = nativeBuildingFilterTargetIsVisible(map, target);
-            if (visible === Boolean(original.visible)) continue;
-            try {
-            if (original.visible) map.addLayer?.(target);
-            else map.removeLayer?.(target);
-            } catch (err) {}
-        }
-        buildingVisibilityManagedTargets.clear();
-        } finally {
-        enforcingBuildingVisibility = previous;
-        }
-    }
-
-    function commitBuildingVisibilitySelection(message = '') {
-        state.buildingVisibility.selectedTypeIds = Array.from(new Set(state.buildingVisibility.selectedTypeIds.map(String)))
-        .filter(value => /^\d+$/u.test(value))
-        .sort((left, right) => Number(left) - Number(right));
-        saveState();
-        applyRootAttributes();
-        updateUI();
-        applyMapVisibilityToggleEffects('buildings');
-        reconcileFeatureRefreshes({ includeSnapshots: false, positionPanel: false });
-        if (message) showToast(message);
-        toolkitAnalyticsRecordFeature('buildingVisibility', 'building_filter');
-    }
-
-    function setBuildingVisibilityType(typeId, selected) {
-        const id = String(typeId || '');
-        if (!/^\d+$/u.test(id)) return false;
-        const knownTypeIds = buildingVisibilityTypeEntries().map(entry => entry.id);
-        const selection = new Set(state.buildingVisibility.mode === 'all' ? knownTypeIds : state.buildingVisibility.selectedTypeIds);
-        if (selected) selection.add(id);
-        else selection.delete(id);
-        if (knownTypeIds.length > 0 && knownTypeIds.every(value => selection.has(value))) {
-        state.buildingVisibility.mode = 'all';
-        state.buildingVisibility.selectedTypeIds = [];
-        } else {
-        state.buildingVisibility.mode = 'selected';
-        state.buildingVisibility.selectedTypeIds = Array.from(selection);
-        }
-        state.visibility.buildings = state.buildingVisibility.mode === 'all' || state.buildingVisibility.selectedTypeIds.length > 0;
-        commitBuildingVisibilitySelection(selected ? `${buildingVisibilityTypeLabel(id)} added` : `${buildingVisibilityTypeLabel(id)} hidden`);
-        return true;
-    }
-
-    function setBuildingVisibilityOnly(typeId) {
-        const id = String(typeId || '');
-        if (!/^\d+$/u.test(id)) return false;
-        state.buildingVisibility.mode = 'selected';
-        state.buildingVisibility.selectedTypeIds = [id];
-        state.visibility.buildings = true;
-        commitBuildingVisibilitySelection(`Only ${buildingVisibilityTypeLabel(id)} shown`);
-        return true;
-    }
-
-    function setBuildingVisibilityScope(scope) {
-        const nextScope = String(scope || '');
-        if (!BUILDING_VISIBILITY_SCOPES.includes(nextScope)) return false;
-        state.buildingVisibility.scope = nextScope;
-        if (state.buildingVisibility.mode === 'all' || state.buildingVisibility.selectedTypeIds.length > 0) state.visibility.buildings = true;
-        commitBuildingVisibilitySelection(`${buildingVisibilityScopeLabel(nextScope)} buildings selected`);
-        return true;
-    }
-
-    function selectAllBuildingVisibilityTypes() {
-        state.buildingVisibility.mode = 'all';
-        state.buildingVisibility.selectedTypeIds = [];
-        state.visibility.buildings = true;
-        commitBuildingVisibilitySelection(`All ${buildingVisibilityScopeLabel().toLowerCase()} building types shown`);
-    }
-
-    function hideAllBuildingVisibilityTypes() {
-        state.visibility.buildings = false;
-        commitBuildingVisibilitySelection('All buildings hidden · selection saved');
-    }
-
-    function restoreBuildingVisibilitySelection() {
-        const snapshot = buildingVisibilityRuntime.restoreSnapshot;
-        if (!snapshot) return false;
-        state.visibility.buildings = Boolean(snapshot.enabled);
-        state.buildingVisibility.scope = BUILDING_VISIBILITY_SCOPES.includes(snapshot.scope) ? snapshot.scope : 'both';
-        state.buildingVisibility.mode = BUILDING_VISIBILITY_MODES.includes(snapshot.mode) ? snapshot.mode : 'all';
-        state.buildingVisibility.selectedTypeIds = Array.isArray(snapshot.selectedTypeIds) ? [...snapshot.selectedTypeIds] : [];
-        commitBuildingVisibilitySelection('Building view restored');
-        return true;
-    }
-
-    async function loadBuildingVisibilityCatalog({ force = false } = {}) {
-        if (buildingVisibilityRuntime.catalogPromise) return buildingVisibilityRuntime.catalogPromise;
-        if (!force && buildingVisibilityRuntime.catalogAt && Object.keys(buildingVisibilityRuntime.typeLabels).length) return buildingVisibilityRuntime.typeLabels;
-        buildingVisibilityRuntime.loading = true;
-        buildingVisibilityRuntime.error = '';
-        renderBuildingVisibilitySelector();
-        const pending = (async () => {
-        try {
-            const { doc } = await fetchDispatchRecruitmentDocument('/buildings/new');
-            const catalog = parseDispatchRecruitmentCatalog(doc);
-            buildingVisibilityRuntime.typeLabels = { ...buildingVisibilityRuntime.typeLabels, ...catalog.typeLabels };
-            buildingVisibilityRuntime.catalogAt = Date.now();
-            return buildingVisibilityRuntime.typeLabels;
-        } catch (err) {
-            buildingVisibilityRuntime.error = 'Native type catalogue unavailable · live map types still work';
-            return buildingVisibilityRuntime.typeLabels;
-        } finally {
-            buildingVisibilityRuntime.loading = false;
-            buildingVisibilityRuntime.catalogPromise = null;
-            if (!runtime.destroyed) {
-            renderBuildingVisibilitySelector();
-            updateUI();
-            }
-        }
-        })();
-        buildingVisibilityRuntime.catalogPromise = pending;
-        return pending;
-    }
-
-    function renderBuildingVisibilitySelector(panel = commandInterfacePanel()) {
-        if (!panel) return null;
-        if (buildingVisibilityRuntime.panel !== panel) {
-        buildingVisibilityRuntime.panel = panel;
-        buildingVisibilityRuntime.selector = panel.getElementsByClassName('mcms-building-selector')[0] || null;
-        buildingVisibilityRuntime.launcher = panel.getElementsByClassName('mcms-building-launcher')[0] || null;
-        }
-        const selector = buildingVisibilityRuntime.selector;
-        const launcher = buildingVisibilityRuntime.launcher;
-        const summary = buildingVisibilityStatusLabel();
-        updateUiSetText(launcher?.lastElementChild, summary);
-        if (launcher) {
-        updateUiToggleClass(launcher, 'mcms-on', buildingVisibilityRuntime.open);
-        updateUiSetAttribute(launcher, 'aria-expanded', String(buildingVisibilityRuntime.open));
-        updateUiSetAttribute(launcher, 'aria-label', `Choose building visibility. Current view: ${summary}.`);
-        }
-        if (!selector) return null;
-        updateUiSetProperty(selector, 'hidden', !buildingVisibilityRuntime.open);
-        if (!buildingVisibilityRuntime.open) return null;
-
-        const entries = buildingVisibilityTypeEntries();
-        const query = dispatchRecruitmentText(buildingVisibilityRuntime.search).toLowerCase();
-        const visibleEntries = entries.filter(entry => !query || entry.label.toLowerCase().includes(query) || entry.id.includes(query));
-        const selectedIds = new Set(state.buildingVisibility.selectedTypeIds);
-        const scope = state.buildingVisibility.scope;
-        const rows = visibleEntries.map(entry => {
-        const selected = state.buildingVisibility.mode === 'all' || selectedIds.has(entry.id);
-        const scopeCount = scope === 'both' ? entry.total : entry[scope];
-        return `<div class="mcms-building-type-row" data-building-type-row="${escapeHtml(entry.id)}">
-            <label><input type="checkbox" data-setting="building-visibility-type" value="${escapeHtml(entry.id)}"${selected ? ' checked' : ''}><span><strong>${escapeHtml(entry.label)}</strong><small>${scopeCount} in scope · ${entry.own} own · ${entry.alliance} alliance</small></span></label>
-            <button class="mcms-building-only-btn" type="button" data-action="building-type-only" data-building-type="${escapeHtml(entry.id)}" title="Show only ${escapeHtml(entry.label)}">Only</button>
-        </div>`;
-        }).join('');
-        const restoreAvailable = !buildingVisibilitySnapshotsEqual(buildingVisibilityRuntime.restoreSnapshot, buildingVisibilitySelectionSnapshot());
-        const status = buildingVisibilityRuntime.loading
-        ? 'Loading MissionChief building types…'
-        : buildingVisibilityRuntime.error || `${entries.length} building type${entries.length === 1 ? '' : 's'} · ${buildingVisibilityStatusLabel()}`;
-        const markup = `
-        <div class="mcms-building-selector-head">
-            <div><strong>Building visibility</strong><small>Shortcut 4 toggles this saved view · Shift+4 opens it</small></div>
-            <button type="button" data-action="toggle-building-selector" aria-label="Close building visibility selector">×</button>
-        </div>
-        <div class="mcms-building-scope" role="group" aria-label="Building ownership scope">
-            ${BUILDING_VISIBILITY_SCOPES.map(value => `<button type="button" data-action="building-scope" data-building-scope="${value}" class="${scope === value ? 'mcms-on' : ''}" aria-pressed="${scope === value}">${escapeHtml(buildingVisibilityScopeLabel(value))}</button>`).join('')}
-        </div>
-        <input class="mcms-input mcms-building-search" type="search" autocomplete="off" spellcheck="false" data-building-visibility-search value="${escapeHtml(buildingVisibilityRuntime.search)}" placeholder="Search building types" aria-label="Search building types">
-        <div class="mcms-building-selector-actions">
-            <button class="mcms-small-btn" type="button" data-action="building-types-all">All</button>
-            <button class="mcms-small-btn" type="button" data-action="building-types-none" title="Hide every building while retaining this selection">None</button>
-            <button class="mcms-small-btn" type="button" data-action="building-types-restore"${restoreAvailable ? '' : ' disabled'}>Restore</button>
-        </div>
-        <div class="mcms-building-type-list">${rows || `<div class="mcms-building-empty">${entries.length ? 'No building types match this search.' : 'No live building types detected yet.'}</div>`}</div>
-        <div class="mcms-building-selector-status">${escapeHtml(status)}</div>`;
-        setInnerHtmlIfChanged(selector, markup);
-        return selector.getElementsByClassName('mcms-building-search')[0] || null;
-    }
-
-    function setBuildingVisibilitySelectorOpen(open, { focus = true } = {}) {
-        const next = Boolean(open);
-        if (next && !buildingVisibilityRuntime.open) buildingVisibilityRuntime.restoreSnapshot = buildingVisibilitySelectionSnapshot();
-        buildingVisibilityRuntime.open = next;
-        if (!next) buildingVisibilityRuntime.search = '';
-        if (next) {
-        openPanel();
-        setActiveTab('map');
-        void loadBuildingVisibilityCatalog();
-        const search = renderBuildingVisibilitySelector();
-        if (focus) search?.focus?.({ preventScroll: true });
-        } else {
-        renderBuildingVisibilitySelector();
-        if (focus) buildingVisibilityRuntime.launcher?.focus?.({ preventScroll: true });
-        }
-    }
-
     function nativeBuildingFilterTargetIsVisible(map, target) {
         if (!map || !target || target === map) return true;
         try {
@@ -24616,7 +24262,6 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function nativeAllianceBuildingLayerAllowed(map, layer, record = getBuildingRecordForLayer(layer)) {
-        if (state?.buildingVisibility) return buildingVisibilityLayerAllowed(layer, record);
         if (!isAllianceBuildingLayer(layer, record)) return true;
         const target = resolveNativeBuildingFilterTarget(layer, record);
         if (!target || target === map) return true;
@@ -24672,7 +24317,6 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function nativeAllianceBuildingFilterMayNeedEnforcement(map = findLeafletMapInstance(false)) {
         if (!map) return false;
-        if (state?.buildingVisibility) return buildingVisibilityFilterIsCustom() || hiddenBuildingVisibilityLayers.size > 0;
         if (hiddenNativeAllianceBuildingLayers.size) return true;
         const seenTargets = new Set();
         for (const record of getBuildingRecordIndex().allianceRecords) {
@@ -24687,10 +24331,6 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function synchroniseNativeAllianceBuildingVisibility(map = findLeafletMapInstance(false)) {
-        if (state?.buildingVisibility) {
-        synchroniseBuildingVisibilitySelector(map);
-        return;
-        }
         if (!map || enforcingNativeAllianceBuildingVisibility) return;
         const layers = getBuildingMarkerLayers().filter(Boolean);
         const currentLayers = new Set(layers);
@@ -24708,7 +24348,6 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function releaseNativeAllianceBuildingVisibility(map = findLeafletMapInstance(false)) {
-        releaseBuildingVisibilitySelector(map);
         if (!map) {
         hiddenNativeAllianceBuildingLayers.clear();
         return;
@@ -24787,80 +24426,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!isPersonalBuildingLayer(layer, personalBuildingIds)) return false;
         if (layer._icon) markPersonalBuildingIcon(layer._icon);
         return true;
-    }
-
-    function restorePersonalBuildingLayerOpacity(layer) {
-        const originalOpacity = personalBuildingLayerOpacity.get(layer);
-        personalBuildingLayerOpacity.delete(layer);
-        try {
-        if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(originalOpacity) ? originalOpacity : 1);
-        } catch (err) {}
-    }
-
-    function hidePersonalBuildingLayer(map, layer, personalBuildingIds = getPersonalBuildingIds()) {
-        if (!map || !markPersonalBuildingLayerIfOwned(layer, personalBuildingIds)) return false;
-
-        hiddenPersonalBuildingLayers.add(layer);
-
-        if (!personalBuildingLayerOpacity.has(layer)) {
-        const currentOpacity = Number(layer.options?.opacity);
-        personalBuildingLayerOpacity.set(layer, Number.isFinite(currentOpacity) ? currentOpacity : 1);
-        }
-
-        try {
-        if (typeof layer.setOpacity === 'function') layer.setOpacity(0);
-        } catch (err) {}
-
-        try {
-        const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-        if (isOnMap && typeof map.removeLayer === 'function') {
-            const previousEnforcementState = enforcingPersonalBuildingVisibility;
-            enforcingPersonalBuildingVisibility = true;
-            try { map.removeLayer(layer); }
-            finally { enforcingPersonalBuildingVisibility = previousEnforcementState; }
-        }
-        } catch (err) {}
-
-        return true;
-    }
-
-    function synchronisePersonalBuildingVisibility(map = findLeafletMapInstance(false)) {
-        if (state?.buildingVisibility) {
-        synchroniseBuildingVisibilitySelector(map);
-        return;
-        }
-        if (!map || enforcingPersonalBuildingVisibility) return;
-
-        const currentBuildingLayers = getBuildingMarkerLayers().filter(Boolean);
-        const currentBuildingLayerSet = new Set(currentBuildingLayers);
-        const personalBuildingIds = getPersonalBuildingIds();
-
-        if (!state.visibility.buildings) {
-        for (const layer of Array.from(hiddenPersonalBuildingLayers)) {
-            if (!currentBuildingLayerSet.has(layer)) {
-                hiddenPersonalBuildingLayers.delete(layer);
-                restorePersonalBuildingLayerOpacity(layer);
-            }
-        }
-
-        for (const layer of currentBuildingLayers) hidePersonalBuildingLayer(map, layer, personalBuildingIds);
-        return;
-        }
-
-        enforcingPersonalBuildingVisibility = true;
-        try {
-        const layersToRestore = new Set([...hiddenPersonalBuildingLayers, ...personalBuildingLayerOpacity.keys()]);
-        for (const layer of layersToRestore) {
-            const wasHidden = hiddenPersonalBuildingLayers.delete(layer);
-            restorePersonalBuildingLayerOpacity(layer);
-            if (!wasHidden || !currentBuildingLayerSet.has(layer)) continue;
-            const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-            if (!isOnMap && typeof map.addLayer === 'function') map.addLayer(layer);
-        }
-        } catch (err) {
-        } finally {
-        enforcingPersonalBuildingVisibility = false;
-        }
     }
 
     function getVehicleMarkerIcons() {
@@ -25008,7 +24573,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         else markerStateSyncTimer = null;
         if (runtime.destroyed || document.hidden) return;
         if ((nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) || state.markerFocus) synchroniseVehicleMarkerClasses();
-        if (buildingVisibilityFilterIsCustom()) synchroniseBuildingVisibilitySelector();
         if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
         };
         const id = runtimeSetTimeout(callback, Math.max(0, Number(delay) || 0));
@@ -25027,7 +24591,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         return Boolean(
         state.markerFocus || state.missionPulse ||
         (nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) ||
-        (nativeVisibilityFallbackNeeded('buildings') && !state.visibility.buildings) ||
         (nativeVisibilityFallbackNeeded('myMissions') && !state.visibility.myMissions) ||
         (nativeVisibilityFallbackNeeded('allianceMissions') && !state.visibility.allianceMissions)
         );
@@ -25323,7 +24886,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
         const onLayerAdd = event => {
         const layer = event?.layer;
-        if (isToolkitLeafletLayer(layer) || enforcingBuildingVisibility || economyLayerEnforcement) return;
+        if (isToolkitLeafletLayer(layer) || economyLayerEnforcement) return;
         const scope = inferScope(layer);
         if (deferMapInteractionRefresh({
             scope,
@@ -25339,7 +24902,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (state.markerFocus && isVehicleLayer) scheduleMarkerStateSync(0, false);
         if (scope === 'building') {
             markPersonalBuildingLayerIfOwned(layer);
-            synchroniseBuildingVisibilitySelector(map);
         }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all', positionPanel: false });
         if (state.economyMode && (scope === 'vehicle' || scope === 'building')) scheduleEconomyLayerSync(80);
@@ -25347,7 +24909,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
         const onLayerRemove = event => {
         const layer = event?.layer;
-        if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || enforcingNativeAllianceBuildingVisibility || enforcingBuildingVisibility || economyLayerEnforcement) return;
+        if (isToolkitLeafletLayer(layer) || enforcingNativeAllianceBuildingVisibility || economyLayerEnforcement) return;
         const scope = inferScope(layer);
         if (deferMapInteractionRefresh({
             scope,
@@ -25379,7 +24941,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         mapInteractionMarkerSyncNeeded ||= Boolean(
             (nativeVisibilityFallbackNeeded('vehicles') && !state.visibility.vehicles) ||
             state.markerFocus ||
-            buildingVisibilityFilterIsCustom() ||
             nativeAllianceBuildingFilterMayNeedEnforcement(map)
         );
         document.documentElement?.setAttribute?.('data-mcms-map-moving', 'true');
@@ -29832,9 +29393,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 visibility: {
                     allianceMissions: state.visibility.allianceMissions,
                     myMissions: state.visibility.myMissions,
-                    buildings: state.visibility.buildings,
                 },
-                buildingVisibility: state.buildingVisibility,
                 allianceCredits: state.allianceCredits,
                 missionAge: state.missionAge,
                 unitCommitment: state.unitCommitment,
@@ -29900,9 +29459,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         renderScreenPins();
         updateUI();
         for (const feature of NATIVE_VISIBILITY_FEATURES) {
-        if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, feature === 'buildings' ? nativeBuildingVisibilityDesired() : state.visibility[feature]);
+        if (feature !== 'vehicles') applyNativeVisibilityPreference(feature, state.visibility[feature]);
         }
-        synchroniseBuildingVisibilitySelector();
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
     }
 
@@ -29916,17 +29474,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         state.roadPriority = Boolean(settings.roadPriority);
         const profileVisibility = { ...(settings.visibility || {}) };
         delete profileVisibility.vehicles;
+        delete profileVisibility.buildings;
         state.visibility = { ...state.visibility, ...profileVisibility };
-        if (settings.buildingVisibility && typeof settings.buildingVisibility === 'object') {
-        const scope = String(settings.buildingVisibility.scope || '');
-        const mode = String(settings.buildingVisibility.mode || '');
-        state.buildingVisibility = {
-            scope: BUILDING_VISIBILITY_SCOPES.includes(scope) ? scope : state.buildingVisibility.scope,
-            mode: BUILDING_VISIBILITY_MODES.includes(mode) ? mode : state.buildingVisibility.mode,
-            selectedTypeIds: Array.from(new Set((Array.isArray(settings.buildingVisibility.selectedTypeIds) ? settings.buildingVisibility.selectedTypeIds : [])
-            .map(String).filter(value => /^\d+$/u.test(value))))
-        };
-        }
         state.allianceCredits = Boolean(settings.allianceCredits);
         state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(settings.allianceCreditMinimum)) ? Number(settings.allianceCreditMinimum) : state.allianceCreditMinimum;
         state.missionAge = Boolean(settings.missionAge);
@@ -35943,6 +35492,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             SCRIPT.mapMeasureHudId,
             SCRIPT.contextMenuId,
             SCRIPT.quickWheelId,
+            SCRIPT.buildingQuickFilterId,
             SCRIPT.fullscreenExitId,
             SCRIPT.vehicleFollowId,
             SCRIPT.cleanExitId,
@@ -35972,8 +35522,13 @@ Credits only. Each station and native action will be fetched again, purchased on
         commandPaletteReturnFocus = null;
         quickWheelReturnFocus = null;
         quickWheelRestoreDragging = false;
+        buildingQuickFilterRuntime.open = false;
+        buildingQuickFilterRuntime.popover = null;
+        buildingQuickFilterRuntime.anchor = null;
+        buildingQuickFilterRuntime.returnFocus = null;
         document.documentElement?.removeAttribute?.('data-mcms-command-palette-open');
         document.documentElement?.removeAttribute?.('data-mcms-help-open');
+        document.documentElement?.removeAttribute?.('data-mcms-native-building-filter-open');
         document.documentElement?.style?.removeProperty?.('cursor');
         document.body?.style?.removeProperty?.('user-select');
         return { reason, removed };
@@ -36041,10 +35596,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
         else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
         else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
-        else if (feature === 'buildings') {
-        state.visibility.buildings = !state.visibility.buildings;
-        if (state.visibility.buildings && state.buildingVisibility.mode === 'selected' && !state.buildingVisibility.selectedTypeIds.length) state.buildingVisibility.mode = 'all';
-        }
         else return false;
         return true;
     }
@@ -36072,9 +35623,8 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
     function applyMapVisibilityToggleEffects(feature) {
         const visibilityFeature = nativeVisibilityDescriptor(feature);
-        if (visibilityFeature) applyNativeVisibilityPreference(feature, feature === 'buildings' ? nativeBuildingVisibilityDesired() : state.visibility[feature]);
-        if (feature === 'buildings') synchroniseBuildingVisibilitySelector();
-        if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+        if (visibilityFeature) applyNativeVisibilityPreference(feature, state.visibility[feature]);
+        if (state.economyMode && feature === 'vehicles') scheduleEconomyLayerSync(0);
         if (feature === 'missionAge') {
         runtimeClearTimeout(missionAgeTimer);
         missionAgeTimer = null;
@@ -36119,7 +35669,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         else if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off'); }
     function handleInterfaceShellToggle(feature) {
         if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else if (feature === 'quickWheel') state.quickWheel.enabled = !state.quickWheel.enabled; else return false; return true; }
-    function toggleFeature(feature) {
+    function toggleFeature(feature, anchor = null) {
+        if (feature === 'buildings') {
+            toggleNativeBuildingQuickFilter(anchor);
+            return;
+        }
         if (feature === 'vehicles') {
             void toggleNativeVehicleVisibility();
             if (state.cleanMode) closePanel();
@@ -36152,7 +35706,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         applyPayoutAudioToggleEffects(feature);
         applyMissionMonitoringToggleEffects(feature);
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
-        if (feature === 'buildings') showToast(`Buildings · ${buildingVisibilityStatusLabel()}`);
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
         if (feature === 'unitCommitment') {
@@ -36648,11 +36201,9 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function closePanel({ restoreFocus = false } = {}) {
         if (panelResizeState) endPanelResize(null);
+        if (buildingQuickFilterRuntime.open) setNativeBuildingQuickFilterOpen(false);
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
-        buildingVisibilityRuntime.open = false;
-        buildingVisibilityRuntime.search = '';
-        renderBuildingVisibilitySelector(panel);
         panel.classList.remove('mcms-open');
         panel.setAttribute('aria-hidden', 'true');
         const menuButton = document.querySelector(`#${SCRIPT.controlId} .mcms-menu-btn`);
@@ -36954,7 +36505,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         toggle('personal-missions', 'Personal Missions', state.visibility.myMissions, 'myMissions', 'mine visibility markers');
         toggle('alliance-missions', 'Alliance Missions', state.visibility.allianceMissions, 'allianceMissions', 'shared visibility markers');
         toggle('vehicles', 'MissionChief Vehicles', state.visibility.vehicles, 'vehicles', 'show vehicles on map game setting units visibility');
-        toggle('buildings', 'Building Markers', state.visibility.buildings, 'buildings', 'stations visibility');
+        add(
+            'buildings',
+            `${buildingQuickFilterRuntime.open ? 'Close' : 'Open'} Station Filters`,
+            'Ambulance, Fire and Police stations through MissionChief native filters',
+            'buildings stations ambulance fire police native filters visibility',
+            () => toggleNativeBuildingQuickFilter(),
+            true
+        );
         toggle('stuck', 'Stuck Mission Detection', state.stuckDetector.enabled, 'stuckDetector', 'stuck vehicles stalled incidents labels');
         toggle('major-feed', 'Major Incident Feed', state.majorIncidentFeed.enabled, 'majorIncidentFeed', 'ticker news wire');
         toggle('mission-age', 'Mission Age Labels', state.missionAge, 'missionAge', 'old incidents time');
@@ -37560,11 +37118,34 @@ Credits only. Each station and native action will be fetched again, purchased on
         return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
     }
 
+    function handleNativeBuildingQuickFilterKeyboard(event) {
+        const popover = buildingQuickFilterRuntime.popover;
+        if (!buildingQuickFilterRuntime.open || !popover?.contains?.(event.target)) return false;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            setNativeBuildingQuickFilterOpen(false, { restoreFocus: true });
+            return true;
+        }
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return false;
+        const buttons = Array.from(popover.querySelectorAll('button:not(:disabled)'));
+        const index = Math.max(0, buttons.indexOf(document.activeElement));
+        const nextIndex = event.key === 'Home' ? 0
+            : event.key === 'End' ? buttons.length - 1
+            : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+        if (!buttons[nextIndex]) return false;
+        event.preventDefault();
+        event.stopPropagation();
+        buttons[nextIndex].focus?.({ preventScroll: true });
+        return true;
+    }
+
     function handleKeyboard(event) {
         if (!toolkitCommandShellContextActive()) {
             teardownToolkitCommandShell('keyboard event outside canonical map context');
             return;
         }
+        if (handleNativeBuildingQuickFilterKeyboard(event)) return;
         if (mapMeasureRuntime.active && !event.defaultPrevented && !isTypingTarget(event.target)) {
             if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); stopMapMeasure(); return; }
             if (event.key === 'Backspace') { event.preventDefault(); event.stopPropagation(); mapMeasureUndo(); return; }
@@ -37574,7 +37155,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (event.key === 'Escape' && closeTabletQuickWheel({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeCommandExperienceModal()) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeHelpCenter()) { event.preventDefault(); return; }
-        if (event.key === 'Escape' && buildingVisibilityRuntime.open) { event.preventDefault(); setBuildingVisibilitySelectorOpen(false); return; }
+        if (event.key === 'Escape' && buildingQuickFilterRuntime.open) { event.preventDefault(); setNativeBuildingQuickFilterOpen(false, { restoreFocus: true }); return; }
         if (event.key === 'Escape') {
             if (state.fullscreenMap) { event.preventDefault(); setMapFullscreen(false); return; }
             const hadOpenUi = Boolean(
@@ -37591,7 +37172,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         }
         if (state.shortcuts && !state.safeMode.enabled && !isTypingTarget(event.target) && !event.defaultPrevented && !event.repeat && !event.metaKey && keyboardBindingFromEvent(event) === 'Shift+4') {
             event.preventDefault();
-            setBuildingVisibilitySelectorOpen(true);
+            setNativeBuildingQuickFilterOpen(true);
             return;
         }
         if (!state.shortcuts || isTypingTarget(event.target) || event.defaultPrevented || event.repeat || event.metaKey) return;
@@ -37993,7 +37574,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                     ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Mine', 'Mine')}
                     ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Ally', 'Ally')}
                     ${makeFloatButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3', 'Units', 'Units')}
-                    ${makeFloatButton('buildings', '4', 'Buildings', 'Toggle your saved building view. Shortcut: 4 · Shift+4 opens the type selector.', 'Bldgs', 'Bldgs')}
+                    ${makeFloatButton('buildings', '4', 'Buildings', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4', 'Bldgs', 'Bldgs')}
                 </div>
                 <div class="mcms-control-group" data-control-group="intelligence" aria-label="Intelligence controls">
                     <span class="mcms-control-group-label">Intelligence</span>
@@ -38063,12 +37644,13 @@ Credits only. Each station and native action will be fetched again, purchased on
                 return;
             }
             if (menuButton) { togglePanel(); return; }
-            if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+            if (toggleButton) { toggleFeature(toggleButton.dataset.toggle, toggleButton); return; }
             if (actionButton) handleAction(actionButton);
         });
         control.addEventListener('contextmenu', event => {
             event.preventDefault();
-            if (closestEventTarget(event, '[data-toggle="buildings"]')) setBuildingVisibilitySelectorOpen(true);
+            const buildingButton = closestEventTarget(event, '[data-toggle="buildings"]');
+            if (buildingButton) setNativeBuildingQuickFilterOpen(true, { anchor: buildingButton });
             else openPanel();
         });
         toolkitApplyCommandBarState(control);
@@ -38336,14 +37918,12 @@ Credits only. Each station and native action will be fetched again, purchased on
                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Toggle MissionChief’s Show vehicles on map setting. Shortcut: 3')}
-                    ${makeToggleButton('buildings', '4', 'Buildings', 'Toggle your saved building view. Shortcut: 4 · Shift+4 opens the type selector.')}
+                    ${makeToggleButton('buildings', '4', 'Buildings', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4')}
                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
                 </div>
-                <button class="mcms-building-launcher" type="button" data-action="toggle-building-selector" aria-expanded="false" aria-controls="mcms-building-visibility-selector"><span>Choose building types &amp; ownership</span><strong data-building-visibility-summary>All types · Own + Alliance</strong></button>
-                <div class="mcms-building-selector" id="mcms-building-visibility-selector" data-building-visibility-selector hidden></div>
                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
                 <div class="mcms-status">Ready.</div>
             </section>
@@ -38706,7 +38286,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
-            if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+            if (toggleButton) { toggleFeature(toggleButton.dataset.toggle, toggleButton); return; }
             if (positionButton) { applyPosition(positionButton.dataset.position, true); return; }
             if (actionButton) {
                 event.preventDefault();
@@ -38716,14 +38296,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         });
         panel.addEventListener('change', event => handleSettingChange(event.target));
         panel.addEventListener('input', event => {
-            if (event.target?.matches?.('[data-building-visibility-search]')) {
-                buildingVisibilityRuntime.search = String(event.target.value || '').trimStart();
-                const search = renderBuildingVisibilitySelector(panel);
-                if (!search) return;
-                search.focus?.({ preventScroll: true });
-                try { search.setSelectionRange(search.value.length, search.value.length); } catch (err) {}
-                return;
-            }
             if (event.target?.matches?.('[data-setting="dispatch-recruitment-personnel"]')) {
                 captureDispatchRecruitmentPersonnelDraft(event.target);
                 return;
@@ -38850,12 +38422,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
             return;
         }
-        if (action === 'toggle-building-selector') { setBuildingVisibilitySelectorOpen(!buildingVisibilityRuntime.open); return; }
-        if (action === 'building-scope') { setBuildingVisibilityScope(button.dataset.buildingScope); return; }
-        if (action === 'building-types-all') { selectAllBuildingVisibilityTypes(); return; }
-        if (action === 'building-types-none') { hideAllBuildingVisibilityTypes(); return; }
-        if (action === 'building-types-restore') { restoreBuildingVisibilitySelection(); return; }
-        if (action === 'building-type-only') { setBuildingVisibilityOnly(button.dataset.buildingType); return; }
         if (action === 'place-go') {
             const place = QUICK_PLACES.find(item => item.id === button.dataset.place);
             if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
@@ -39094,10 +38660,6 @@ Credits only. Each station and native action will be fetched again, purchased on
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
-        if (setting === 'building-visibility-type') {
-            setBuildingVisibilityType(String(target.value || ''), Boolean(target.checked));
-            return;
-        }
         if (setting.startsWith('alliance-course-') && (allianceCourseRuntime.running || allianceCourseRuntime.scanPromise)) {
             updateUI();
             showToast('Wait for Alliance Courses to finish scanning or stop the active run before changing settings');
@@ -39463,8 +39025,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         const panel = document.getElementById(SCRIPT.panelId);
         const menuButton = control?.querySelector('.mcms-menu-btn') || null;
         const dockPosition = activeDockPosition();
-        const buildingStatus = buildingVisibilityStatusLabel();
-        const compactBuildingStatus = buildingVisibilityStatusLabel({ compact: true });
         if (control) {
             const controlToggleButtons = Array.from(control.querySelectorAll('[data-toggle]'));
             const controlActionButtons = new Map(Array.from(control.querySelectorAll('[data-action]'), button => [button.dataset.action, button]));
@@ -39490,7 +39050,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 allianceMissions: state.visibility.allianceMissions,
                 myMissions: state.visibility.myMissions,
                 vehicles: state.visibility.vehicles,
-                buildings: state.visibility.buildings,
+                buildings: buildingQuickFilterRuntime.open,
                 allianceCredits: state.allianceCredits,
                 missionAge: state.missionAge,
                 transportWatcher: state.transportWatcher,
@@ -39499,14 +39059,16 @@ Credits only. Each station and native action will be fetched again, purchased on
             };
             controlToggleButtons.forEach(btn => {
                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
-                const currentBuildingStatus = btn.dataset.toggle === 'buildings' ? buildingStatus : '';
+                const isBuildingFilter = btn.dataset.toggle === 'buildings';
                 updateUiToggleClass(btn, 'mcms-on', on);
                 updateUiSetAttribute(btn, 'aria-pressed', String(on));
                 updateUiSetDataset(btn, 'mcmsState', on ? 'on' : 'off');
-                updateUiSetText(btn.querySelector('.mcms-control-state'), currentBuildingStatus ? compactBuildingStatus : (on ? 'ON' : 'OFF'));
-                if (currentBuildingStatus) {
-                    updateUiSetProperty(btn, 'title', `Building view: ${currentBuildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
-                    updateUiSetAttribute(btn, 'aria-label', `Buildings: ${currentBuildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
+                updateUiSetText(btn.querySelector('.mcms-control-state'), isBuildingFilter ? (on ? 'OPEN' : 'FILTER') : (on ? 'ON' : 'OFF'));
+                if (isBuildingFilter) {
+                    updateUiSetProperty(btn, 'title', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4');
+                    updateUiSetAttribute(btn, 'aria-label', `Buildings native station filters: ${on ? 'open' : 'closed'}. Shortcut: 4.`);
+                    updateUiSetAttribute(btn, 'aria-expanded', String(on));
+                    updateUiSetAttribute(btn, 'aria-controls', SCRIPT.buildingQuickFilterId);
                     return;
                 }
                 const controlName = btn.querySelector('.mcms-float-label-desktop')?.textContent || btn.title || 'Map control';
@@ -39605,7 +39167,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             allianceMissions: state.visibility.allianceMissions,
             myMissions: state.visibility.myMissions,
             vehicles: state.visibility.vehicles,
-            buildings: state.visibility.buildings,
+            buildings: buildingQuickFilterRuntime.open,
             allianceCredits: state.allianceCredits,
             missionAge: state.missionAge,
             transportWatcher: state.transportWatcher,
@@ -39614,18 +39176,20 @@ Credits only. Each station and native action will be fetched again, purchased on
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
             const on = Boolean(toggleValues[key]);
-            const currentBuildingStatus = key === 'buildings' ? buildingStatus : '';
+            const isBuildingFilter = key === 'buildings';
             updateUiToggleClass(btn, 'mcms-on', on);
             const pill = btn.querySelector('.mcms-pill');
-            updateUiSetText(pill, currentBuildingStatus
-                ? compactBuildingStatus
+            updateUiSetText(pill, isBuildingFilter
+                ? (on ? 'OPEN' : 'FILTER')
                 : key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
             updateUiSetAttribute(btn, 'aria-pressed', String(on));
-            if (!currentBuildingStatus) return;
-            updateUiSetProperty(btn, 'title', `Building view: ${currentBuildingStatus}. Shortcut: 4 · Shift+4 opens the selector.`);
-            updateUiSetAttribute(btn, 'aria-label', `Buildings: ${currentBuildingStatus}. Shortcut 4 toggles this view; Shift+4 opens the selector.`);
+            if (!isBuildingFilter) return;
+            updateUiSetProperty(btn, 'title', 'Open Ambulance, Fire and Police station filters powered directly by MissionChief. Shortcut: 4');
+            updateUiSetAttribute(btn, 'aria-label', `Buildings native station filters: ${on ? 'open' : 'closed'}. Shortcut: 4.`);
+            updateUiSetAttribute(btn, 'aria-expanded', String(on));
+            updateUiSetAttribute(btn, 'aria-controls', SCRIPT.buildingQuickFilterId);
         });
-        renderBuildingVisibilitySelector(panel);
+        if (buildingQuickFilterRuntime.open || buildingQuickFilterRuntime.popover) renderNativeBuildingQuickFilterPopover();
         const pressureBoardToggle = panel.querySelector('.mcms-pressure-board-toggle');
         if (pressureBoardToggle) {
             const open = operationalPressureBoardOpen();
@@ -40040,12 +39604,8 @@ Credits only. Each station and native action will be fetched again, purchased on
             for (const [key] of ordered.slice(0, resourceGapAnalysisCache.size - 180)) resourceGapAnalysisCache.delete(key);
         }
         const currentVehicleLayers = new Set(getVehicleMarkerLayers());
-        const currentBuildingLayers = new Set(getBuildingMarkerLayers());
         for (const layer of Array.from(economyHiddenVehicleLayers)) {
             if (!layer || (!layer._map && !currentVehicleLayers.has(layer))) economyHiddenVehicleLayers.delete(layer);
-        }
-        for (const layer of Array.from(economyHiddenBuildingLayers)) {
-            if (!layer || (!layer._map && !currentBuildingLayers.has(layer))) economyHiddenBuildingLayers.delete(layer);
         }
         if (!state.resourceGap.enabled) {
             resourceGapAnalysisCache.clear();
@@ -40522,14 +40082,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             economyIntervalMs: 12000,
             economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
         });
-        runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
-            synchroniseBuildingVisibilitySelector();
-            if (state.economyMode) scheduleEconomyLayerSync(0);
-        }, {
-            intervalResolver: () => buildingVisibilityFilterIsCustom() ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
-            economyIntervalMs: 45 * 1000,
-            economyIntervalResolver: () => (buildingVisibilityFilterIsCustom() || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
-        });
     }
 
     function boot() {
@@ -40589,7 +40141,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
-                if (buildingVisibilityFilterIsCustom() || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
+                if (nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
             }
             if (layoutChanged) invalidateMapElementCache();
             if (document.hidden || dragState || mapInteractionWorkDeferred()) return;
@@ -40637,6 +40189,30 @@ Credits only. Each station and native action will be fetched again, purchased on
                 suppressNextOutsideClick = false;
                 return;
             }
+            const buildingPopover = buildingQuickFilterRuntime.popover;
+            const insideBuildingPopover = Boolean(buildingPopover?.contains?.(event.target));
+            const buildingToggle = event.target?.closest?.('[data-toggle="buildings"]') || null;
+            if (insideBuildingPopover) {
+                const closeButton = closestEventTarget(event, '[data-native-building-close]');
+                if (closeButton) {
+                    event.preventDefault();
+                    setNativeBuildingQuickFilterOpen(false, { restoreFocus: true });
+                    return;
+                }
+                const filterButton = closestEventTarget(event, '[data-native-building-filter]');
+                if (filterButton) {
+                    event.preventDefault();
+                    activateNativeBuildingQuickFilter(filterButton.dataset.nativeBuildingFilter);
+                }
+                return;
+            }
+            if (buildingQuickFilterRuntime.open && !nativeVisibilityWriteInProgress && !insideBuildingPopover && !buildingToggle) {
+                setNativeBuildingQuickFilterOpen(false);
+            }
+            // The popup lives outside the settings panel. Treat its delegated filter clicks
+            // as part of the panel interaction so capture-phase outside-click handling cannot
+            // close it before MissionChief receives the native checkbox click.
+            if (nativeVisibilityWriteInProgress) return;
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel || !panel.classList.contains('mcms-open')) return;
             if (event.target?.closest?.(`#${SCRIPT.controlId}`)) return;
@@ -40648,6 +40224,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             applyRootAttributes();
             refreshTabletModeUi();
             scheduleVisualViewportStabilisation('window-resize');
+            positionNativeBuildingQuickFilterPopover();
             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
             if (dragState || panelResizeState) return;
@@ -40657,11 +40234,14 @@ Credits only. Each station and native action will be fetched again, purchased on
             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
             scheduleMajorIncidentFeedLayout();
         });
-        runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+        runtimeListen(pageWindow, 'scroll', () => {
+            scheduleMajorIncidentFeedLayout();
+            positionNativeBuildingQuickFilterPopover();
+        }, { passive: true });
         runtimeListen(pageWindow,'orientationchange',()=>scheduleVisualViewportStabilisation('orientationchange'));
         if(pageWindow.visualViewport){
-            runtimeListen(pageWindow.visualViewport,'resize',()=>scheduleVisualViewportStabilisation('visual-viewport-resize'));
-            runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');},{passive:true});
+            runtimeListen(pageWindow.visualViewport,'resize',()=>{scheduleVisualViewportStabilisation('visual-viewport-resize');positionNativeBuildingQuickFilterPopover();});
+            runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');positionNativeBuildingQuickFilterPopover();},{passive:true});
         }
         applyVisualViewportGeometry();
         scheduleVisualViewportStabilisation('boot-viewport');
@@ -40706,7 +40286,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             refreshSuppression();
             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
             if (state.economyMode) scheduleEconomyLayerSync(0);
-            synchroniseBuildingVisibilitySelector();
             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
             scheduleMajorIncidentFeedRender(80);
         });
@@ -40741,11 +40320,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             disposeCoverageCanvasRenderer();
             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
             majorIncidentFeedLayoutTimer = null;
-            try {
-                releaseBuildingVisibilitySelector(cachedMap);
-            } catch (err) {
-                console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
-            }
             try { creditsValueObserver?.disconnect(); } catch (err) {}
             removeMajorIncidentFeed();
             clearMissionLockOnEffect();
@@ -40791,8 +40365,12 @@ Credits only. Each station and native action will be fetched again, purchased on
             missionOverlayVersions.clear();
             markerRegistryCache.clear();
             removeOldInstances();
+            buildingQuickFilterRuntime.open = false;
+            buildingQuickFilterRuntime.popover = null;
+            buildingQuickFilterRuntime.anchor = null;
+            buildingQuickFilterRuntime.returnFocus = null;
             const root = document.documentElement;
-            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mcms-missionchief-reskin', 'data-mcms-dock-auto-hide', 'data-mcms-auto-hide-axis', 'data-mcms-auto-hide-revealed', 'data-mcms-safe-mode', 'data-mcms-panel-open', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mcms-custom-theme', 'data-mcms-missionchief-reskin', 'data-mcms-dock-auto-hide', 'data-mcms-auto-hide-axis', 'data-mcms-auto-hide-revealed', 'data-mcms-safe-mode', 'data-mcms-panel-open', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open', 'data-mcms-native-building-filter-open']) root.removeAttribute(attribute);
         });
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

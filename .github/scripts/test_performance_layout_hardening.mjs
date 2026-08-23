@@ -74,7 +74,7 @@ for (const contract of [
   '.mcms-tab-panel.mcms-active{grid-template-columns:1fr!important}',
   '.mcms-tabs{position:static!important;top:auto!important;grid-template-rows:repeat(3,44px)!important}',
   '.mcms-ui-theme-copy strong {\n            font-size:12.5px !important;',
-  '.mcms-building-launcher > strong {\n            flex:1 1 100% !important;',
+  '#${SCRIPT.buildingQuickFilterId} .mcms-native-building-copy strong { display:block !important; min-width:0 !important;',
   'applyMobileDockLayout(mapEl);\n                applyTabletPanelPosition({ sizeOnly: true });',
   'applyTabletDockLayout(mapEl);\n                applyTabletPanelPosition({ sizeOnly: true });',
   'font-size:clamp(9px,2.35vw,10px)',

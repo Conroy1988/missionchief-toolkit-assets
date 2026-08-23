@@ -17,8 +17,7 @@
     "vehicle-data-refresh",
     "mission-maintenance",
     "minute-maintenance",
-    "major-incident-feed-integrity",
-    "building-visibility"
+    "major-incident-feed-integrity"
   ],
   "requiredDocumentListeners": [
     "keydown",
@@ -70,7 +69,8 @@
     "data-mcms-show-buildings",
     "data-mcms-help-open",
     "data-mcms-command-palette-open",
-    "data-mcms-command-experience-open"
+    "data-mcms-command-experience-open",
+    "data-mcms-native-building-filter-open"
   ],
   "retiredRootAttributes": [
     "data-mcms-show-vehicles"

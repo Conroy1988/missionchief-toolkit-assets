@@ -1,24 +1,22 @@
-# Building Visibility Selector
+# Native Building Quick Filters
 
-The Buildings control now toggles a saved view instead of forcing a single undifferentiated map state.
+The Buildings control opens a small popup for the three station filters used most often:
 
-## Interaction
+- Ambulance Stations
+- Fire Stations
+- Police Stations
 
-- Press `4` (or tap Buildings) to hide or restore the current saved building view.
-- Press `Shift+4`, right-click the Buildings dock control, or choose **Choose building types & ownership** in Map Visibility to open the selector.
-- Choose **Own**, **Alliance**, or **Own + Alliance** as the ownership scope.
-- Search native MissionChief building types, tick any combination, or use **Only** for a one-type view.
-- **All** shows every type in the current ownership scope.
-- **None** hides every building without discarding the saved selection, so `4` restores it immediately.
-- **Restore** rolls the selector back to the state captured when it was opened.
+Press `4`, tap **Buildings**, use the configured Quick Wheel action, or choose **Open Station Filters** in the command palette. `Shift+4` and right-clicking the dock control also open the same popup.
 
-The dock and panel report the effective state (`ALL`, a single type, `N TYPES`, or `HIDDEN`). Selection, ownership scope, and map profiles persist through Toolkit state storage.
+Each row reads the current checked state from MissionChief's own `#map_filters` list and activates that native checkbox. MissionChief therefore remains responsible for layer visibility and `/map_filters` persistence. Multiple station types can be changed without closing the popup. For every other building type, use MissionChief's full Filters menu.
 
-## Layer behaviour
+## Performance and compatibility
 
-The selector uses MissionChief's `map_filters_service.getFilterLayerByBuildingParams` targets when available, then enforces the same decision on confidently identified marker layers as a fallback. This keeps newly loaded markers aligned with the saved selection. The broad native My Buildings setting is bridged independently from the Toolkit master state, allowing Alliance-only views without the native bridge turning the whole selector off.
+The Toolkit no longer fetches `/buildings/new`, scans building markers, maintains an ownership/type selection, hides layers with CSS, or runs a building-visibility timer for this control. Economy Mode also leaves building layers to MissionChief's filter service.
 
-Toolkit teardown restores the native target visibility captured before the selector managed each target.
+Older `buildingVisibility` data is accepted during state import so existing backups remain valid, but it is inert and is not written into new map profiles. The separate alliance-building native-filter leak safeguard remains in place.
+
+The popup is viewport-clamped, scroll-safe, keyboard navigable, and uses wrapping labels and state badges at desktop, tablet, and narrow iPhone widths.
 
 ## Validation
 
@@ -28,4 +26,4 @@ Run the focused local lane:
 ./toolkit check --feature building-visibility
 ```
 
-The contract and runtime fixtures cover persistence anchors, responsive controls, type and ownership decisions, native target enforcement, fallback marker restoration, and teardown restoration.
+The static, isolated runtime, and Dev Lab fixtures cover exact three-filter discovery, native checkbox events, dock and panel interaction, multi-selection, click-away handling, stale legacy-state isolation, and responsive text containment.

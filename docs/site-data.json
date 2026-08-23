@@ -286,6 +286,24 @@
           ]
         },
         {
+          "name": "UK Building Filters",
+          "summary": "Opens every active UK building type through MissionChief's own map-filter controls in a fixed popularity-led order.",
+          "details": [
+            "Ambulance, Police and Fire remain first",
+            "All 31 active UK building type IDs covered by 30 rows",
+            "Exact main and small station matching",
+            "Native filter state and persistence remain authoritative",
+            "One bounded native-control scan per popup render"
+          ],
+          "visual": "building-filters",
+          "tags": [
+            "buildings",
+            "filters",
+            "map",
+            "uk"
+          ]
+        },
+        {
           "name": "Toolkit Command Palette",
           "summary": "Searches live missions, personal vehicles, buildings, locations, Settings cards and safe Toolkit actions from one responsive surface.",
           "details": [
@@ -872,7 +890,7 @@
     },
     {
       "key": "4",
-      "action": "Toggle My Buildings"
+      "action": "Open UK Building Filters"
     },
     {
       "key": "5",

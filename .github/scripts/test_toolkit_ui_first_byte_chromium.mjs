@@ -64,7 +64,7 @@ function browserExecutable() {
 function initScript(applicationSource) {
   const storedState = JSON.stringify({
     setupWizard: { completed: true, schema: 1 },
-    updateBriefing: { enabled: false, seenVersion: "10.17.3", seenFeatures: [] },
+    updateBriefing: { enabled: false, seenVersion: "10.17.4", seenFeatures: [] },
     cleanMode: false,
   });
   return `
@@ -90,7 +90,7 @@ async function healthyScenario(browser, url) {
   const box = await control.boundingBox();
   assert.ok(box && box.width > 40 && box.height > 30, "Chromium launcher has no visible geometry");
   assert.equal(await control.evaluate(element => element.parentElement?.id), "map", "Chromium launcher missed the canonical map");
-  assert.equal(await page.evaluate(() => window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.version), "10.17.3");
+  assert.equal(await page.evaluate(() => window.__MC_MAP_COMMAND_TOOLKIT_RUNTIME__?.version), "10.17.4");
   assert.equal(await page.locator("html").getAttribute("data-mcms-first-byte-phase"), "ui-mounted");
   await control.locator(".mcms-menu-btn").click();
   await page.locator("#mc-map-command-toolkit-panel.mcms-open").waitFor({ state: "visible", timeout: 10000 });

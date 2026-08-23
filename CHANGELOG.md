@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.17.4] - 2026-08-24
+
+### Complete UK Building Filters
+
+- Expands the Buildings popup from three services to every active MissionChief UK building type.
+- Keeps Ambulance, Police and Fire first, then lists every other building in a fixed popularity-led UK order.
+- Covers all 31 active UK building types through 30 native filter rows, with large and small Building Complexes sharing MissionChief's combined control.
+- Resolves current native labels, UK and US spellings, MissionChief filter identifiers and live I18n translations without introducing a Toolkit-owned map layer.
+- Scans MissionChief's native filter controls once per popup render so the expanded catalogue remains bounded on Desktop, Tablet and iOS.
+- Adds clear Most popular and All other buildings sections, service-colour cues, sticky section labels and safe viewport scrolling.
+
 ## [10.17.3] - 2026-08-23
 
 ### Fast Map Icon Stability Hotfix

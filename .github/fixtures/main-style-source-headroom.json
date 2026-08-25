@@ -127,17 +127,17 @@
     "templateLines": 10126,
     "templateSha256": "89735c291ef8acac9a9e5c557bb873cd4b3b3bb873adf9e3e339751edb836dde",
     "canonicalCssSha256": "3b3b391cc93e1032e0dc0f0d49dd3a43d054513a8601861ad42a6eabf3745888",
-    "maxSourceBytes": 2857556,
-    "maxSourceLines": 42958,
+    "maxSourceBytes": 2904743,
+    "maxSourceLines": 43411,
     "minTemplateBytes": 500000,
     "baseline": "10.8.0",
     "approvedGrowth": {
-      "sourceBytes": 490117,
-      "sourceLines": 7430,
+      "sourceBytes": 537304,
+      "sourceLines": 7883,
       "templateBytes": 54024,
       "templateLines": 592
     },
-    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, v10.17.1 base-map/HUD repair, v10.17.2 native marker/route restoration, v10.17.3 icon stability hardening, and v10.17.4 complete UK building filters",
-    "incident": "complete-uk-building-filters"
+    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, v10.17.1 base-map/HUD repair, v10.17.2 native marker/route restoration, v10.17.3 icon stability hardening, v10.17.4 complete UK building filters, and v10.18.0 command interface overhaul",
+    "incident": "command-interface-overhaul"
   }
 }

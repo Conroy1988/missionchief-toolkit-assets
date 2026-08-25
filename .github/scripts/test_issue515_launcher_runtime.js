@@ -111,6 +111,7 @@ documentStub.mapOuter = mapOuter;
 documentStub.maps = [missionMap];
 
 const calls = [];
+let layoutApplyCount = 0;
 let teardownCount = 0;
 const sandbox = {
     console,
@@ -129,6 +130,10 @@ const sandbox = {
     isTouchLayoutActive: () => false,
     getLargestLeafletMap: () => documentStub.mainMap,
     createControl: map => { calls.push(map); return control; },
+    applyLayoutBuilderControl(candidate) {
+        assert.equal(candidate, control);
+        layoutApplyCount += 1;
+    },
     createPanel() {},
     ensureVersionStatusButton() {},
     findLeafletMapInstance: () => null,
@@ -154,11 +159,13 @@ assert.equal(helpers.toolkitControlHost(missionMap, documentStub), mainMap, 'can
 
 helpers.toolkitApplyCommandBarState(control);
 assert.equal(control.attrs['data-mcms-command-bar-open'], 'true');
+assert.equal(layoutApplyCount, 1);
 assert.equal(dock.attrs['aria-expanded'], 'true');
 assert.equal(icon.textContent, '▴');
 sandbox.state.commandBarOpen = false;
 helpers.toolkitApplyCommandBarState(control);
 assert.equal(control.attrs['data-mcms-command-bar-open'], 'false');
+assert.equal(layoutApplyCount, 2);
 assert.equal(filter.style.values.get('display').value, 'none');
 assert.equal(pins.style.values.get('display').priority, 'important');
 assert.equal(icon.textContent, '▾');

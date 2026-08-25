@@ -1,6 +1,6 @@
 # Issue #716 — Procurement Brain and Operational Timeline
 
-Toolkit v10.9.1 provides two read-only planning views in the existing Operational Pressure Board. Open **Toolkit → Missions → Procurement Brain** or **Operational Timeline**, use the Command Palette, or open the board with <kbd>B</kbd> and change tabs.
+Toolkit v10.9.1 provides two read-only planning views in the existing Operational Pressure Board. Open **Toolkit → Incident Operations → Procurement Brain** or **Operational Timeline**, use the Command Palette, or open the board with <kbd>B</kbd> and change tabs.
 
 ## Mission scope and logging
 

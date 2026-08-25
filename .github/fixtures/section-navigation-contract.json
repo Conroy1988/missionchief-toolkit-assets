@@ -3,26 +3,26 @@
     {
       "key": "map",
       "label": "Map",
-      "title": "Map Controls",
-      "description": "Visibility, overlays and map tools"
+      "title": "Map & Locations",
+      "description": "Visibility, drawing, jumps, bookmarks and profiles"
     },
     {
-      "key": "missions",
-      "label": "Missions",
-      "title": "Mission Operations",
-      "description": "Intelligence, resources and response tools"
+      "key": "incidents",
+      "label": "Incidents",
+      "title": "Incident Operations",
+      "description": "Pressure, intelligence and active response"
     },
     {
-      "key": "alliance",
-      "label": "Alliance Admin",
-      "title": "Alliance Administration",
-      "description": "Courses, transports and alliance controls"
+      "key": "fleet",
+      "label": "Fleet",
+      "title": "Fleet & Resources",
+      "description": "Vehicle status, coverage and resource planning"
     },
     {
-      "key": "dispatch",
-      "label": "Dispatch",
-      "title": "Dispatch Administration",
-      "description": "Recruitment across selected stations"
+      "key": "administration",
+      "label": "Administration",
+      "title": "Guided Administration",
+      "description": "Courses, transports, recruitment, icons and upgrades"
     },
     {
       "key": "finance",
@@ -31,66 +31,67 @@
       "description": "Reports, payouts and financial archive"
     },
     {
-      "key": "locations",
-      "label": "Locations",
-      "title": "Saved Locations",
-      "description": "Jumps, bookmarks and map profiles"
-    },
-    {
-      "key": "appearance",
-      "label": "Appearance",
-      "title": "Appearance",
-      "description": "Interface themes and map skins"
+      "key": "status",
+      "label": "Status",
+      "title": "Operations Status Centre",
+      "description": "Health, progress, freshness and system authority"
     },
     {
       "key": "settings",
       "label": "Settings",
-      "title": "Toolkit Settings",
-      "description": "Devices, controls and recovery"
+      "title": "Settings & Personalisation",
+      "description": "Appearance, devices, controls and recovery"
     }
   ],
   "legacyPanelSources": {
-    "map": ["tools"],
-    "missions": ["resources", "ops"],
-    "alliance": ["alliance"],
-    "dispatch": ["dispatch"],
+    "map": ["tools", "places"],
+    "incidents": ["ops"],
+    "fleet": ["resources"],
+    "administration": ["alliance", "dispatch"],
     "finance": ["discord", "payouts"],
-    "locations": ["places"],
-    "appearance": ["skins"],
-    "settings": ["settings"]
+    "status": [],
+    "settings": ["settings", "skins"]
   },
   "legacyStateMigration": {
-    "skins": "appearance",
+    "skins": "settings",
+    "appearance": "settings",
     "tools": "map",
-    "resources": "missions",
-    "ops": "missions",
+    "places": "map",
+    "locations": "map",
+    "resources": "fleet",
+    "fleet": "fleet",
+    "ops": "incidents",
+    "missions": "incidents",
     "payouts": "finance",
     "discord": "finance",
-    "places": "locations",
-    "fleet": "missions",
-    "allianceAdmin": "alliance"
+    "alliance": "administration",
+    "dispatch": "administration",
+    "allianceAdmin": "administration"
   },
   "placements": {
     "map": [
       "makeToggleButton('allianceBuildingsMapBlocker'",
       "makeToggleButton('transportWatcher'",
       "makeToggleButton('unitCommitment'",
-      "makeToggleButton('missionAge'"
+      "makeToggleButton('missionAge'",
+      "mcms-quick-list",
+      "mcms-bookmark-list",
+      "data-profile-list"
     ],
-    "missions": [
-      "makeToggleButton('resourceGap'",
-      "makeToggleButton('autoLoadAllVehicles'",
+    "incidents": [
       "makeToggleButton('majorIncidentFeed'",
       "makeToggleButton('missionLockAudio'",
       "data-action=\"open-vehicle-status\""
     ],
-    "alliance": [
+    "fleet": [
+      "makeToggleButton('resourceGap'",
+      "makeToggleButton('autoLoadAllVehicles'"
+    ],
+    "administration": [
       "data-action=\"scan-alliance-courses\"",
       "data-action=\"scan-transport-sweep\"",
       "data-setting=\"alliance-course-duration\"",
-      "data-alliance-courses"
-    ],
-    "dispatch": [
+      "data-alliance-courses",
       "data-action=\"load-dispatch-recruitment\"",
       "data-action=\"scan-dispatch-recruitment\"",
       "data-action=\"apply-dispatch-recruitment\"",
@@ -106,17 +107,11 @@
       "data-setting=\"discord-webhook\"",
       "data-action=\"finance-archive-scan\""
     ],
-    "locations": [
-      "mcms-quick-list",
-      "mcms-bookmark-list",
-      "data-profile-list"
-    ],
-    "appearance": [
+    "status": [],
+    "settings": [
       "mcms-ui-theme-grid",
       "${coreThemeButtons}",
-      "${serviceThemeButtons}"
-    ],
-    "settings": [
+      "${serviceThemeButtons}",
       "makeToggleButton('shortcuts'",
       "data-device-layout-status",
       "data-action=\"export-config\"",

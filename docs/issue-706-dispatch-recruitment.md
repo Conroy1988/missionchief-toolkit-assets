@@ -1,6 +1,6 @@
 # Issue #706 — Dispatch Recruitment
 
-Toolkit v10.10.0 provides **Dispatch → Dispatch Recruitment**, a deliberate bulk editor for one exact native building type or every type across one Dispatch Centre or every loaded Dispatch Centre in a single plan.
+Toolkit v10.10.0 introduced **Dispatch Recruitment**, now available under **Administration**, as a deliberate bulk editor for one exact native building type or every type across one Dispatch Centre or every loaded Dispatch Centre in a single plan.
 
 It updates two native MissionChief station settings:
 
@@ -11,7 +11,7 @@ The Toolkit discovers the player's current Dispatch Centres and MissionChief's c
 
 ## Running Dispatch Recruitment
 
-1. Open **Toolkit → Dispatch → Dispatch Recruitment**.
+1. Open **Toolkit → Administration → Dispatch Recruitment**.
 2. Choose **Load Dispatch Centres**.
 3. Select one Dispatch Centre or choose **ALL DISPATCH CENTRES**.
 4. Choose **ALL BUILDING TYPES** or one exact native type such as Fire Station, Police Station or Ambulance Station. The list is supplied by MissionChief and therefore includes every type exposed for the current game region.

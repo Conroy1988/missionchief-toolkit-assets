@@ -2,9 +2,11 @@
   "use strict";
 
   const params = new URLSearchParams(location.search);
+  const tabAliases = Object.freeze({ missions: "incidents", alliance: "administration", dispatch: "administration", locations: "map", appearance: "settings" });
+  const requestedTab = params.get("tab") || "administration";
   const fixture = Object.freeze({
     device: ["desktop", "tablet", "ios"].includes(params.get("device")) ? params.get("device") : "desktop",
-    tab: params.get("tab") || "dispatch",
+    tab: tabAliases[requestedTab] || requestedTab,
     focus: params.get("focus") || "",
     theme: params.get("theme") || "mapCommand",
   });

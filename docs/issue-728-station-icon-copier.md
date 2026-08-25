@@ -1,6 +1,6 @@
 # Station Icon Copier operator and safety contract
 
-Toolkit v10.12.1 provides **Dispatch → Station Icon Copier** for copying one already-uploaded station icon to an exact, operator-reviewed subset of owned stations.
+Toolkit v10.12.1 introduced **Station Icon Copier**, now available under **Administration**, for copying one already-uploaded station icon to an exact, operator-reviewed subset of owned stations.
 
 MissionChief's native image workflow remains authoritative. The Toolkit reads owned buildings from MissionChief, downloads the selected source station's existing custom icon into browser memory, and uses each target station's current native building-edit form. It does not add an external image host, ask for a local upload, or retain image data in Toolkit storage.
 

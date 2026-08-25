@@ -45,7 +45,7 @@ def main() -> int:
     expected_keys = [item["key"] for item in fixture["tabs"]]
 
     order_match = re.search(r"const COMMAND_SECTION_ORDER = Object\.freeze\(\[([^\]]+)\]\);", source)
-    assert order_match, "Missing canonical v9 section order"
+    assert order_match, "Missing canonical v10 task section order"
     order = re.findall(r"'([^']+)'", order_match.group(1))
     assert order == expected_keys, f"Command section order drifted: {order}"
 
@@ -94,13 +94,16 @@ def main() -> int:
     for token in [
         "tabs.replaceChildren();",
         "tabs.insertAdjacentHTML('afterbegin', commandSectionNavigationMarkup());",
-        "missions.append(...Array.from(missionOperations.childNodes));",
+        "map.append(...Array.from(places.childNodes));",
+        "administration.append(...Array.from(dispatch.childNodes));",
         "finance.append(...Array.from(payout.childNodes));",
+        "const status = createStatusCentreSection();",
+        "enhanceAdministrationWorkflow",
         "wrapCommandSectionCards(section);",
         "content.appendChild(section);",
-        "panel.dataset.mcmsCommandInterface = 'v9';",
+        "panel.dataset.mcmsCommandInterface = 'v10';",
     ]:
-        assert token in upgrade, f"Missing v9 runtime upgrade guarantee: {token}"
+        assert token in upgrade, f"Missing v10 runtime upgrade guarantee: {token}"
     assert "const COMMAND_SECTION_ORDER" in source and "${commandSectionNavigationMarkup()}" in panel
 
     label = rule_body(source, '#${SCRIPT.panelId} .mcms-label')
@@ -136,7 +139,7 @@ def main() -> int:
         assert needed <= case["maxLines"], f"{case['label']} needs {needed} lines at fixture width"
 
     print(
-        f"Section-navigation contract passed: {len(order)} v9 sections, "
+        f"Section-navigation contract passed: {len(order)} v10 task sections, "
         f"{len(fixture['singlePlacementTokens'])} canonical controls and "
         f"{len(fixture['narrowLabelCases'])} narrow-label cases."
     )

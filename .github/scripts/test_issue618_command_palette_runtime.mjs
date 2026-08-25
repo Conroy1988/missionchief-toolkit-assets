@@ -55,7 +55,12 @@ const sandbox = {
   console,
   document: dom.window.document,
   SCRIPT: { panelId: "panel", commandPaletteId: "palette" },
-  COMMAND_SECTION_ORDER: ["map", "missions", "finance", "locations", "appearance", "settings"],
+  COMMAND_SECTION_ORDER: ["map", "incidents", "fleet", "administration", "finance", "status", "settings"],
+  COMMAND_PALETTE_SCOPES: [
+    { key: "all", label: "All", kind: "" },
+    { key: "commands", label: "Commands", kind: "action" },
+    { key: "missions", label: "Missions", kind: "mission" },
+  ],
   COMMAND_PALETTE_KIND_META: {
     action: { label: "Action", icon: "A", priority: 60 },
     mission: { label: "Mission", icon: "M", priority: 50 },
@@ -72,7 +77,7 @@ const sandbox = {
 };
 vm.createContext(sandbox);
 vm.runInContext(
-  "let commandPaletteEntries=[]; let commandPaletteResults=[]; let commandPaletteSelectedIndex=0;\n" +
+  "let commandPaletteEntries=[]; let commandPaletteResults=[]; let commandPaletteSelectedIndex=0; let commandPaletteScope='all'; let commandPaletteRecentIds=[];\n" +
   [
     "commandPaletteNormalise",
     "commandPaletteAddEntry",
@@ -84,7 +89,7 @@ vm.runInContext(
   ].map(extractFunction).join("\n") +
   "\nthis.__probe={" +
   "add:commandPaletteAddEntry,search:commandPaletteSearch,select:commandPaletteUpdateSelection,trap:commandPaletteTrapFocus,setting:commandPaletteOpenSetting," +
-  "setEntries(value){commandPaletteEntries=value},setResults(value){commandPaletteResults=value},selected(){return commandPaletteSelectedIndex}" +
+  "setEntries(value){commandPaletteEntries=value},setResults(value){commandPaletteResults=value},setScope(value){commandPaletteScope=value},setRecent(value){commandPaletteRecentIds=value},selected(){return commandPaletteSelectedIndex}" +
   "};",
   sandbox,
   { filename: "issue618-command-palette-runtime.js" },
@@ -112,6 +117,12 @@ assert.equal(sandbox.__probe.search("armed response")[0].id, "vehicle:12");
 assert.equal(sandbox.__probe.search("keyboard shortcuts")[0].id, "setting:input");
 assert.equal(sandbox.__probe.search("missing result").length, 0);
 assert.ok(sandbox.__probe.search("").every(entry => entry.featured), "empty search must show featured quick access only");
+sandbox.__probe.setScope("missions");
+assert.deepEqual(sandbox.__probe.search("").map(entry => entry.id), [], "mission scope must not leak featured commands");
+sandbox.__probe.setRecent(["mission:77"]);
+assert.deepEqual(sandbox.__probe.search("").map(entry => entry.id), ["mission:77"], "empty scoped search must surface matching session recents");
+sandbox.__probe.setScope("all");
+sandbox.__probe.setRecent([]);
 
 const overlay = dom.window.document.getElementById("palette");
 sandbox.__probe.setResults(entries.slice(0, 2));

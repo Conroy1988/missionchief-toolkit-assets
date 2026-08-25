@@ -52,6 +52,10 @@ It does not invent game actions or replace permissions. It makes MissionChief's 
 | **Reduce movement, not control** | Contextual actions shorten the route while native permissions, confirmations and outcomes stay visible. |
 | **Remain recoverable** | Local-first preferences, backups, Safe Mode, diagnostics and one-click cleanup make ambitious customisation reversible. |
 
+The interface is organised by the work itself: **Map**, **Incidents**, **Fleet**, **Administration**, **Finance**, **Status** and **Settings**. The persistent map bar keeps four to six chosen commands visible and moves the complete remaining command set under **More**. The same global Command Palette searches commands, live missions, vehicles, buildings, places and settings.
+
+Five high-impact administration tools share one guided sequence—**Scope → Configure → Review → Run → Results**—while the Operations Status Centre reports freshness, progress and whether MissionChief or the Toolkit owns each live state. These presentation layers do not weaken the existing native permission, confirmation or verification contracts.
+
 <p align="center">
   <img src="docs/media/readme-v3-operational-picture.svg" width="100%" alt="Unoccupied aerial UK multi-agency operational picture connecting incidents, fleet pressure, transport and map control">
 </p>
@@ -128,7 +132,7 @@ The operational hierarchy survives the change in screen—not just the colour sc
 |---|---|
 | **Desktop** | A movable, resizable Toolkit Workspace with readable adaptive columns, direct keyboard command, temporary maximise/restore and a persistent map-attached toolbar. |
 | **Tablet** | Reflowed panels, touch-safe targets and the same command structure without a stripped-down feature set. |
-| **iOS Mobile** | Compact, touch-first MissionChief operation with administration, patient transport and recovery behaviour designed for the smaller surface. |
+| **iOS Mobile** | A five-item bottom navigation for Map, Incidents, Fleet, Administration and More, with Finance, Status and Settings in a touch-safe sheet above the safe area. |
 
 ### Eight complete interface systems
 
@@ -147,7 +151,7 @@ These are not accent-colour presets. Each is a complete reskin with its own hier
 
 | Navigate and control | Personalise and stay informed |
 |---|---|
-| Toolkit Command Palette · Contextual Command Menus · smart auto-hiding dock | Complete MissionChief Reskinning · Personalisation Studio · Hotkey & Gesture Studio · What’s New & Feature Beacon · Update Briefing · operational notices |
+| Toolkit Command Palette with scopes and recents · Contextual Command Menus · configurable primary bar · smart auto-hiding dock | Complete MissionChief Reskinning · five-part Personalisation Studio · Hotkey & Gesture Studio · What’s New & Feature Beacon · Operations Status Centre · operational notices |
 
 The complete experience also includes Complete MissionChief Reskinning, Smart Auto-Hiding Dock and the What’s New & Feature Beacon—designed as parts of the command layer rather than unrelated add-ons.
 

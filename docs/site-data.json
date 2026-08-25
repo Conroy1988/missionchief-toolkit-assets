@@ -549,6 +549,57 @@
       "description": "Use the same Toolkit state across Desktop, Tablet/iPad and iOS layouts.",
       "features": [
         {
+          "name": "Task-Based Command Interface",
+          "summary": "Organises every Toolkit control around seven operational tasks and keeps four to six chosen map commands permanently available.",
+          "details": [
+            "Map, Incidents, Fleet, Administration, Finance, Status and Settings",
+            "Automatic migration from legacy saved tabs",
+            "Configurable primary command bar with complete More surface",
+            "One global search for commands and live records"
+          ],
+          "visual": "task-command-interface",
+          "tags": [
+            "navigation",
+            "commands",
+            "responsive",
+            "accessibility"
+          ]
+        },
+        {
+          "name": "Operations Status Centre",
+          "summary": "Explains system health, freshness, progress and MissionChief or Toolkit authority from existing live runtime state.",
+          "details": [
+            "Version and renderer health",
+            "Safe Mode visibility",
+            "Five administration workflow summaries",
+            "No additional request, observer or poller"
+          ],
+          "visual": "operations-status-centre",
+          "tags": [
+            "status",
+            "diagnostics",
+            "administration",
+            "authority"
+          ]
+        },
+        {
+          "name": "Guided Administration Workflows",
+          "summary": "Presents five bounded administration tools through Scope, Configure, Review, Run and Results stages.",
+          "details": [
+            "Alliance Courses and Patient Transport Sweep",
+            "Dispatch Recruitment and Station Icon Copier",
+            "Expansion & Upgrade Planner",
+            "Existing native permissions, confirmations and verification preserved"
+          ],
+          "visual": "guided-administration",
+          "tags": [
+            "administration",
+            "workflow",
+            "safety",
+            "missionchief"
+          ]
+        },
+        {
           "name": "Resizable Desktop Toolkit Workspace",
           "summary": "Moves, resizes and temporarily maximises the complete Desktop menu without detaching the map command toolbar.",
           "details": [
@@ -619,9 +670,10 @@
         },
         {
           "name": "Personalisation Studio",
-          "summary": "Tailors each device layout, visual theme, Quick Wheel and notification profile from one safe workspace.",
+          "summary": "Consolidates layout, appearance, controls, alerts and recovery into one safe workspace without changing stored preferences.",
           "details": [
             "Independent Desktop, Tablet and iOS layouts",
+            "Four to six configurable primary map commands",
             "Validated visual-only theme codes",
             "Four to eight configurable Quick Wheel slots",
             "Encrypted transfers and five bounded local snapshots",
@@ -999,8 +1051,8 @@
       "title": "Alliance administration",
       "sections": [
         {
-          "heading": "Alliance Admin section",
-          "body": "Alliance Courses and Co-admin Patient Transport Sweep share one top-level Toolkit section. Both remain manual, bounded workflows and require MissionChief's current native controls."
+          "heading": "Guided Administration",
+          "body": "Alliance Courses and Co-admin Patient Transport Sweep share the Administration task area with Dispatch Recruitment, Station Icon Copier and the Expansion & Upgrade Planner. Each remains a manual, bounded five-stage workflow using MissionChief's current native controls."
         },
         {
           "heading": "Alliance Courses building setup",
@@ -1068,7 +1120,7 @@
       "sections": [
         {
           "heading": "Selection workflow",
-          "body": "Open Toolkit → Dispatch, load stations, choose one Dispatch Centre or ALL DISPATCH CENTRES, then choose an owned source station that already has the correct custom icon. The source defines the exact native building type and small/full classification. Scan, review the source thumbnail and exact target list, clear any unwanted stations, then confirm Apply to Selected. Changing scope, source or protection policy destroys the stale queue."
+          "body": "Open Toolkit → Administration → Station Icon Copier, load stations, choose one Dispatch Centre or ALL DISPATCH CENTRES, then choose an owned source station that already has the correct custom icon. The source defines the exact native building type and small/full classification. Scan, review the source thumbnail and exact target list, clear any unwanted stations, then confirm Apply to Selected. Changing scope, source or protection policy destroys the stale queue."
         },
         {
           "heading": "Protected and replacement modes",

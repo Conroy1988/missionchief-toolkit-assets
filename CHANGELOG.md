@@ -1,5 +1,18 @@
 # Changelog
 
+## [10.18.0] - 2026-08-25
+
+### Command Interface Overhaul
+
+- Reorganises the complete Toolkit into seven task-based areas: Map, Incidents, Fleet, Administration, Finance, Status and Settings, with automatic migration from every previous saved tab name.
+- Replaces the fifteen-control persistent bar with four to six configurable primary commands and a bounded More surface that preserves every existing control, shortcut and layout preference.
+- Adds Scope, Configure, Review, Run and Results stages to Alliance Courses, Patient Transport Sweep, Dispatch Recruitment, Station Icon Copier and Expansion & Upgrade Planner without changing their native permissions, confirmation or verification contracts.
+- Adds a central Operations Status Centre for version health, map authority, Safe Mode and live administration progress by reusing existing runtime state instead of adding another request, observer or poller.
+- Rebuilds iOS navigation as a five-item bottom bar with a touch-safe More sheet while retaining the desktop workspace and tablet reflow.
+- Consolidates eight Personalisation Studio routes into Layout, Appearance, Controls, Alerts and Recovery while preserving themes, map skins, layouts, Quick Wheel slots, hotkeys, gestures, alerts, snapshots and setup state.
+- Makes the global Command Palette the only search surface, adds scope chips and session recents, and keeps missions, vehicles, buildings, places, settings and safe commands in one local index.
+- Adds text-and-colour state pills, progressive guidance, larger minimum typography and a strict interface motion budget across all eight themes.
+
 ## [10.17.4] - 2026-08-24
 
 ### Complete UK Building Filters

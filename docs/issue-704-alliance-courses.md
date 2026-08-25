@@ -99,7 +99,7 @@ The building-name text in the left column resolves to the current English Missio
 
 ## Running Alliance Courses
 
-1. Open **Toolkit → Alliance Admin → Alliance Courses**.
+1. Open **Toolkit → Administration → Alliance Courses**.
 2. Select **Today** or a specific building day.
 3. Select the alliance sharing duration. The default is **1 day**; **1 hour**, **12 hours** and **2 days** are also supported.
 4. Select the delay between courses. The default is **1.5 seconds**.

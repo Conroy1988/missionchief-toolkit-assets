@@ -72,7 +72,8 @@ const sandbox = {
   INPUT_COMMAND_META: commands,
   DEFAULT_HOTKEY_BINDINGS: defaults,
   GESTURE_KEYS: ["swipeLeft", "swipeRight", "swipeUp", "swipeDown"],
-  COMMAND_SECTION_ORDER: ["map", "missions", "finance", "locations", "appearance", "settings"],
+  COMMAND_SECTION_ORDER: ["map", "incidents", "fleet", "administration", "finance", "status", "settings"],
+  LEGACY_COMMAND_SECTION_MAP: { missions: "incidents", alliance: "administration", dispatch: "administration", locations: "map", appearance: "settings" },
   executed: [],
   executeInputCommand(command) { sandbox.executed.push(command); return true; },
 };
@@ -114,7 +115,7 @@ assert.equal(input.gestures.enabled, true);
 
 assert.deepEqual(plain(sandbox.__probe.dock({ enabled: 1, edge: "horizontal" })), { enabled: true, edge: "horizontal" });
 assert.deepEqual(plain(sandbox.__probe.dock({ enabled: false, edge: "diagonal" })), { enabled: false, edge: "auto" });
-assert.deepEqual(plain(sandbox.__probe.safe({ enabled: true, since: "123", previousTab: "missions" })), { enabled: true, since: 123, previousTab: "missions" });
+assert.deepEqual(plain(sandbox.__probe.safe({ enabled: true, since: "123", previousTab: "missions" })), { enabled: true, since: 123, previousTab: "incidents" });
 assert.equal(sandbox.__probe.safe({ previousTab: "secrets" }).previousTab, "map");
 assert.equal(sandbox.__probe.key({ key: "s", ctrlKey: true, altKey: false, shiftKey: true }), "Ctrl+Shift+S");
 

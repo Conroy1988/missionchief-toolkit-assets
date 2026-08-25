@@ -77,7 +77,7 @@ const sandbox = {
   document: dom.window.document,
   window: dom.window,
   console,
-  state: { activeTab: "missions" },
+  state: { activeTab: "incidents" },
   escapeHtml(value) {
     return String(value)
       .replaceAll("&", "&amp;")
@@ -96,6 +96,15 @@ const sandbox = {
     element[property] = value;
     return true;
   },
+  createStatusCentreSection() {
+    const section = dom.window.document.createElement("section");
+    section.className = "mcms-tab-panel";
+    section.dataset.panel = "status";
+    section.innerHTML = '<div class="mcms-section-label">Operations Status Centre</div><div data-operations-status-centre></div>';
+    return section;
+  },
+  enhanceAdministrationWorkflow() {},
+  enhanceProgressiveGuidance() {},
 };
 vm.createContext(sandbox);
 vm.runInContext(`${commandConstants}
@@ -110,26 +119,32 @@ this.__probe = {
 const panel = dom.window.document.querySelector("#panel");
 sandbox.__probe.upgrade(panel);
 
-const expectedSections = ["map", "missions", "alliance", "dispatch", "finance", "locations", "appearance", "settings"];
+const expectedSections = ["map", "incidents", "fleet", "administration", "finance", "status", "settings"];
 assert.deepEqual(Array.from(sandbox.__probe.order), expectedSections);
 assert.deepEqual(
   Array.from(panel.querySelectorAll(".mcms-tabs > .mcms-tab-btn"), button => button.dataset.tab),
   expectedSections,
-  "eight-section navigation order drifted",
+  "seven-section navigation order drifted",
 );
 assert.deepEqual(
   Array.from(panel.querySelectorAll(".mcms-command-content > .mcms-tab-panel"), section => section.dataset.panel),
   expectedSections,
   "runtime panel order drifted",
 );
-assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 8, "navigation did not consolidate to eight sections");
-assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 8, "content did not consolidate to eight sections");
-assert.equal(panel.dataset.mcmsCommandInterface, "v9");
+assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 7, "navigation did not consolidate to seven task sections");
+assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 7, "content did not consolidate to seven task sections");
+assert.equal(panel.dataset.mcmsCommandInterface, "v10");
 
-const missions = panel.querySelector('[data-panel="missions"]');
-assert.ok(missions.querySelector("#resource-control"), "Resources were not routed into Missions");
-assert.ok(missions.querySelector("#vehicle-control"), "Ops were not routed into Missions");
-assert.equal(missions.querySelectorAll(".mcms-command-card").length, 2, "Mission cards were not separated");
+const incidents = panel.querySelector('[data-panel="incidents"]');
+const fleet = panel.querySelector('[data-panel="fleet"]');
+const administration = panel.querySelector('[data-panel="administration"]');
+const map = panel.querySelector('[data-panel="map"]');
+const settings = panel.querySelector('[data-panel="settings"]');
+assert.ok(incidents.querySelector("#vehicle-control"), "Ops were not routed into Incidents");
+assert.ok(fleet.querySelector("#resource-control"), "Resources were not routed into Fleet");
+assert.ok(administration.querySelector("#alliance-control") && administration.querySelector("#dispatch-control"), "Administration sources were not merged");
+assert.ok(map.querySelector("#map-control") && map.querySelector("#location-control"), "Map and saved locations were not merged");
+assert.ok(settings.querySelector("#settings-control") && settings.querySelector("#theme-control"), "Appearance was not merged into Settings");
 const finance = panel.querySelector('[data-panel="finance"]');
 assert.ok(finance.querySelector("#discord-control"), "Discord reporting was not routed into Finance");
 assert.ok(finance.querySelector("#payout-control"), "Payouts were not routed into Finance");
@@ -151,12 +166,12 @@ for (const id of [
 sandbox.__probe.setQuery("vehicle");
 assert.equal(sandbox.__probe.search(panel), 1, "current-section search returned the wrong match count");
 assert.equal(
-  missions.querySelector("#vehicle-control").closest(".mcms-command-card").classList.contains("mcms-search-hidden"),
+  incidents.querySelector("#vehicle-control").closest(".mcms-command-card").classList.contains("mcms-search-hidden"),
   false,
 );
 assert.equal(
-  missions.querySelector("#resource-control").closest(".mcms-command-card").classList.contains("mcms-search-hidden"),
-  true,
+  incidents.querySelector("#vehicle-control").closest(".mcms-command-card").classList.contains("mcms-search-hidden"),
+  false,
 );
 assert.equal(panel.querySelector(".mcms-command-search-empty").hidden, true);
 
@@ -165,12 +180,12 @@ assert.equal(sandbox.__probe.search(panel), 0);
 assert.equal(panel.querySelector(".mcms-command-search-empty").hidden, false, "empty search state was not shown");
 
 sandbox.__probe.setQuery("");
-assert.equal(sandbox.__probe.search(panel), 2);
-assert.equal(missions.querySelectorAll(".mcms-search-hidden").length, 0, "clearing search did not restore cards");
+assert.equal(sandbox.__probe.search(panel), 1);
+assert.equal(incidents.querySelectorAll(".mcms-search-hidden").length, 0, "clearing search did not restore cards");
 
 sandbox.__probe.upgrade(panel);
-assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 8, "upgrade was not idempotent");
-assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 8, "idempotent upgrade changed panel count");
+assert.equal(panel.querySelectorAll(".mcms-tab-btn").length, 7, "upgrade was not idempotent");
+assert.equal(panel.querySelectorAll(".mcms-tab-panel").length, 7, "idempotent upgrade changed panel count");
 
 dom.window.close();
-console.log("Issue #597 command-interface runtime passed: eight sections, deterministic migration, card grouping, search and idempotence.");
+console.log("Issue #597 command-interface runtime passed: seven task sections, deterministic migration, card grouping and idempotence.");

@@ -41,14 +41,44 @@ async function scenario(device, tab, focus = "") {
   assert.ok(panel.isConnected, `${device}: panel is detached`);
   assert.ok(panel.classList.contains("mcms-open"), `${device}: panel is closed`);
   assert.ok(window.document.querySelector("#mc-map-command-toolkit-control"), `${device}: command bar missing`);
+  const control = window.document.querySelector("#mc-map-command-toolkit-control");
+  assert.deepEqual(
+    Array.from(control.querySelectorAll(".mcms-command-primary > button"), button => button.dataset.toggle || button.dataset.action),
+    ["myMissions", "allianceMissions", "vehicles", "buildings", "open-command-palette"],
+    `${device}: default primary commands drifted`,
+  );
+  assert.equal(control.querySelectorAll(".mcms-float-btn, .mcms-economy-btn").length, 15, `${device}: a legacy map command was lost`);
+  const more = control.querySelector('[data-action="toggle-command-overflow"]');
+  assert.equal(more?.querySelector(".mcms-command-more-count")?.textContent, "10", `${device}: overflow count is wrong`);
+  more.click();
+  assert.equal(control.querySelector(".mcms-command-overflow")?.hidden, false, `${device}: More did not reveal all other commands`);
+  more.click();
+  assert.equal(control.querySelector(".mcms-command-overflow")?.hidden, true, `${device}: More did not close cleanly`);
   assert.ok(panel.querySelector(`.mcms-tab-panel[data-panel="${tab}"].mcms-active`), `${device}: ${tab} page not active`);
+  assert.deepEqual(
+    Array.from(panel.querySelectorAll(".mcms-command-content > .mcms-tab-panel"), section => section.dataset.panel),
+    ["map", "incidents", "fleet", "administration", "finance", "status", "settings"],
+    `${device}: task navigation order drifted`,
+  );
+  assert.equal(panel.querySelectorAll('.mcms-command-card[data-workflow-ready="true"]').length, 5, `${device}: guided administration workflow count drifted`);
+  panel.querySelectorAll('.mcms-command-card[data-workflow-ready="true"]').forEach(card => {
+    assert.equal(card.querySelectorAll("[data-workflow-stage-button]").length, 5, `${device}: ${card.dataset.commandCard} stage count drifted`);
+    assert.equal(card.dataset.workflowStage, "scope", `${device}: ${card.dataset.commandCard} did not start at Scope`);
+  });
+  assert.equal(panel.querySelectorAll("[data-operations-status-centre] .mcms-operations-status-card").length, 8, `${device}: status centre inventory drifted`);
+  if (device === "ios") {
+    assert.equal(panel.querySelectorAll(".mcms-mobile-nav > button").length, 5, "iOS: bottom navigation must expose five items");
+    panel.querySelector('.mcms-mobile-nav [data-action="toggle-mobile-more"]').click();
+    assert.equal(panel.querySelector(".mcms-mobile-more")?.hidden, false, "iOS: More sheet did not open");
+    assert.deepEqual(Array.from(panel.querySelectorAll(".mcms-mobile-more [data-mobile-tab]"), button => button.dataset.mobileTab), ["finance", "status", "settings"], "iOS: More routes drifted");
+  }
   if (focus) assert.ok(panel.querySelector(`[data-command-card="${focus}"].mcms-dev-focus`), `${device}: ${focus} focus missing`);
   assert.equal(report.mount, true, `${device}: mount probe failed`);
   assert.equal(report.runtimeHealthy, true, `${device}: runtime probe failed`);
   assert.equal(report.widthStable, true, `${device}: page navigation changed panel width by ${report.widthRange}`);
   assert.equal(report.noHorizontalOverflow, true, `${device}: horizontal overflow detected`);
   assert.equal(report.errors.length, 0, `${device}: runtime errors: ${report.errors.join(" | ")}`);
-  if (tab === "dispatch") {
+  if (tab === "administration") {
     const personnel = panel.querySelector('[data-setting="dispatch-recruitment-personnel"]');
     const delay = panel.querySelector('[data-setting="dispatch-recruitment-delay"]');
     assert.equal(personnel?.value, "400", `${device}: Expansion Planner rendering overwrote Personnel (Desired)`);
@@ -101,7 +131,7 @@ async function scenario(device, tab, focus = "") {
   dom.window.close();
 }
 
-await scenario("desktop", "dispatch", "expansion-and-upgrade-planner");
-await scenario("tablet", "dispatch", "dispatch-recruitment");
+await scenario("desktop", "administration", "expansion-and-upgrade-planner");
+await scenario("tablet", "administration", "dispatch-recruitment");
 await scenario("ios", "map");
-console.log("Dev Lab mounted canonical source across Desktop, Tablet and iOS; complete popularity-ranked UK building filters supported multi-selection while page cycling retained width and produced no horizontal overflow or runtime errors.");
+console.log("Dev Lab mounted the task-based command interface across Desktop, Tablet and iOS; guided administration and complete popularity-ranked UK building filters retained stable width, native multi-selection and a clean runtime.");

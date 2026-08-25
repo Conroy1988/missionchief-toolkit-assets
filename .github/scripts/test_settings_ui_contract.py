@@ -38,4 +38,4 @@ assert settings == sorted(fixtures["settings"])
 assert tabs == sorted(fixtures["tabs"])
 assert "delete merged.operationalWindow;" in source and "delete merged.missionRequirements;" in source
 assert "data-operational-setting" not in source and "handleOperationalWindowSettingChange" not in source
-print("Settings/UI contract passed for v9.")
+print("Settings/UI contract passed for v10 task navigation.")

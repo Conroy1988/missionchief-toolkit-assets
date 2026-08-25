@@ -1,5 +1,5 @@
 const DEVICES = ["desktop", "tablet", "ios"];
-const DEFAULTS = Object.freeze({ device: "desktop", tab: "dispatch", focus: "", theme: "mapCommand" });
+const DEFAULTS = Object.freeze({ device: "desktop", tab: "administration", focus: "", theme: "mapCommand" });
 const controls = {
   device: document.querySelector("[data-device-controls]"),
   tab: document.querySelector("[data-tab]"),

@@ -1,6 +1,6 @@
 # Background-first Patient Transport Sweep
 
-Toolkit v10.9.2 adds a faster processing mode to **Toolkit → Alliance Admin → Patient Transport Sweep**. It keeps the existing Scan, confirmation, maximum-per-run, pacing and Stop controls.
+Toolkit v10.9.2 adds a faster processing mode to **Toolkit → Administration → Patient Transport Sweep**. It keeps the existing Scan, confirmation, maximum-per-run, pacing and Stop controls.
 
 ## How it works
 

@@ -1,20 +1,18 @@
 {
   "fixedNow": 1784203200000,
   "tabs": [
-    "alliance",
-    "appearance",
-    "dispatch",
+    "administration",
     "finance",
-    "locations",
+    "fleet",
+    "incidents",
     "map",
-    "missions",
+    "status",
     "settings"
   ],
   "actions": [
     "apply-dispatch-recruitment",
     "apply-expansion-planner",
     "apply-station-icons",
-    "clear-command-search",
     "clear-dispatch-recruitment",
     "clear-expansion-planner",
     "clear-station-icons",
@@ -84,7 +82,7 @@
     "stop-station-icons",
     "stop-transport-sweep",
     "test-payout-flash",
-    "toggle-command-search",
+    "toggle-mobile-more",
     "toggle-safe-mode",
     "toggle-workspace-maximize",
     "toolkit-doctor"

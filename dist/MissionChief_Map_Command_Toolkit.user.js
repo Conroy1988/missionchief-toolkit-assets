@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.17.4
+// @version      10.18.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.17.4';
+    const VERSION = '10.18.0';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -824,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.17.4',
+        version: '10.18.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -887,15 +887,17 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.17.4",
-        title: "Complete UK Building Filters",
+        version: "10.18.0",
+        title: "Command Interface Overhaul",
         highlights: Object.freeze([
-            "Expands the Buildings popup from three services to every active MissionChief UK building type.",
-            "Keeps Ambulance, Police and Fire first, then lists every other building in a fixed popularity-led UK order.",
-            "Covers all 31 active UK building types through 30 native filter rows, with large and small Building Complexes sharing MissionChief's combined control.",
-            "Resolves current native labels, UK and US spellings, MissionChief filter identifiers and live I18n translations without introducing a Toolkit-owned map layer.",
-            "Scans MissionChief's native filter controls once per popup render so the expanded catalogue remains bounded on Desktop, Tablet and iOS.",
-            "Adds clear Most popular and All other buildings sections, service-colour cues, sticky section labels and safe viewport scrolling."
+            "Reorganises the complete Toolkit into seven task-based areas: Map, Incidents, Fleet, Administration, Finance, Status and Settings, with automatic migration from every previous saved tab name.",
+            "Replaces the fifteen-control persistent bar with four to six configurable primary commands and a bounded More surface that preserves every existing control, shortcut and layout preference.",
+            "Adds Scope, Configure, Review, Run and Results stages to Alliance Courses, Patient Transport Sweep, Dispatch Recruitment, Station Icon Copier and Expansion & Upgrade Planner without changing their native permissions, confirmation or verification contracts.",
+            "Adds a central Operations Status Centre for version health, map authority, Safe Mode and live administration progress by reusing existing runtime state instead of adding another request, observer or poller.",
+            "Rebuilds iOS navigation as a five-item bottom bar with a touch-safe More sheet while retaining the desktop workspace and tablet reflow.",
+            "Consolidates eight Personalisation Studio routes into Layout, Appearance, Controls, Alerts and Recovery while preserving themes, map skins, layouts, Quick Wheel slots, hotkeys, gestures, alerts, snapshots and setup state.",
+            "Makes the global Command Palette the only search surface, adds scope chips and session recents, and keeps missions, vehicles, buildings, places, settings and safe commands in one local index.",
+            "Adds text-and-colour state pills, progressive guidance, larger minimum typography and a strict interface motion budget across all eight themes."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -1959,6 +1961,10 @@ try {
         allianceCredits: 'Alliance Credits', missionAge: 'Mission Age', transportWatcher: 'Transport Watcher', unitCommitment: 'Unit Count', stuckDetector: 'Stuck Detector',
         'open-vehicle-status': 'Vehicle Codes', 'open-pressure-board': 'Pressure Board', 'open-command-palette': 'Command Palette', 'open-map-measure': 'Drawing', 'toggle-economy': 'Economy Mode', 'toggle-fast-map': 'Fast Map'
     });
+    const COMMAND_BAR_PRIMARY_MIN = 4;
+    const COMMAND_BAR_PRIMARY_MAX = 6;
+    const DEFAULT_COMMAND_BAR_PRIMARY = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings', 'open-command-palette']);
+    const COMMAND_BAR_CONTROL_KEYS = Object.freeze(Object.values(LAYOUT_CONTROL_GROUPS).flatMap(group => group.controls));
     // <mcms-fast-map>
     // MapLibre is fetched only after a deliberate opt-in, verified byte-for-byte, and
     // discarded on any failure before the MissionChief-owned Leaflet map is restored.
@@ -2477,16 +2483,15 @@ try {
     runtime.cleanupCallbacks.push(() => {
         stopMapMeasure(false);
     });
-    const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'alliance', 'dispatch', 'finance', 'locations', 'appearance', 'settings']);
+    const COMMAND_SECTION_ORDER = Object.freeze(['map', 'incidents', 'fleet', 'administration', 'finance', 'status', 'settings']);
     const COMMAND_SECTION_META = Object.freeze({
-        map: Object.freeze({ label: 'Map', title: 'Map Controls', icon: '◎', description: 'Visibility, overlays and map tools' }),
-        missions: Object.freeze({ label: 'Missions', title: 'Mission Operations', icon: '◆', description: 'Intelligence, resources and response tools' }),
-        alliance: Object.freeze({ label: 'Alliance Admin', title: 'Alliance Administration', icon: '♜', description: 'Courses, transports and alliance controls' }),
-        dispatch: Object.freeze({ label: 'Dispatch', title: 'Dispatch Administration', icon: '☷', description: 'Recruitment across selected stations' }),
+        map: Object.freeze({ label: 'Map', title: 'Map & Locations', icon: '◎', description: 'Visibility, drawing, jumps, bookmarks and profiles' }),
+        incidents: Object.freeze({ label: 'Incidents', title: 'Incident Operations', icon: '◆', description: 'Pressure, intelligence and active response' }),
+        fleet: Object.freeze({ label: 'Fleet', title: 'Fleet & Resources', icon: '▰', description: 'Vehicle status, coverage and resource planning' }),
+        administration: Object.freeze({ label: 'Administration', title: 'Guided Administration', icon: '♜', description: 'Courses, transports, recruitment, icons and upgrades' }),
         finance: Object.freeze({ label: 'Finance', title: 'Finance Command', icon: '£', description: 'Reports, payouts and financial archive' }),
-        locations: Object.freeze({ label: 'Locations', title: 'Saved Locations', icon: '⌂', description: 'Jumps, bookmarks and map profiles' }),
-        appearance: Object.freeze({ label: 'Appearance', title: 'Appearance', icon: '◈', description: 'Interface themes and map skins' }),
-        settings: Object.freeze({ label: 'Settings', title: 'Toolkit Settings', icon: '⚙', description: 'Devices, controls and recovery' }),
+        status: Object.freeze({ label: 'Status', title: 'Operations Status Centre', icon: '◉', description: 'Health, progress, freshness and system authority' }),
+        settings: Object.freeze({ label: 'Settings', title: 'Settings & Personalisation', icon: '⚙', description: 'Appearance, devices, controls and recovery' }),
     });
     const COMMAND_PALETTE_RESULT_LIMIT = 30;
     const COMMAND_PALETTE_KIND_META = Object.freeze({
@@ -2497,16 +2502,30 @@ try {
         location: Object.freeze({ label: 'LOCATION', icon: '⌖', priority: 3 }),
         setting: Object.freeze({ label: 'SETTING', icon: '⚙', priority: 2 })
     });
+    const COMMAND_PALETTE_SCOPES = Object.freeze([
+        Object.freeze({ key: 'all', label: 'All', kind: '' }),
+        Object.freeze({ key: 'commands', label: 'Commands', kind: 'action' }),
+        Object.freeze({ key: 'missions', label: 'Missions', kind: 'mission' }),
+        Object.freeze({ key: 'vehicles', label: 'Vehicles', kind: 'vehicle' }),
+        Object.freeze({ key: 'buildings', label: 'Buildings', kind: 'building' }),
+        Object.freeze({ key: 'places', label: 'Places', kind: 'location' }),
+        Object.freeze({ key: 'settings', label: 'Settings', kind: 'setting' })
+    ]);
     const LEGACY_COMMAND_SECTION_MAP = Object.freeze({
-        skins: 'appearance',
+        skins: 'settings',
+        appearance: 'settings',
         tools: 'map',
-        resources: 'missions',
-        ops: 'missions',
+        places: 'map',
+        locations: 'map',
+        resources: 'fleet',
+        fleet: 'fleet',
+        ops: 'incidents',
+        missions: 'incidents',
         payouts: 'finance',
         discord: 'finance',
-        places: 'locations',
-        fleet: 'missions',
-        allianceAdmin: 'alliance',
+        alliance: 'administration',
+        dispatch: 'administration',
+        allianceAdmin: 'administration',
     });
     let commandSearchOpen = false;
     let commandSearchQuery = '';
@@ -2514,6 +2533,10 @@ try {
     let commandPaletteResults = [];
     let commandPaletteSelectedIndex = 0;
     let commandPaletteReturnFocus = null;
+    let commandPaletteScope = 'all';
+    let commandPaletteRecentIds = [];
+    let commandBarOverflowOpen = false;
+    let mobileMoreOpen = false;
     state = loadState();
     function applyFirstByteRecoveryRequest() {
         if (runtime.destroyed) return false;
@@ -2576,6 +2599,22 @@ try {
         if (allowedSet.has(key) && !result.includes(key)) result.push(key);
         }
         for (const key of fallback) if (!result.includes(key)) result.push(key);
+        return result;
+    }
+
+    function normaliseCommandBarPrimary(value) {
+        const allowed = new Set(COMMAND_BAR_CONTROL_KEYS);
+        const source = Array.isArray(value) ? value : DEFAULT_COMMAND_BAR_PRIMARY;
+        const result = [];
+        for (const item of source) {
+        const key = String(item || '');
+        if (allowed.has(key) && !result.includes(key)) result.push(key);
+        if (result.length >= COMMAND_BAR_PRIMARY_MAX) break;
+        }
+        for (const key of DEFAULT_COMMAND_BAR_PRIMARY) {
+        if (result.length >= COMMAND_BAR_PRIMARY_MIN) break;
+        if (!result.includes(key)) result.push(key);
+        }
         return result;
     }
 
@@ -2731,10 +2770,11 @@ try {
 
     function normaliseSafeModeState(value) {
         const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        const previousTab = LEGACY_COMMAND_SECTION_MAP[source.previousTab] || source.previousTab;
         return {
         enabled: Boolean(source.enabled),
         since: Math.max(0, Number(source.since) || 0),
-        previousTab: COMMAND_SECTION_ORDER.includes(source.previousTab) ? source.previousTab : 'map'
+        previousTab: COMMAND_SECTION_ORDER.includes(previousTab) ? previousTab : 'map'
         };
     }
 
@@ -2750,6 +2790,7 @@ try {
         roadPriority: false,
         compactDock: false,
         commandBarOpen: true,
+        commandBarPrimary: [...DEFAULT_COMMAND_BAR_PRIMARY],
         economyMode: false,
         fullscreenMap: false,
         tabletMode: 'auto',
@@ -2854,6 +2895,7 @@ try {
         merged.coverage.radiusMi = Number(merged.coverage.radiusMi) || 10;
         merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
         merged.commandBarOpen = merged.commandBarOpen !== false;
+        merged.commandBarPrimary = normaliseCommandBarPrimary(parsed.commandBarPrimary);
         merged.economyMode = Boolean(merged.economyMode);
         merged.fullscreenMap = Boolean(merged.fullscreenMap);
         merged.buildingVisibility.scope = BUILDING_VISIBILITY_SCOPES.includes(String(merged.buildingVisibility.scope)) ? String(merged.buildingVisibility.scope) : 'both';
@@ -14127,7 +14169,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const pins = control.querySelector?.('.mcms-screen-pins');
         const launchRect = launchRow?.getBoundingClientRect?.() || {};
         const launchWidth = Math.max(56, Math.ceil(launchRect.width || launchRow?.offsetWidth || 117));
-        const groups = Array.from(filter?.querySelectorAll?.(':scope > .mcms-control-group:not(.mcms-layout-group-hidden)') || []);
+        const primaryGroup = filter?.querySelector?.('.mcms-command-primary');
+        const groups = (primaryGroup
+            ? [primaryGroup, ...(filter.dataset.overflowOpen === 'true' ? Array.from(filter.querySelectorAll('.mcms-command-overflow .mcms-control-group:not(.mcms-layout-group-hidden)')) : [])]
+            : Array.from(filter?.querySelectorAll?.(':scope > .mcms-control-group:not(.mcms-layout-group-hidden)') || []))
+            .filter(group => group && (!group.classList.contains('mcms-command-primary') || group.querySelector(':scope > button:not(.mcms-layout-hidden)')));
         const groupControlCounts = groups.map(group => group.querySelectorAll(':scope > button:not(.mcms-layout-hidden)').length);
         const pinsVisible = Boolean(pins?.childElementCount) && state.commandBarOpen !== false;
         const desiredNudgeX = Number(state.nudge?.x) || 0;
@@ -14544,6 +14590,64 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-tab-btn.mcms-active,.mcms-toggle-btn.mcms-on,.mcms-position-btn.mcms-active,.mcms-small-btn:hover),html[data-mcms-custom-theme="true"] body #${SCRIPT.controlId} :is(.mcms-float-btn,.mcms-economy-btn).mcms-on{border-color:${theme.accent}!important;background:${theme.accent}33!important;color:${theme.text}!important}
         html[data-mcms-custom-theme="true"] body #${SCRIPT.panelId} :is(.mcms-section-label,.mcms-title,.mcms-label),html[data-mcms-custom-theme="true"] #${SCRIPT.commandExperienceModalId} :is(h2,strong),html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId} .mcms-command-palette-title span{color:${theme.accent}!important}
         html[data-mcms-custom-theme="true"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:${theme.accent};--mcms-palette-accent-rgb:${themeColourRgb(theme.accent)}}
+
+        /* v10.18 command-interface overhaul */
+        #${SCRIPT.controlId} .mcms-floating-filter,
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-floating-filter{
+            position:relative!important;display:flex!important;grid-template-columns:none!important;align-items:stretch!important;justify-content:flex-start!important;gap:6px!important;
+            width:auto!important;max-width:min(calc(100vw - 24px),760px)!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;pointer-events:auto!important
+        }
+        #${SCRIPT.controlId} .mcms-command-primary{display:flex!important;align-items:stretch!important;gap:5px!important;width:auto!important;min-width:0!important;padding:5px!important;pointer-events:auto!important}
+        #${SCRIPT.controlId} .mcms-command-primary>.mcms-control-group-label{display:none!important}
+        #${SCRIPT.controlId} .mcms-command-primary>:is(.mcms-float-btn,.mcms-economy-btn),
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-command-primary>:is(.mcms-float-btn,.mcms-economy-btn){width:88px!important;min-width:72px!important;max-width:104px!important;height:44px!important;min-height:44px!important;pointer-events:auto!important}
+        #${SCRIPT.controlId} .mcms-command-more{position:relative!important;display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:1fr 1fr!important;place-items:center!important;column-gap:4px!important;width:58px!important;min-width:58px!important;min-height:44px!important;padding:4px 6px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:9px!important;background:rgba(8,24,36,.94)!important;color:#eaf7ff!important;font:800 10px/1.05 system-ui,-apple-system,"Segoe UI",sans-serif!important;pointer-events:auto!important}
+        #${SCRIPT.controlId} .mcms-command-more>span:first-child{grid-column:1!important;font-size:15px!important;letter-spacing:1px!important}.mcms-command-more>span:nth-child(2){grid-column:1!important}.mcms-command-more-count{grid-column:2!important;grid-row:1/3!important;display:grid!important;place-items:center!important;min-width:20px!important;height:20px!important;padding:0 4px!important;border-radius:10px!important;background:rgba(104,207,255,.18)!important;color:#8addff!important;font-size:10px!important}
+        #${SCRIPT.controlId} .mcms-command-more[aria-expanded="true"]{border-color:#70ceff!important;background:rgba(25,114,164,.34)!important}
+        #${SCRIPT.controlId} .mcms-command-overflow{position:absolute!important;left:0!important;bottom:calc(100% + 8px)!important;z-index:2147483620!important;width:min(720px,calc(100vw - 24px))!important;padding:10px!important;border:1px solid rgba(108,204,255,.52)!important;border-radius:13px!important;background:rgba(5,16,25,.98)!important;box-shadow:0 18px 48px rgba(0,0,0,.62)!important;backdrop-filter:blur(14px)!important;pointer-events:auto!important}
+        #${SCRIPT.controlId}:is(.mcms-pos-tl,.mcms-pos-tr) .mcms-command-overflow{top:calc(100% + 8px)!important;bottom:auto!important}
+        #${SCRIPT.controlId}:is(.mcms-pos-tr,.mcms-pos-br) .mcms-command-overflow{right:0!important;left:auto!important}
+        #${SCRIPT.controlId} .mcms-command-overflow[hidden]{display:none!important}
+        #${SCRIPT.controlId} .mcms-command-overflow-head{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px!important;margin:0 2px 8px!important;color:#ecf8ff!important}.mcms-command-overflow-head strong{font-size:12px!important}.mcms-command-overflow-head span{color:#9db4c2!important;font-size:10px!important}
+        #${SCRIPT.controlId} .mcms-command-overflow-groups{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+        #${SCRIPT.controlId} .mcms-command-overflow .mcms-control-group,
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-command-overflow .mcms-control-group{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:auto!important;min-width:0!important;gap:5px!important;padding:7px!important;pointer-events:auto!important}
+        #${SCRIPT.controlId} .mcms-command-overflow .mcms-control-group-label{grid-column:1/-1!important;font-size:10px!important;text-transform:none!important;letter-spacing:.02em!important}
+        #${SCRIPT.controlId} .mcms-command-overflow :is(.mcms-float-btn,.mcms-economy-btn),
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.controlId}[data-mcms-desktop-dock-fit] .mcms-command-overflow :is(.mcms-float-btn,.mcms-economy-btn){width:100%!important;min-width:0!important;max-width:none!important;height:42px!important;min-height:42px!important;pointer-events:auto!important}
+
+        #${SCRIPT.panelId} .mcms-tabs{grid-template-rows:repeat(7,minmax(58px,auto))!important}
+        #${SCRIPT.panelId} .mcms-tab-btn,#${SCRIPT.panelId} .mcms-section-label{letter-spacing:.015em!important;text-transform:none!important}
+        #${SCRIPT.panelId} :is(.mcms-status,.mcms-row-label,.mcms-label,.mcms-bookmark-name,.mcms-command-note,.mcms-alliance-course-guide,.mcms-empty-state){font-size:max(11.5px,1em)!important;line-height:1.48!important}
+        #${SCRIPT.panelId} :is(.mcms-small-btn,.mcms-select,.mcms-input,.mcms-position-btn,.mcms-bookmark-btn,.mcms-pin-btn){min-height:38px!important;font-size:12px!important;line-height:1.25!important}
+        #${SCRIPT.panelId} .mcms-command-card{animation:none!important;transition:border-color 120ms ease,background-color 120ms ease!important}
+        #${SCRIPT.panelId} .mcms-command-card:focus{border-color:#73d7ff!important;background:rgba(61,170,225,.12)!important;outline:2px solid rgba(115,215,255,.34)!important;outline-offset:2px!important}
+        #${SCRIPT.panelId} .mcms-guidance{margin:8px 0!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:9px!important;background:rgba(0,0,0,.13)!important}.mcms-guidance>summary{min-height:38px!important;padding:10px 12px!important;color:#bfe9ff!important;font-size:11.5px!important;font-weight:850!important;cursor:pointer!important}.mcms-guidance>.mcms-status{margin:0 10px 10px!important}
+
+        #${SCRIPT.panelId} .mcms-workflow-steps{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important;margin:2px 0 12px!important}.mcms-workflow-steps button{display:grid!important;grid-template-columns:24px minmax(0,1fr)!important;align-items:center!important;gap:5px!important;min-height:42px!important;padding:5px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:8px!important;background:rgba(255,255,255,.04)!important;color:#9fb5c3!important;font-size:10.5px!important;text-align:left!important}.mcms-workflow-steps button>span{display:grid!important;place-items:center!important;width:24px!important;height:24px!important;border-radius:50%!important;background:rgba(255,255,255,.08)!important}.mcms-workflow-steps button.mcms-active{border-color:#68cfff!important;background:rgba(45,154,211,.18)!important;color:#fff!important}.mcms-workflow-steps button.mcms-active>span{background:#68cfff!important;color:#062033!important}
+        #${SCRIPT.panelId} .mcms-workflow-body{min-width:0!important}.mcms-workflow-stage{display:grid!important;gap:9px!important;min-width:0!important}.mcms-workflow-stage[hidden]{display:none!important}.mcms-workflow-actions{margin:0!important}.mcms-workflow-footer{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;gap:8px!important;margin-top:12px!important;padding-top:10px!important;border-top:1px solid rgba(255,255,255,.1)!important}.mcms-workflow-footer>span{color:#9eb4c2!important;font-size:11px!important;text-align:center!important}.mcms-workflow-footer>button{min-height:38px!important;padding:7px 11px!important;border:1px solid rgba(104,207,255,.3)!important;border-radius:8px!important;background:rgba(44,139,193,.16)!important;color:#eefaff!important;font-size:11px!important;font-weight:800!important}.mcms-workflow-footer>button:disabled{opacity:.38!important}
+
+        #${SCRIPT.panelId} .mcms-status-centre{display:grid!important;gap:12px!important}.mcms-status-centre-summary{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}.mcms-status-centre-summary>span{display:flex!important;align-items:baseline!important;justify-content:center!important;gap:5px!important;padding:10px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:9px!important;background:rgba(255,255,255,.035)!important;color:#a8bdca!important;font-size:11px!important}.mcms-status-centre-summary b{color:#fff!important;font-size:17px!important}.mcms-status-centre-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}.mcms-operations-status-card{display:grid!important;gap:8px!important;min-width:0!important;padding:12px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid #8195a3!important;border-radius:10px!important;background:rgba(255,255,255,.035)!important}.mcms-operations-status-card[data-state="good"]{border-left-color:#55d891!important}.mcms-operations-status-card[data-state="busy"]{border-left-color:#61cfff!important}.mcms-operations-status-card[data-state="warn"]{border-left-color:#ffc861!important}.mcms-operations-status-card[data-state="bad"]{border-left-color:#ff7777!important}.mcms-operations-status-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important}.mcms-operations-status-head>span{min-width:0!important}.mcms-operations-status-head strong,.mcms-operations-status-head small{display:block!important}.mcms-operations-status-head strong{color:#f4fbff!important;font-size:12.5px!important}.mcms-operations-status-head small{margin-top:3px!important;color:#91a9b7!important;font-size:10.5px!important}.mcms-state-pill{flex:0 0 auto!important;padding:4px 7px!important;border-radius:999px!important;background:rgba(129,149,163,.18)!important;color:#c5d3dc!important;font-size:10px!important}.mcms-state-pill[data-tone="good"]{background:rgba(72,210,137,.16)!important;color:#7cf0ad!important}.mcms-state-pill[data-tone="busy"]{background:rgba(77,192,255,.16)!important;color:#83d9ff!important}.mcms-state-pill[data-tone="warn"]{background:rgba(255,194,76,.16)!important;color:#ffd783!important}.mcms-state-pill[data-tone="bad"]{background:rgba(255,105,105,.16)!important;color:#ff9c9c!important}.mcms-operations-status-card>p{margin:0!important;color:#b8c9d3!important;font-size:11.5px!important;line-height:1.45!important}.mcms-operations-status-card>footer{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;color:#829ba9!important;font-size:10.5px!important}.mcms-operations-status-card>footer button{min-height:34px!important;padding:5px 9px!important;border:1px solid rgba(104,207,255,.28)!important;border-radius:7px!important;background:rgba(39,136,190,.14)!important;color:#dff6ff!important;font-size:10.5px!important;font-weight:800!important}
+
+        #${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}.mcms-personal-composite>.mcms-personal-pane{padding-block-end:14px!important;border-bottom:1px solid rgba(255,255,255,.1)!important}.mcms-personal-composite>.mcms-personal-pane:last-child{padding-block-end:0!important;border-bottom:0!important}.mcms-primary-command-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin-top:9px!important}.mcms-primary-command{display:flex!important;align-items:center!important;gap:8px!important;min-height:42px!important;padding:7px 9px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:8px!important;background:rgba(255,255,255,.035)!important;color:#d5e5ed!important;font-size:11px!important}.mcms-primary-command input{width:18px!important;height:18px!important}
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-scopes{display:flex!important;gap:6px!important;margin-top:9px!important;overflow-x:auto!important;scrollbar-width:thin!important}.mcms-command-palette-scopes button{flex:0 0 auto!important;min-height:32px!important;padding:5px 10px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:999px!important;background:rgba(255,255,255,.045)!important;color:#aebfca!important;font-size:10.5px!important;font-weight:800!important}.mcms-command-palette-scopes button[aria-pressed="true"]{border-color:var(--mcms-palette-accent,#68cfff)!important;background:rgba(var(--mcms-palette-accent-rgb,104,207,255),.18)!important;color:#fff!important}.mcms-command-palette-recent{border-left-color:var(--mcms-palette-accent,#68cfff)!important}
+        #${SCRIPT.panelId} .mcms-mobile-nav,#${SCRIPT.panelId} .mcms-mobile-more{display:none!important}
+        html[data-mcms-safe-mode="true"] body #${SCRIPT.panelId} .mcms-tab-btn[data-tab="status"]{display:grid!important}html[data-mcms-safe-mode="true"] body #${SCRIPT.panelId} .mcms-tab-panel[data-panel="status"].mcms-active{display:grid!important}
+
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId}{padding-bottom:max(72px,calc(62px + env(safe-area-inset-bottom)))!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-command-layout{display:block!important;height:calc(100% - 66px)!important;min-height:0!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-tabs{display:none!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-command-content{height:100%!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-footer{display:none!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-mobile-nav{position:absolute!important;right:0!important;bottom:0!important;left:0!important;z-index:40!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;min-height:62px!important;padding:6px max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))!important;border-top:1px solid rgba(255,255,255,.14)!important;background:rgba(5,16,25,.985)!important;box-shadow:0 -10px 30px rgba(0,0,0,.36)!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-mobile-nav-btn{display:grid!important;grid-template-rows:22px auto!important;place-items:center!important;min-width:0!important;min-height:48px!important;padding:3px!important;border:1px solid transparent!important;border-radius:9px!important;background:transparent!important;color:#94aab8!important;font-size:16px!important}.mcms-mobile-nav-btn strong{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;color:inherit!important;font-size:10px!important;white-space:nowrap!important}.mcms-mobile-nav-btn.mcms-active{border-color:rgba(104,207,255,.36)!important;background:rgba(48,155,211,.16)!important;color:#dff7ff!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-mobile-more{position:absolute!important;right:8px!important;bottom:max(66px,calc(58px + env(safe-area-inset-bottom)))!important;left:8px!important;z-index:39!important;display:grid!important;gap:7px!important;padding:12px!important;border:1px solid rgba(104,207,255,.42)!important;border-radius:14px!important;background:rgba(6,18,28,.985)!important;box-shadow:0 -14px 40px rgba(0,0,0,.56)!important}.mcms-mobile-more[hidden]{display:none!important}.mcms-mobile-more>div{display:flex!important;align-items:center!important;justify-content:space-between!important;color:#fff!important}.mcms-mobile-more>div>button{width:44px!important;height:44px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:24px!important}.mcms-mobile-more>button{display:grid!important;grid-template-columns:38px minmax(0,1fr)!important;align-items:center!important;gap:9px!important;min-height:56px!important;padding:8px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:10px!important;background:rgba(255,255,255,.04)!important;color:#e7f4fa!important;text-align:left!important}.mcms-mobile-more>button>span:first-child{font-size:19px!important;text-align:center!important}.mcms-mobile-more strong,.mcms-mobile-more small{display:block!important}.mcms-mobile-more strong{font-size:12.5px!important}.mcms-mobile-more small{margin-top:3px!important;color:#91a9b7!important;font-size:10.5px!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-workflow-steps{display:flex!important;overflow-x:auto!important;scroll-snap-type:x proximity!important}.mcms-workflow-steps button{flex:0 0 116px!important;scroll-snap-align:start!important}.mcms-workflow-footer{grid-template-columns:1fr 1fr!important}.mcms-workflow-footer>span{grid-column:1/-1!important;grid-row:1!important}.mcms-workflow-footer>button{grid-row:2!important;min-height:44px!important}.mcms-status-centre-grid{grid-template-columns:1fr!important}.mcms-primary-command-grid{grid-template-columns:1fr!important}
+        html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.controlId} .mcms-command-primary>:is(.mcms-float-btn,.mcms-economy-btn){width:58px!important;min-width:52px!important;max-width:66px!important;height:44px!important;min-height:44px!important;padding:3px!important}.mcms-command-primary .mcms-float-label-desktop{display:none!important}.mcms-command-primary .mcms-float-label-tablet{display:block!important;font-size:9.5px!important}.mcms-command-primary .mcms-control-state{font-size:9px!important}
+        html[data-mcms-mobile-active="true"] body #${SCRIPT.controlId} .mcms-command-overflow{position:fixed!important;right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;left:8px!important;top:auto!important;width:auto!important;max-height:min(72vh,620px)!important;overflow-y:auto!important}.mcms-command-overflow-groups{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+        #${SCRIPT.panelId} :is(button,.mcms-tab-btn,.mcms-command-card),#${SCRIPT.controlId} :is(button,.mcms-control-group){animation:none!important}#${SCRIPT.panelId} button,#${SCRIPT.controlId} button{transition:color 120ms ease,background-color 120ms ease,border-color 120ms ease,opacity 120ms ease!important}
+        @media(prefers-reduced-motion:reduce){#${SCRIPT.panelId} *,#${SCRIPT.controlId} *,#${SCRIPT.commandPaletteId} *,#${SCRIPT.commandExperienceModalId} *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
         @media(max-width:620px){#${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-grid{grid-template-columns:1fr!important}#${SCRIPT.commandExperienceModalId} .mcms-layout-item{grid-template-columns:28px minmax(0,1fr) 42px 42px!important}#${SCRIPT.commandExperienceModalId} .mcms-personal-field :is(input,select){font-size:16px!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row{grid-template-columns:minmax(0,1fr) auto!important}#${SCRIPT.commandExperienceModalId} .mcms-unit-locator-row button:last-child{grid-column:1/-1!important}}
         `;
         if (style.textContent !== css) style.textContent = css;
@@ -14561,14 +14665,24 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const filter = control?.querySelector?.('.mcms-floating-filter');
         if (!filter) return false;
         const preferences = activeLayoutPreferences();
-        const groups = new Map(Array.from(filter.querySelectorAll(':scope > .mcms-control-group')).map(group => [group.dataset.controlGroup, group]));
+        const primary = filter.querySelector('.mcms-command-primary');
+        const overflow = filter.querySelector('.mcms-command-overflow');
+        const overflowGroups = filter.querySelector('.mcms-command-overflow-groups') || overflow;
+        const groups = new Map(Array.from(filter.querySelectorAll('.mcms-command-overflow .mcms-control-group')).map(group => [group.dataset.controlGroup, group]));
+        const buttons = new Map(Array.from(filter.querySelectorAll('.mcms-float-btn, .mcms-economy-btn')).map(button => [mapControlLayoutKey(button), button]));
+        for (const [groupKey, groupMeta] of Object.entries(LAYOUT_CONTROL_GROUPS)) {
+        for (const controlKey of groupMeta.controls) {
+            const button = buttons.get(controlKey);
+            if (button) button.dataset.commandGroup = groupKey;
+        }
+        }
         for (const groupKey of preferences.groupOrder) {
         const group = groups.get(groupKey);
         if (!group) continue;
-        filter.appendChild(group);
+        overflowGroups?.appendChild(group);
         const label = group.querySelector(':scope > .mcms-control-group-label');
-        if (label) group.appendChild(label);
-        const controls = new Map(Array.from(group.querySelectorAll(':scope > button')).map(button => [mapControlLayoutKey(button), button]));
+        if (label) group.prepend(label);
+        const controls = new Map((preferences.controlOrder[groupKey] || []).map(controlKey => [controlKey, buttons.get(controlKey)]).filter(([, button]) => button));
         for (const controlKey of preferences.controlOrder[groupKey] || []) {
             const button = controls.get(controlKey);
             if (button) group.appendChild(button);
@@ -14581,6 +14695,28 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         group.classList.toggle('mcms-layout-group-hidden', visibleCount === 0);
         }
+        for (const controlKey of normaliseCommandBarPrimary(state.commandBarPrimary)) {
+        const button = buttons.get(controlKey);
+        if (button && primary) primary.appendChild(button);
+        }
+        for (const [groupKey, group] of groups) {
+        const remaining = Array.from(group.querySelectorAll(':scope > button')).filter(button => !button.classList.contains('mcms-layout-hidden')).length;
+        group.classList.toggle('mcms-layout-group-hidden', remaining === 0);
+        group.dataset.commandAuthority = groupKey === 'visibility' ? 'missionchief' : 'toolkit';
+        }
+        const overflowCount = Array.from(overflow?.querySelectorAll?.('.mcms-control-group > button:not(.mcms-layout-hidden)') || []).length;
+        const more = filter.querySelector('[data-action="toggle-command-overflow"]');
+        if (more) {
+        more.hidden = overflowCount === 0;
+        more.setAttribute('aria-expanded', String(commandBarOverflowOpen && overflowCount > 0));
+        more.querySelector('.mcms-command-more-count').textContent = String(overflowCount);
+        }
+        if (overflow) {
+        overflow.hidden = overflowCount === 0 || !commandBarOverflowOpen;
+        overflow.setAttribute('aria-hidden', String(overflow.hidden));
+        }
+        filter.dataset.primaryCount = String(primary?.querySelectorAll(':scope > button:not(.mcms-layout-hidden)').length || 0);
+        filter.dataset.overflowOpen = String(Boolean(commandBarOverflowOpen && overflowCount));
         control.dataset.mcmsLayoutDevice = activeDeviceLayout;
         return true;
     }
@@ -28795,7 +28931,7 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function operationalUiIsVisible() {
         const panel = document.getElementById(SCRIPT.panelId);
-        const opsPanelVisible = Boolean(panel?.classList?.contains('mcms-open') && state.activeTab === 'missions');
+        const opsPanelVisible = Boolean(panel?.classList?.contains('mcms-open') && state.activeTab === 'incidents');
         const vehicleStatusVisible = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
         return opsPanelVisible || vehicleStatusVisible || operationalPressureBoardOpen();
     }
@@ -28813,7 +28949,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         runtimeClearTimeout(opsRefreshTimer);
         opsRefreshTimer = null;
         const panel = document.getElementById(SCRIPT.panelId);
-        const opsPanelVisible = Boolean(panel?.classList?.contains('mcms-open') && state.activeTab === 'missions');
+        const opsPanelVisible = Boolean(panel?.classList?.contains('mcms-open') && state.activeTab === 'incidents');
         const vehicleStatusVisible = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
         const pressureBoardVisible = operationalPressureBoardOpen();
         if (!force && !opsPanelVisible && !vehicleStatusVisible && !pressureBoardVisible) return;
@@ -31509,9 +31645,8 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function personalisationTabsMarkup(active) {
         const tabs = [
-        ['layout', 'Layout Builder'], ['theme', 'Theme Studio'], ['wheel', 'Quick Wheel'],
-        ['shell', 'Toolkit & Game'], ['input', 'Hotkeys & Gestures'],
-        ['backup', 'Backup Centre'], ['setup', 'Setup Wizard'], ['notifications', 'Sounds & Alerts']
+        ['layout', 'Layout'], ['appearance', 'Appearance'], ['controls', 'Controls'],
+        ['alerts', 'Alerts'], ['recovery', 'Recovery']
         ];
         const buttons = tabs.map(([key, label]) =>
         `<button type="button" data-personal-tab="${key}" aria-selected="${key === active}">${label}</button>`
@@ -31535,8 +31670,10 @@ Credits only. Each station and native action will be fetched again, purchased on
         const heightLabel = device === 'desktop' && Number(preferences.panelHeightPx) > 0
             ? `Workspace height · ${preferences.panelHeightPx}px resized`
             : `Menu height · ${preferences.panelHeight}%`;
+        const primaryCommands = COMMAND_BAR_CONTROL_KEYS.map(key => `<label class="mcms-primary-command"><input type="checkbox" data-command-primary="${escapeHtml(key)}"${state.commandBarPrimary.includes(key) ? ' checked' : ''}><span>${escapeHtml(LAYOUT_CONTROL_LABELS[key])}</span></label>`).join('');
         return `<div class="mcms-personal-pane" data-personal-pane="layout">
         <div class="mcms-personal-grid"><label class="mcms-personal-field"><span>Editing device</span><select data-personal-layout-device>${deviceOptions}</select></label><label class="mcms-personal-field"><span>Dock position</span><select data-layout-position>${positionOptions}</select></label>${widthField}<label class="mcms-personal-field"><span>${heightLabel}</span><input type="range" min="${device === 'mobile' ? 72 : 60}" max="96" step="2" value="${preferences.panelHeight}" data-layout-panel-height></label></div>
+        <section class="mcms-personal-section mcms-primary-command-section"><strong>Primary map commands · ${state.commandBarPrimary.length} selected</strong><p class="mcms-command-note">Choose 4–6 commands for the always-visible bar. Every other command remains available under More.</p><div class="mcms-primary-command-grid">${primaryCommands}</div></section>
         <div class="mcms-command-note">Drag groups or controls to reorder them. The arrow buttons provide the same control on touch and keyboard. Hidden controls remain available in Settings and the Command Palette.</div>
         ${groups}<button type="button" data-personal-action="layout-reset">Restore ${device === 'mobile' ? 'iOS Mobile' : device[0].toUpperCase() + device.slice(1)} defaults</button></div>`;
     }
@@ -31599,26 +31736,29 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function personalisationPaneMarkup(tab, device) {
-        if (tab === 'theme') return themeStudioMarkup();
-        if (tab === 'wheel') return quickWheelStudioMarkup();
-        if (tab === 'shell') return shellStudioMarkup();
-        if (tab === 'input') return inputStudioMarkup();
-        if (tab === 'backup') return backupCentreMarkup();
-        if (tab === 'setup') return setupStudioMarkup();
-        if (tab === 'notifications') return notificationStudioMarkup();
+        if (tab === 'appearance') return `<div class="mcms-personal-pane mcms-personal-composite" data-personal-pane="appearance">${themeStudioMarkup()}${shellStudioMarkup()}</div>`;
+        if (tab === 'controls') return `<div class="mcms-personal-pane mcms-personal-composite" data-personal-pane="controls">${quickWheelStudioMarkup()}${inputStudioMarkup()}</div>`;
+        if (tab === 'alerts') return notificationStudioMarkup();
+        if (tab === 'recovery') return `<div class="mcms-personal-pane mcms-personal-composite" data-personal-pane="recovery">${backupCentreMarkup()}${setupStudioMarkup()}</div>`;
         return layoutStudioMarkup(device);
+    }
+
+    function normalisePersonalisationTab(tab) {
+        const aliases = { theme: 'appearance', shell: 'appearance', wheel: 'controls', input: 'controls', notifications: 'alerts', backup: 'recovery', setup: 'recovery' };
+        const next = aliases[tab] || tab;
+        return ['layout', 'appearance', 'controls', 'alerts', 'recovery'].includes(next) ? next : 'layout';
     }
 
     function renderPersonalisationStudio(overlay, tab = 'layout', device = null) {
         if (!overlay) return;
-        const activeTab = ['layout', 'theme', 'wheel', 'shell', 'input', 'backup', 'setup', 'notifications'].includes(tab) ? tab : 'layout';
+        const activeTab = normalisePersonalisationTab(tab);
         const activeDevice = LAYOUT_DEVICE_KEYS.includes(device) ? device : (overlay.dataset.personalDevice || activeDeviceLayout);
         overlay.dataset.personalTab = activeTab;
         overlay.dataset.personalDevice = activeDevice;
         const body = overlay.querySelector('.mcms-command-experience-body');
         if (body) setInnerHtmlIfChanged(body, personalisationTabsMarkup(activeTab) + personalisationPaneMarkup(activeTab, activeDevice));
         const subtitle = overlay.querySelector('header p');
-        if (subtitle) subtitle.textContent = `${activeTab === 'layout' ? 'Custom Layout Builder' : activeTab === 'theme' ? 'Visual Theme Studio' : activeTab === 'wheel' ? 'Quick Actions Wheel' : activeTab === 'shell' ? 'Toolkit shell and MissionChief interface' : activeTab === 'input' ? 'Context menus, hotkeys and gestures' : activeTab === 'backup' ? 'Settings Backup Centre' : activeTab === 'setup' ? 'First-run guidance' : 'Custom sounds and notifications'} · ${activeDevice === 'mobile' ? 'iOS Mobile' : activeDevice}`;
+        if (subtitle) subtitle.textContent = `${activeTab === 'layout' ? 'Layout and primary commands' : activeTab === 'appearance' ? 'Themes, shell and MissionChief styling' : activeTab === 'controls' ? 'Quick Wheel, context menus, hotkeys and gestures' : activeTab === 'alerts' ? 'Sounds and notifications' : 'Backup, recovery and setup'} · ${activeDevice === 'mobile' ? 'iOS Mobile' : activeDevice}`;
     }
 
     function saveAndApplyPersonalisation(announce = '') {
@@ -31701,6 +31841,22 @@ Credits only. Each station and native action will be fetched again, purchased on
         const tab = overlay.dataset.personalTab || 'layout';
         const device = overlay.dataset.personalDevice || activeDeviceLayout;
         if (target.matches('[data-personal-layout-device]')) { renderPersonalisationStudio(overlay, tab, target.value); return; }
+        if (target.matches('[data-command-primary]')) {
+        const key = target.dataset.commandPrimary;
+        const selected = [...state.commandBarPrimary];
+        if (target.checked && !selected.includes(key)) selected.push(key);
+        if (!target.checked && selected.includes(key)) selected.splice(selected.indexOf(key), 1);
+        if (selected.length < COMMAND_BAR_PRIMARY_MIN || selected.length > COMMAND_BAR_PRIMARY_MAX) {
+            target.checked = !target.checked;
+            showToast(`Choose ${COMMAND_BAR_PRIMARY_MIN}–${COMMAND_BAR_PRIMARY_MAX} primary commands`);
+            return;
+        }
+        state.commandBarPrimary = normaliseCommandBarPrimary(selected);
+        commandBarOverflowOpen = false;
+        saveAndApplyPersonalisation('Primary command bar updated');
+        renderPersonalisationStudio(overlay, tab, device);
+        return;
+        }
         const preferences = state.layoutBuilder.layouts[device];
         if (target.matches('[data-layout-position]')) { preferences.position = POSITIONS[target.value] ? target.value : 'bl'; if (device === activeDeviceLayout) state.position = preferences.position; saveAndApplyPersonalisation(); return; }
         if (target.matches('[data-layout-panel-width]')) { preferences.panelWidth = Math.round(clamp(target.value, 560, device === 'tablet' ? 900 : DESKTOP_WORKSPACE_MAX_WIDTH, preferences.panelWidth)); saveAndApplyPersonalisation(); renderPersonalisationStudio(overlay, tab, device); return; }
@@ -31767,10 +31923,11 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function openPersonalisationStudio(tab = 'layout') {
         closePanel();
-        if (tab === 'input') { markFeatureBeaconViewed('context'); markFeatureBeaconViewed('input'); }
-        if (tab === 'shell') { markFeatureBeaconViewed('reskin'); markFeatureBeaconViewed('dock'); markFeatureBeaconViewed('safeMode'); }
+        const activeTab = normalisePersonalisationTab(tab);
+        if (activeTab === 'controls') { markFeatureBeaconViewed('context'); markFeatureBeaconViewed('input'); }
+        if (activeTab === 'appearance') { markFeatureBeaconViewed('reskin'); markFeatureBeaconViewed('dock'); markFeatureBeaconViewed('safeMode'); }
         const overlay = openCommandExperienceModal({ kind: 'Personalisation Studio', title: 'Make the Toolkit yours', subtitle: 'Device-aware personalisation', body: '', actions: '<button type="button" data-mcms-command-action="modal-close">Close Studio</button>' });
-        renderPersonalisationStudio(overlay, tab, activeDeviceLayout);
+        renderPersonalisationStudio(overlay, activeTab, activeDeviceLayout);
         overlay.onclick = event => { const tabButton = event.target?.closest?.('[data-personal-tab]'); if (tabButton) { renderPersonalisationStudio(overlay, tabButton.dataset.personalTab, overlay.dataset.personalDevice); return; } const actionButton = event.target?.closest?.('[data-personal-action],[data-layout-move-group],[data-layout-move-control]'); if (actionButton) handlePersonalisationAction(overlay, actionButton); };
         overlay.onchange = event => { if (event.target?.matches?.('[data-personal-backup-file]')) { importToolkitConfigFile(event.target.files?.[0]); event.target.value = ''; return; } handlePersonalisationChange(overlay, event.target); };
         overlay.ondragstart = event => { const item = event.target?.closest?.('[data-layout-drag-type]'); if (!item) return; overlay.__mcmsPersonalDrag = { type: item.dataset.layoutDragType, value: item.dataset.layoutValue, group: item.dataset.layoutGroup || '' }; try { event.dataTransfer.effectAllowed = 'move'; } catch (err) {} };
@@ -37067,10 +37224,11 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!COMMAND_SECTION_ORDER.includes(tab)) return;
         if (tab === 'finance') toolkitAnalyticsRecordFeature('financialIntelligence');
         state.activeTab = tab;
+        mobileMoreOpen = false;
         saveState();
         updateUI();
         if (!dragState) positionPanelOverlay(true);
-        if (tab === 'missions') refreshPersonalVehicleData(false).finally(() => scheduleOperationalPanelsRender(0, true));
+        if (['incidents', 'fleet'].includes(tab)) refreshPersonalVehicleData(false).finally(() => scheduleOperationalPanelsRender(0, true));
     }
 
     function applyPosition(position, persist = true) {
@@ -37217,6 +37375,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         control ||= document.querySelector?.(`#${SCRIPT.controlId}`) || null;
         if (!control) return false;
         const open = state.commandBarOpen !== false;
+        if (!open) commandBarOverflowOpen = false;
         const autoHiding = Boolean(state.autoHideDock.enabled && !state.safeMode.enabled);
         const visuallyOpen = open && (!autoHiding || autoHideDockRevealed || !isTouchLayoutActive());
         control.setAttribute('data-mcms-command-bar-open', String(open));
@@ -37226,6 +37385,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (open) element.style.removeProperty('display');
             else element.style.setProperty('display', 'none', 'important');
         }
+        applyLayoutBuilderControl(control);
         const button = control.querySelector?.('.mcms-dock-toggle-btn');
         if (button) {
             const label = autoHiding && isTouchLayoutActive() ? (autoHideDockRevealed ? 'Hide auto-hiding command bar' : 'Reveal auto-hiding command bar') : (open ? 'Collapse command bar' : 'Expand command bar');
@@ -38191,10 +38351,10 @@ Credits only. Each station and native action will be fetched again, purchased on
             () => toggleFeature(feature)
         );
 
-        add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
-        add('dispatch-recruitment', 'Open Dispatch Recruitment', 'Choose one or all Dispatch Centres, filter station types and prepare a recruitment plan', 'dispatch centre all centres station hiring phase personnel desired recruitment bulk', () => commandPaletteOpenSetting('dispatch', 'dispatch-recruitment'), true);
-        add('station-icon-copier', 'Open Station Icon Copier', 'Copy one owned station icon to exact same-type stations with a verified preview', 'dispatch station building image icon graphic copy bulk protect custom', () => commandPaletteOpenSetting('dispatch', 'station-icon-copier'), true);
-        add('expansion-upgrade-planner', 'Open Expansion & Upgrade Planner', 'Preview current native Credit upgrades, enforce a hard budget and purchase a verified selection', 'dispatch station building bay level extension expand upgrade credits budget planner', () => commandPaletteOpenSetting('dispatch', 'expansion-planner'), true);
+        add('settings', 'Open Toolkit Settings', 'Open settings and personalisation', 'menu preferences configuration', () => commandPaletteOpenSetting('settings'), true);
+        add('dispatch-recruitment', 'Open Dispatch Recruitment', 'Choose one or all Dispatch Centres, filter station types and prepare a recruitment plan', 'dispatch centre all centres station hiring phase personnel desired recruitment bulk', () => commandPaletteOpenSetting('administration', 'dispatch-recruitment'), true);
+        add('station-icon-copier', 'Open Station Icon Copier', 'Copy one owned station icon to exact same-type stations with a verified preview', 'dispatch station building image icon graphic copy bulk protect custom', () => commandPaletteOpenSetting('administration', 'station-icon-copier'), true);
+        add('expansion-upgrade-planner', 'Open Expansion & Upgrade Planner', 'Preview current native Credit upgrades, enforce a hard budget and purchase a verified selection', 'dispatch station building bay level extension expand upgrade credits budget planner', () => commandPaletteOpenSetting('administration', 'expansion-and-upgrade-planner'), true);
         add('personalisation', 'Open Personalisation Studio', 'Layouts, themes, game styling, input, Quick Wheel, backups, setup and alerts', 'customize customise appearance sound notification backup wizard hotkeys gestures reskin', () => openPersonalisationStudio(), true);
         add('input-studio', 'Open Hotkey & Gesture Studio', 'Remap Toolkit keys, assign touch gestures and learn contextual commands', 'input shortcuts right click long press context menu swipe', () => openPersonalisationStudio('input'), true);
         add('shell-studio', 'Open Toolkit & Game Style', 'MissionChief reskin, smart auto-hiding dock and Safe Mode', 'theme reskin dock collapse safe recovery', () => openPersonalisationStudio('shell'), true);
@@ -38391,7 +38551,11 @@ Credits only. Each station and native action will be fetched again, purchased on
     function commandPaletteEntryScore(entry, query) {
         const cleanQuery = commandPaletteNormalise(query);
         const meta = COMMAND_PALETTE_KIND_META[entry.kind] || COMMAND_PALETTE_KIND_META.action;
-        if (!cleanQuery) return entry.featured ? 1000 + meta.priority : -1;
+        if (!cleanQuery) {
+            const recentIndex = commandPaletteRecentIds.indexOf(entry.id);
+            if (recentIndex >= 0) return 2000 - recentIndex;
+            return entry.featured ? 1000 + meta.priority : -1;
+        }
         const title = commandPaletteNormalise(entry.title);
         const detail = commandPaletteNormalise(entry.detail);
         const search = entry.searchText || `${title} ${detail}`;
@@ -38412,7 +38576,9 @@ Credits only. Each station and native action will be fetched again, purchased on
     }
 
     function commandPaletteSearch(query = '') {
+        const scope = COMMAND_PALETTE_SCOPES.find(item => item.key === commandPaletteScope) || COMMAND_PALETTE_SCOPES[0];
         return commandPaletteEntries
+            .filter(entry => !scope.kind || entry.kind === scope.kind)
             .map(entry => ({ entry, score: commandPaletteEntryScore(entry, query) }))
             .filter(result => result.score >= 0)
             .sort((left, right) => right.score - left.score || left.entry.title.localeCompare(right.entry.title))
@@ -38440,11 +38606,12 @@ Credits only. Each station and native action will be fetched again, purchased on
         const status = overlay.querySelector('[data-command-palette-status]');
         const html = commandPaletteResults.length ? commandPaletteResults.map((entry, index) => {
             const meta = COMMAND_PALETTE_KIND_META[entry.kind] || COMMAND_PALETTE_KIND_META.action;
-            return `<button id="mcms-command-palette-option-${index}" class="mcms-command-palette-result" type="button" role="option" data-command-palette-result="${index}" aria-selected="${index === commandPaletteSelectedIndex}"><span class="mcms-command-palette-kind-icon" aria-hidden="true">${meta.icon}</span><span class="mcms-command-palette-copy"><strong>${escapeHtml(entry.title)}</strong><small>${escapeHtml(entry.detail || meta.label)}</small></span><span class="mcms-command-palette-kind">${meta.label}</span></button>`;
+            const recent = !query && commandPaletteRecentIds.includes(entry.id);
+            return `<button id="mcms-command-palette-option-${index}" class="mcms-command-palette-result${recent ? ' mcms-command-palette-recent' : ''}" type="button" role="option" data-command-palette-result="${index}" aria-selected="${index === commandPaletteSelectedIndex}"><span class="mcms-command-palette-kind-icon" aria-hidden="true">${meta.icon}</span><span class="mcms-command-palette-copy"><strong>${escapeHtml(entry.title)}</strong><small>${escapeHtml(entry.detail || meta.label)}</small></span><span class="mcms-command-palette-kind">${recent ? 'RECENT · ' : ''}${meta.label}</span></button>`;
         }).join('') : `<div class="mcms-command-palette-empty"><strong>No matching command</strong><span>Try a mission name, vehicle, building, place, setting or a shorter command phrase.</span></div>`;
         setInnerHtmlIfChanged(results, html, `${query}:${commandPaletteResults.map(entry => entry.id).join('|')}`);
         if (status) status.textContent = commandPaletteResults.length
-            ? `${commandPaletteResults.length} result${commandPaletteResults.length === 1 ? '' : 's'} · ${query ? 'ranked locally' : 'quick access'}`
+            ? `${commandPaletteResults.length} result${commandPaletteResults.length === 1 ? '' : 's'} · ${query ? 'ranked locally' : commandPaletteRecentIds.length ? 'recent and quick access' : 'quick access'}`
             : 'No results';
         commandPaletteUpdateSelection(overlay);
         return commandPaletteResults.length;
@@ -38453,6 +38620,7 @@ Credits only. Each station and native action will be fetched again, purchased on
     function executeCommandPaletteResult(index = commandPaletteSelectedIndex) {
         const entry = commandPaletteResults[Number(index)];
         if (!entry) return false;
+        commandPaletteRecentIds = [entry.id, ...commandPaletteRecentIds.filter(id => id !== entry.id)].slice(0, 6);
         closeCommandPalette({ restoreFocus: false });
         try {
             entry.execute();
@@ -38487,6 +38655,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <header class="mcms-command-palette-head">
                     <div class="mcms-command-palette-brand"><div class="mcms-command-palette-title"><span>GLOBAL COMMAND SEARCH</span><strong id="mcms-command-palette-title">Toolkit Command Palette</strong></div><button class="mcms-command-palette-close" type="button" data-command-palette-close aria-label="Close Command Palette">×</button></div>
                     <label class="mcms-command-palette-search"><span aria-hidden="true">⌕</span><input type="search" inputmode="search" autocomplete="off" autocapitalize="none" spellcheck="false" data-command-palette-input role="combobox" aria-autocomplete="list" aria-controls="mcms-command-palette-results" aria-expanded="true" placeholder="Search missions, vehicles, buildings, locations, settings or commands"><kbd>K</kbd></label>
+                    <nav class="mcms-command-palette-scopes" aria-label="Search scope">${COMMAND_PALETTE_SCOPES.map(item => `<button type="button" data-command-palette-scope="${item.key}" aria-pressed="${item.key === commandPaletteScope}">${item.label}</button>`).join('')}</nav>
                 </header>
                 <div id="mcms-command-palette-results" class="mcms-command-palette-results" data-command-palette-results role="listbox" aria-label="Command Palette results"></div>
                 <footer class="mcms-command-palette-foot"><span>↑↓ select · Enter run · Esc close</span><span data-command-palette-status aria-live="polite"></span></footer>
@@ -38499,6 +38668,14 @@ Credits only. Each station and native action will be fetched again, purchased on
         });
         runtimeListen(overlay, 'click', event => {
             if (event.target === overlay || closestEventTarget(event, '[data-command-palette-close]')) { closeCommandPalette({ restoreFocus: true }); return; }
+            const scope = closestEventTarget(event, '[data-command-palette-scope]');
+            if (scope) {
+                commandPaletteScope = COMMAND_PALETTE_SCOPES.some(item => item.key === scope.dataset.commandPaletteScope) ? scope.dataset.commandPaletteScope : 'all';
+                overlay.querySelectorAll('[data-command-palette-scope]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.commandPaletteScope === commandPaletteScope)));
+                commandPaletteSelectedIndex = 0;
+                renderCommandPalette(overlay.querySelector('[data-command-palette-input]')?.value || '', overlay);
+                return;
+            }
             const result = closestEventTarget(event, '[data-command-palette-result]');
             if (result) executeCommandPaletteResult(Number(result.dataset.commandPaletteResult));
         });
@@ -39282,6 +39459,13 @@ Credits only. Each station and native action will be fetched again, purchased on
                 </div>
             </div>
             <div class="mcms-floating-filter" aria-label="Persistent map command bar">
+                <div class="mcms-command-primary mcms-control-group" data-control-group="primary" aria-label="Primary commands"></div>
+                <button class="mcms-command-more" type="button" data-action="toggle-command-overflow" aria-expanded="false" aria-controls="mcms-command-overflow" title="Show every other map command">
+                    <span aria-hidden="true">•••</span><span>More</span><b class="mcms-command-more-count">0</b>
+                </button>
+                <div id="mcms-command-overflow" class="mcms-command-overflow" aria-label="All other map commands" aria-hidden="true" hidden>
+                <div class="mcms-command-overflow-head"><strong>All commands</strong><span>MissionChief visibility and Toolkit tools</span></div>
+                <div class="mcms-command-overflow-groups">
                 <div class="mcms-control-group" data-control-group="visibility" aria-label="Visibility controls">
                     <span class="mcms-control-group-label">Visibility</span>
                     ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Mine', 'Mine')}
@@ -39316,6 +39500,8 @@ Credits only. Each station and native action will be fetched again, purchased on
                         <span class="mcms-float-icon" aria-hidden="true">⚡</span>
                         <span class="mcms-float-copy"><span class="mcms-float-label mcms-float-label-desktop">Fast Map</span><span class="mcms-float-label mcms-float-label-tablet">Fast</span><span class="mcms-float-label mcms-float-label-mobile">Fast</span><span class="mcms-control-state">OFF</span></span>
                     </button>
+                </div>
+                </div>
                 </div>
             </div>
             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
@@ -39390,6 +39576,19 @@ Credits only. Each station and native action will be fetched again, purchased on
         }).join('');
     }
 
+    function mobileCommandNavigationMarkup() {
+        const primary = ['map', 'incidents', 'fleet', 'administration'];
+        const buttons = primary.map(key => {
+            const meta = COMMAND_SECTION_META[key];
+            return `<button class="mcms-mobile-nav-btn" type="button" data-mobile-tab="${key}"><span aria-hidden="true">${meta.icon}</span><strong>${escapeHtml(meta.label)}</strong></button>`;
+        }).join('');
+        return `<nav class="mcms-mobile-nav" aria-label="Toolkit primary navigation">${buttons}<button class="mcms-mobile-nav-btn" type="button" data-action="toggle-mobile-more" aria-expanded="false" aria-controls="mcms-mobile-more"><span aria-hidden="true">•••</span><strong>More</strong></button></nav>
+            <div id="mcms-mobile-more" class="mcms-mobile-more" hidden aria-label="More Toolkit sections">
+                <div><strong>More Toolkit</strong><button type="button" data-action="toggle-mobile-more" aria-label="Close More sections">×</button></div>
+                ${['finance', 'status', 'settings'].map(key => `<button type="button" data-mobile-tab="${key}"><span aria-hidden="true">${COMMAND_SECTION_META[key].icon}</span><span><strong>${escapeHtml(COMMAND_SECTION_META[key].label)}</strong><small>${escapeHtml(COMMAND_SECTION_META[key].description)}</small></span></button>`).join('')}
+            </div>`;
+    }
+
     function commandInterfacePanel() {
         return document.querySelector(`[id="${SCRIPT.panelId}"]`);
     }
@@ -39409,7 +39608,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 const headingId = `mcms-card-${section.dataset.panel}-${slug}`;
                 node.id = headingId;
                 card.setAttribute('aria-labelledby', headingId);
-                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'station-icon-copier', 'expansion-and-upgrade-planner', 'discord-financial-command', 'player-linked-local-financial-archive'].includes(slug)) {
+                if (['alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'station-icon-copier', 'expansion-and-upgrade-planner', 'discord-financial-command', 'player-linked-local-financial-archive', 'operations-status-centre'].includes(slug)) {
                     card.classList.add('mcms-command-card-wide');
                 }
                 fragment.appendChild(card);
@@ -39420,10 +39619,208 @@ Credits only. Each station and native action will be fetched again, purchased on
         section.dataset.mcmsCardsReady = 'true';
     }
 
+    const ADMIN_WORKFLOW_STAGES = Object.freeze([
+        Object.freeze({ key: 'scope', label: 'Scope' }),
+        Object.freeze({ key: 'configure', label: 'Configure' }),
+        Object.freeze({ key: 'review', label: 'Review' }),
+        Object.freeze({ key: 'run', label: 'Run' }),
+        Object.freeze({ key: 'results', label: 'Results' })
+    ]);
+    const ADMIN_WORKFLOW_CARDS = Object.freeze(new Set([
+        'alliance-courses', 'co-admin-patient-transport-sweep', 'dispatch-recruitment', 'station-icon-copier', 'expansion-and-upgrade-planner'
+    ]));
+
+    function workflowStageForAction(action) {
+        if (/^(?:load|scan)-/u.test(action)) return 'scope';
+        if (/^(?:select|clear)-/u.test(action)) return 'review';
+        if (/^(?:start|apply|stop)-/u.test(action)) return 'run';
+        if (/^(?:dismiss|retry)-/u.test(action)) return 'results';
+        return 'review';
+    }
+
+    function setAdministrationWorkflowStage(card, stage, { focus = false } = {}) {
+        if (!card || !ADMIN_WORKFLOW_STAGES.some(item => item.key === stage)) return false;
+        card.dataset.workflowStage = stage;
+        card.querySelectorAll('[data-workflow-stage-button]').forEach(button => {
+            const active = button.dataset.workflowStageButton === stage;
+            button.classList.toggle('mcms-active', active);
+            button.setAttribute('aria-current', active ? 'step' : 'false');
+            button.setAttribute('aria-selected', String(active));
+        });
+        card.querySelectorAll('[data-workflow-stage-panel]').forEach(panel => {
+            const active = panel.dataset.workflowStagePanel === stage;
+            panel.hidden = !active;
+            panel.classList.toggle('mcms-active', active);
+        });
+        const index = ADMIN_WORKFLOW_STAGES.findIndex(item => item.key === stage);
+        const back = card.querySelector('[data-action="workflow-back"]');
+        const next = card.querySelector('[data-action="workflow-next"]');
+        if (back) back.disabled = index <= 0;
+        if (next) {
+            next.disabled = index >= ADMIN_WORKFLOW_STAGES.length - 1;
+            next.textContent = index >= ADMIN_WORKFLOW_STAGES.length - 1 ? 'Complete' : `Continue to ${ADMIN_WORKFLOW_STAGES[index + 1].label}`;
+        }
+        const progress = card.querySelector('[data-workflow-progress]');
+        if (progress) progress.textContent = `Step ${index + 1} of ${ADMIN_WORKFLOW_STAGES.length} · ${ADMIN_WORKFLOW_STAGES[index].label}`;
+        if (focus) card.querySelector(`[data-workflow-stage-panel="${stage}"]`)?.focus?.({ preventScroll: true });
+        return true;
+    }
+
+    function advanceAdministrationWorkflowFromAction(button) {
+        const card = button?.closest?.('.mcms-command-card[data-workflow-ready="true"]');
+        if (!card) return false;
+        const action = String(button.dataset.action || '');
+        const stage = /^(?:load)-/u.test(action) ? 'configure'
+            : /^(?:scan)-/u.test(action) ? 'review'
+            : /^(?:start|apply)-/u.test(action) ? 'run'
+            : /^(?:stop|dismiss|retry)-/u.test(action) ? 'results'
+            : '';
+        return stage ? setAdministrationWorkflowStage(card, stage) : false;
+    }
+
+    function moveWorkflowActionGrid(grid, panels) {
+        const buttons = Array.from(grid.querySelectorAll(':scope > button[data-action]'));
+        for (const button of buttons) {
+            const stage = workflowStageForAction(button.dataset.action || '');
+            let actions = panels[stage].querySelector(':scope > .mcms-workflow-actions');
+            if (!actions) {
+                actions = document.createElement('div');
+                actions.className = 'mcms-grid-2 mcms-workflow-actions';
+                panels[stage].appendChild(actions);
+            }
+            actions.appendChild(button);
+        }
+        if (!grid.children.length) grid.remove();
+    }
+
+    function enhanceAdministrationWorkflow(card) {
+        if (!card || card.dataset.workflowReady === 'true' || !ADMIN_WORKFLOW_CARDS.has(card.dataset.commandCard)) return;
+        const heading = card.querySelector(':scope > .mcms-section-label');
+        const nav = document.createElement('nav');
+        nav.className = 'mcms-workflow-steps';
+        nav.setAttribute('aria-label', `${heading?.textContent || 'Administration'} workflow stages`);
+        ADMIN_WORKFLOW_STAGES.forEach((item, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.action = 'workflow-stage';
+            button.dataset.workflowStageButton = item.key;
+            const number = document.createElement('span');
+            number.textContent = String(index + 1);
+            const label = document.createElement('strong');
+            label.textContent = item.label;
+            button.append(number, label);
+            nav.appendChild(button);
+        });
+        const body = document.createElement('div');
+        body.className = 'mcms-workflow-body';
+        const panels = Object.fromEntries(ADMIN_WORKFLOW_STAGES.map(item => {
+            const panel = document.createElement('section');
+            panel.className = 'mcms-workflow-stage';
+            panel.dataset.workflowStagePanel = item.key;
+            panel.tabIndex = -1;
+            panel.setAttribute('aria-label', item.label);
+            body.appendChild(panel);
+            return [item.key, panel];
+        }));
+        const children = Array.from(card.children).filter(child => child !== heading);
+        for (const child of children) {
+            if (child.matches?.('.mcms-grid-2') && child.querySelector(':scope > button[data-action]')) {
+                moveWorkflowActionGrid(child, panels);
+                continue;
+            }
+            let stage = 'review';
+            if (child.matches?.('.mcms-row, .mcms-expansion-planner-fields')) stage = 'configure';
+            if (child.matches?.('[data-alliance-courses], [data-transport-sweep], [data-dispatch-recruitment], [data-station-icon-copier], [data-expansion-planner], .mcms-expansion-planner-results')) stage = 'results';
+            if (child.matches?.('.mcms-expansion-planner-layout')) stage = 'configure';
+            panels[stage].appendChild(child);
+        }
+        const footer = document.createElement('footer');
+        footer.className = 'mcms-workflow-footer';
+        const back = document.createElement('button');
+        back.type = 'button';
+        back.dataset.action = 'workflow-back';
+        back.textContent = 'Back';
+        const progress = document.createElement('span');
+        progress.dataset.workflowProgress = '';
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.dataset.action = 'workflow-next';
+        next.textContent = 'Continue';
+        footer.append(back, progress, next);
+        heading?.after(nav, body, footer);
+        card.dataset.workflowReady = 'true';
+        setAdministrationWorkflowStage(card, 'scope');
+    }
+
+    function enhanceProgressiveGuidance(section) {
+        for (const status of Array.from(section?.querySelectorAll?.('.mcms-status:not([data-tone])') || [])) {
+            if (status.classList.length !== 1 || String(status.textContent || '').trim().length < 170 || status.closest('details')) continue;
+            const details = document.createElement('details');
+            details.className = 'mcms-guidance';
+            const summary = document.createElement('summary');
+            summary.textContent = status.closest('.mcms-command-card[data-workflow-ready="true"]') ? 'Safeguards & guidance' : 'More guidance';
+            status.before(details);
+            details.append(summary, status);
+        }
+    }
+
+    function createStatusCentreSection() {
+        const section = document.createElement('section');
+        section.className = 'mcms-tab-panel';
+        section.dataset.panel = 'status';
+        const heading = document.createElement('div');
+        heading.className = 'mcms-section-label';
+        heading.textContent = 'Operations Status Centre';
+        const centre = document.createElement('div');
+        centre.className = 'mcms-status-centre';
+        centre.dataset.operationsStatusCentre = '';
+        centre.setAttribute('aria-live', 'polite');
+        section.append(heading, centre);
+        return section;
+    }
+
+    function operationFreshness(timestamp) {
+        const value = Number(timestamp) || 0;
+        if (!value) return 'Not checked this session';
+        const elapsed = Math.max(0, Date.now() - value);
+        if (elapsed < 60000) return 'Updated just now';
+        if (elapsed < 3600000) return `Updated ${Math.max(1, Math.round(elapsed / 60000))}m ago`;
+        return `Updated ${Math.round(elapsed / 3600000)}h ago`;
+    }
+
+    function operationsStatusCard({ id, title, stateLabel, tone = 'neutral', detail, freshness = '', authority = 'Toolkit', tab = 'status', card = '' }) {
+        return `<article class="mcms-operations-status-card" data-status-id="${escapeHtml(id)}" data-state="${escapeHtml(tone)}"><div class="mcms-operations-status-head"><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(authority)} authority</small></span><b class="mcms-state-pill" data-tone="${escapeHtml(tone)}">${escapeHtml(stateLabel)}</b></div><p>${escapeHtml(detail)}</p><footer><span>${escapeHtml(freshness)}</span><button type="button" data-action="status-route" data-status-tab="${escapeHtml(tab)}"${card ? ` data-status-card="${escapeHtml(card)}"` : ''}>Open</button></footer></article>`;
+    }
+
+    function renderOperationsStatusCentre(panel = commandInterfacePanel()) {
+        const target = panel?.querySelector?.('[data-operations-status-centre]');
+        if (!target) return false;
+        const workflow = (id, title, runtimeState, detail, authority = 'Toolkit') => {
+            const busy = Boolean(runtimeState.running || runtimeState.preparing || runtimeState.scanPromise || runtimeState.catalogPromise);
+            const errors = Number(runtimeState.errors) || 0;
+            const tone = errors ? 'bad' : busy ? 'busy' : runtimeState.scannedAt ? 'good' : 'neutral';
+            const stateLabel = errors ? `${errors} issue${errors === 1 ? '' : 's'}` : busy ? 'Running' : runtimeState.scannedAt ? 'Ready' : 'Idle';
+            return operationsStatusCard({ id, title, stateLabel, tone, detail, freshness: operationFreshness(runtimeState.scannedAt || runtimeState.catalogAt), authority, tab: 'administration', card: id });
+        };
+        const versionTone = versionStatusModel.state === 'update' || versionStatusModel.state === 'error' ? 'warn' : versionStatusModel.state === 'latest' ? 'good' : versionStatusModel.state === 'checking' ? 'busy' : 'neutral';
+        const cards = [
+            operationsStatusCard({ id: 'toolkit-version', title: 'Toolkit version', stateLabel: versionStatusModel.state === 'latest' ? 'Current' : versionStatusModel.state === 'update' ? 'Update ready' : versionStatusModel.state === 'checking' ? 'Checking' : versionStatusModel.state === 'error' ? 'Unavailable' : 'Not checked', tone: versionTone, detail: `Installed ${SCRIPT.version}${versionStatusModel.manifest?.version ? ` · verified release ${versionStatusModel.manifest.version}` : ''}`, freshness: operationFreshness(versionStatusModel.checkedAt || versionStatusModel.failedAt), tab: 'settings' }),
+            operationsStatusCard({ id: 'map-authority', title: 'Map renderer', stateLabel: fastMapIsActive() ? 'Fast Map' : fastMapRuntime.phase === 'error' ? 'Fallback safe' : 'Native', tone: fastMapRuntime.phase === 'error' ? 'warn' : 'good', detail: fastMapIsActive() ? 'Toolkit WebGL renderer is active for this session.' : 'MissionChief owns the active Leaflet map and native visibility filters.', freshness: fastMapRuntime.lastSyncAt ? operationFreshness(fastMapRuntime.lastSyncAt) : 'Live session state', authority: fastMapIsActive() ? 'Toolkit' : 'MissionChief', tab: 'map' }),
+            operationsStatusCard({ id: 'safe-mode', title: 'Toolkit Safe Mode', stateLabel: state.safeMode.enabled ? 'Active' : 'Normal', tone: state.safeMode.enabled ? 'warn' : 'good', detail: state.safeMode.enabled ? 'Optional modules are suspended; settings and recovery remain available.' : 'All configured Toolkit modules may run normally.', freshness: state.safeMode.since ? operationFreshness(state.safeMode.since) : 'Live setting', tab: 'settings' }),
+            workflow('alliance-courses', 'Alliance Courses', allianceCourseRuntime, `${allianceCourseRuntime.queue.length} queued · ${allianceCourseRuntime.created} created`),
+            workflow('co-admin-patient-transport-sweep', 'Patient Transport Sweep', transportSweepRuntime, `${transportSweepRuntime.missionTotal || transportSweepRuntime.queue.length} found · ${transportSweepRuntime.cleared} cleared`),
+            workflow('dispatch-recruitment', 'Dispatch Recruitment', dispatchRecruitmentRuntime, `${dispatchRecruitmentRuntime.selectedBuildingIds.size} selected · ${dispatchRecruitmentRuntime.updated} updated`),
+            workflow('station-icon-copier', 'Station Icon Copier', stationIconCopierRuntime, `${stationIconCopierRuntime.selectedBuildingIds.size} selected · ${stationIconCopierRuntime.updated} updated`),
+            workflow('expansion-and-upgrade-planner', 'Expansion & Upgrade Planner', expansionPlannerRuntime, `${expansionPlannerRuntime.selectedOperationIds.size} selected · ${expansionPlannerRuntime.purchased} purchased`)
+        ];
+        setInnerHtmlIfChanged(target, `<div class="mcms-status-centre-summary"><span><b>${cards.length}</b> systems</span><span><b>${cards.filter(card => card.includes('data-tone="good"')).length}</b> ready</span><span><b>${cards.filter(card => card.includes('data-tone="busy"')).length}</b> running</span></div><div class="mcms-status-centre-grid">${cards.join('')}</div>`, cards.join('|'));
+        return true;
+    }
+
     function upgradeCommandInterface(panel) {
         const sticky = panel?.querySelector('.mcms-panel-sticky-stack');
         const tabs = sticky?.querySelector('.mcms-tabs');
-        if (!panel || !sticky || !tabs || panel.dataset.mcmsCommandInterface === 'v9') return panel;
+        if (!panel || !sticky || !tabs || panel.dataset.mcmsCommandInterface === 'v10') return panel;
         tabs.replaceChildren();
         tabs.insertAdjacentHTML('afterbegin', commandSectionNavigationMarkup());
 
@@ -39436,13 +39833,19 @@ Credits only. Each station and native action will be fetched again, purchased on
             section.dataset.panel = nextName;
             return section;
         };
-        const appearance = rename('skins', 'appearance');
         const map = rename('tools', 'map');
-        const missions = rename('resources', 'missions');
-        const missionOperations = byLegacyName.ops;
-        if (missions && missionOperations) {
-            missions.append(...Array.from(missionOperations.childNodes));
-            missionOperations.remove();
+        const places = byLegacyName.places;
+        if (map && places) {
+            map.append(...Array.from(places.childNodes));
+            places.remove();
+        }
+        const incidents = rename('ops', 'incidents');
+        const fleet = rename('resources', 'fleet');
+        const administration = rename('alliance', 'administration');
+        const dispatch = byLegacyName.dispatch;
+        if (administration && dispatch) {
+            administration.append(...Array.from(dispatch.childNodes));
+            dispatch.remove();
         }
         const finance = rename('discord', 'finance');
         const payout = byLegacyName.payouts;
@@ -39450,11 +39853,14 @@ Credits only. Each station and native action will be fetched again, purchased on
             finance.append(...Array.from(payout.childNodes));
             payout.remove();
         }
-        const locations = rename('places', 'locations');
-        const alliance = byLegacyName.alliance;
-        const dispatch = byLegacyName.dispatch;
         const settings = byLegacyName.settings;
-        const sections = { map, missions, alliance, dispatch, finance, locations, appearance, settings };
+        const appearance = byLegacyName.skins;
+        if (settings && appearance) {
+            settings.append(...Array.from(appearance.childNodes));
+            appearance.remove();
+        }
+        const status = createStatusCentreSection();
+        const sections = { map, incidents, fleet, administration, finance, status, settings };
 
         const layout = document.createElement('div');
         layout.className = 'mcms-command-layout';
@@ -39466,6 +39872,8 @@ Credits only. Each station and native action will be fetched again, purchased on
             const section = sections[key];
             if (!section) continue;
             wrapCommandSectionCards(section);
+            if (key === 'administration') section.querySelectorAll('.mcms-command-card').forEach(enhanceAdministrationWorkflow);
+            enhanceProgressiveGuidance(section);
             content.appendChild(section);
         }
         const empty = document.createElement('div');
@@ -39477,7 +39885,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         emptyGuidance.textContent = 'Try a shorter word or choose another command section.';
         empty.replaceChildren(emptyHeading, emptyGuidance);
         content.appendChild(empty);
-        panel.dataset.mcmsCommandInterface = 'v9';
+        panel.dataset.mcmsCommandInterface = 'v10';
         return panel;
     }
 
@@ -39583,16 +39991,11 @@ Credits only. Each station and native action will be fetched again, purchased on
                         </span>
                     </div>
                     <div class="mcms-header-actions">
-                        <button class="mcms-search-button" type="button" data-action="toggle-command-search" title="Search the current command section" aria-label="Search the current command section" aria-expanded="false">⌕</button>
+                        <button class="mcms-search-button" type="button" data-action="open-command-palette" title="Search every command, mission, vehicle, building, place and setting" aria-label="Open universal Toolkit search">⌕</button>
                         <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
                         <button class="mcms-workspace-maximize" type="button" data-action="toggle-workspace-maximize" title="Maximise Toolkit Workspace" aria-label="Maximise Toolkit Workspace" aria-pressed="false">□</button>
                         <button class="mcms-close" type="button" title="Close" aria-label="Close Map Command Toolkit">×</button>
                     </div>
-                </div>
-                <div class="mcms-command-search" hidden>
-                    <span aria-hidden="true">⌕</span>
-                    <input type="search" inputmode="search" autocomplete="off" spellcheck="false" data-command-search placeholder="Search this section" aria-label="Search the current command section">
-                    <button type="button" data-action="clear-command-search" title="Clear search" aria-label="Clear command search">×</button>
                 </div>
                 <div class="mcms-tabs">
                     ${commandSectionNavigationMarkup()}
@@ -39873,7 +40276,7 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
-                <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+                <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: five task destinations stay in the safe-area bottom bar, secondary destinations open from More, commands remain touch-safe, and full-width sheets follow the Visual Viewport when the iOS keyboard opens. Tablet and desktop layouts remain independent.</div>
                 <div class="mcms-section-label">Interface density</div>
                 <div class="mcms-row"><span class="mcms-row-label">Desktop density</span><select class="mcms-select" data-setting="density-desktop"><option value="spacious">Spacious</option><option value="standard">Standard</option><option value="compact">Compact</option><option value="command">Command Centre</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Tablet density</span><select class="mcms-select" data-setting="density-tablet"><option value="spacious">Spacious</option><option value="standard">Standard</option><option value="compact">Compact</option><option value="command">Command Centre</option></select></div>
@@ -39951,9 +40354,10 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <div class="mcms-status">Encrypted Export includes every preference, profile, bookmark, Discord webhook and local Financial Archive record inside AES-256-GCM passphrase encryption. Safe Export is plaintext but deliberately excludes all integrations, identity and financial history. Legacy JSON backups remain importable through a redacted review step.</div>
             </section>
             <div class="mcms-footer">
-                <span>Unified command interface · Desktop, Tablet and iOS · all themes share one operational layout.</span>
+                <span>Task-based command interface · MissionChief authority preserved · Desktop, Tablet and iOS.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
+            ${mobileCommandNavigationMarkup()}
             <button class="mcms-workspace-resize-handle" type="button" title="Drag to resize · Arrow keys resize · Shift changes size faster" aria-label="Resize Toolkit Workspace with pointer or arrow keys" aria-hidden="false"><span></span></button>
         `;
         upgradeCommandInterface(panel);
@@ -39997,6 +40401,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         panel.addEventListener('click', event => {
             const closeButton = closestEventTarget(event, '.mcms-close');
             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
+            const mobileTabButton = closestEventTarget(event, '[data-mobile-tab]');
             const uiThemeButton = closestEventTarget(event, '.mcms-ui-theme-btn');
             const themeButton = closestEventTarget(event, '.mcms-theme-btn');
             const toggleButton = closestEventTarget(event, '[data-toggle]');
@@ -40004,6 +40409,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             const actionButton = closestEventTarget(event, '[data-action]');
             if (closeButton) { closePanel({ restoreFocus: true }); return; }
             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
+            if (mobileTabButton) { setActiveTab(mobileTabButton.dataset.mobileTab); return; }
             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle, toggleButton); return; }
@@ -40011,6 +40417,7 @@ Credits only. Each station and native action will be fetched again, purchased on
             if (actionButton) {
                 event.preventDefault();
                 handleAction(actionButton);
+                advanceAdministrationWorkflowFromAction(actionButton);
                 return;
             }
         });
@@ -40138,6 +40545,31 @@ Credits only. Each station and native action will be fetched again, purchased on
 
     function handleAction(button) {
         const action = button.dataset.action;
+        if (action === 'workflow-stage') {
+            setAdministrationWorkflowStage(button.closest('.mcms-command-card'), button.dataset.workflowStageButton, { focus: true });
+            return;
+        }
+        if (action === 'workflow-back' || action === 'workflow-next') {
+            const card = button.closest('.mcms-command-card');
+            const current = ADMIN_WORKFLOW_STAGES.findIndex(item => item.key === card?.dataset.workflowStage);
+            const next = Math.max(0, Math.min(ADMIN_WORKFLOW_STAGES.length - 1, current + (action === 'workflow-next' ? 1 : -1)));
+            setAdministrationWorkflowStage(card, ADMIN_WORKFLOW_STAGES[next].key, { focus: true });
+            return;
+        }
+        if (action === 'status-route') {
+            const tab = button.dataset.statusTab;
+            const cardKey = button.dataset.statusCard;
+            setActiveTab(tab);
+            if (cardKey) {
+                const card = commandInterfacePanel()?.querySelector?.(`.mcms-command-card[data-command-card="${cardKey}"]`);
+                if (card) {
+                    card.tabIndex = -1;
+                    card.scrollIntoView?.({ block: 'start' });
+                    card.focus?.({ preventScroll: true });
+                }
+            }
+            return;
+        }
         if (action === 'toggle-alliance-member-manager') {
             setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
             return;
@@ -40163,6 +40595,17 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (action === 'panel-up') { nudgePanel(0, -24); return; }
         if (action === 'panel-down') { nudgePanel(0, 24); return; }
         if (action === 'toggle-workspace-maximize') { toggleDesktopWorkspaceMaximize(); return; }
+        if (action === 'toggle-command-overflow') {
+            commandBarOverflowOpen = !commandBarOverflowOpen;
+            applyLayoutBuilderControl(button.closest(`[id="${SCRIPT.controlId}"]`));
+            fitControlToMap();
+            return;
+        }
+        if (action === 'toggle-mobile-more') {
+            mobileMoreOpen = !mobileMoreOpen;
+            updateUI();
+            return;
+        }
         if (action === 'toggle-command-search') { setCommandSearchOpen(!commandSearchOpen); return; }
         if (action === 'clear-command-search') {
             commandSearchQuery = '';
@@ -40867,6 +41310,16 @@ Credits only. Each station and native action will be fetched again, purchased on
             updateUiToggleClass(tabPanel, 'mcms-active', active);
             updateUiSetProperty(tabPanel, 'hidden', !active);
         });
+        panel.querySelectorAll('[data-mobile-tab]').forEach(button => {
+            const active = button.dataset.mobileTab === state.activeTab;
+            updateUiToggleClass(button, 'mcms-active', active);
+            updateUiSetAttribute(button, 'aria-current', active ? 'page' : 'false');
+        });
+        const mobileMore = panel.querySelector('.mcms-mobile-more');
+        if (mobileMore) updateUiSetProperty(mobileMore, 'hidden', !mobileMoreOpen);
+        const mobileMoreButton = panel.querySelector('.mcms-mobile-nav [data-action="toggle-mobile-more"]');
+        if (mobileMoreButton) updateUiSetAttribute(mobileMoreButton, 'aria-expanded', String(mobileMoreOpen));
+        renderOperationsStatusCentre(panel);
         const panelOpen = panel.classList.contains('mcms-open');
         updateUiSetAttribute(panel, 'aria-hidden', String(!panelOpen));
         updateUiSetAttribute(menuButton, 'aria-expanded', String(panelOpen));
@@ -40971,7 +41424,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (allianceCourseDuration) updateUiSetProperty(allianceCourseDuration, 'value', String(state.allianceCourses.shareDuration));
         const allianceCourseDelay = panelSettings.get('alliance-course-delay');
         if (allianceCourseDelay) updateUiSetProperty(allianceCourseDelay, 'value', String(state.allianceCourses.delayMs));
-        if (panelOpen && state.activeTab === 'alliance') {
+        if (panelOpen && state.activeTab === 'administration') {
             renderTransportSweepPanel();
             renderAllianceCoursesPanel();
         }
@@ -40981,7 +41434,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (dispatchRecruitmentPersonnel && document.activeElement !== dispatchRecruitmentPersonnel) updateUiSetProperty(dispatchRecruitmentPersonnel, 'value', state.dispatchRecruitment.personnelDesired);
         const dispatchRecruitmentDelay = panelSettings.get('dispatch-recruitment-delay');
         if (dispatchRecruitmentDelay) updateUiSetProperty(dispatchRecruitmentDelay, 'value', String(state.dispatchRecruitment.delayMs));
-        if (panelOpen && state.activeTab === 'dispatch') {
+        if (panelOpen && state.activeTab === 'administration') {
             renderDispatchRecruitmentPanel();
             renderStationIconCopierPanel();
             renderExpansionPlannerPanel();
@@ -41038,7 +41491,7 @@ Credits only. Each station and native action will be fetched again, purchased on
         const economyStatus = panel.querySelector('.mcms-economy-status');
         updateUiSetText(economyStatus, state.economyMode
             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
-            : 'Economy Mode is OFF. Enable it here or from the Performance group on the map command bar to reduce CPU, GPU and marker workload.');
+            : 'Economy Mode is OFF. Enable it here or from More on the map command bar to reduce CPU, GPU and marker workload.');
         const fastMapStatus = panel.querySelector('.mcms-fast-map-status');
         const fastMapStatusText = fastMapIsActive()
             ? `Fast Map is ACTIVE: ${fastMapTotalFeatures().toLocaleString()} live points use one WebGL renderer; MissionChief Leaflet is disconnected and parked. Drawing or Coverage automatically restores the native map.`
@@ -41050,8 +41503,8 @@ Credits only. Each station and native action will be fetched again, purchased on
         updateUiSetText(fastMapStatus, fastMapStatusText);
         const nudge = panel.querySelector('.mcms-nudge-value');
         updateUiSetText(nudge, `X ${state.nudge.x} / Y ${state.nudge.y}`);
-        if (panelOpen && state.activeTab === 'settings') renderProfiles();
-        if ((panelOpen && state.activeTab === 'missions') || operationalUiIsVisible()) renderOperationalPanels();
+        if (panelOpen && state.activeTab === 'map') renderProfiles();
+        if ((panelOpen && state.activeTab === 'incidents') || operationalUiIsVisible()) renderOperationalPanels();
         updateCommandInterfaceHeader(panel);
     }
     function ensureUi() {

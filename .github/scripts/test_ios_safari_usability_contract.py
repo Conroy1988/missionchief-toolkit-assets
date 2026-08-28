@@ -15,7 +15,10 @@ required={
 'visual scroll recovery':"scheduleVisualViewportStabilisation('visual-viewport-scroll')",
 'orientation recovery':"scheduleVisualViewportStabilisation('orientationchange')",
 'mobile 44px pin':'height:44px!important;min-height:44px!important;scroll-snap-align:start',
-'mobile six-section navigation':'grid-template-columns:repeat(3,minmax(0,1fr)) !important;',
+'mobile seven-section navigation':'grid-template-columns:repeat(12,minmax(0,1fr))!important;',
+'mobile balanced two-row navigation':'grid-template-rows:repeat(2,48px)!important;',
+'mobile primary row spans':'grid-column:span 3!important;',
+'mobile secondary row spans':'.mcms-tab-btn:nth-child(n+5){grid-column:span 4!important}',
 'mobile 44px tab':'height:44px !important;\n            min-height:44px !important;',
 'touch press feedback':'filter:brightness(1.16) saturate(1.06)!important;opacity:.88!important',
 'visual bottom safe edge':'var(--mcms-visual-gap-bottom,0px)',
@@ -38,6 +41,8 @@ forbidden={
 }
 present=[name for name,token in forbidden.items() if token in text]
 if present: raise SystemExit('IOS SAFARI CONTRACT ERROR: '+', '.join(present))
+for retired in ('mcms-mobile-more', 'mcms-mobile-nav', 'toggle-mobile-more', 'data-mobile-tab'):
+    if retired in text: raise SystemExit('IOS SAFARI CONTRACT ERROR: blocking mobile navigation overlay returned: '+retired)
 create=text[text.index('    function createControl(mapEl)'):text.index('    function commandSectionSlug(')]
 if 'mcms-dock-toggle-btn' in create: raise SystemExit('IOS SAFARI CONTRACT ERROR: retired arrow launcher returned')
 print('iOS/Safari usability contract passed')

@@ -195,7 +195,7 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
   window.addEventListener("unhandledrejection", event => runtimeErrors.push(String(event.reason?.stack || event.reason)));
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
     setupWizard: { completed: true, schema: 1 },
-    updateBriefing: { enabled: false, seenVersion: "10.18.0", seenFeatures: [] },
+    updateBriefing: { enabled: false, seenVersion: "10.18.1", seenFeatures: [] },
     tabletMode: device === "tablet" ? "on" : "off",
     mobileMode: device === "ios" ? "on" : "off",
     cleanMode,
@@ -270,7 +270,7 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
   );
   assert.equal(control.parentElement, initialMap, `${device}: launcher did not mount into the canonical map`);
   assert.ok(document.getElementById(STYLE_ID), `${device}: main stylesheet is missing`);
-  assert.equal(window[RUNTIME_KEY]?.version, "10.18.0", `${device}: wrong active runtime`);
+  assert.equal(window[RUNTIME_KEY]?.version, "10.18.1", `${device}: wrong active runtime`);
   assert.equal(window[RUNTIME_KEY]?.destroyed, false, `${device}: runtime was destroyed during boot`);
   let panel = null;
   if (cleanMode) {
@@ -299,6 +299,22 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
     panel = await waitFor(() => document.getElementById(PANEL_ID), `${device} command panel`);
   }
   assert.ok(panel.classList.contains("mcms-open"), `${device}: command panel did not open`);
+  if (device === "ios") {
+    assert.equal(document.documentElement.dataset.mcmsMobileActive, "true", "iOS: mobile layout was not active");
+    assert.equal(panel.querySelector(".mcms-mobile-nav"), null, "iOS: duplicate bottom navigation returned");
+    assert.equal(panel.querySelector(".mcms-mobile-more"), null, "iOS: blocking More Toolkit sheet returned");
+    const tabs = panel.querySelector(".mcms-tabs");
+    assert.equal(window.getComputedStyle(tabs).display, "grid", "iOS: sole section grid is hidden");
+    assert.deepEqual(
+      Array.from(tabs.querySelectorAll(":scope > .mcms-tab-btn"), button => button.dataset.tab),
+      ["map", "incidents", "fleet", "administration", "finance", "status", "settings"],
+      "iOS: direct section navigation drifted",
+    );
+    for (const route of ["finance", "status", "settings"]) {
+      tabs.querySelector(`[data-tab="${route}"]`).click();
+      assert.ok(panel.querySelector(`[data-panel="${route}"].mcms-active`), `iOS: ${route} was not directly reachable`);
+    }
+  }
 
   // MissionChief can replace its map node after initial parsing. The launcher must self-heal.
   const replacementMap = installMap(window, device, 2);
@@ -319,7 +335,7 @@ async function scenario(device, { cleanMode = false, fatalApplication = false, r
   dom.window.close();
 }
 
-assert.match(source, /^\/\/ @version\s+10\.18\.0$/mu);
+assert.match(source, /^\/\/ @version\s+10\.18\.1$/mu);
 for (const device of ["desktop", "tablet", "ios"]) await scenario(device);
 await scenario("desktop", { cleanMode: true });
 await scenario("desktop", { fatalApplication: true });

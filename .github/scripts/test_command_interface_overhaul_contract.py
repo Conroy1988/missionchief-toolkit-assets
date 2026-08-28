@@ -17,10 +17,10 @@ def section(source: str, start: str, end: str) -> str:
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    assert "// @version      10.18.0" in source
-    assert "const VERSION = '10.18.0';" in source
-    assert "version: '10.18.0'" in source
-    assert 'version: "10.18.0"' in source
+    assert "// @version      10.18.1" in source
+    assert "const VERSION = '10.18.1';" in source
+    assert "version: '10.18.1'" in source
+    assert 'version: "10.18.1"' in source
 
     assert "const COMMAND_SECTION_ORDER = Object.freeze(['map', 'incidents', 'fleet', 'administration', 'finance', 'status', 'settings']);" in source
     for legacy, target in {
@@ -111,11 +111,16 @@ def main() -> int:
     assert 'data-action="open-command-palette" title="Search every command' in panel
     assert 'data-action="toggle-command-search"' not in panel
 
-    mobile = section(source, "    function mobileCommandNavigationMarkup(", "    function commandInterfacePanel(")
-    assert "['map', 'incidents', 'fleet', 'administration']" in mobile
-    assert "['finance', 'status', 'settings']" in mobile
-    assert 'data-action="toggle-mobile-more"' in mobile
-    assert "grid-template-columns:repeat(5,minmax(0,1fr))" in source
+    assert "function mobileCommandNavigationMarkup(" not in source
+    assert "toggle-mobile-more" not in source
+    assert "data-mobile-tab" not in source
+    assert "mcms-mobile-more" not in source
+    assert "mcms-mobile-nav" not in source
+    assert 'html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tabs' in source
+    assert "grid-template-columns:repeat(12,minmax(0,1fr))" in source
+    assert "grid-template-rows:repeat(2,48px)" in source
+    assert ".mcms-tab-btn:nth-child(n+5){grid-column:span 4!important}" in source
+    assert "${mobileCommandNavigationMarkup()}" not in panel
 
     for token in (
         ".mcms-state-pill",

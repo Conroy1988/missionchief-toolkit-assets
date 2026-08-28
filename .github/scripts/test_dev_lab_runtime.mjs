@@ -67,10 +67,15 @@ async function scenario(device, tab, focus = "") {
   });
   assert.equal(panel.querySelectorAll("[data-operations-status-centre] .mcms-operations-status-card").length, 8, `${device}: status centre inventory drifted`);
   if (device === "ios") {
-    assert.equal(panel.querySelectorAll(".mcms-mobile-nav > button").length, 5, "iOS: bottom navigation must expose five items");
-    panel.querySelector('.mcms-mobile-nav [data-action="toggle-mobile-more"]').click();
-    assert.equal(panel.querySelector(".mcms-mobile-more")?.hidden, false, "iOS: More sheet did not open");
-    assert.deepEqual(Array.from(panel.querySelectorAll(".mcms-mobile-more [data-mobile-tab]"), button => button.dataset.mobileTab), ["finance", "status", "settings"], "iOS: More routes drifted");
+    assert.equal(panel.querySelector(".mcms-mobile-nav"), null, "iOS: duplicate bottom navigation returned");
+    assert.equal(panel.querySelector(".mcms-mobile-more"), null, "iOS: blocking More Toolkit sheet returned");
+    const mobileTabs = Array.from(panel.querySelectorAll(".mcms-tabs > .mcms-tab-btn"));
+    assert.deepEqual(mobileTabs.map(button => button.dataset.tab), ["map", "incidents", "fleet", "administration", "finance", "status", "settings"], "iOS: direct section navigation drifted");
+    for (const route of ["finance", "status", "settings"]) {
+      panel.querySelector(`.mcms-tab-btn[data-tab="${route}"]`).click();
+      assert.ok(panel.querySelector(`.mcms-tab-panel[data-panel="${route}"].mcms-active`), `iOS: ${route} was not directly reachable`);
+    }
+    panel.querySelector('.mcms-tab-btn[data-tab="map"]').click();
   }
   if (focus) assert.ok(panel.querySelector(`[data-command-card="${focus}"].mcms-dev-focus`), `${device}: ${focus} focus missing`);
   assert.equal(report.mount, true, `${device}: mount probe failed`);

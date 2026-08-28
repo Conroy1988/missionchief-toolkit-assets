@@ -137,7 +137,7 @@
       "templateBytes": 54024,
       "templateLines": 592
     },
-    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, v10.17.1 base-map/HUD repair, v10.17.2 native marker/route restoration, v10.17.3 icon stability hardening, v10.17.4 complete UK building filters, and v10.18.0 command interface overhaul",
+    "scope": "Issue #760 plus v10.16.7 first-byte UI recovery, v10.16.8 performance/layout hardening, v10.16.9 native three-station building filters, v10.17.0 Fast Map replacement rendering, v10.17.1 base-map/HUD repair, v10.17.2 native marker/route restoration, v10.17.3 icon stability hardening, v10.17.4 complete UK building filters, v10.18.0 command interface overhaul, and v10.18.1 mobile navigation overlay hotfix",
     "incident": "command-interface-overhaul"
   }
 }

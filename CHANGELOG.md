@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.18.1] - 2026-08-28
+
+### Mobile Navigation Overlay Hotfix
+
+- Removes the redundant More Toolkit sheet that covered the active Toolkit controls on iOS.
+- Uses one touch-safe mobile section grid for Map, Incidents, Fleet, Administration, Finance, Status and Settings, keeping every area directly accessible.
+- Fixes the theme-specific CSS conflict that displayed the old section grid and the new bottom navigation at the same time.
+- Reclaims the sheet and bottom-bar space for active content while retaining safe-area padding and 44-pixel touch targets.
+- Preserves Desktop and Tablet navigation, saved active sections and the separate More control for the ten secondary map commands.
+- Adds static and mounted iOS regressions proving a single navigation surface, direct secondary-section routing and no blocking Toolkit overlay.
+
 ## [10.18.0] - 2026-08-25
 
 ### Command Interface Overhaul

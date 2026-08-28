@@ -132,7 +132,7 @@ The operational hierarchy survives the change in screen—not just the colour sc
 |---|---|
 | **Desktop** | A movable, resizable Toolkit Workspace with readable adaptive columns, direct keyboard command, temporary maximise/restore and a persistent map-attached toolbar. |
 | **Tablet** | Reflowed panels, touch-safe targets and the same command structure without a stripped-down feature set. |
-| **iOS Mobile** | A five-item bottom navigation for Map, Incidents, Fleet, Administration and More, with Finance, Status and Settings in a touch-safe sheet above the safe area. |
+| **iOS Mobile** | One touch-safe section grid exposes Map, Incidents, Fleet, Administration, Finance, Status and Settings directly, with no blocking navigation sheet. |
 
 ### Eight complete interface systems
 

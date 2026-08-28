@@ -16,7 +16,7 @@ def source_section(source: str, start: str, end: str) -> str:
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    assert "version: '10.18.0'" in source
+    assert "version: '10.18.1'" in source
     assert "const COMMAND_SECTION_ORDER = Object.freeze(['map', 'incidents', 'fleet', 'administration', 'finance', 'status', 'settings']);" in source
     assert "label: 'Administration'" in source and "title: 'Guided Administration'" in source
     assert "'allianceCourses'" in source, "Alliance Courses analytics allow-list entry is missing"

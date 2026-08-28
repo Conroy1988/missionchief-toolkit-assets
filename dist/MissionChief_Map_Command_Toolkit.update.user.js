@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      10.18.0
+// @version      10.18.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -51,7 +51,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 const MCMS_FIRST_BYTE = (() => {
     'use strict';
-    const VERSION = '10.18.0';
+    const VERSION = '10.18.1';
     const EVENT_NAME = 'mcms:first-byte-recover';
     const STATUS_ID = 'mcms-first-byte-status';
     const RECOVERY_ID = 'mcms-first-byte-recovery';
@@ -824,7 +824,7 @@ try {
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '10.18.0',
+        version: '10.18.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -887,17 +887,15 @@ try {
     };
 
     const RELEASE_BRIEFING = Object.freeze({
-        version: "10.18.0",
-        title: "Command Interface Overhaul",
+        version: "10.18.1",
+        title: "Mobile Navigation Overlay Hotfix",
         highlights: Object.freeze([
-            "Reorganises the complete Toolkit into seven task-based areas: Map, Incidents, Fleet, Administration, Finance, Status and Settings, with automatic migration from every previous saved tab name.",
-            "Replaces the fifteen-control persistent bar with four to six configurable primary commands and a bounded More surface that preserves every existing control, shortcut and layout preference.",
-            "Adds Scope, Configure, Review, Run and Results stages to Alliance Courses, Patient Transport Sweep, Dispatch Recruitment, Station Icon Copier and Expansion & Upgrade Planner without changing their native permissions, confirmation or verification contracts.",
-            "Adds a central Operations Status Centre for version health, map authority, Safe Mode and live administration progress by reusing existing runtime state instead of adding another request, observer or poller.",
-            "Rebuilds iOS navigation as a five-item bottom bar with a touch-safe More sheet while retaining the desktop workspace and tablet reflow.",
-            "Consolidates eight Personalisation Studio routes into Layout, Appearance, Controls, Alerts and Recovery while preserving themes, map skins, layouts, Quick Wheel slots, hotkeys, gestures, alerts, snapshots and setup state.",
-            "Makes the global Command Palette the only search surface, adds scope chips and session recents, and keeps missions, vehicles, buildings, places, settings and safe commands in one local index.",
-            "Adds text-and-colour state pills, progressive guidance, larger minimum typography and a strict interface motion budget across all eight themes."
+            "Removes the redundant More Toolkit sheet that covered the active Toolkit controls on iOS.",
+            "Uses one touch-safe mobile section grid for Map, Incidents, Fleet, Administration, Finance, Status and Settings, keeping every area directly accessible.",
+            "Fixes the theme-specific CSS conflict that displayed the old section grid and the new bottom navigation at the same time.",
+            "Reclaims the sheet and bottom-bar space for active content while retaining safe-area padding and 44-pixel touch targets.",
+            "Preserves Desktop and Tablet navigation, saved active sections and the separate More control for the ten secondary map commands.",
+            "Adds static and mounted iOS regressions proving a single navigation surface, direct secondary-section routing and no blocking Toolkit overlay."
         ])
     });
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
@@ -2536,7 +2534,6 @@ try {
     let commandPaletteScope = 'all';
     let commandPaletteRecentIds = [];
     let commandBarOverflowOpen = false;
-    let mobileMoreOpen = false;
     state = loadState();
     function applyFirstByteRecoveryRequest() {
         if (runtime.destroyed) return false;
@@ -14631,17 +14628,15 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
 
         #${SCRIPT.commandExperienceModalId} .mcms-personal-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}.mcms-personal-composite>.mcms-personal-pane{padding-block-end:14px!important;border-bottom:1px solid rgba(255,255,255,.1)!important}.mcms-personal-composite>.mcms-personal-pane:last-child{padding-block-end:0!important;border-bottom:0!important}.mcms-primary-command-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin-top:9px!important}.mcms-primary-command{display:flex!important;align-items:center!important;gap:8px!important;min-height:42px!important;padding:7px 9px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:8px!important;background:rgba(255,255,255,.035)!important;color:#d5e5ed!important;font-size:11px!important}.mcms-primary-command input{width:18px!important;height:18px!important}
         #${SCRIPT.commandPaletteId} .mcms-command-palette-scopes{display:flex!important;gap:6px!important;margin-top:9px!important;overflow-x:auto!important;scrollbar-width:thin!important}.mcms-command-palette-scopes button{flex:0 0 auto!important;min-height:32px!important;padding:5px 10px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:999px!important;background:rgba(255,255,255,.045)!important;color:#aebfca!important;font-size:10.5px!important;font-weight:800!important}.mcms-command-palette-scopes button[aria-pressed="true"]{border-color:var(--mcms-palette-accent,#68cfff)!important;background:rgba(var(--mcms-palette-accent-rgb,104,207,255),.18)!important;color:#fff!important}.mcms-command-palette-recent{border-left-color:var(--mcms-palette-accent,#68cfff)!important}
-        #${SCRIPT.panelId} .mcms-mobile-nav,#${SCRIPT.panelId} .mcms-mobile-more{display:none!important}
         html[data-mcms-safe-mode="true"] body #${SCRIPT.panelId} .mcms-tab-btn[data-tab="status"]{display:grid!important}html[data-mcms-safe-mode="true"] body #${SCRIPT.panelId} .mcms-tab-panel[data-panel="status"].mcms-active{display:grid!important}
 
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId}{padding-bottom:max(72px,calc(62px + env(safe-area-inset-bottom)))!important}
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-command-layout{display:block!important;height:calc(100% - 66px)!important;min-height:0!important}
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-tabs{display:none!important}
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-command-content{height:100%!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId}{padding-bottom:max(0px,env(safe-area-inset-bottom))!important}
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-layout{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr)!important;height:100%!important;min-height:0!important}
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tabs{position:relative!important;top:auto!important;z-index:2!important;display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;grid-template-rows:repeat(2,48px)!important;gap:4px!important;min-height:0!important;padding:5px 6px!important;overflow:visible!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.11)!important;background:rgba(0,0,0,.13)!important}
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-btn{grid-column:span 3!important;grid-template-columns:20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;height:48px!important;min-height:48px!important;padding:4px 5px!important;scroll-snap-align:none!important}
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-btn:nth-child(n+5){grid-column:span 4!important}
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-content{grid-row:2!important;height:auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
         html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-footer{display:none!important}
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-mobile-nav{position:absolute!important;right:0!important;bottom:0!important;left:0!important;z-index:40!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;min-height:62px!important;padding:6px max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))!important;border-top:1px solid rgba(255,255,255,.14)!important;background:rgba(5,16,25,.985)!important;box-shadow:0 -10px 30px rgba(0,0,0,.36)!important}
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-mobile-nav-btn{display:grid!important;grid-template-rows:22px auto!important;place-items:center!important;min-width:0!important;min-height:48px!important;padding:3px!important;border:1px solid transparent!important;border-radius:9px!important;background:transparent!important;color:#94aab8!important;font-size:16px!important}.mcms-mobile-nav-btn strong{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;color:inherit!important;font-size:10px!important;white-space:nowrap!important}.mcms-mobile-nav-btn.mcms-active{border-color:rgba(104,207,255,.36)!important;background:rgba(48,155,211,.16)!important;color:#dff7ff!important}
-        html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-mobile-more{position:absolute!important;right:8px!important;bottom:max(66px,calc(58px + env(safe-area-inset-bottom)))!important;left:8px!important;z-index:39!important;display:grid!important;gap:7px!important;padding:12px!important;border:1px solid rgba(104,207,255,.42)!important;border-radius:14px!important;background:rgba(6,18,28,.985)!important;box-shadow:0 -14px 40px rgba(0,0,0,.56)!important}.mcms-mobile-more[hidden]{display:none!important}.mcms-mobile-more>div{display:flex!important;align-items:center!important;justify-content:space-between!important;color:#fff!important}.mcms-mobile-more>div>button{width:44px!important;height:44px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:24px!important}.mcms-mobile-more>button{display:grid!important;grid-template-columns:38px minmax(0,1fr)!important;align-items:center!important;gap:9px!important;min-height:56px!important;padding:8px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:10px!important;background:rgba(255,255,255,.04)!important;color:#e7f4fa!important;text-align:left!important}.mcms-mobile-more>button>span:first-child{font-size:19px!important;text-align:center!important}.mcms-mobile-more strong,.mcms-mobile-more small{display:block!important}.mcms-mobile-more strong{font-size:12.5px!important}.mcms-mobile-more small{margin-top:3px!important;color:#91a9b7!important;font-size:10.5px!important}
         html[data-mcms-mobile-active="true"] body #${SCRIPT.panelId} .mcms-workflow-steps{display:flex!important;overflow-x:auto!important;scroll-snap-type:x proximity!important}.mcms-workflow-steps button{flex:0 0 116px!important;scroll-snap-align:start!important}.mcms-workflow-footer{grid-template-columns:1fr 1fr!important}.mcms-workflow-footer>span{grid-column:1/-1!important;grid-row:1!important}.mcms-workflow-footer>button{grid-row:2!important;min-height:44px!important}.mcms-status-centre-grid{grid-template-columns:1fr!important}.mcms-primary-command-grid{grid-template-columns:1fr!important}
         html:is([data-mcms-tablet-active="true"],[data-mcms-mobile-active="true"]) body #${SCRIPT.controlId} .mcms-command-primary>:is(.mcms-float-btn,.mcms-economy-btn){width:58px!important;min-width:52px!important;max-width:66px!important;height:44px!important;min-height:44px!important;padding:3px!important}.mcms-command-primary .mcms-float-label-desktop{display:none!important}.mcms-command-primary .mcms-float-label-tablet{display:block!important;font-size:9.5px!important}.mcms-command-primary .mcms-control-state{font-size:9px!important}
         html[data-mcms-mobile-active="true"] body #${SCRIPT.controlId} .mcms-command-overflow{position:fixed!important;right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;left:8px!important;top:auto!important;width:auto!important;max-height:min(72vh,620px)!important;overflow-y:auto!important}.mcms-command-overflow-groups{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -37224,7 +37219,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         if (!COMMAND_SECTION_ORDER.includes(tab)) return;
         if (tab === 'finance') toolkitAnalyticsRecordFeature('financialIntelligence');
         state.activeTab = tab;
-        mobileMoreOpen = false;
         saveState();
         updateUI();
         if (!dragState) positionPanelOverlay(true);
@@ -39576,19 +39570,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         }).join('');
     }
 
-    function mobileCommandNavigationMarkup() {
-        const primary = ['map', 'incidents', 'fleet', 'administration'];
-        const buttons = primary.map(key => {
-            const meta = COMMAND_SECTION_META[key];
-            return `<button class="mcms-mobile-nav-btn" type="button" data-mobile-tab="${key}"><span aria-hidden="true">${meta.icon}</span><strong>${escapeHtml(meta.label)}</strong></button>`;
-        }).join('');
-        return `<nav class="mcms-mobile-nav" aria-label="Toolkit primary navigation">${buttons}<button class="mcms-mobile-nav-btn" type="button" data-action="toggle-mobile-more" aria-expanded="false" aria-controls="mcms-mobile-more"><span aria-hidden="true">•••</span><strong>More</strong></button></nav>
-            <div id="mcms-mobile-more" class="mcms-mobile-more" hidden aria-label="More Toolkit sections">
-                <div><strong>More Toolkit</strong><button type="button" data-action="toggle-mobile-more" aria-label="Close More sections">×</button></div>
-                ${['finance', 'status', 'settings'].map(key => `<button type="button" data-mobile-tab="${key}"><span aria-hidden="true">${COMMAND_SECTION_META[key].icon}</span><span><strong>${escapeHtml(COMMAND_SECTION_META[key].label)}</strong><small>${escapeHtml(COMMAND_SECTION_META[key].description)}</small></span></button>`).join('')}
-            </div>`;
-    }
-
     function commandInterfacePanel() {
         return document.querySelector(`[id="${SCRIPT.panelId}"]`);
     }
@@ -40357,7 +40338,6 @@ Credits only. Each station and native action will be fetched again, purchased on
                 <span>Task-based command interface · MissionChief authority preserved · Desktop, Tablet and iOS.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
-            ${mobileCommandNavigationMarkup()}
             <button class="mcms-workspace-resize-handle" type="button" title="Drag to resize · Arrow keys resize · Shift changes size faster" aria-label="Resize Toolkit Workspace with pointer or arrow keys" aria-hidden="false"><span></span></button>
         `;
         upgradeCommandInterface(panel);
@@ -40401,7 +40381,6 @@ Credits only. Each station and native action will be fetched again, purchased on
         panel.addEventListener('click', event => {
             const closeButton = closestEventTarget(event, '.mcms-close');
             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
-            const mobileTabButton = closestEventTarget(event, '[data-mobile-tab]');
             const uiThemeButton = closestEventTarget(event, '.mcms-ui-theme-btn');
             const themeButton = closestEventTarget(event, '.mcms-theme-btn');
             const toggleButton = closestEventTarget(event, '[data-toggle]');
@@ -40409,7 +40388,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             const actionButton = closestEventTarget(event, '[data-action]');
             if (closeButton) { closePanel({ restoreFocus: true }); return; }
             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
-            if (mobileTabButton) { setActiveTab(mobileTabButton.dataset.mobileTab); return; }
             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle, toggleButton); return; }
@@ -40599,11 +40577,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             commandBarOverflowOpen = !commandBarOverflowOpen;
             applyLayoutBuilderControl(button.closest(`[id="${SCRIPT.controlId}"]`));
             fitControlToMap();
-            return;
-        }
-        if (action === 'toggle-mobile-more') {
-            mobileMoreOpen = !mobileMoreOpen;
-            updateUI();
             return;
         }
         if (action === 'toggle-command-search') { setCommandSearchOpen(!commandSearchOpen); return; }
@@ -41310,15 +41283,6 @@ Credits only. Each station and native action will be fetched again, purchased on
             updateUiToggleClass(tabPanel, 'mcms-active', active);
             updateUiSetProperty(tabPanel, 'hidden', !active);
         });
-        panel.querySelectorAll('[data-mobile-tab]').forEach(button => {
-            const active = button.dataset.mobileTab === state.activeTab;
-            updateUiToggleClass(button, 'mcms-active', active);
-            updateUiSetAttribute(button, 'aria-current', active ? 'page' : 'false');
-        });
-        const mobileMore = panel.querySelector('.mcms-mobile-more');
-        if (mobileMore) updateUiSetProperty(mobileMore, 'hidden', !mobileMoreOpen);
-        const mobileMoreButton = panel.querySelector('.mcms-mobile-nav [data-action="toggle-mobile-more"]');
-        if (mobileMoreButton) updateUiSetAttribute(mobileMoreButton, 'aria-expanded', String(mobileMoreOpen));
         renderOperationsStatusCentre(panel);
         const panelOpen = panel.classList.contains('mcms-open');
         updateUiSetAttribute(panel, 'aria-hidden', String(!panelOpen));

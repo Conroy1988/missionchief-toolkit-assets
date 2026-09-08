@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "MissionChief Map Command Toolkit",
+  "version": "0.1.3",
+  "version_name": "0.1.3 Early Access · Toolkit 10.18.1",
+  "description": "Map controls, mission insights and administration tools for MissionChief UK. Independent community extension. Early Access.",
+  "icons": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"},
+  "minimum_chrome_version": "120",
+  "permissions": ["storage", "scripting"],
+  "host_permissions": [
+    "https://missionchief.co.uk/*", "https://*.missionchief.co.uk/*",
+    "https://raw.githubusercontent.com/*", "https://tkb-gaming.scot/*",
+    "https://leitstellenspiel.s3.amazonaws.com/*"
+  ],
+  "background": {"service_worker": "background.js", "type": "module"},
+  "action": {"default_popup": "popup.html", "default_title": "Map Command Toolkit", "default_icon": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"}},
+  "content_scripts": [{
+    "matches": ["https://missionchief.co.uk/*", "https://*.missionchief.co.uk/*"],
+    "js": ["bridge.js"], "run_at": "document_idle", "all_frames": false
+  }],
+  "web_accessible_resources": [{
+    "resources": ["vendor/maplibre-gl-csp-worker.js"],
+    "matches": ["https://missionchief.co.uk/*", "https://*.missionchief.co.uk/*"]
+  }],
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'"}
+}

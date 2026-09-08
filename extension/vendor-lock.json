@@ -1,0 +1,18 @@
+{
+  "package": "maplibre-gl",
+  "version": "5.24.0",
+  "files": {
+    "maplibre-gl-csp.js": {
+      "sha256": "a1f1847bac64aa00acbf80fbb79b2c5af24d8eecaaa5e2ad14080fab81f1de95",
+      "url": "https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl-csp.js"
+    },
+    "maplibre-gl-csp-worker.js": {
+      "sha256": "f950e7b15c49c8b9c7bb52136df2a2df2f6f03b83b8927774573fc98b067f7f0",
+      "url": "https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl-csp-worker.js"
+    },
+    "LICENSE.txt": {
+      "sha256": "ee5fc05a0677eaf69601d2c7db0d9ecd6cc27c3abc1d0733bc9ed34707cf8ef2",
+      "url": "https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/LICENSE.txt"
+    }
+  }
+}

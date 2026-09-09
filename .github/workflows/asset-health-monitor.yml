@@ -3,7 +3,7 @@ run-name: Asset health · ${{ github.event_name }}
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "17 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -129,7 +129,7 @@ jobs:
             asset-health-report.json
             asset-health-report.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Reconcile asset-health incident
         if: always() && github.event_name != 'pull_request'

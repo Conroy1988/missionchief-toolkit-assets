@@ -1,10 +1,10 @@
 name: GitHub Pages Documentation
 
+
 run-name: Documentation site · ${{ github.event_name }}
 
+
 on:
-  schedule:
-    - cron: "17 * * * *"
   push:
     branches:
       - main
@@ -22,12 +22,15 @@ on:
       - "docs/media/**"
   workflow_dispatch:
 
+
 permissions:
   contents: read
+
 
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('toolkit-pages-pr-{0}', github.event.pull_request.number) || 'toolkit-pages-production' }}
   cancel-in-progress: true
+
 
 jobs:
   validate:
@@ -35,12 +38,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+
 
       - name: Overlay authoritative release-state status
         shell: bash
@@ -54,7 +59,6 @@ jobs:
             status/update-manifest.json \
             status/release-speed-history.json \
             status/RELEASE_SPEED.md
-
       - name: Validate source syntax
         run: |
           python3 -m py_compile .github/scripts/build_pages_site.py
@@ -64,19 +68,16 @@ jobs:
           python3 .github/scripts/test_pages_release_deploy_contract.py
           node --check docs/site-assets/site.js
           python3 -m json.tool docs/site-data.json > /dev/null
-
       - name: Build static documentation
         run: |
           python3 .github/scripts/build_pages_site.py \
             --output _site \
             --base-path /missionchief-toolkit-assets/ \
             | tee pages-build-report.json
-
       - name: Enforce deterministic static-site limits
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           root = Path('_site')
           files = [path for path in root.rglob('*') if path.is_file()]
           total_bytes = sum(path.stat().st_size for path in files)
@@ -112,7 +113,6 @@ jobs:
               raise SystemExit(f'Pages byte limit failed: {total_bytes}')
           print(f'Pages output: {len(files)} files, {total_bytes} bytes.')
           PY
-
       - name: Upload Pages preview and diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -125,6 +125,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+
   deploy:
     name: Deploy verified site to GitHub Pages
     if: github.event_name != 'pull_request'
@@ -132,14 +133,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+
     permissions:
       contents: read
       pages: write
       id-token: write
 
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
 
     steps:
       - name: Check out current production source
@@ -148,6 +152,7 @@ jobs:
           ref: main
           fetch-depth: 1
           persist-credentials: false
+
 
       - name: Resolve verified production source
         id: production
@@ -178,55 +183,3 @@ jobs:
               SOURCE_SHA="$(git rev-parse HEAD)"
               RELEASE_STATE_SHA="$(git rev-parse refs/remotes/origin/release-state)"
               echo "release_version=$EXPECTED_VERSION" >> "$GITHUB_OUTPUT"
-              echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
-              echo "release_state_sha=$RELEASE_STATE_SHA" >> "$GITHUB_OUTPUT"
-              echo "Deploying verified Toolkit ${EXPECTED_VERSION} from main ${SOURCE_SHA} with release-state ${RELEASE_STATE_SHA}."
-              exit 0
-            fi
-            echo "Waiting for verified production state ${EXPECTED_VERSION:-unknown}; dashboard=${DASHBOARD_VERSION:-missing}, GitHub=${RELEASE_STATE:-missing}, TKB distribution=${DISTRIBUTION_STATE:-missing}."
-            sleep 15
-          done
-          echo "::error::Verified production state ${EXPECTED_VERSION:-unknown} was not available within 10 minutes."
-          exit 1
-
-      - name: Configure GitHub Pages
-        id: pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-
-      - name: Build deployment site
-        env:
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE_PATH="${PAGES_BASE_PATH:-/missionchief-toolkit-assets}"
-          python3 .github/scripts/build_pages_site.py \
-            --output _site \
-            --base-path "$BASE_PATH"
-          grep -Fq "${{ steps.production.outputs.release_version }}" _site/index.html
-          echo "Pages source: ${{ steps.production.outputs.source_sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Pages release-state: ${{ steps.production.outputs.release_state_sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Pages release: ${{ steps.production.outputs.release_version }}" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Build public TKB download statistics
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --slurp > release-pages.json
-          python3 .github/scripts/build_download_stats.py \
-            --releases release-pages.json \
-            --output _site/data/download-stats.json
-          jq -e '.schemaVersion == 1 and (.newInstalls | type == "number") and (.successfulUpdates | type == "number")' \
-            _site/data/download-stats.json > /dev/null
-          echo "TKB download statistics feed generated." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: _site/
-
-      - name: Deploy GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

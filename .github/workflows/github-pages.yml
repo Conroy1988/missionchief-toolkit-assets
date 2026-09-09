@@ -3,8 +3,6 @@ name: GitHub Pages Documentation
 run-name: Documentation site · ${{ github.event_name }}
 
 on:
-  schedule:
-    - cron: "17 * * * *"
   push:
     branches:
       - main

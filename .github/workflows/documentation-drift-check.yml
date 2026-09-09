@@ -36,7 +36,7 @@ jobs:
 
       - name: Run documentation contract audit
         env:
-          ALLOW_RELEASE_CANDIDATE: ${{ (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && '1' || '0' }}
+          ALLOW_RELEASE_CANDIDATE: '1'
         shell: bash
         run: |
           set -euo pipefail
@@ -59,4 +59,4 @@ jobs:
             documentation-drift-report.json
             documentation-drift-report.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7

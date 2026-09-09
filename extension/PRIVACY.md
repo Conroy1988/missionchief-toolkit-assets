@@ -1,7 +1,7 @@
 # MissionChief Map Command Toolkit — Privacy
 
 
-Early Access extension 0.1.3. Updated 7 September 2026. Independent community software, not an official MissionChief product.
+Extension 0.9.2. Updated 9 September 2026. Independent community software, not an official MissionChief product.
 
 
 ## Purpose and information used
@@ -25,7 +25,7 @@ MissionChief receives game reads and actions. Public guides and reference data m
 ## Limits and sharing
 
 
-The extension does not include advertising or developer analytics, sell user data, or send game records to a developer collection server. It does not read browsing history from unrelated websites. Discord posting, private credential storage, private finance persistence and encrypted private imports are unavailable in this Early Access build. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
+The extension does not include advertising or developer analytics, sell user data, or send game records to a developer collection server. It does not read browsing history from unrelated websites. Discord is optional: the webhook URL stays in extension local storage and is excluded from game-page settings, backups and diagnostics. A prepared report (including an optional PNG chart) is stored locally for review and expires after 30 minutes. Discord receives the selected report only after you confirm sending. Connection checks contact Discord without posting a message. Forget destination removes the webhook and report. Expired drafts are removed when the Discord screen or draft service next accesses them. A per-account timestamp of the last confirmed financial report is retained for the Since Last Report option until extension data is removed. Reports already delivered remain in Discord under the destination server’s rules; removing the extension does not delete Discord messages. Private finance persistence and encrypted private imports remain unavailable. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
 
 
 ## Your choices

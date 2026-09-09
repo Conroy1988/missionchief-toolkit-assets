@@ -29,7 +29,7 @@ on:
     types:
       - completed
   schedule:
-    - cron: "37 */6 * * *"
+    - cron: "37 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -112,7 +112,7 @@ jobs:
             pages-production-health.json
             pages-production-health.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Reconcile persistent incident
         if: >-

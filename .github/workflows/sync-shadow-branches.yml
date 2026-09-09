@@ -170,7 +170,7 @@ jobs:
           name: missionchief-shadow-sync-${{ inputs.mode }}-${{ inputs.target }}-${{ inputs.source_sha }}
           path: shadow-sync-evidence/
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 7
 
       - name: Publish rehearsal summary
         if: always()

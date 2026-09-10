@@ -102,7 +102,7 @@ jobs:
             code-integrity-report.json
             code-integrity-report.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Stop on integrity failure
         if: steps.integrity.outputs.exit_code != '0'

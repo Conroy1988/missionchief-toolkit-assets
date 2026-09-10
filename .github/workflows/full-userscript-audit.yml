@@ -43,7 +43,7 @@ jobs:
           name: missionchief-toolkit-contract-preflight
           path: full-userscript-contract-preflight.log
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Stop on deterministic contract failure
         if: steps.preflight.outputs.exit_code != '0'
@@ -105,7 +105,7 @@ jobs:
             full-userscript-audit.json
             full-userscript-audit.md
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
       - name: Stop on definite static-audit failure
         if: >-
@@ -187,7 +187,7 @@ jobs:
             eslint-userscript-audit.md
             eslint-userscript-evidence.txt
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
       - name: Stop on definite ESLint failure
         if: >-

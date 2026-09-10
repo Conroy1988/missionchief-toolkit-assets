@@ -32,10 +32,15 @@ jobs:
                   body = response.read()
                   return json.loads(body) if body else None
           candidates = []
+          seen = set()
           page = 1
           while True:
               batch = api("/actions/artifacts?per_page=100&page=" + str(page))["artifacts"]
+              print("Inventory page", page, "records", len(batch), flush=True)
               for a in batch:
+                  if a["id"] in seen:
+                      raise RuntimeError("Repeated artifact across pages; no deletions performed")
+                  seen.add(a["id"])
                   name = a["name"]
                   allowed = name in ("missionchief-toolkit-asset-health", "github-pages-production-health") or name.startswith("missionchief-shadow-branch-parity-")
                   created = datetime.datetime.fromisoformat(a["created_at"].replace("Z", "+00:00"))
@@ -44,8 +49,9 @@ jobs:
               if len(batch) < 100:
                   break
               page += 1
-              if page > 100:
+              if page > 1000:
                   raise RuntimeError("Inventory page limit reached; no deletions performed")
+          print("Inventory complete:", len(seen), "records;", len(candidates), "eligible reports", flush=True)
           deleted = []
           for a in candidates:
               run_id = a.get("workflow_run", {}).get("id")

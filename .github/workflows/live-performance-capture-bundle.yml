@@ -84,4 +84,4 @@ jobs:
           name: missionchief-toolkit-v10.3.1-authenticated-performance-capture
           path: capture-output/
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7

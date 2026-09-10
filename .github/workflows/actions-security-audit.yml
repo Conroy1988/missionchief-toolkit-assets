@@ -42,4 +42,4 @@ jobs:
             actions-security-report.json
             actions-security-report.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7

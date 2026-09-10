@@ -1,0 +1,65 @@
+name: One-off approved diagnostic artifact cleanup
+on:
+  push:
+    branches:
+      - maintenance/diagnostic-artifact-cleanup-20260910
+    paths:
+      - .github/workflows/approved-diagnostic-cleanup-20260910.yml
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: approved-diagnostic-cleanup-20260910
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.repository == 'Conroy1988/missionchief-toolkit-assets' && github.actor == 'Conroy1988'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete approved reports older than seven days
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, urllib.request
+          base = "https://api.github.com/repos/Conroy1988/missionchief-toolkit-assets"
+          headers = {"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+          cutoff = datetime.datetime(2026, 9, 3, tzinfo=datetime.timezone.utc)
+          def api(path, method="GET"):
+              req = urllib.request.Request(base + path, headers=headers, method=method)
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  body = response.read()
+                  return json.loads(body) if body else None
+          candidates = []
+          page = 1
+          while True:
+              batch = api("/actions/artifacts?per_page=100&page=" + str(page))["artifacts"]
+              for a in batch:
+                  name = a["name"]
+                  allowed = name in ("missionchief-toolkit-asset-health", "github-pages-production-health") or name.startswith("missionchief-shadow-branch-parity-")
+                  created = datetime.datetime.fromisoformat(a["created_at"].replace("Z", "+00:00"))
+                  if allowed and not a["expired"] and created < cutoff:
+                      candidates.append(a)
+              if len(batch) < 100:
+                  break
+              page += 1
+              if page > 100:
+                  raise RuntimeError("Inventory page limit reached; no deletions performed")
+          deleted = []
+          for a in candidates:
+              run_id = a.get("workflow_run", {}).get("id")
+              if not run_id or api("/actions/runs/" + str(run_id))["status"] != "completed":
+                  continue
+              api("/actions/artifacts/" + str(a["id"]), "DELETE")
+              item = {"id": a["id"], "name": a["name"], "bytes": a["size_in_bytes"], "created_at": a["created_at"], "run_id": run_id}
+              deleted.append(item)
+              print(json.dumps(item), flush=True)
+          total = sum(a["bytes"] for a in deleted)
+          print("Deleted", len(deleted), "artifacts;", total, "bytes")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as report:
+              report.write("# Approved diagnostic cleanup\n\nDeleted " + str(len(deleted)) + " old diagnostic artifacts (" + str(total) + " bytes).\n\nRelease packages and workflow runs were preserved.\n\n")
+              report.write("| Artifact ID | Name | Bytes | Run |\n|---|---|---:|---|\n")
+              for a in deleted:
+                  report.write("| {id} | {name} | {bytes} | {run_id} |\n".format(**a))
+          PY

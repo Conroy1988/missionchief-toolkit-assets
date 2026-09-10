@@ -101,7 +101,7 @@ jobs:
             performance-budget-report.json
             performance-budget-report.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Stop on performance regression
         if: steps.budget.outputs.exit_code != '0'

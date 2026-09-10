@@ -96,4 +96,4 @@ jobs:
             .github/fixtures/unchanged-render-scenarios-v4.20.24.json
             docs/audits/unchanged-render-measurement-v4.20.24.md
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7

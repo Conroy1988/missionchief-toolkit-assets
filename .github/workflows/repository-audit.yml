@@ -49,7 +49,7 @@ jobs:
           name: missionchief-repository-audit-${{ github.sha }}
           path: repository-audit-output/
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
       - name: Publish audit summary
         shell: bash

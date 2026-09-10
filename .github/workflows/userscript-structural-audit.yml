@@ -48,7 +48,7 @@ jobs:
             userscript-audit.json
             userscript-audit.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Stop on structural failure
         if: steps.audit.outputs.exit_code != '0'

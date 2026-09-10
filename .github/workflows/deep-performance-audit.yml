@@ -114,4 +114,4 @@ jobs:
             deep-performance-audit.md
             deep-performance-source-evidence.md
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7

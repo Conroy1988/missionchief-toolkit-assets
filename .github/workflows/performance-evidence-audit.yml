@@ -116,4 +116,4 @@ jobs:
             docs/audits/observer-ownership-v4.20.24.md
             docs/audits/performance-evidence-v4.20.24.md
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7

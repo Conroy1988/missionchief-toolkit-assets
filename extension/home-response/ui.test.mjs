@@ -36,9 +36,9 @@ test('preloads named map centres before preview and reorders without changing se
  const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();
  const original=globalThis.fetch;
  try{await new Promise(r=>setTimeout(r,10));const select=document.querySelector('[data-dispatch]');assert.equal(select.options.length,3);assert.ok(requests.includes('/api/v2/buildings'));assert.equal(document.querySelector('[data-build]').disabled,true);assert.ok(tooltips.some(t=>t.textContent==='<b>Near centre</b>'&&t.children.length===0));
- select.value='11';globalThis.fetch=async()=>({ok:true,json:async()=>[{display_name:'City',lon:-3,lat:54,geojson:{type:'Polygon',coordinates:[[[-3.1,53.9],[-2.9,53.9],[-2.9,54.1],[-3.1,54.1],[-3.1,53.9]]]}}]});
+ select.value='11';select.dispatchEvent(new window.Event('change',{bubbles:true}));globalThis.fetch=async()=>({ok:true,json:async()=>[{display_name:'City',lon:-3,lat:54,geojson:{type:'Polygon',coordinates:[[[-3.1,53.9],[-2.9,53.9],[-2.9,54.1],[-3.1,54.1],[-3.1,53.9]]]}}]});
  document.querySelector('[data-city]').value='City';await document.querySelector('[data-search]').onclick();document.querySelector('[data-places]').value='0';await document.querySelector('[data-places]').onchange();
- assert.equal(select.options[0].value,'12');assert.match(select.options[0].textContent,/nearest/);assert.equal(select.value,'11');clicks.at(-2)();assert.equal(select.value,'12');
+ assert.equal(select.options[0].value,'12');assert.match(select.options[0].textContent,/nearest/);assert.equal(select.value,'12');select.value='11';select.dispatchEvent(new window.Event('change',{bubbles:true}));document.querySelector('[data-spacing]').dispatchEvent(new window.Event('change',{bubbles:true}));assert.equal(select.value,'11');clicks.at(-2)();assert.equal(select.value,'12');
  }finally{globalThis.fetch=original;document.querySelector('[data-close]').click();grid.remove();window.fetch=oldFetch;window.L=oldL;}
 });
 test('saved icon picker opens without scanning and selected type is passed to refresh',async()=>{
@@ -47,4 +47,14 @@ test('saved icon picker opens without scanning and selected type is passed to re
  const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();await new Promise(r=>setTimeout(r,0));assert.equal(scans,0);assert.equal(document.querySelectorAll('[data-icon-grid] button').length,2);assert.match(document.querySelector('[data-icon-status]').textContent,/saved icons/);
  const type=document.querySelector('[data-icon-type]');type.add(new Option('Home Response','22'));type.value='22';await document.querySelector('[data-load-icons]').onclick();assert.equal(scans,1);assert.equal(selected,'22');assert.match(document.querySelector('[data-icon-status]').textContent,/Saved for next time/);
  document.querySelector('[data-close]').click();grid.remove();
+});
+test('resume prompts with saved dispatch assignment and cancellation makes no purchases',async()=>{
+ const oldFetch=window.fetch,oldConfirm=window.confirm,oldNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator');let prompt='',writes=0;
+ const job={id:'dispatch-confirm-test',account:'123',state:'paused',dispatchId:'7',areaCenter:[-3.19,55.95],vehicle:{name:'Fire Officer',credits:10000},spent:0,items:[{name:'Test',point:[-3.18,55.95],state:'ready'}]};
+ window.localStorage.setItem('mcms_home_response_job_123',JSON.stringify(job));window.requestAnimationFrame=fn=>{setTimeout(fn,0);return 1;};
+ window.fetch=async(url,opts)=>{if(opts.method&&opts.method!=='GET')writes++;return {ok:true,url:String(url),text:async()=>JSON.stringify(String(url).endsWith('/api/credits')?{user_id:123}:{result:[{id:7,building_type:7,caption:'Confirmed Centre',longitude:-3.19,latitude:55.95}]})};};
+ window.confirm=text=>{prompt=text;return false;};Object.defineProperty(globalThis,'navigator',{configurable:true,value:{locks:{request:async(name,options,fn)=>fn({})}}});
+ const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();
+ try{await new Promise(r=>setTimeout(r,10));await document.querySelector('[data-resume]').onclick();assert.match(prompt,/Confirmed Centre/);assert.match(prompt,/acknowledge/);assert.equal(writes,0);assert.equal(JSON.parse(window.localStorage.getItem('mcms_home_response_job_123')).state,'paused');}
+ finally{document.querySelector('[data-close]').click();grid.remove();window.fetch=oldFetch;window.confirm=oldConfirm;window.localStorage.removeItem('mcms_home_response_job_123');if(oldNavigator)Object.defineProperty(globalThis,'navigator',oldNavigator);else delete globalThis.navigator;}
 });

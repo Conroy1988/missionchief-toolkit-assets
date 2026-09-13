@@ -76,3 +76,9 @@ Validation: 49 tests including cache reuse without catalogue/image scanning, acc
 The Bristol video shows a maximum of 20 and the preview explicitly reaching it. Previous south-to-north traversal therefore placed all 20 near the bottom before stopping. Cell traversal now uses a deterministic bit-reversed order to sample distant parts of the grid early, with cached scanline geometry and throttled progress updates. Caps, exact spacing, water and exclusion checks remain enforced. This improves distribution; it does not guarantee optimal coverage or packing. The selected maximum remains unchanged.
 
 Validation: 50 automated tests, including a capped 20-site fixture spanning all four quadrants, water constraints and minimum spacing. Chrome Store review remains untouched.
+
+## 0.23.12 — automatic dispatch assignment with acknowledgement
+
+Selecting an area automatically chooses the nearest centre with known coordinates. Manual choices are preserved for that area across preview/settings updates; changing the area resets the automatic choice. Before build or resume, the current building catalogue verifies the saved job's actual dispatch ID. The confirmation names that centre, gives the area-centre distance and planned building distance range, and explicitly requires acknowledgement. Distances are straight-line. Unassigned is explicitly disclosed; missing assigned centres block continuation.
+
+Validation: 52 automated checks, including auto-selection, manual override preservation, confirmation content and cancellation without purchases. Chrome Store review remains untouched.

@@ -28,3 +28,16 @@ test('selecting a city restores boundary mode and point results never silently s
  assert.ok(document.querySelector('[data-status]').compareDocumentPosition(document.querySelector('[data-map]'))&4);
  }finally{globalThis.fetch=original;document.querySelector('[data-close]').click();grid.remove();}
 });
+test('preloads named map centres before preview and reorders without changing selection',async()=>{
+ const oldFetch=window.fetch,oldL=window.L,tooltips=[],clicks=[],requests=[];
+ const layer=()=>({addTo(){return this;},bindTooltip(label){tooltips.push(label);return this;},on(name,fn){clicks.push(fn);return this;}});
+ window.L={map:()=>({setView(){return this;},on(){},invalidateSize(){},remove(){},fitBounds(){}}),tileLayer:layer,layerGroup:()=>({...layer(),clearLayers(){}}),circleMarker:layer,geoJSON:()=>({...layer(),getBounds:()=>[]})};
+ window.fetch=async url=>{requests.push(new URL(url).pathname);return {ok:true,url:String(url),text:async()=>JSON.stringify(String(url).endsWith('/api/credits')?{user_id:1}:{result:[{id:11,building_type:7,caption:'A distant centre',longitude:-1,latitude:54},{id:12,building_type:7,caption:'<b>Near centre</b>',longitude:-3.01,latitude:54}]})};};
+ const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();
+ const original=globalThis.fetch;
+ try{await new Promise(r=>setTimeout(r,10));const select=document.querySelector('[data-dispatch]');assert.equal(select.options.length,3);assert.ok(requests.includes('/api/v2/buildings'));assert.equal(document.querySelector('[data-build]').disabled,true);assert.ok(tooltips.some(t=>t.textContent==='<b>Near centre</b>'&&t.children.length===0));
+ select.value='11';globalThis.fetch=async()=>({ok:true,json:async()=>[{display_name:'City',lon:-3,lat:54,geojson:{type:'Polygon',coordinates:[[[-3.1,53.9],[-2.9,53.9],[-2.9,54.1],[-3.1,54.1],[-3.1,53.9]]]}}]});
+ document.querySelector('[data-city]').value='City';await document.querySelector('[data-search]').onclick();document.querySelector('[data-places]').value='0';await document.querySelector('[data-places]').onchange();
+ assert.equal(select.options[0].value,'12');assert.match(select.options[0].textContent,/nearest/);assert.equal(select.value,'11');clicks.at(-2)();assert.equal(select.value,'12');
+ }finally{globalThis.fetch=original;document.querySelector('[data-close]').click();grid.remove();window.fetch=oldFetch;window.L=oldL;}
+});

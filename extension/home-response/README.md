@@ -58,3 +58,9 @@ Validation: 41 automated checks, including gap recovery, adjacent grid distances
 Selecting a search result always restores City boundary. A result without a polygon leaves the area unset and explains the explicit radius/drawing alternatives. The default on opening remains City boundary. Location counts and diagnostics now sit above the map; optional circles show both existing and proposed minimum spacing, with a compact checkbox.
 
 Gap search refines to quarter-row/column offsets, preserving already accepted sites and all distance/land checks. This does not guarantee optimal packing or a higher count for every area. Video showed sparse three-mile Wigan proposals; account coordinates were not supplied, so the precise live count was not reproduced. 43 automated checks pass, including narrow dry gaps and city selection after radius mode. Chrome Store review remains untouched.
+
+## 0.23.9 — dispatch centres ready on opening
+
+The builder preloads the building catalogue independently of saved-job recovery. Preview refresh supersedes an older preload so delayed responses cannot overwrite fresher records. Dispatch options sort by straight-line miles from the area's bounding-box centre; without an area they sort by name. Unknown coordinates remain selectable but cannot be ranked geographically or plotted. Existing selection, including Unassigned, is preserved. Named gold markers use text-only tooltips and can select a centre when construction is idle.
+
+Validation: 46 automated checks, including preload before preview, nearest-first ordering, selection preservation, and safe map labels. Chrome Store review remains untouched.

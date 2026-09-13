@@ -41,3 +41,10 @@ test('preloads named map centres before preview and reorders without changing se
  assert.equal(select.options[0].value,'12');assert.match(select.options[0].textContent,/nearest/);assert.equal(select.value,'11');clicks.at(-2)();assert.equal(select.value,'12');
  }finally{globalThis.fetch=original;document.querySelector('[data-close]').click();grid.remove();window.fetch=oldFetch;window.L=oldL;}
 });
+test('saved icon picker opens without scanning and selected type is passed to refresh',async()=>{
+ const {configureImages}=await import('./ui.mjs');let scans=0,selected;
+ configureImages({saved:async()=>({icons:[{id:'9',caption:'Saved',customIconUrl:'https://example.com/saved.png',count:1}],savedAt:Date.now()}),sources:async options=>{scans++;selected=options.typeId;return {icons:[],unavailable:0,persisted:true};}});
+ const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();await new Promise(r=>setTimeout(r,0));assert.equal(scans,0);assert.equal(document.querySelectorAll('[data-icon-grid] button').length,2);assert.match(document.querySelector('[data-icon-status]').textContent,/saved icons/);
+ const type=document.querySelector('[data-icon-type]');type.add(new Option('Home Response','22'));type.value='22';await document.querySelector('[data-load-icons]').onclick();assert.equal(scans,1);assert.equal(selected,'22');assert.match(document.querySelector('[data-icon-status]').textContent,/Saved for next time/);
+ document.querySelector('[data-close]').click();grid.remove();
+});

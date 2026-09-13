@@ -64,3 +64,9 @@ Gap search refines to quarter-row/column offsets, preserving already accepted si
 The builder preloads the building catalogue independently of saved-job recovery. Preview refresh supersedes an older preload so delayed responses cannot overwrite fresher records. Dispatch options sort by straight-line miles from the area's bounding-box centre; without an area they sort by name. Unknown coordinates remain selectable but cannot be ranked geographically or plotted. Existing selection, including Unassigned, is preserved. Named gold markers use text-only tooltips and can select a centre when construction is idle.
 
 Validation: 46 automated checks, including preload before preview, nearest-first ordering, selection preservation, and safe map labels. Chrome Store review remains untouched.
+
+## 0.23.10 — remembered icon catalogues and type scans
+
+Icon scans persist in same-origin browser storage, scoped by verified game account and selected building type. The last scanned type is restored on opening. Saved results include source references and counts, not downloaded image bytes; thumbnails still load normally. A manual refresh rechecks images, filters records by type before downloading, and replaces that scope's saved catalogue. Game catalogue metadata is still loaded to obtain buildings/types. Existing source and target verification during copying is retained. Storage failures are reported without discarding scan results. Clearing site storage removes the saved catalogues.
+
+Validation: 49 tests including cache reuse without catalogue/image scanning, account and type isolation, type-filtered image requests, storage failure, and UI restoration. Chrome Store review remains untouched.

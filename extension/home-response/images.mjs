@@ -1,11 +1,18 @@
 import {distanceMiles} from './planner.mjs';
 // Reuse the Toolkit's verified native image copier; checkpoints contain no image bytes.
-export function createImageBridge({list,building,image,apply}){
+export function createImageBridge({list,building,image,apply,storage=null,scope=async()=>null,typeLabels={}}){
  let cached;
+ const catalogueKey=async type=>{const account=await scope();return account?`mcms_hr_icons_v1_${account}_${type??'all'}`:null;};
+ async function saved(type){try{const key=await catalogueKey(type);const data=key&&JSON.parse(storage?.getItem(key)||'null');return data?.version===1&&Array.isArray(data.icons)?data:null;}catch{return null;}}
+
  async function load(id){const record=await building(id,{requireIcon:true});if(!record.hasCustomIcon||!record.customIconUrl)throw Error('The selected source no longer has a custom building image.');const data=await image(record.customIconUrl,`${record.caption} source icon`);if(!data.pixelDigest)throw Error('Could not verify the source image.');return {...data,record};}
  return {
-  sources:async({onProgress=()=>{}}={})=>{
-   const records=(await list()).filter(b=>b.hasCustomIcon&&b.customIconUrl).sort((a,b)=>a.caption.localeCompare(b.caption));
+  lastType:async()=>{try{const key=await catalogueKey('last');return key?JSON.parse(storage?.getItem(key)||'null'):null;}catch{return null;}},
+  typeName:id=>typeLabels[id]||`Building type ${id}`,
+  saved:({typeId=null}={})=>saved(typeId),
+  sources:async({onProgress=()=>{},typeId=null}={})=>{
+   const key=await catalogueKey(typeId);
+   const records=(await list()).filter(b=>(typeId===null||String(b.typeId)===String(typeId))&&b.hasCustomIcon&&b.customIconUrl).sort((a,b)=>a.caption.localeCompare(b.caption));
    const urls=new Map();for(const b of records){if(!urls.has(b.customIconUrl))urls.set(b.customIconUrl,[]);urls.get(b.customIconUrl).push(b);}
    const entries=[...urls.values()],groups=new Map();let next=0,done=0,unavailable=0;
    // Four read-only downloads at most; identical URLs are fetched only once.
@@ -15,7 +22,9 @@ export function createImageBridge({list,building,image,apply}){
     if(groups.has(key))groups.get(key).count+=stations.length;
     else groups.set(key,{...b,count:stations.length});
    }catch{unavailable+=stations.length;}finally{onProgress({done:++done,total:entries.length});}}}));
-   return {icons:[...groups.values()].sort((a,b)=>a.caption.localeCompare(b.caption)),unavailable};
+   const result={version:1,savedAt:Date.now(),icons:[...groups.values()].sort((a,b)=>a.caption.localeCompare(b.caption)),unavailable};
+   try{if(key&&storage){storage.setItem(key,JSON.stringify(result));result.persisted=true;try{storage.setItem(key.replace(/_[^_]+$/,'_last'),JSON.stringify(typeId));}catch{}}}catch{result.persisted=false;}
+   return result;
   },
   prepare:async id=>{cached=await load(id);return {id:String(id),name:cached.record.caption,pixelDigest:cached.pixelDigest};},
   copy:async(item,job)=>{

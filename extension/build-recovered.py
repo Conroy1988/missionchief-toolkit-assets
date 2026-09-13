@@ -31,12 +31,13 @@ s=s.replace(anchor,'''HomeResponseBuilder.configureImages(HomeResponseBuilder.cr
 p.write_text(s)
 import runpy
 runpy.run_path(str(root/'operations-navigation.py'))['patch_operations_navigation'](out)
-m=json.loads((out/'manifest.json').read_text());m['version']='0.23.5';m['version_name']='Home Response testing · Extension 0.23.5 · Toolkit 10.18.1';(out/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+runpy.run_path(str(root/'icon-form-compatibility.py'))['patch_icon_form'](out)
+m=json.loads((out/'manifest.json').read_text());m['version']='0.23.6';m['version_name']='Home Response testing · Extension 0.23.6 · Toolkit 10.18.1';(out/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
 for name in ['TEST-RESULTS.json','TRANSPORT-TEST-RESULTS.json']:(out/name).unlink()
-(out/'BUILD.json').write_text(json.dumps({'extensionVersion':'0.23.5','recoveredBaseline':'0.22.3','channel':'home-response-testing','storeSubmission':'not-submitted','livePurchaseValidation':'pending'},indent=2)+'\n')
+(out/'BUILD.json').write_text(json.dumps({'extensionVersion':'0.23.6','recoveredBaseline':'0.22.3','channel':'home-response-testing','storeSubmission':'not-submitted','livePurchaseValidation':'pending'},indent=2)+'\n')
 shutil.copytree(root/'home-response'/'geodata',out/'home-response-geodata')
-p=out/'release-notes.html';p.write_text(p.read_text().replace('<main>','<main><h1>Home Response Builder · 0.23.5 testing</h1><p>Restores a visible Back to Operations control in each operation’s sticky action area. Clicking the Operations sidebar also returns to tool selection. Navigation preserves selections, findings and running tasks. Review road access and crew requirements. Live purchase acceptance remains pending.</p>',1))
-archive=out.parent/'MissionChief-Toolkit-Extension-0.23.5-test.zip'
+p=out/'release-notes.html';p.write_text(p.read_text().replace('<main>','<main><h1>Home Response Builder · 0.23.6 testing</h1><p>Fixes building-image copying when an unassigned dispatch centre is represented as blank in the native edit form and zero in building data. Real dispatch mismatches still stop the image update. Resume retries outstanding icon copying without rebuilding or rebuying. Review road access and crew requirements. Live purchase acceptance remains pending.</p>',1))
+archive=out.parent/'MissionChief-Toolkit-Extension-0.23.6-test.zip'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(out.rglob('*')):
   if p.is_file():z.writestr(zipfile.ZipInfo(str(p.relative_to(out)),(2026,1,1,0,0,0)),p.read_bytes(),compress_type=zipfile.ZIP_DEFLATED)

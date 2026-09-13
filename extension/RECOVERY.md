@@ -38,3 +38,9 @@ The visual icon picker loads separately from preview. It groups shared URLs befo
 The original operation Back button was hidden by command-ui.css. The overlay moves it to the sticky action area and restores explicit contrast and a 44px touch target. The Operations sidebar now calls the existing home navigation directly. Neither path clears scan selections or stops tasks. Immutable baseline remains unchanged.
 
 37 automated tests pass, including packaged-controller navigation with a running task and retained input, sidebar event routing, and removal of the conflicting CSS rule. Phone acceptance pending; no store submission.
+
+## 0.23.6 icon dispatch-form compatibility
+
+Screenshot reports native edit form building[leitstelle_building_id] mismatch after the first location is purchased. Code inspection found API normalisation maps unassigned to '0', while native blank select values were compared literally. The overlay equates blank and zero only for that dispatch field; it does not alter the form payload or ignore actual centre changes. Screenshot alone does not expose the actual values, so live acceptance remains pending.
+
+38 automated tests pass, including blank/zero compatibility, real mismatch rejection, unchanged native controls, and image-only resume without duplicate purchases. Chrome Store 0.22.3 review remains untouched per user instruction.

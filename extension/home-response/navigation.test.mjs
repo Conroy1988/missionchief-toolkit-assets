@@ -1,6 +1,13 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';import {readFileSync} from 'node:fs';import {execFileSync} from 'node:child_process';import vm from 'node:vm';
 const root=new URL('../../',import.meta.url);execFileSync('python3',['extension/build-recovered.py'],{cwd:root});
 const source=readFileSync(new URL('../../.dev/home-response-extension/toolkit.js',import.meta.url),'utf8');
+test('icon form accepts blank/zero unassigned dispatch but rejects real changes',()=>{
+ const dom=new JSDOM('<form><select name="building[leitstelle_building_id]"><option value="" selected>Unassigned</option><option value="42">Centre</option></select><input name="building[caption]" value="Example"></form>');
+ const context=vm.createContext({stationIconSafeSkip:message=>new Error(message)}),start=source.indexOf('    function stationIconAssertFormValue('),end=source.indexOf('    function prepareStationIconSubmission(',start);
+ vm.runInContext(source.slice(start,end),context);const form=dom.window.document.querySelector('form'),name='building[leitstelle_building_id]',check=context.stationIconAssertFormValue;
+ check(form,name,'0');check(form,name,0);assert.equal(form.elements.namedItem(name).value,'');assert.throws(()=>check(form,name,'42'),/no longer matches/);
+ form.elements.namedItem(name).value='42';check(form,name,'42');assert.throws(()=>check(form,name,'0'),/no longer matches/);assert.throws(()=>check(form,'building[caption]','Other'),/no longer matches/);
+});
 test('sticky Operations return keeps selections and running task state',()=>{
  const dom=new JSDOM('<section><div data-command-card="station-icon-copier"><h3 class="mcms-section-label">Icons</h3><label class="mcms-row"><input data-setting="source" value="chosen"></label><button data-action="stop-station-icons">Stop</button></div></section>');
  const context=vm.createContext({document:dom.window.document,setTimeout,clearInterval:()=>{},setInterval:()=>1,HomeResponseBuilder:{mount:()=>{}}});

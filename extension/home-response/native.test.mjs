@@ -1,4 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';import {nativeAdapter} from './native.mjs';
+test('post-purchase verification starts both independent reads together',async()=>{
+ const pending=[];const api=nativeAdapter({location:{origin:'https://www.missionchief.co.uk'},fetch:(url)=>new Promise(resolve=>pending.push(()=>resolve({ok:true,url:String(url),text:async()=>String(url).endsWith('/api/vehicles')?'[{"id":9,"building_id":2,"vehicle_type":10}]':'<a href="/vehicles/9">RRV</a>'}))) });
+ const done=api.verifyVehicle({buildingId:'2',beforeVehicles:[]},{vehicle:{id:10}});assert.equal(pending.length,2);pending.forEach(resolve=>resolve());assert.equal(await done,true);
+});
 const dom=new JSDOM('',{url:'https://www.missionchief.co.uk/'});globalThis.DOMParser=dom.window.DOMParser;globalThis.FormData=dom.window.FormData;
 function make(responses){const calls=[];const win={location:dom.window.location,fetch:async(url,options)=>{calls.push({url:String(url),options});const data=responses.shift();if(!data)throw Error('Unexpected request');return {ok:true,url:data.url||String(url),text:async()=>typeof data.body==='string'?data.body:JSON.stringify(data.body)};}};return {api:nativeAdapter(win),calls};}
 test('partial building catalogue prevents planning',async()=>{const {api}=make([{body:{result:[],pagination:{total:1}}}]);await assert.rejects(api.buildings(),/incomplete/);});

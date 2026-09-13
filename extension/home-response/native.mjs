@@ -58,15 +58,17 @@ export function nativeAdapter(win=window){
   const link=[...doc.querySelectorAll('a[href]')].find(a=>new URL(a.getAttribute('href'),origin).pathname===`/buildings/${item.buildingId}/vehicle/${item.buildingId}/${job.vehicle.id}/credits`);
   if(!link||link.getAttribute('aria-disabled')==='true'||link.classList.contains('disabled'))throw Error('Selected vehicle is unavailable at this location.');
   const cost=money(link.textContent);if(cost>job.vehicle.credits)throw Error('Vehicle price increased. Review a new plan.');
-  const credits=await account();if(String(credits.user_id)!==String(job.account))throw Error('Account changed.');if(Number(credits.credits_user_current)<cost)throw Error('Not enough Credits.');
-  return {cost,url:link.getAttribute('href'),before:await vehicles(item.buildingId)};
+  const [credits,before]=await Promise.all([account(),vehicles(item.buildingId)]);
+  if(String(credits.user_id)!==String(job.account))throw Error('Account changed.');if(Number(credits.credits_user_current)<cost)throw Error('Not enough Credits.');
+  return {cost,url:link.getAttribute('href'),before};
  }
  return {account,buildings,html,reconcile,async checkAccount(id){if(String((await account()).user_id)!==String(id))throw Error('Account changed.');},
   async checkSite(item,job){if(!isDryLand(item.point))return {skip:'Water or uncertain shoreline: location excluded.'};const current=await buildings();if(current.some(b=>Number(b.building_type)===22&&distanceMiles(item.point,[b.longitude,b.latitude])<job.spacingMiles))return {skip:'A Home Response is now too close.'};
-   const {doc}=await html('/buildings/new'),button=doc.querySelector('#build_credits_22'),form=button?.closest('form');
+   const [{doc},credits]=await Promise.all([html('/buildings/new'),account()]);const button=doc.querySelector('#build_credits_22'),form=button?.closest('form');
    if(!form||new URL(form.getAttribute('action'),origin).pathname!=='/buildings'||button.disabled)throw Error('Native construction form unavailable.');
    const cost=money(button.value);if(cost>10000)throw Error('Building price increased. Review a new plan.');
-   const total=cost+job.vehicle.credits;if(Number((await account()).credits_user_current)<total)throw Error('Not enough Credits for building and vehicle.');
+   if(String(credits.user_id)!==String(job.account))throw Error('Account changed.');
+   const total=cost+job.vehicle.credits;if(Number(credits.credits_user_current)<total)throw Error('Not enough Credits for building and vehicle.');
    return {cost,total,form,commit:button.value,beforeBuildingIds:current.filter(b=>(b.caption??b.name)===item.name).map(b=>String(b.id))};
   },
   async create(item,job,check){const data=new FormData(check.form);
@@ -80,6 +82,6 @@ export function nativeAdapter(win=window){
    return {id:String(b.id),cost:check.cost};
   },checkVehicle,
   async buy(item,job,purchase){item.beforeVehicles=purchase.before;await read(purchase.url);},
-  async verifyVehicle(item,job){const after=await vehicles(item.buildingId);const added=after.filter(id=>!item.beforeVehicles?.includes(id)).map(path=>path.split('/').pop());const data=await json('/api/vehicles');if(!Array.isArray(data))throw Error('Unexpected vehicle verification response.');return data.some(v=>added.includes(String(v.id))&&String(v.building_id)===String(item.buildingId)&&Number(v.vehicle_type)===job.vehicle.id);}
+  async verifyVehicle(item,job){const [after,data]=await Promise.all([vehicles(item.buildingId),json('/api/vehicles')]);const added=after.filter(id=>!item.beforeVehicles?.includes(id)).map(path=>path.split('/').pop());if(!Array.isArray(data))throw Error('Unexpected vehicle verification response.');return data.some(v=>added.includes(String(v.id))&&String(v.building_id)===String(item.buildingId)&&Number(v.vehicle_type)===job.vehicle.id);}
  };
 }

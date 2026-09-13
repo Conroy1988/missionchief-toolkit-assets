@@ -72,7 +72,7 @@ function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],landGeomet
 }
 export function plan(options){const iterator=generatePlan(options);let step;do{step=iterator.next();}while(!step.done);return step.value;}
 export async function planAsync(options,{onProgress=()=>{},cancelled=()=>false}={}){
- const iterator=generatePlan(options);let step;
- do{if(cancelled())throw Error('Planning cancelled.');step=iterator.next();if(!step.done){onProgress(step.value);await new Promise(resolve=>setTimeout(resolve,0));}}while(!step.done);
+ const iterator=generatePlan(options);let step,lastYield=performance.now();
+ do{if(cancelled())throw Error('Planning cancelled.');step=iterator.next();if(!step.done){onProgress(step.value);if(performance.now()-lastYield>=8){await new Promise(resolve=>setTimeout(resolve,0));lastYield=performance.now();}}}while(!step.done);
  return step.value;
 }

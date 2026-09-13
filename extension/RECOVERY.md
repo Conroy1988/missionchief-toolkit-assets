@@ -24,3 +24,11 @@ BUILD.json inside the archive predates submission; its status is historical.
 The former planner tested administrative boundaries only; it had no independent water mask. Bundled GSHHG 2.3.7 full-resolution shoreline and lake data now constrain previews and marker movement, and native pre-construction checks skip water locations in older saved plans. No network lookup is required for the land check. The derived UK mask, reconstruction script, provenance and LGPL notices are in home-response/geodata and land-data.mjs. A small inward shoreline margin excludes uncertain coast-edge placements. Historical map data cannot identify every small waterway or prove road access.
 
 Validation: 32 automated tests pass, including Northern Ireland offshore and Lough Neagh checks, inland control points, regional preview filtering and legacy-plan pre-request rejection. Packaged syntax verified. Phone acceptance testing pending; not submitted to the store.
+
+## 0.23.4 performance and icon picker test build
+
+Independent account/form/vehicle verification reads run concurrently within their stages. Mutations remain serial with durable checkpoints; no purchase retries or account/price/land validation are removed. Planning yields on an 8ms work budget instead of sleeping after every row; progress rendering reuses DOM rows and coalesces updates per animation frame.
+
+The visual icon picker loads separately from preview. It groups shared URLs before downloading, then groups decoded pixel digests plus dimensions, showing one thumbnail and usage count per distinct icon. At most four source image reads run concurrently. Unavailable images are counted, not mislabelled as duplicates. The selected source is still freshly verified before approval.
+
+35 automated tests pass, including concurrent read initiation, cross-URL pixel deduplication, source download concurrency, accessible visual selection and prior recovery/water protections. Packaged syntax verified. No live timing claim or store submission; phone acceptance pending.

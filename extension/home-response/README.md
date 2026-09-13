@@ -70,3 +70,9 @@ Validation: 46 automated checks, including preload before preview, nearest-first
 Icon scans persist in same-origin browser storage, scoped by verified game account and selected building type. The last scanned type is restored on opening. Saved results include source references and counts, not downloaded image bytes; thumbnails still load normally. A manual refresh rechecks images, filters records by type before downloading, and replaces that scope's saved catalogue. Game catalogue metadata is still loaded to obtain buildings/types. Existing source and target verification during copying is retained. Storage failures are reported without discarding scan results. Clearing site storage removes the saved catalogues.
 
 Validation: 49 tests including cache reuse without catalogue/image scanning, account and type isolation, type-filtered image requests, storage failure, and UI restoration. Chrome Store review remains untouched.
+
+## 0.23.11 — capped plans sample the whole area
+
+The Bristol video shows a maximum of 20 and the preview explicitly reaching it. Previous south-to-north traversal therefore placed all 20 near the bottom before stopping. Cell traversal now uses a deterministic bit-reversed order to sample distant parts of the grid early, with cached scanline geometry and throttled progress updates. Caps, exact spacing, water and exclusion checks remain enforced. This improves distribution; it does not guarantee optimal coverage or packing. The selected maximum remains unchanged.
+
+Validation: 50 automated tests, including a capped 20-site fixture spanning all four quadrants, water constraints and minimum spacing. Chrome Store review remains untouched.

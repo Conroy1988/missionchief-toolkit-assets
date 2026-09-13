@@ -40,7 +40,7 @@ test('gap search recovers positions missed by the first grid without relaxing sp
 test('corrected horizontal grid preserves adjacent candidates at requested distance',()=>{
  const g={type:'Polygon',coordinates:[[[-3,54],[-2.7,54],[-2.7,54.001],[-3,54.001],[-3,54]]]};
  const result=plan({geometry:g,spacingMiles:1,fillGaps:false});
- assert.ok(result.count>=12);for(let i=1;i<result.count;i++){const miles=distanceMiles(result.sites[i-1],result.sites[i]);assert.ok(miles>=1&&miles<1.01);}
+ result.sites.sort((a,b)=>a[0]-b[0]);assert.ok(result.count>=12);for(let i=1;i<result.count;i++){const miles=distanceMiles(result.sites[i-1],result.sites[i]);assert.ok(miles>=1&&miles<1.01);}
 });
 test('fine search finds narrow dry gaps between the original sample rows',()=>{
  const dy=3/3958.7613*180/Math.PI*1.002*Math.sqrt(3)/2;
@@ -48,4 +48,11 @@ test('fine search finds narrow dry gaps between the original sample rows',()=>{
  const y=54+dy*.25,landGeometry={type:'Polygon',coordinates:[[[-3,y-.0001],[-2.7,y-.0001],[-2.7,y+.0001],[-3,y+.0001],[-3,y-.0001]]]};
  const p=plan({geometry,landGeometry,spacingMiles:3});assert.ok(p.count>0);assert.equal(p.gapAdded,p.count);
  p.sites.forEach(site=>assert.ok(contains(landGeometry,site)));
+});
+
+test('a 20-building cap spreads proposals across the area instead of filling the south first',()=>{
+ const geometry=circle([-2.59,51.45],7),p=plan({geometry,spacingMiles:1,maxBuildings:20});
+ assert.equal(p.count,20);assert.equal(p.limitReached,true);
+ for(const north of [false,true])for(const east of [false,true])assert.ok(p.sites.some(([x,y])=>(y>=51.45)===north&&(x>=-2.59)===east));
+ assert.ok(Math.max(...p.sites.map(p=>p[1]))-Math.min(...p.sites.map(p=>p[1]))>.12);
 });

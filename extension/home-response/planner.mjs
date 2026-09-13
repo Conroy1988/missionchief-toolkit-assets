@@ -63,27 +63,31 @@ function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],landGeomet
  const offsets=fillGaps?[[0,0],[.5,0],[.25,.5],[.75,.5]]:[[0,0]];
  // Refine between the initial sample lines without removing accepted sites.
  if(fillGaps)for(const y of [0,.25,.5,.75])for(const x of [0,.25,.5,.75])if(!offsets.some(([a,b])=>a===x&&b===y))offsets.push([x,y]);
- outer:for(let pass=0;pass<offsets.length;pass++)for(let r=0;r<rows;r++){
-  const [ox,oy]=offsets[pass],y=minY+(r+oy)*dy;
+ // Bit-reversed cell order visits distant parts of the grid early. A small
+ // building cap therefore does not simply truncate a south-to-north scan.
+ const cells=rows*cols,bits=Math.ceil(Math.log2(cells)),slots=2**bits;
+ outer:for(let pass=0;pass<offsets.length;pass++)for(let i=0;i<slots;i++){
+  let index=0,n=i;for(let bit=0;bit<bits;bit++){index=index*2+(n%2);n=Math.floor(n/2);}
+  if(index>=cells)continue;
+  const r=Math.floor(index/cols),c=index%cols,[ox,oy]=offsets[pass],y=minY+(r+oy)*dy;
   if(!scanlines.has(y)){const spans=spansAt(ps,y);scanlines.set(y,{spans,holes:spans.length?spansAt(ex,y):[],dry:land&&spans.length?spansAt(land,y):null});}
-  const {spans,holes,dry}=scanlines.get(y);
-  for(let c=0;c<cols;c++){
-   const p=[minX+(c+(r%2)/2+ox)*dx,y];
-   if(!spans.some(([a,b])=>p[0]>=a&&p[0]<b))continue;
-   if(holes.some(([a,b])=>p[0]>=a&&p[0]<b)){excludedPoints++;continue;}
-   if(dry&&!dry.some(([a,b])=>p[0]>=a&&p[0]<b)){waterExcluded++;continue;}
-   const reason=near(p);if(reason){blocked++;if(reason==='existing')existingBlocked++;else proposedBlocked++;continue;}
+  const {spans,holes,dry}=scanlines.get(y),p=[minX+(c+(r%2)/2+ox)*dx,y];
+  do{
+   if(!spans.some(([a,b])=>p[0]>=a&&p[0]<b))break;
+   if(holes.some(([a,b])=>p[0]>=a&&p[0]<b)){excludedPoints++;break;}
+   if(dry&&!dry.some(([a,b])=>p[0]>=a&&p[0]<b)){waterExcluded++;break;}
+   const reason=near(p);if(reason){blocked++;if(reason==='existing')existingBlocked++;else proposedBlocked++;break;}
    if(sites.length>=maxBuildings){limitReached=true;break outer;}
    sites.push(p);add(p,'proposed');if(pass)gapAdded++;
-  }
-  yield {rowsDone:r+1,rows,count:sites.length,pass:pass+1};
+  }while(false);
+  yield {cellsDone:i+1,cells:slots,count:sites.length,pass:pass+1};
  }
 
  return {sites,count:sites.length,limitReached,spacingMiles,existingCount:existing.length,blocked,waterExcluded,existingBlocked,proposedBlocked,excludedPoints,gapAdded,distanceBasis:'straight-line',placementStatus:'Geometric proposal: road access and build eligibility require review.'};
 }
 export function plan(options){const iterator=generatePlan(options);let step;do{step=iterator.next();}while(!step.done);return step.value;}
 export async function planAsync(options,{onProgress=()=>{},cancelled=()=>false}={}){
- const iterator=generatePlan(options);let step,lastYield=performance.now();
- do{if(cancelled())throw Error('Planning cancelled.');step=iterator.next();if(!step.done){onProgress(step.value);if(performance.now()-lastYield>=8){await new Promise(resolve=>setTimeout(resolve,0));lastYield=performance.now();}}}while(!step.done);
+ const iterator=generatePlan(options);let step,lastYield=performance.now(),firstProgress=true;
+ do{if(cancelled())throw Error('Planning cancelled.');step=iterator.next();if(!step.done){if(firstProgress||performance.now()-lastYield>=8){onProgress(step.value);firstProgress=false;}if(performance.now()-lastYield>=8){await new Promise(resolve=>setTimeout(resolve,0));lastYield=performance.now();}}}while(!step.done);
  return step.value;
 }

@@ -32,3 +32,9 @@ Independent account/form/vehicle verification reads run concurrently within thei
 The visual icon picker loads separately from preview. It groups shared URLs before downloading, then groups decoded pixel digests plus dimensions, showing one thumbnail and usage count per distinct icon. At most four source image reads run concurrently. Unavailable images are counted, not mislabelled as duplicates. The selected source is still freshly verified before approval.
 
 35 automated tests pass, including concurrent read initiation, cross-URL pixel deduplication, source download concurrency, accessible visual selection and prior recovery/water protections. Packaged syntax verified. No live timing claim or store submission; phone acceptance pending.
+
+## 0.23.5 Operations navigation repair
+
+The original operation Back button was hidden by command-ui.css. The overlay moves it to the sticky action area and restores explicit contrast and a 44px touch target. The Operations sidebar now calls the existing home navigation directly. Neither path clears scan selections or stops tasks. Immutable baseline remains unchanged.
+
+37 automated tests pass, including packaged-controller navigation with a running task and retained input, sidebar event routing, and removal of the conflicting CSS rule. Phone acceptance pending; no store submission.

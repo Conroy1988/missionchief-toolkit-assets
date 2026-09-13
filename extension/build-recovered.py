@@ -29,12 +29,14 @@ assert s.count(anchor)==1
 s=s.replace(anchor,'''HomeResponseBuilder.configureImages(HomeResponseBuilder.createImageBridge({list:fetchStationIconBuildings,building:fetchStationIconBuilding,image:fetchStationIconImage,apply:applyStationIconToStation}));
 '''+anchor)
 p.write_text(s)
-m=json.loads((out/'manifest.json').read_text());m['version']='0.23.4';m['version_name']='Home Response testing · Extension 0.23.4 · Toolkit 10.18.1';(out/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+import runpy
+runpy.run_path(str(root/'operations-navigation.py'))['patch_operations_navigation'](out)
+m=json.loads((out/'manifest.json').read_text());m['version']='0.23.5';m['version_name']='Home Response testing · Extension 0.23.5 · Toolkit 10.18.1';(out/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
 for name in ['TEST-RESULTS.json','TRANSPORT-TEST-RESULTS.json']:(out/name).unlink()
-(out/'BUILD.json').write_text(json.dumps({'extensionVersion':'0.23.4','recoveredBaseline':'0.22.3','channel':'home-response-testing','storeSubmission':'not-submitted','livePurchaseValidation':'pending'},indent=2)+'\n')
+(out/'BUILD.json').write_text(json.dumps({'extensionVersion':'0.23.5','recoveredBaseline':'0.22.3','channel':'home-response-testing','storeSubmission':'not-submitted','livePurchaseValidation':'pending'},indent=2)+'\n')
 shutil.copytree(root/'home-response'/'geodata',out/'home-response-geodata')
-p=out/'release-notes.html';p.write_text(p.read_text().replace('<main>','<main><h1>Home Response Builder · 0.23.4 testing</h1><p>Faster independent read checks, batched planning and lightweight progress updates. Visual icon picker groups identical image contents across buildings and URLs. Icon discovery is separate from location preview. Water checks and durable sequential purchases are preserved. Review road access and crew requirements. Live purchase acceptance remains pending.</p>',1))
-archive=out.parent/'MissionChief-Toolkit-Extension-0.23.4-test.zip'
+p=out/'release-notes.html';p.write_text(p.read_text().replace('<main>','<main><h1>Home Response Builder · 0.23.5 testing</h1><p>Restores a visible Back to Operations control in each operation’s sticky action area. Clicking the Operations sidebar also returns to tool selection. Navigation preserves selections, findings and running tasks. Review road access and crew requirements. Live purchase acceptance remains pending.</p>',1))
+archive=out.parent/'MissionChief-Toolkit-Extension-0.23.5-test.zip'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(out.rglob('*')):
   if p.is_file():z.writestr(zipfile.ZipInfo(str(p.relative_to(out)),(2026,1,1,0,0,0)),p.read_bytes(),compress_type=zipfile.ZIP_DEFLATED)

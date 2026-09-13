@@ -18,3 +18,9 @@ BUILD.json inside the archive predates submission; its status is historical.
 - City shortlist complements the existing UK area search. Selected search results still supply the boundary.
 - Optional owned-building image source uses the existing verified image copier, with source digest checkpoints and image-only resume after purchase completion.
 - Validation: 29 automated tests, including a 24,000-vertex region with 1,000 placements, source/target image validation and purchase recovery; packaged JavaScript syntax checked. Live Orion construction and image copying still require acceptance testing. Not submitted to the Chrome Web Store.
+
+## 0.23.3 water exclusion test build
+
+The former planner tested administrative boundaries only; it had no independent water mask. Bundled GSHHG 2.3.7 full-resolution shoreline and lake data now constrain previews and marker movement, and native pre-construction checks skip water locations in older saved plans. No network lookup is required for the land check. The derived UK mask, reconstruction script, provenance and LGPL notices are in home-response/geodata and land-data.mjs. A small inward shoreline margin excludes uncertain coast-edge placements. Historical map data cannot identify every small waterway or prove road access.
+
+Validation: 32 automated tests pass, including Northern Ireland offshore and Lough Neagh checks, inland control points, regional preview filtering and legacy-plan pre-request rejection. Packaged syntax verified. Phone acceptance testing pending; not submitted to the store.

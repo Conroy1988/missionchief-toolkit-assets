@@ -1,3 +1,4 @@
+import {isDryLand} from './land.mjs';
 import {distanceMiles} from './planner.mjs';
 export function nativeAdapter(win=window){
  const origin=win.location.origin;
@@ -61,7 +62,7 @@ export function nativeAdapter(win=window){
   return {cost,url:link.getAttribute('href'),before:await vehicles(item.buildingId)};
  }
  return {account,buildings,html,reconcile,async checkAccount(id){if(String((await account()).user_id)!==String(id))throw Error('Account changed.');},
-  async checkSite(item,job){const current=await buildings();if(current.some(b=>Number(b.building_type)===22&&distanceMiles(item.point,[b.longitude,b.latitude])<job.spacingMiles))return {skip:'A Home Response is now too close.'};
+  async checkSite(item,job){if(!isDryLand(item.point))return {skip:'Water or uncertain shoreline: location excluded.'};const current=await buildings();if(current.some(b=>Number(b.building_type)===22&&distanceMiles(item.point,[b.longitude,b.latitude])<job.spacingMiles))return {skip:'A Home Response is now too close.'};
    const {doc}=await html('/buildings/new'),button=doc.querySelector('#build_credits_22'),form=button?.closest('form');
    if(!form||new URL(form.getAttribute('action'),origin).pathname!=='/buildings'||button.disabled)throw Error('Native construction form unavailable.');
    const cost=money(button.value);if(cost>10000)throw Error('Building price increased. Review a new plan.');

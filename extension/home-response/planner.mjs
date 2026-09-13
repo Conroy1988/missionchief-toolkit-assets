@@ -32,32 +32,46 @@ export function circle(center,radiusMiles){
   }
   ring.push([...ring[0]]);return {type:'Polygon',coordinates:[ring]};
 }
-export function plan({geometry,spacingMiles,existing=[],excluded=[],maxBuildings=500}){
-  if(!SPACING_MILES.includes(spacingMiles))throw Error('Unsupported spacing.');
-  if(!Number.isInteger(maxBuildings)||maxBuildings<1||maxBuildings>500)throw Error('Choose 1–500 buildings.');
-  if(existing.some(p=>!valid(p)))throw Error('Existing building coordinates are incomplete. Refresh buildings before planning.');
-  const ps=polygons(geometry),ex=excluded.map(polygons);
-  const inside=(polys,p)=>polys.some(poly=>inRing(p,poly[0])&&!poly.slice(1).some(r=>inRing(p,r)));
-  const coords=ps.flat(2);if(coords.length>20000)throw Error('Boundary is too detailed. Draw a simpler area.');const xs=coords.map(p=>p[0]),ys=coords.map(p=>p[1]);
-  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-  if(minX < -9 || maxX > 3 || minY < 49 || maxY > 61)throw Error('Select an area within the UK planning bounds.');
-  const dy=spacingMiles/69*0.8660254, midY=(minY+maxY)/2,dx=spacingMiles/(69.172*Math.cos(rad(midY)));
-  const rows=Math.ceil((maxY-minY)/dy)+1,cols=Math.ceil((maxX-minX)/dx)+2;
-  if(rows*cols*(coords.length+ex.flat(3).length)>10000000)throw Error('Area is too detailed at this spacing. Draw a simpler boundary or increase spacing.');
-  if(rows*cols>60000)throw Error('Area is too large at this spacing. Split it into smaller areas.');
-  // A spatial index bounds neighbour checks, including existing sites outside the area.
-  const cellY=spacingMiles/69.2,cellX=spacingMiles/(69.2*Math.cos(rad(minY))),buckets=new Map();
-  const key=p=>[Math.floor(p[0]/cellX),Math.floor(p[1]/cellY)];
-  const add=p=>{const k=key(p).join(',');if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(p);};
-  const near=p=>{const [x,y]=key(p);for(let i=x-3;i<=x+3;i++)for(let j=y-3;j<=y+3;j++)for(const q of buckets.get(`${i},${j}`)||[])if(distanceMiles(p,q)<spacingMiles-1e-8)return true;return false;};
-  existing.forEach(add);const sites=[];let limitReached=false,blocked=0;
-  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    const p=[minX+(c+(r%2)/2)*dx,minY+r*dy];
-    if(!inside(ps,p)||ex.some(polys=>inside(polys,p)))continue;
-    if(near(p)){blocked++;continue;}
-    if(sites.length>=maxBuildings){limitReached=true;continue;}
-    sites.push(p);add(p);
+// Intersect one latitude with boundary edges once, rather than retesting every
+// candidate against every vertex. Even/odd intersections preserve boundary holes.
+function spansAt(polys,y){
+ const spans=[];
+ for(const poly of polys){const xs=[];for(const ring of poly)for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]));
+ }xs.sort((a,b)=>a-b);for(let i=0;i+1<xs.length;i+=2)spans.push([xs[i],xs[i+1]]);}
+ return spans;
+}
+function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],maxBuildings=1000}){
+ if(!SPACING_MILES.includes(spacingMiles))throw Error('Unsupported spacing.');
+ if(!Number.isInteger(maxBuildings)||maxBuildings<1||maxBuildings>1000)throw Error('Choose 1–1000 buildings.');
+ if(existing.some(p=>!valid(p)))throw Error('Existing building coordinates are incomplete. Refresh buildings before planning.');
+ const ps=polygons(geometry),ex=excluded.flatMap(polygons);
+ let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+ for(const poly of ps)for(const ring of poly)for(const [x,y]of ring){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+ if(minX < -9 || maxX > 3 || minY < 49 || maxY > 61)throw Error('Select an area within the UK planning bounds.');
+ const dy=spacingMiles/69*0.8660254,dx=spacingMiles/(69.172*Math.cos(rad((minY+maxY)/2)));
+ const rows=Math.ceil((maxY-minY)/dy)+1,cols=Math.ceil((maxX-minX)/dx)+2;
+ const cellY=spacingMiles/69.2,cellX=spacingMiles/(69.2*Math.cos(rad(minY))),buckets=new Map();
+ const key=p=>[Math.floor(p[0]/cellX),Math.floor(p[1]/cellY)];
+ const add=p=>{const k=key(p).join(',');if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(p);};
+ const near=p=>{const [x,y]=key(p);for(let i=x-3;i<=x+3;i++)for(let j=y-3;j<=y+3;j++)for(const q of buckets.get(`${i},${j}`)||[])if(distanceMiles(p,q)<spacingMiles-1e-8)return true;return false;};
+ existing.forEach(add);const sites=[];let limitReached=false,blocked=0;
+ outer:for(let r=0;r<rows;r++){
+  const y=minY+r*dy,spans=spansAt(ps,y),holes=spansAt(ex,y);
+  for(let c=0;c<cols;c++){
+   const p=[minX+(c+(r%2)/2)*dx,y];
+   if(!spans.some(([a,b])=>p[0]>=a&&p[0]<b)||holes.some(([a,b])=>p[0]>=a&&p[0]<b))continue;
+   if(near(p)){blocked++;continue;}
+   if(sites.length>=maxBuildings){limitReached=true;break outer;}
+   sites.push(p);add(p);
   }
-  return {sites,count:sites.length,limitReached,spacingMiles,existingCount:existing.length,blocked,
-    distanceBasis:'straight-line',placementStatus:'Geometric proposal: road access and build eligibility require review.'};
+  yield {rowsDone:r+1,rows,count:sites.length};
+ }
+ return {sites,count:sites.length,limitReached,spacingMiles,existingCount:existing.length,blocked,distanceBasis:'straight-line',placementStatus:'Geometric proposal: road access and build eligibility require review.'};
+}
+export function plan(options){const iterator=generatePlan(options);let step;do{step=iterator.next();}while(!step.done);return step.value;}
+export async function planAsync(options,{onProgress=()=>{},cancelled=()=>false}={}){
+ const iterator=generatePlan(options);let step;
+ do{if(cancelled())throw Error('Planning cancelled.');step=iterator.next();if(!step.done){onProgress(step.value);await new Promise(resolve=>setTimeout(resolve,0));}}while(!step.done);
+ return step.value;
 }

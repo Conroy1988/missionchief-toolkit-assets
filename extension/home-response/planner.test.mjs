@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {plan,circle,contains,distanceMiles,SPACING_MILES} from './planner.mjs';
+import {planAsync,plan,circle,contains,distanceMiles,SPACING_MILES} from './planner.mjs';
 const center=[-3.19,55.95],geometry=circle(center,7);
 test('all supported spacing choices produce contained, separated sites',()=>{
  for(const spacingMiles of SPACING_MILES){const existing=[center,[-3.4,55.9]];const p=plan({geometry,spacingMiles,existing});
@@ -23,3 +23,11 @@ test('same inputs produce same preview; increasing spacing reduces proposals',()
  assert.deepEqual(plan({geometry,spacingMiles:3}),plan({geometry,spacingMiles:3}));
  assert.ok(plan({geometry,spacingMiles:1}).count>plan({geometry,spacingMiles:6}).count);
 });
+
+test('detailed region supports 1000 locations without the old complexity error',async()=>{
+ const ring=[];for(let i=0;i<24000;i++){const a=i*Math.PI*2/24000;ring.push([-6+Math.cos(a),54.6+Math.sin(a)*.6]);}ring.push(ring[0]);
+ const options={geometry:{type:'Polygon',coordinates:[ring]},spacingMiles:1,maxBuildings:1000};let updates=0;const result=await planAsync(options,{onProgress:()=>updates++});
+ assert.equal(result.count,1000);assert.equal(result.limitReached,true);assert.ok(updates>0);assert.deepEqual(result,plan(options));
+ assert.throws(()=>plan({...options,maxBuildings:1001}),/1000/);
+});
+test('async planning can be cancelled between rows',async()=>{let stop=false;await assert.rejects(planAsync({geometry,spacingMiles:1},{onProgress:()=>{stop=true;},cancelled:()=>stop}),/cancelled/);});

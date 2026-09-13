@@ -1,0 +1,50 @@
+/* Scoped to Operations; native controls keep their existing styling and handlers. */
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations .mcms-operation-hidden,
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations [hidden]{display:none!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations :is(h2,h3,p){color:inherit!important;line-height:1.5!important;margin:0 0 12px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations h2{font-size:22px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations h3{font-size:16px!important;font-weight:700!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:6px!important;margin:12px 0!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid button{display:grid!important;grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr) auto!important;align-items:center!important;gap:14px!important;padding:10px 12px!important;text-align:left!important;white-space:normal!important;min-height:60px!important;height:auto!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;border-radius:8px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid strong{font-size:14px!important;font-weight:650!important;line-height:1.35!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid span{font-size:12px!important;font-weight:400!important;line-height:1.4!important;opacity:.85}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations button{min-height:44px!important;white-space:normal!important;height:auto!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-shell{display:flex!important;flex-direction:column!important;gap:16px!important;min-width:0!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-shell>section{padding:16px!important;border:1px solid rgba(150,170,195,.25)!important;border-radius:12px!important;background:rgba(110,135,160,.055)!important;min-width:0!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-steps{display:flex!important;gap:6px!important;list-style:none!important;padding:0!important;margin:0!important;flex-wrap:wrap!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-steps li{padding:7px 10px!important;border-radius:7px!important;border:1px solid rgba(150,170,195,.3)!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-steps [aria-current="step"]{background:#e02020!important;color:#101010!important;border-color:#e02020!important;font-weight:700!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-scope{padding:12px!important;border-left:3px solid #e02020!important;background:rgba(150,170,195,.09)!important;overflow-wrap:anywhere!important;font-size:13px!important;line-height:1.6!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-sticky{position:sticky!important;top:0!important;z-index:5!important;padding:12px!important;border:1px solid #959595!important;border-radius:10px!important;background:#101010!important;color:#f0f4fa!important;box-shadow:0 -4px 16px #0004!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-sticky progress{width:100%!important;accent-color:#e02020!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-run>button{background:#e02020!important;color:#101010!important;font-weight:700!important;width:100%!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations details>summary{cursor:pointer!important;min-height:44px!important;padding:10px 0!important;font-weight:600!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-findings details{padding:8px 12px!important;border:1px solid rgba(150,170,195,.2)!important;border-radius:8px!important;margin-bottom:8px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-results p{overflow-wrap:anywhere!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations :focus-visible{outline:3px solid #e02020!important;outline-offset:3px!important}
+@media(max-width:650px){html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid{grid-template-columns:minmax(0,1fr)!important}html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-shell>section{padding:12px!important}html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-steps li{padding:6px!important;font-size:12px!important}}
+
+/* Operations is a single workspace, never one cell in the legacy multi-card grid.
+   The repeated panel ID gives these extension rules priority over theme/device rules. */
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations.mcms-active{grid-template-columns:minmax(0,1fr)!important;align-content:start!important;align-items:start!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations> :is(.mcms-operations-home,.mcms-operation-card){grid-column:1/-1!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid small{font-size:11px!important;font-weight:500!important;white-space:nowrap!important;border:1px solid currentColor!important;border-radius:20px!important;padding:3px 8px!important;opacity:.8}
+/* Descriptions remain in each navigation button's native tooltip. */
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-tab-copy small{display:none!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-tab-btn{height:44px!important;min-height:44px!important;padding:6px 8px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-tab-copy strong{font-size:12px!important;line-height:1.3!important;font-weight:650!important}
+html:not([data-mcms-mobile-active="true"]) body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-tabs{grid-auto-rows:44px!important;grid-template-rows:repeat(7,44px)!important;align-content:start!important;gap:5px!important}
+@media(max-width:650px){
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid button{grid-template-columns:minmax(0,1fr) auto!important;gap:4px 10px!important;padding:9px 10px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid strong{grid-column:1!important;grid-row:1!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid small{grid-column:2!important;grid-row:1!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operations-grid span{grid-column:1/-1!important;grid-row:2!important}
+}
+
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-presets{padding:8px 10px!important;border:1px solid rgba(150,170,195,.3)!important;border-radius:8px!important;margin-bottom:12px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-presets label{display:block!important;margin:8px 0!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-presets :is(input,select){max-width:100%!important;min-height:36px!important;box-sizing:border-box!important;color:inherit!important;background:rgba(120,140,160,.15)!important;border:1px solid #959595!important;border-radius:6px!important;padding:6px!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-presets button{margin:4px 6px 4px 0!important}
+html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel .mcms-operation-target-preview>div{max-height:220px!important;overflow:auto!important}
+@media(prefers-reduced-motion:reduce){html body :is(#mc-map-command-toolkit-panel,#mc-map-command-toolkit-control,#mc-map-command-toolkit-command-experience),html body :is(#mc-map-command-toolkit-panel,#mc-map-command-toolkit-control,#mc-map-command-toolkit-command-experience) *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media(pointer:coarse){html body #mc-map-command-toolkit-panel#mc-map-command-toolkit-panel :is(input:not([type=checkbox]),select){min-height:44px!important}}

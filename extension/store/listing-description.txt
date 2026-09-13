@@ -1,0 +1,32 @@
+MissionChief Map Command Toolkit brings map controls, mission insights, finance and practical administration tools together in a compact command workspace for MissionChief UK.
+
+NEW IN THE FULL 1.0 RELEASE — HOME RESPONSE BUILDER
+• Choose a UK city using search or the city list, select its boundary directly on the map, draw an area, or use a centre and radius.
+• Plan up to 1,000 Home Responses with 1, 3, 4, 6, 8 or 10-mile minimum straight-line spacing.
+• Preview proposed locations and estimated Credit costs, account for existing Home Responses, and inspect spacing circles and exclusion counts.
+• Exclude mapped sea and major lakes using bundled geographic data.
+• Choose from 14 verified Home Response vehicle options.
+• Automatically select the nearest dispatch centre, see named centres on the map and acknowledge assignment distances before building.
+• Choose building icons from a visual catalogue. Scan by building type and remember distinct icons between sessions.
+• Create each building, purchase its vehicle and optionally copy its icon in a saved sequence with balance checks, Pause, Stop and verified recovery.
+• Faster independent checks and per-building stage timings.
+
+MAP AND COMMAND WORKSPACE
+Compact black-and-red controls, native-map tools, building filters, mission insights, shortcuts, pinned tools and settings search. The Game Guide button beside Menu opens the official TKB MissionChief guide in a new tab.
+
+OPERATIONS
+Patient transport sweeps, staff recruitment, training-course workflows, building expansions and station-icon copying. Review scopes and targets before confirming actions. Return to Operations without clearing selections or stopping a running task.
+
+FINANCE AND DISCORD
+Enhanced finance views, on-demand historical reports and optional Discord reporting. Prepare and review financial reports, sweep reports or operational SITREPs before confirming a send. Reports are not posted automatically.
+
+SETTINGS AND RECOVERY
+Local settings, operation presets, import/export, task status and privacy-conscious diagnostic exports. Store updates are managed by the browser. Disable duplicate Toolkit userscripts or extension copies, then reload MissionChief after updating.
+
+PLEASE NOTE
+This extension is for MissionChief UK. Building spacing is measured in straight-line miles, not driving distance or guaranteed response coverage. Check small waterways and road access visually. Home Response staffing and training are not supplied automatically. Confirmed operations spend in-game Credits and change your game account; keep the game tab open during a run.
+
+City and boundary lookups use OpenStreetMap Nominatim. Selected map areas request map tiles. Preferences, builder checkpoints and icon catalogue references are stored locally in your browser. Discord is optional and requires explicit send confirmation. See the included privacy details for data handling.
+
+Independent community extension; not affiliated with or endorsed by MissionChief.
+Developer: MartyBlyth. Helper: Conroy1988.

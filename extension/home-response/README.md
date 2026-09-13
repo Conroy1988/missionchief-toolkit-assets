@@ -4,9 +4,9 @@ The pure planner and checkpointed serial execution core are independently tested
 UK type 22 and all 14 vehicle options were inspected in the signed-in native game
 on 2026-09-13. No game purchases were made during development.
 
-The native adapter uses native forms and Credit links. Before release it requires
-an integration test against an explicitly selected one-location plan, including
-staff/training readiness, then a small batch. Do not run arbitrary purchases as tests.
+The native adapter uses native forms and Credit links. The user reported successful
+live builder operation during the 0.23.x iteration and requested full store release.
+Do not run arbitrary purchases as tests. Staff/training readiness remains a user check.
 
 Distances are straight-line separation, not driving time or guaranteed coverage.
 Boundary holes and excluded areas are honoured. Geographic candidates still need
@@ -22,9 +22,11 @@ Run `npm ci --prefix extension/home-response`, then
 `node --test extension/home-response/*.test.mjs` and
 `python3 extension/build-recovered.py` from the repository root.
 The build verifies every recovered file hash before applying the new module.
-The package is a 0.23.1 test candidate, not a Chrome Store release.
+That command reproduces the 0.23.14 test package. For the full 1.0.0 store package,
+run `python3 extension/prepare-store-release.py`. Store listing copy lives in
+`extension/store/`. Submission state must be checked in the publisher dashboard.
 
-## Acceptance remaining
+## Live validation notes (original test checklist)
 
 - Load on desktop and Orion; confirm city-search provider availability and map controls.
 - Choose one intended location, a vehicle without additional training and a suitable
@@ -98,3 +100,11 @@ Native purchase checks validate account identity and balance themselves, so the 
 Purchase writes remain sequential with durable intent and authoritative completion checks. Whole-catalogue receipt verification remains where no proven equivalent targeted response has been established. The icon settling delay is retained. Per-item cumulative stage timings cover checks, build/receipt, vehicle purchase/verification, recovery and icon copy, including failed attempts. Live speedup is unmeasured until phone testing.
 
 Validation: 59 tests pass, including concurrent reads, changed-account rejection, full-garage rejection, durable purchase recovery, timing records and retained icon post-upload validation. Chrome Store review remains untouched.
+
+## 1.0.0 — full release packaging
+
+Promotes approved 0.23.14 functionality with stable metadata, refreshed bundled help,
+release notes, privacy disclosures and store copy. No gameplay logic or permissions
+changed. 59 automated tests and all packaged JavaScript syntax checks passed.
+Latest speed improvement remains unmeasured. Submission requires the authenticated
+Chrome Web Store dashboard; do not infer approval from package creation.

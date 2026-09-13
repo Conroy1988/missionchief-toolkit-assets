@@ -82,3 +82,11 @@ Validation: 50 automated tests, including a capped 20-site fixture spanning all 
 Selecting an area automatically chooses the nearest centre with known coordinates. Manual choices are preserved for that area across preview/settings updates; changing the area resets the automatic choice. Before build or resume, the current building catalogue verifies the saved job's actual dispatch ID. The confirmation names that centre, gives the area-centre distance and planned building distance range, and explicitly requires acknowledgement. Distances are straight-line. Unassigned is explicitly disclosed; missing assigned centres block continuation.
 
 Validation: 52 automated checks, including auto-selection, manual override preservation, confirmation content and cancellation without purchases. Chrome Store review remains untouched.
+
+## 0.23.13 — choose an area directly on the map
+
+Select area on map is an explicit mode; City boundary remains the default. A click performs city/town-level reverse lookups, retaining only UK polygon boundaries containing that point and removing duplicate results. One result is selected directly; multiple results appear in Search results for user selection. The normal boundary selection path handles map fitting, preview invalidation and nearest dispatch selection. No radius fallback is automatic. Marker clicks do not trigger area selection; late lookup results cannot replace a newer selection.
+
+Search and reverse requests share a serial, rate-limited, in-dialog cache. API references: https://nominatim.org/release-docs/latest/api/Reverse/ and https://operations.osmfoundation.org/policies/nominatim/ . Returned choices depend on mapped data and are not an exhaustive list of every administrative boundary.
+
+Validation: 55 automated tests, including polygon containment, duplicate/foreign/point rejection, request spacing/cache, and map-click selection through the UI. Real browser lookup acceptance still requires testing. Chrome Store review remains untouched.

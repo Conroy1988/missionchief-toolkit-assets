@@ -58,3 +58,11 @@ test('resume prompts with saved dispatch assignment and cancellation makes no pu
  try{await new Promise(r=>setTimeout(r,10));await document.querySelector('[data-resume]').onclick();assert.match(prompt,/Confirmed Centre/);assert.match(prompt,/acknowledge/);assert.equal(writes,0);assert.equal(JSON.parse(window.localStorage.getItem('mcms_home_response_job_123')).state,'paused');}
  finally{document.querySelector('[data-close]').click();grid.remove();window.fetch=oldFetch;window.confirm=oldConfirm;window.localStorage.removeItem('mcms_home_response_job_123');if(oldNavigator)Object.defineProperty(globalThis,'navigator',oldNavigator);else delete globalThis.navigator;}
 });
+test('map area mode loads a clicked boundary and returns to city boundary mode',async()=>{
+ const oldL=window.L,original=globalThis.fetch;let click;
+ const layer=()=>({addTo(){return this;}});window.L={map:()=>({setView(){return this;},on(name,fn){click=fn;},invalidateSize(){},remove(){},fitBounds(){}}),tileLayer:layer,layerGroup:()=>({...layer(),clearLayers(){}}),geoJSON:()=>({...layer(),getBounds:()=>[]})};
+ globalThis.fetch=async()=>({ok:true,json:async()=>({osm_type:'relation',osm_id:99,display_name:'Clicked City',lon:-3.19,lat:55.95,address:{country_code:'gb'},geojson:{type:'Polygon',coordinates:[[[-3.3,55.8],[-3,55.8],[-3,56],[-3.3,56],[-3.3,55.8]]]}})});
+ const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();
+ try{const mode=document.querySelector('[data-mode]');assert.equal(mode.value,'boundary');mode.value='map';await mode.onchange();click({latlng:{lng:-3.19,lat:55.95}});for(let i=0;i<40&&mode.value==='map';i++)await new Promise(r=>setTimeout(r,50));assert.equal(mode.value,'boundary');assert.match(document.querySelector('[data-status]').textContent,/Clicked City/);assert.equal(document.querySelector('[data-places]').value,'0');}
+ finally{document.querySelector('[data-close]').click();grid.remove();window.L=oldL;globalThis.fetch=original;}
+});

@@ -22,7 +22,7 @@ Run `npm ci --prefix extension/home-response`, then
 `node --test extension/home-response/*.test.mjs` and
 `python3 extension/build-recovered.py` from the repository root.
 The build verifies every recovered file hash before applying the new module.
-The package is a 0.23.0 test candidate, not a Chrome Store release.
+The package is a 0.23.1 test candidate, not a Chrome Store release.
 
 ## Acceptance remaining
 
@@ -31,6 +31,16 @@ The package is a 0.23.0 test candidate, not a Chrome Store release.
   dispatch centre. Review the displayed name, position and Credit budget before confirming.
 - Verify exactly one building and its selected vehicle, then test pause/resume on a small batch.
 - A request with an unknown result is deliberately blocked from retrying; inspect the
-  corresponding building/vehicle in the game. Automatic reconciliation is not implemented.
+  corresponding building/vehicle in the game. Resume now checks the complete owned-building catalogue for the exact name, type and coordinates. It recovers a unique match without another building request; vehicle recovery requires the selected vehicle in that exact building. Unknown or conflicting records remain paused.
 - Road snapping, reuse of empty Home Responses and automatic staff training are not included.
   Placement is geometric and uses explicit exclusions and editable markers for review.
+
+## 0.23.1 recovery fix
+
+A live inspection confirmed the reported first building existed with zero vehicles.
+Construction success no longer depends on a /buildings/:id redirect. Legacy 0.23.0
+creating checkpoints recover their building cost from the saved reservation.
+Opening the builder restores the saved account plan directly. The original error
+is retained, and new intents record individual costs before submitting requests.
+23 regression tests cover recovery, no duplicate purchases and cost accounting.
+No live purchase was made while fixing the issue.

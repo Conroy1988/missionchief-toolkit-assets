@@ -42,3 +42,10 @@ test('corrected horizontal grid preserves adjacent candidates at requested dista
  const result=plan({geometry:g,spacingMiles:1,fillGaps:false});
  assert.ok(result.count>=12);for(let i=1;i<result.count;i++){const miles=distanceMiles(result.sites[i-1],result.sites[i]);assert.ok(miles>=1&&miles<1.01);}
 });
+test('fine search finds narrow dry gaps between the original sample rows',()=>{
+ const dy=3/3958.7613*180/Math.PI*1.002*Math.sqrt(3)/2;
+ const geometry={type:'Polygon',coordinates:[[[-3,54],[-2.7,54],[-2.7,54.1],[-3,54.1],[-3,54]]]};
+ const y=54+dy*.25,landGeometry={type:'Polygon',coordinates:[[[-3,y-.0001],[-2.7,y-.0001],[-2.7,y+.0001],[-3,y+.0001],[-3,y-.0001]]]};
+ const p=plan({geometry,landGeometry,spacingMiles:3});assert.ok(p.count>0);assert.equal(p.gapAdded,p.count);
+ p.sites.forEach(site=>assert.ok(contains(landGeometry,site)));
+});

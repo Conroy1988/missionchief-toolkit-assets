@@ -61,6 +61,8 @@ function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],landGeomet
  existing.forEach(p=>add(p,'existing'));const sites=[];let limitReached=false,blocked=0,waterExcluded=0,existingBlocked=0,proposedBlocked=0,excludedPoints=0,gapAdded=0;
  const scanlines=new Map();
  const offsets=fillGaps?[[0,0],[.5,0],[.25,.5],[.75,.5]]:[[0,0]];
+ // Refine between the initial sample lines without removing accepted sites.
+ if(fillGaps)for(const y of [0,.25,.5,.75])for(const x of [0,.25,.5,.75])if(!offsets.some(([a,b])=>a===x&&b===y))offsets.push([x,y]);
  outer:for(let pass=0;pass<offsets.length;pass++)for(let r=0;r<rows;r++){
   const [ox,oy]=offsets[pass],y=minY+(r+oy)*dy;
   if(!scanlines.has(y)){const spans=spansAt(ps,y);scanlines.set(y,{spans,holes:spans.length?spansAt(ex,y):[],dry:land&&spans.length?spansAt(land,y):null});}

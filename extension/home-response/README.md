@@ -52,3 +52,9 @@ Corrects degree-to-mile grid spacing so adjacent candidates are not discarded by
 The preview distinguishes existing buildings inside the area from the account-wide catalogue, offers spacing-circle overlays and explains sampled-position exclusions. Radius applies only in Point and radius mode. Changing area settings clears stale proposals. The cap remains 1000; Chrome Store submission remains deferred.
 
 Validation: 41 automated checks, including gap recovery, adjacent grid distances, water, queue recovery and area controls. Real account placement counts and phone acceptance still require testing.
+
+## 0.23.8 — city defaults and finer gap search
+
+Selecting a search result always restores City boundary. A result without a polygon leaves the area unset and explains the explicit radius/drawing alternatives. The default on opening remains City boundary. Location counts and diagnostics now sit above the map; optional circles show both existing and proposed minimum spacing, with a compact checkbox.
+
+Gap search refines to quarter-row/column offsets, preserving already accepted sites and all distance/land checks. This does not guarantee optimal packing or a higher count for every area. Video showed sparse three-mile Wigan proposals; account coordinates were not supplied, so the precise live count was not reproduced. 43 automated checks pass, including narrow dry gaps and city selection after radius mode. Chrome Store review remains untouched.

@@ -16,3 +16,15 @@ test('area controls enable radius only when it defines the selected area',async(
  mode.value='boundary';await mode.onchange();assert.equal(radius.disabled,true);assert.equal(finish.disabled,true);assert.ok(document.querySelector('[data-build]').disabled);
  document.querySelector('[data-close]').click();grid.remove();
 });
+test('selecting a city restores boundary mode and point results never silently select radius',async()=>{
+ const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();
+ const original=globalThis.fetch;globalThis.fetch=async()=>({ok:true,json:async()=>[
+ {display_name:'Test city',lon:-3,lat:54,geojson:{type:'Polygon',coordinates:[[[-3,54],[-2.9,54],[-2.9,54.1],[-3,54.1],[-3,54]]]}},
+ {display_name:'Point only',lon:-3,lat:54,geojson:{type:'Point',coordinates:[-3,54]}}
+ ]});
+ try{const mode=document.querySelector('[data-mode]');mode.value='radius';await mode.onchange();document.querySelector('[data-city]').value='Test';await document.querySelector('[data-search]').onclick();
+ const places=document.querySelector('[data-places]');places.value='0';await places.onchange();assert.equal(mode.value,'boundary');assert.equal(document.querySelector('[data-radius]').disabled,true);
+ places.value='1';await places.onchange();assert.equal(mode.value,'boundary');assert.match(document.querySelector('[data-status]').textContent,/no mapped boundary/);assert.equal(document.querySelector('[data-build]').disabled,true);
+ assert.ok(document.querySelector('[data-status]').compareDocumentPosition(document.querySelector('[data-map]'))&4);
+ }finally{globalThis.fetch=original;document.querySelector('[data-close]').click();grid.remove();}
+});

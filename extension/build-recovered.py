@@ -35,12 +35,17 @@ p.write_text(s)
 import runpy
 runpy.run_path(str(root/'operations-navigation.py'))['patch_operations_navigation'](out)
 runpy.run_path(str(root/'icon-form-compatibility.py'))['patch_icon_form'](out)
-m=json.loads((out/'manifest.json').read_text());m['version']='0.23.13';m['version_name']='Home Response testing · Extension 0.23.13 · Toolkit 10.18.1';(out/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+# Reuse the builder's just-verified icon target; native scope and post-write checks remain.
+p=out/'features/administration.js';text=p.read_text()
+old='const baseline = await (0,__mcmsModuleContext.fetchStationIconBuilding)(item.buildingId, { requireIcon: true });'
+assert text.count(old)==1
+p.write_text(text.replace(old,'const baseline = plan.homeResponseBaseline || await (0,__mcmsModuleContext.fetchStationIconBuilding)(item.buildingId, { requireIcon: true });'))
+m=json.loads((out/'manifest.json').read_text());m['version']='0.23.14';m['version_name']='Home Response testing · Extension 0.23.14 · Toolkit 10.18.1';(out/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
 for name in ['TEST-RESULTS.json','TRANSPORT-TEST-RESULTS.json']:(out/name).unlink()
-(out/'BUILD.json').write_text(json.dumps({'extensionVersion':'0.23.13','recoveredBaseline':'0.22.3','channel':'home-response-testing','storeSubmission':'not-submitted','livePurchaseValidation':'pending'},indent=2)+'\n')
+(out/'BUILD.json').write_text(json.dumps({'extensionVersion':'0.23.14','recoveredBaseline':'0.22.3','channel':'home-response-testing','storeSubmission':'not-submitted','livePurchaseValidation':'pending'},indent=2)+'\n')
 shutil.copytree(root/'home-response'/'geodata',out/'home-response-geodata')
-p=out/'release-notes.html';p.write_text(p.read_text().replace('<main>','<main><h1>Home Response Builder · 0.23.13 testing</h1><p>Adds Select area on map: tap a UK location to retrieve city or town boundaries, choose between overlapping results and continue with the standard preview and nearest dispatch selection. Minimum spacing, water checks and purchase recovery remain enforced. Review road access and crew requirements. Live purchase acceptance remains pending.</p>',1))
-archive=out.parent/'MissionChief-Toolkit-Extension-0.23.13-test.zip'
+p=out/'release-notes.html';p.write_text(p.read_text().replace('<main>','<main><h1>Home Response Builder · 0.23.14 testing</h1><p>Reduces duplicate account checks, overlaps independent construction and vehicle reads, reuses the freshly verified icon target, and shows per-building stage timings. Purchases remain sequential and authoritative purchase recovery is preserved. Minimum spacing, water checks and purchase recovery remain enforced. Review road access and crew requirements. Live purchase acceptance remains pending.</p>',1))
+archive=out.parent/'MissionChief-Toolkit-Extension-0.23.14-test.zip'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(out.rglob('*')):
   if p.is_file():z.writestr(zipfile.ZipInfo(str(p.relative_to(out)),(2026,1,1,0,0,0)),p.read_bytes(),compress_type=zipfile.ZIP_DEFLATED)

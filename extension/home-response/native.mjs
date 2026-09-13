@@ -53,18 +53,17 @@ export function nativeAdapter(win=window){
  const money=text=>{const m=String(text).match(/([\d,]+)\s*Credits/i);if(!m)throw Error('Native Credit price is unavailable.');return Number(m[1].replaceAll(',',''));};
  const vehicles=async id=>{const {doc}=await html('/buildings/'+id);return [...doc.querySelectorAll('a[href]')].filter(a=>/^\/vehicles\/\d+$/.test(a.getAttribute('href'))).map(a=>a.getAttribute('href'));};
  async function checkVehicle(item,job){
-  const {doc}=await html('/buildings/'+item.buildingId+'/vehicles/new');
+  const [{doc},credits,before]=await Promise.all([html('/buildings/'+item.buildingId+'/vehicles/new'),account(),vehicles(item.buildingId)]);
   if(/no free places|No available parking/i.test(doc.body.textContent))throw Error('No free vehicle space. Inspect the created building before continuing.');
   const link=[...doc.querySelectorAll('a[href]')].find(a=>new URL(a.getAttribute('href'),origin).pathname===`/buildings/${item.buildingId}/vehicle/${item.buildingId}/${job.vehicle.id}/credits`);
   if(!link||link.getAttribute('aria-disabled')==='true'||link.classList.contains('disabled'))throw Error('Selected vehicle is unavailable at this location.');
   const cost=money(link.textContent);if(cost>job.vehicle.credits)throw Error('Vehicle price increased. Review a new plan.');
-  const [credits,before]=await Promise.all([account(),vehicles(item.buildingId)]);
   if(String(credits.user_id)!==String(job.account))throw Error('Account changed.');if(Number(credits.credits_user_current)<cost)throw Error('Not enough Credits.');
   return {cost,url:link.getAttribute('href'),before};
  }
- return {account,buildings,html,reconcile,async checkAccount(id){if(String((await account()).user_id)!==String(id))throw Error('Account changed.');},
-  async checkSite(item,job){if(!isDryLand(item.point))return {skip:'Water or uncertain shoreline: location excluded.'};const current=await buildings();if(current.some(b=>Number(b.building_type)===22&&distanceMiles(item.point,[b.longitude,b.latitude])<job.spacingMiles))return {skip:'A Home Response is now too close.'};
-   const [{doc},credits]=await Promise.all([html('/buildings/new'),account()]);const button=doc.querySelector('#build_credits_22'),form=button?.closest('form');
+ return {validatesPurchaseAccount:true,account,buildings,html,reconcile,async checkAccount(id){if(String((await account()).user_id)!==String(id))throw Error('Account changed.');},
+  async checkSite(item,job){if(!isDryLand(item.point))return {skip:'Water or uncertain shoreline: location excluded.'};const [current,{doc},credits]=await Promise.all([buildings(),html('/buildings/new'),account()]);if(current.some(b=>Number(b.building_type)===22&&distanceMiles(item.point,[b.longitude,b.latitude])<job.spacingMiles))return {skip:'A Home Response is now too close.'};
+   const button=doc.querySelector('#build_credits_22'),form=button?.closest('form');
    if(!form||new URL(form.getAttribute('action'),origin).pathname!=='/buildings'||button.disabled)throw Error('Native construction form unavailable.');
    const cost=money(button.value);if(cost>10000)throw Error('Building price increased. Review a new plan.');
    if(String(credits.user_id)!==String(job.account))throw Error('Account changed.');

@@ -24,3 +24,9 @@ test('Operations sidebar click returns home without bubbling into another naviga
  context.click({target:{closest:()=>({dataset:{tab:'administration'}})},preventDefault:()=>{},stopPropagation:()=>{stopped=true;}});assert.equal(backs,1);assert.equal(stopped,true);
  const css=readFileSync(new URL('../../.dev/home-response-extension/command-ui.css',import.meta.url),'utf8');assert.ok(!css.includes('.mcms-operation-description,.mcms-operation-back,'));assert.ok(css.includes('.mcms-operation-sticky > .mcms-operation-back{display:inline-flex!important'));
 });
+test('icon baseline reuse still verifies native scope and post-upload image',async()=>{
+ const module=readFileSync(new URL('../../.dev/home-response-extension/features/administration.js',import.meta.url),'utf8');const start=module.indexOf('"applyStationIconToStation":')+'"applyStationIconToStation":'.length,end=module.indexOf(',\n"loadStationIconCatalog"',start);const factory=vm.runInNewContext('('+module.slice(start,end)+')');
+ let reads=0,scope=0,uploaded=0,verified=0;const baseline={hasCustomIcon:false},after={hasCustomIcon:true,customIconUrl:'https://example.com/icon.png'};
+ const apply=factory({fetchStationIconBuilding:async()=>{reads++;return after;},stationIconAssertTargetScope:()=>scope++,STATION_ICON_REPLACE_DEFAULTS:'defaults',fetchStationIconDocument:async()=>({doc:{}}),prepareStationIconSubmission:()=>({}),submitStationIconForm:async()=>uploaded++,runtimeDelay:async()=>true,stationIconAssertUnchangedAfterMutation:()=>verified++,fetchStationIconImage:async()=>({}),stationIconImagesMatch:()=>true});
+ await apply({buildingId:'1',name:'New'},{replaceMode:'all',homeResponseBaseline:baseline},{});assert.equal(reads,1);assert.equal(scope,1);assert.equal(uploaded,1);assert.equal(verified,1);
+});

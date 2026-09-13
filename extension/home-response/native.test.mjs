@@ -15,7 +15,7 @@ test('native creation uses Credit form and verifies location identity',async()=>
  const data=calls[0].options.body;assert.equal(data.get('build_with_coins'),'0');assert.equal(data.get('build_as_alliance'),'0');assert.equal(data.has('build_another'),false);assert.equal(data.get('building[building_type]'),'22');assert.equal(data.get('building[longitude]'),'-3.19');
 });
 test('changed account stops construction',async()=>{const {api}=make([{body:{user_id:2}}]);await assert.rejects(api.checkAccount('1'),/Account changed/);});
-test('full garage prevents vehicle spending',async()=>{const {api,calls}=make([{body:'<p>No available parking</p>'}]);await assert.rejects(api.checkVehicle({buildingId:'99'},{vehicle:{id:3,credits:10000}}),/No free vehicle/);assert.equal(calls.length,1);});
+test('full garage prevents vehicle spending',async()=>{const {api,calls}=make([{body:'<p>No available parking</p>'},{body:{user_id:1}},{body:'<div></div>'}]);await assert.rejects(api.checkVehicle({buildingId:'99'},{vehicle:{id:3,credits:10000}}),/No free vehicle/);assert.equal(calls.length,3);assert.ok(calls.every(c=>!c.options.method));});
 test('form returning without created identity remains inconclusive',async()=>{const {api}=make([{body:'validation failed'},{body:{result:[]}}]);const doc=new DOMParser().parseFromString('<form></form>','text/html');await assert.rejects(api.create({point:[-3,55],name:'HR'},{},{form:doc.querySelector('form'),commit:'Build 10,000 Credits',cost:10000}),/not yet visible/);});
 const recovered={id:99,building_type:22,latitude:55.95,longitude:-3.19,caption:'Home Response 1 [saved-run]'};
 const savedItem=()=>({state:'creating',point:[-3.19,55.95],name:recovered.caption,reserved:14000});
@@ -38,4 +38,12 @@ test('completed vehicle request recovers only the requested vehicle in the verif
  const item={...savedItem(),buildingId:'99',state:'buying',vehicleCost:4000};
  const {api}=make([{body:{result:[recovered]}},{body:[{id:400,building_id:99,vehicle_type:10}]}]);assert.equal((await api.reconcile(item,{vehicle:{id:10,credits:4000}})).state,'complete');
  const wrong=make([{body:{result:[recovered]}},{body:[{id:400,building_id:99,vehicle_type:3}]}]);await assert.rejects(wrong.api.reconcile(item,{vehicle:{id:10,credits:4000}}),/unverified/);
+});
+test('construction checks start independent reads together and reject changed account',async()=>{
+ const pending=[];const api=nativeAdapter({location:dom.window.location,fetch:url=>new Promise(resolve=>pending.push(()=>resolve({ok:true,url:String(url),text:async()=>String(url).endsWith('/api/v2/buildings')?'{"result":[]}':String(url).endsWith('/api/credits')?'{"user_id":2,"credits_user_current":50000}':'<form action="/buildings"><input id="build_credits_22" value="10000 Credits"></form>'})))});
+ const promise=api.checkSite({point:[-3.19,55.95],name:'New'},{account:'1',spacingMiles:1,vehicle:{credits:4000}});assert.equal(pending.length,3);pending.forEach(resolve=>resolve());await assert.rejects(promise,/Account changed/);
+});
+test('vehicle checks start independent reads together and reject changed account',async()=>{
+ const pending=[];const api=nativeAdapter({location:dom.window.location,fetch:url=>new Promise(resolve=>pending.push(()=>resolve({ok:true,url:String(url),text:async()=>String(url).endsWith('/api/credits')?'{"user_id":2,"credits_user_current":50000}':String(url).endsWith('/vehicles/new')?'<a href="/buildings/99/vehicle/99/3/credits">4000 Credits</a>':'<div></div>'})))});
+ const promise=api.checkVehicle({buildingId:'99'},{account:'1',vehicle:{id:3,credits:4000}});assert.equal(pending.length,3);pending.forEach(resolve=>resolve());await assert.rejects(promise,/Account changed/);
 });

@@ -33,7 +33,7 @@ export function createImageBridge({list,building,image,apply,storage=null,scope=
    if(cached.pixelDigest!==source.pixelDigest)throw Error('The source image has changed since this plan was approved. No image was copied.');
    const record=await building(item.buildingId,{requireIcon:true});
    if(String(record.id)!==String(item.buildingId)||Number(record.typeId)!==22||record.caption!==item.name||!Number.isFinite(record.longitude)||!Number.isFinite(record.latitude)||distanceMiles([record.longitude,record.latitude],item.point)>.02)throw Error('The new Home Response identity changed. No image was copied.');
-   await apply({buildingId:record.id,dispatchId:record.dispatchId,typeId:record.typeId,small:record.small,name:record.caption,latitude:record.latitude,longitude:record.longitude},{replaceMode:'all'},cached);
+   await apply({buildingId:record.id,dispatchId:record.dispatchId,typeId:record.typeId,small:record.small,name:record.caption,latitude:record.latitude,longitude:record.longitude},{replaceMode:'all',homeResponseBaseline:record},cached);
   }
  };
 }

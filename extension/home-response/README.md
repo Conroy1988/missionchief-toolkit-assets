@@ -90,3 +90,11 @@ Select area on map is an explicit mode; City boundary remains the default. A cli
 Search and reverse requests share a serial, rate-limited, in-dialog cache. API references: https://nominatim.org/release-docs/latest/api/Reverse/ and https://operations.osmfoundation.org/policies/nominatim/ . Returned choices depend on mapped data and are not an exhaustive list of every administrative boundary.
 
 Validation: 55 automated tests, including polygon containment, duplicate/foreign/point rejection, request spacing/cache, and map-click selection through the UI. Real browser lookup acceptance still requires testing. Chrome Store review remains untouched.
+
+## 0.23.14 — faster sequential construction
+
+Native purchase checks validate account identity and balance themselves, so the queue omits two redundant standalone account reads on the normal purchase path. Recovery and image-only resume retain their standalone identity check; other adapters retain the old behavior. Building catalogue/form/account reads run together; vehicle form/account/current-vehicle reads run together. The image copier reuses the target record just verified by the builder while retaining scope, form, post-upload and pixel checks. This removes one duplicate icon-target read.
+
+Purchase writes remain sequential with durable intent and authoritative completion checks. Whole-catalogue receipt verification remains where no proven equivalent targeted response has been established. The icon settling delay is retained. Per-item cumulative stage timings cover checks, build/receipt, vehicle purchase/verification, recovery and icon copy, including failed attempts. Live speedup is unmeasured until phone testing.
+
+Validation: 59 tests pass, including concurrent reads, changed-account rejection, full-garage rejection, durable purchase recovery, timing records and retained icon post-upload validation. Chrome Store review remains untouched.

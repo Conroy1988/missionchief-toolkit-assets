@@ -26,3 +26,8 @@ test('image failure resumes only copying, never another purchase',async()=>{
  api.copyImage=async()=>events.push('image');await runQueue(job,api,{save:async()=>{}});assert.deepEqual(events,['create','buy','image','image']);assert.equal(job.spent,12500);assert.equal(job.items[0].imageDone,true);assert.equal(job.state,'complete');
 });
 test('insufficient account credits still stop before purchase',async()=>{const job=make(),events=[],api=adapter(events);delete job.budget;api.checkSite=async()=>{throw Error('Insufficient Credits');};await assert.rejects(runQueue(job,api,{save:async()=>{}}),/Insufficient/);assert.deepEqual(events,[]);});
+test('native validated purchase checks avoid redundant account reads while recovery still checks',async()=>{
+ const job=make(),api=adapter([]);let checks=0;api.validatesPurchaseAccount=true;api.checkAccount=async()=>checks++;
+ await runQueue(job,api,{save:async()=>{}});assert.equal(checks,0);assert.ok(job.items.every(i=>Object.keys(i.timings).length===5&&Object.values(i.timings).every(n=>Number.isFinite(n)&&n>=0)));
+ const resumed=make();resumed.items=[{state:'creating'}];api.reconcile=async()=>({state:'complete',cost:10000});await runQueue(resumed,api,{save:async()=>{}});assert.equal(checks,1);
+});

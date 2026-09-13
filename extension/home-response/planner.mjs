@@ -41,7 +41,7 @@ function spansAt(polys,y){
  }xs.sort((a,b)=>a-b);for(let i=0;i+1<xs.length;i+=2)spans.push([xs[i],xs[i+1]]);}
  return spans;
 }
-function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],landGeometry=null,maxBuildings=1000}){
+function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],landGeometry=null,maxBuildings=1000,fillGaps=true}){
  if(!SPACING_MILES.includes(spacingMiles))throw Error('Unsupported spacing.');
  if(!Number.isInteger(maxBuildings)||maxBuildings<1||maxBuildings>1000)throw Error('Choose 1–1000 buildings.');
  if(existing.some(p=>!valid(p)))throw Error('Existing building coordinates are incomplete. Refresh buildings before planning.');
@@ -49,26 +49,35 @@ function* generatePlan({geometry,spacingMiles,existing=[],excluded=[],landGeomet
  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
  for(const poly of ps)for(const ring of poly)for(const [x,y]of ring){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
  if(minX < -9 || maxX > 3 || minY < 49 || maxY > 61)throw Error('Select an area within the UK planning bounds.');
- const dy=spacingMiles/69*0.8660254,dx=spacingMiles/(69.172*Math.cos(rad((minY+maxY)/2)));
+ // Use the same Earth radius as the distance check; approximate degree lengths
+ // previously made neighbouring grid points slightly closer than requested.
+ const angular=spacingMiles/R*180/Math.PI*1.002;
+ const dy=angular*Math.sqrt(3)/2,dx=angular/Math.cos(rad(maxY));
  const rows=Math.ceil((maxY-minY)/dy)+1,cols=Math.ceil((maxX-minX)/dx)+2;
  const cellY=spacingMiles/69.2,cellX=spacingMiles/(69.2*Math.cos(rad(minY))),buckets=new Map();
  const key=p=>[Math.floor(p[0]/cellX),Math.floor(p[1]/cellY)];
- const add=p=>{const k=key(p).join(',');if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(p);};
- const near=p=>{const [x,y]=key(p);for(let i=x-3;i<=x+3;i++)for(let j=y-3;j<=y+3;j++)for(const q of buckets.get(`${i},${j}`)||[])if(distanceMiles(p,q)<spacingMiles-1e-8)return true;return false;};
- existing.forEach(add);const sites=[];let limitReached=false,blocked=0,waterExcluded=0;
- outer:for(let r=0;r<rows;r++){
-  const y=minY+r*dy,spans=spansAt(ps,y),holes=spansAt(ex,y),dry=land?spansAt(land,y):null;
+ const add=(p,kind)=>{const k=key(p).join(',');if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push({p,kind});};
+ const near=p=>{const [x,y]=key(p);let proposed=false;for(let i=x-3;i<=x+3;i++)for(let j=y-3;j<=y+3;j++)for(const q of buckets.get(`${i},${j}`)||[])if(distanceMiles(p,q.p)<spacingMiles-1e-8){if(q.kind==='existing')return 'existing';proposed=true;}return proposed?'proposed':null;};
+ existing.forEach(p=>add(p,'existing'));const sites=[];let limitReached=false,blocked=0,waterExcluded=0,existingBlocked=0,proposedBlocked=0,excludedPoints=0,gapAdded=0;
+ const scanlines=new Map();
+ const offsets=fillGaps?[[0,0],[.5,0],[.25,.5],[.75,.5]]:[[0,0]];
+ outer:for(let pass=0;pass<offsets.length;pass++)for(let r=0;r<rows;r++){
+  const [ox,oy]=offsets[pass],y=minY+(r+oy)*dy;
+  if(!scanlines.has(y)){const spans=spansAt(ps,y);scanlines.set(y,{spans,holes:spans.length?spansAt(ex,y):[],dry:land&&spans.length?spansAt(land,y):null});}
+  const {spans,holes,dry}=scanlines.get(y);
   for(let c=0;c<cols;c++){
-   const p=[minX+(c+(r%2)/2)*dx,y];
-   if(!spans.some(([a,b])=>p[0]>=a&&p[0]<b)||holes.some(([a,b])=>p[0]>=a&&p[0]<b))continue;
+   const p=[minX+(c+(r%2)/2+ox)*dx,y];
+   if(!spans.some(([a,b])=>p[0]>=a&&p[0]<b))continue;
+   if(holes.some(([a,b])=>p[0]>=a&&p[0]<b)){excludedPoints++;continue;}
    if(dry&&!dry.some(([a,b])=>p[0]>=a&&p[0]<b)){waterExcluded++;continue;}
-   if(near(p)){blocked++;continue;}
+   const reason=near(p);if(reason){blocked++;if(reason==='existing')existingBlocked++;else proposedBlocked++;continue;}
    if(sites.length>=maxBuildings){limitReached=true;break outer;}
-   sites.push(p);add(p);
+   sites.push(p);add(p,'proposed');if(pass)gapAdded++;
   }
-  yield {rowsDone:r+1,rows,count:sites.length};
+  yield {rowsDone:r+1,rows,count:sites.length,pass:pass+1};
  }
- return {sites,count:sites.length,limitReached,spacingMiles,existingCount:existing.length,blocked,waterExcluded,distanceBasis:'straight-line',placementStatus:'Geometric proposal: road access and build eligibility require review.'};
+
+ return {sites,count:sites.length,limitReached,spacingMiles,existingCount:existing.length,blocked,waterExcluded,existingBlocked,proposedBlocked,excludedPoints,gapAdded,distanceBasis:'straight-line',placementStatus:'Geometric proposal: road access and build eligibility require review.'};
 }
 export function plan(options){const iterator=generatePlan(options);let step;do{step=iterator.next();}while(!step.done);return step.value;}
 export async function planAsync(options,{onProgress=()=>{},cancelled=()=>false}={}){

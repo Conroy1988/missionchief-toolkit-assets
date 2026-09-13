@@ -7,3 +7,12 @@ test('visual icon picker selects one image with an accessible selected state',as
  const buttons=document.querySelectorAll('[data-icon-grid] button');assert.equal(buttons.length,2);assert.ok(buttons[1].querySelector('img'));buttons[1].click();assert.equal(document.querySelector('[data-image]').value,'12');assert.equal(buttons[1].getAttribute('aria-pressed'),'true');assert.equal(buttons[0].getAttribute('aria-pressed'),'false');document.querySelector('[data-close]').click();grid.remove();
 });
 test('Operations launcher is unique and exposes exact spacing and all verified vehicles',()=>{const grid=document.getElementById('grid');mount(grid);mount(grid);assert.equal(grid.children.length,1);grid.querySelector('button').click();assert.ok(document.querySelector('dialog').open);assert.deepEqual([...document.querySelector('[data-spacing]').options].map(o=>o.value),['1','3','4','6','8','10']);assert.equal(document.querySelector('[data-vehicle]').options.length,14);assert.equal(document.querySelector('[data-limit]').max,'1000');assert.equal(document.querySelector('[data-budget]'),null);assert.ok(document.querySelector('[data-cities]').options.length>60);assert.ok(document.querySelector('[data-image]'));assert.ok(document.querySelector('[data-build]').disabled);assert.ok(document.querySelector('[data-preview]').disabled);document.querySelector('[data-close]').click();assert.equal(document.querySelector('dialog'),null);});
+test('area controls enable radius only when it defines the selected area',async()=>{
+ const grid=document.createElement('div');document.body.append(grid);mount(grid);grid.querySelector('button').click();
+ const mode=document.querySelector('[data-mode]'),radius=document.querySelector('[data-radius]'),finish=document.querySelector('[data-finish]');
+ assert.equal(radius.disabled,true);assert.equal(finish.disabled,true);
+ mode.value='radius';await mode.onchange();assert.equal(radius.disabled,false);assert.equal(finish.disabled,true);
+ mode.value='draw';await mode.onchange();assert.equal(radius.disabled,true);assert.equal(finish.disabled,false);
+ mode.value='boundary';await mode.onchange();assert.equal(radius.disabled,true);assert.equal(finish.disabled,true);assert.ok(document.querySelector('[data-build]').disabled);
+ document.querySelector('[data-close]').click();grid.remove();
+});

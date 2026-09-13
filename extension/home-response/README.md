@@ -44,3 +44,11 @@ Opening the builder restores the saved account plan directly. The original error
 is retained, and new intents record individual costs before submitting requests.
 23 regression tests cover recovery, no duplicate purchases and cost accounting.
 No live purchase was made while fixing the issue.
+
+## 0.23.7 — location gap search
+
+Corrects degree-to-mile grid spacing so adjacent candidates are not discarded by the exact distance check. Additional offset passes look for gaps without relaxing minimum spacing, land or exclusion checks. Scanline intersections are cached between passes. This is a deterministic proposal, not an optimal-packing guarantee.
+
+The preview distinguishes existing buildings inside the area from the account-wide catalogue, offers spacing-circle overlays and explains sampled-position exclusions. Radius applies only in Point and radius mode. Changing area settings clears stale proposals. The cap remains 1000; Chrome Store submission remains deferred.
+
+Validation: 41 automated checks, including gap recovery, adjacent grid distances, water, queue recovery and area controls. Real account placement counts and phone acceptance still require testing.

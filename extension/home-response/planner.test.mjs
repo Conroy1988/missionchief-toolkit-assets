@@ -31,3 +31,14 @@ test('detailed region supports 1000 locations without the old complexity error',
  assert.throws(()=>plan({...options,maxBuildings:1001}),/1000/);
 });
 test('async planning can be cancelled between rows',async()=>{let stop=false;await assert.rejects(planAsync({geometry,spacingMiles:1},{onProgress:()=>{stop=true;},cancelled:()=>stop}),/cancelled/);});
+test('gap search recovers positions missed by the first grid without relaxing spacing',()=>{
+ const options={geometry:circle([-2.63,53.54],5),spacingMiles:4,existing:[[-2.63,53.54]]};
+ const first=plan({...options,fillGaps:false}),filled=plan(options);
+ assert.equal(first.count,0);assert.ok(filled.count>=3);assert.equal(filled.gapAdded,filled.count);assert.ok(filled.existingBlocked>0);
+ for(let i=0;i<filled.count;i++)for(const q of [...options.existing,...filled.sites.slice(0,i)])assert.ok(distanceMiles(filled.sites[i],q)>=4);
+});
+test('corrected horizontal grid preserves adjacent candidates at requested distance',()=>{
+ const g={type:'Polygon',coordinates:[[[-3,54],[-2.7,54],[-2.7,54.001],[-3,54.001],[-3,54]]]};
+ const result=plan({geometry:g,spacingMiles:1,fillGaps:false});
+ assert.ok(result.count>=12);for(let i=1;i<result.count;i++){const miles=distanceMiles(result.sites[i-1],result.sites[i]);assert.ok(miles>=1&&miles<1.01);}
+});

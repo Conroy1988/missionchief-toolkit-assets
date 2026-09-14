@@ -1,0 +1,26 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync} from 'node:fs';
+const require=createRequire(new URL('../home-response/package.json',import.meta.url));
+const {JSDOM}=require('jsdom');
+const code=['core.mjs','ui.mjs'].map(name=>readFileSync(new URL(name,import.meta.url),'utf8').replace(/^import .*?;\n/gm,'').replace(/^export /gm,'')).join('\n');
+const tick=()=>new Promise(resolve=>setTimeout(resolve,25));
+test('visual picker previews and replaces only selected matches after confirmation',async()=>{
+ const dom=new JSDOM('<body></body>',{url:'https://www.missionchief.co.uk/',runScripts:'outside-only'}),w=dom.window;
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
+ Object.defineProperty(w.navigator,'locks',{value:{request:async(name,options,fn)=>fn({name})}});
+ let confirmed=false;w.confirm=()=>confirmed;
+ const records=[1,2,9].map(id=>({id,caption:`Building ${id} <b>literal</b>`,typeId:'4',dispatchId:'0',small:false,latitude:55,longitude:-3,hasCustomIcon:true,customIconUrl:id===9?'https://example.com/new.png':'https://example.com/old.png'}));
+ const writes=[];w.api={account:async()=>({user_id:1}),busy:()=>false,list:async()=>records,building:async id=>records.find(r=>r.id===id),typeName:()=> 'Hospital',image:async url=>({width:50,height:50,pixelDigest:url}),apply:async(item,plan,image)=>{writes.push(item.buildingId);records.find(r=>r.id===item.buildingId).customIconUrl=image.pixelDigest;}};
+ w.eval(code+'\nconfigureIconReplacement(window.api);openIconReplacement();');await tick();
+ const $=s=>w.document.querySelector(s);
+ $('[data-scan]').click();await tick();
+ assert.equal(w.document.querySelectorAll('[data-from] button').length,2);
+ $('[data-from] button').click();w.document.querySelectorAll('[data-to] button')[1].click();
+ $('[data-preview]').click();await tick();assert.equal(w.document.querySelectorAll('[data-results] input').length,2);assert.equal($('[data-results] b'),null);
+ const selected=w.document.querySelectorAll('[data-results] input')[1];selected.checked=false;selected.dispatchEvent(new w.Event('change'));
+ $('[data-run]').click();await tick();assert.deepEqual(writes,[]);
+ confirmed=true;$('[data-run]').click();await tick();assert.deepEqual(writes,[1]);assert.match($('[data-status]').textContent,/complete/);
+ dom.window.close();
+});

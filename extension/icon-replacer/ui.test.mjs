@@ -12,13 +12,13 @@ test('visual picker previews and replaces only selected matches after confirmati
  Object.defineProperty(w.navigator,'locks',{value:{request:async(name,options,fn)=>fn({name})}});
  let confirmed=false;w.confirm=()=>confirmed;
  const records=[1,2,9].map(id=>({id,caption:`Building ${id} <b>literal</b>`,typeId:'4',dispatchId:'0',small:false,latitude:55,longitude:-3,hasCustomIcon:true,customIconUrl:id===9?'https://example.com/new.png':'https://example.com/old.png'}));
- const writes=[];w.api={account:async()=>({user_id:1}),busy:()=>false,list:async()=>records,building:async id=>records.find(r=>r.id===id),typeName:()=> 'Hospital',image:async url=>({width:50,height:50,pixelDigest:url}),apply:async(item,plan,image)=>{writes.push(item.buildingId);records.find(r=>r.id===item.buildingId).customIconUrl=image.pixelDigest;}};
+ const writes=[];let imageReads=0;w.api={account:async()=>({user_id:1}),busy:()=>false,list:async()=>records,building:async id=>records.find(r=>r.id===id),typeName:()=> 'Hospital',image:async url=>{imageReads++;return {width:50,height:50,pixelDigest:url};},apply:async(item,plan,image)=>{writes.push(item.buildingId);records.find(r=>r.id===item.buildingId).customIconUrl=image.pixelDigest;}};
  w.eval(code+'\nconfigureIconReplacement(window.api);openIconReplacement();');await tick();
  const $=s=>w.document.querySelector(s);
  $('[data-scan]').click();await tick();
  assert.equal(w.document.querySelectorAll('[data-from] button').length,2);
  $('[data-from] button').click();w.document.querySelectorAll('[data-to] button')[1].click();
- $('[data-preview]').click();await tick();assert.equal(w.document.querySelectorAll('[data-results] input').length,2);assert.equal($('[data-results] b'),null);
+ const readsBeforePreview=imageReads;$('[data-preview]').click();await tick();assert.equal(imageReads,readsBeforePreview,'preview must not download icons again');assert.equal(w.document.querySelectorAll('[data-results] input').length,2);assert.equal($('[data-results] b'),null);
  const selected=w.document.querySelectorAll('[data-results] input')[1];selected.checked=false;selected.dispatchEvent(new w.Event('change'));
  $('[data-run]').click();await tick();assert.deepEqual(writes,[]);
  confirmed=true;$('[data-run]').click();await tick();assert.deepEqual(writes,[1]);assert.match($('[data-status]').textContent,/complete/);assert.equal($('[data-phase]').textContent,'Complete');assert.equal($('[data-count]').textContent,'1 / 1 · 100%');assert.equal($('[data-progress]').value,1);assert.equal($('.progress-panel').dataset.working,'false');

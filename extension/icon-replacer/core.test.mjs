@@ -38,3 +38,11 @@ test('failed checkpoint prevents upload; pause retains pending work',async()=>{
  const f=fixture();await assert.rejects(runIconReplacement(f.job,f.api,{save:async j=>{if(j.items[0].state==='writing')throw Error('storage');}}),/storage/);assert.equal(f.writes.length,0);
  const g=fixture();await runIconReplacement(g.job,g.api,{save:async()=>{},stopped:()=>true});assert.equal(g.job.state,'paused');assert.equal(g.writes.length,0);
 });
+test('reports an active upload before completion without advancing verified progress',async()=>{
+ const f=fixture();f.job.items=f.job.items.slice(0,1);let release;const waiting=new Promise(r=>release=r),stages=[];let updates=0;
+ f.api.apply=async()=>waiting;
+ const run=runIconReplacement(f.job,f.api,{save:async()=>{},stage:(action,item)=>stages.push([action,item?.name]),progress:()=>updates++});
+ await new Promise(r=>setTimeout(r,10));
+ assert.deepEqual(stages.at(-1),['Uploading and verifying icon','Station 1']);assert.equal(f.job.items[0].state,'writing');assert.equal(updates,0);
+ release();await run;assert.equal(f.job.state,'complete');
+});

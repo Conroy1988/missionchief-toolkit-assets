@@ -30,9 +30,10 @@ export async function scanIcons(api, records, {progress=()=>{}, stopped=()=>fals
   }
   return {groups:[...groups.values()].sort((a,b)=>b.items.length-a.items.length),unavailable,savedAt:Date.now()};
 }
-export async function runIconReplacement(job,api,{save,stopped=()=>false,progress=()=>{}}) {
+export async function runIconReplacement(job,api,{save,stopped=()=>false,progress=()=>{},stage=()=>{}}) {
   if(job.schema!==1 || !job.items?.length || job.from===job.to) throw Error('Invalid replacement plan.');
   const identity=async()=>{if(String((await api.account()).user_id)!==job.account)throw Error('Game account changed.');if(api.busy())throw Error('Another Operations task is running.');};
+  stage('Checking replacement source');
   await identity();
   const source=await api.building(job.sourceId,{requireIcon:true});
   if(!source.hasCustomIcon||!source.customIconUrl)throw Error('Replacement source no longer has a custom icon.');
@@ -43,6 +44,7 @@ export async function runIconReplacement(job,api,{save,stopped=()=>false,progres
     if(stopped())break;
     if(['complete','skipped'].includes(item.state))continue;
     try {
+      stage('Checking building and current icon',item);
       await identity();
       const record=await api.building(item.buildingId,{requireIcon:true});
       if(!sameIconTarget(record,item))throw Error('Building identity or scope changed. Review this building before continuing.');
@@ -53,6 +55,7 @@ export async function runIconReplacement(job,api,{save,stopped=()=>false,progres
       else if(key!==job.from){item.state='skipped';item.detail='Original icon changed since preview';}
       else {
         item.state='writing';await save(job);
+        stage('Uploading and verifying icon',item);
         await api.apply(item,{replaceMode:'all',expectedIcon:current},image);
         item.state='complete';item.detail='Replacement icon saved and verified';
       }

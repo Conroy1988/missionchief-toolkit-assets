@@ -11,21 +11,64 @@
 > [!IMPORTANT]
 > **The Toolkit is now a Chrome extension. The Tampermonkey/userscript edition is no longer supported.** Install through the **[Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc)**. Existing script users: **[follow the migration guide](docs/MIGRATING_FROM_USERSCRIPT.md)** before disabling the old copy.
 
-<p align="center"><a href="#built-for-your-operation">Features</a> · <a href="#operations-with-a-plan">Operations</a> · <a href="#get-started">Get started</a> · <a href="#privacy-and-control">Privacy</a> · <a href="#source-and-releases">Source</a></p>
+<p align="center"><a href="#built-for-your-operation">Features</a> · <a href="#mission-intelligence">Missions</a> · <a href="#fleet-and-transport">Fleet</a> · <a href="#operations-with-a-plan">Operations</a> · <a href="#finance-and-discord">Finance</a> · <a href="#make-it-your-workspace">Customisation</a> · <a href="#get-started">Get started</a> · <a href="#privacy-and-control">Privacy</a> · <a href="#source-and-releases">Source</a></p>
 
 ## Built for your operation
 
 Bring map controls, mission information, fleet visibility, building workflows and finance into the game. Open **Menu** for the Toolkit and **Game Guide** for the official TKB MissionChief guide.
 
-| Area | What you can do |
+| When you want to… | Open… |
 |---|---|
-| **Map & missions** | Use native mission and building filters, mission-age and value information, saved locations and drawing tools. |
-| **Fleet** | Read vehicle status, locate units and inspect resource pressure while keeping the game map in view. |
-| **Operations** | Plan Home Response coverage, replace selected Home Response unit types, upgrade hospitals and use recruitment and image-copying tools. |
-| **Finance** | Review in-game financial information, reconciliation and reports. Send a chosen report to Discord after reviewing and confirming it. |
-| **Your workspace** | Adjust appearance and layout, use keyboard commands and return to Operations without clearing an active task. |
+| **See what your operation is short of** | Operational Pressure Board, Resource Gap and Procurement Brain |
+| **Find a mission, vehicle or station quickly** | Command Palette, Unit Locator and saved locations |
+| **Build out an area** | Home Response Builder with coverage preview, vehicles and icons |
+| **Change your Home Response fleet** | Home Response Unit Switcher, filtered by dispatch centre |
+| **Handle repetitive building administration** | Hospital Upgrades, Dispatch Recruitment, Station Icon Copier and Expansion & Upgrade Planner |
+| **Understand where your Credits went** | Financial intelligence, historical ledger scans and report comparisons |
+| **Make the game fit how you play** | Personalisation Studio, layout controls, themes, hotkeys and Quick Wheel |
 
 **Install the version available in the Store.** The feature descriptions below include the **1.2.5 submission**; Google review and browser update delivery determine when that version becomes available to you. A source commit or test ZIP is not proof of Store approval.
+
+## Mission intelligence
+
+**Know what needs attention, what is already covered and where the next shortage is coming from.**
+
+| Feature | What it brings to your game |
+|---|---|
+| **Operational Pressure Board** | Compare mission demand with your available fleet, identify competing demands for specialist units, and inspect patient and prisoner transport pressure. Focus, open or pin incidents from the board. Personal missions are included; joined alliance missions are optional. |
+| **Procurement Brain** | Review ranked acquisition, repositioning, recruitment and training recommendations based on current shortages and repeated local mission evidence. Recommendations show their supporting evidence; the tool does not purchase or dispatch for you. |
+| **Resource Gap** | Inspect mission requirements against your personal fleet within a chosen radius, with an optional map badge. |
+| **Mission Age map timers** | See how long personal missions have been waiting directly above their map markers. |
+| **Mission Value** | See available mission-value information inside opened mission windows. Unavailable values are left hidden. |
+| **Incident Command Wire** | Follow a prioritised incident feed. Incidents leave the attendance queue when one of your units is on scene and can return when the last one leaves. |
+| **Operational Timeline** | Enable a searchable local history of mission changes, responses, demand, stalls, recoveries and completions. Filter, export or clear it. Logging starts off. |
+| **Alliance Credits** | Inspect alliance mission values with eligibility-aware states and value filters. |
+
+## Fleet and transport
+
+**Find the right unit and see what is keeping vehicles occupied.**
+
+| Feature | What it brings to your game |
+|---|---|
+| **Vehicle Code Status** | View status-code descriptions and live fleet totals, including out-of-service vehicles. |
+| **Unit Locator & Follow Mode** | Search your vehicles by name, ID, type, station or status. Locate one on the map or deliberately follow its live marker, with a visible Stop control. |
+| **Transport Watcher** | Highlight missions still waiting for patient or prisoner transport, with map indicators and counts. |
+| **Patient Transport Sweep** | Scan eligible alliance patient transports, review the scope and use the game's native patient-release controls. Follow progress and retain the completion report for review. |
+| **Auto-load all vehicles** | Use the game's native vehicle-list batch control inside the active mission window to reveal additional vehicles. |
+
+## Map tools and navigation
+
+**Keep useful information on the map and reach the rest quickly.**
+
+| Feature | What it brings to your game |
+|---|---|
+| **UK Building Filters** | Access native building-type filters, with commonly used types placed first. |
+| **Command Palette** | Search Toolkit commands, settings, live missions, personal vehicles, buildings and saved locations from one place. |
+| **Drawing & Map Measure** | Measure distances in kilometres and add temporary lines, arrows, freehand sketches, shapes, zones, text and markers. |
+| **Coverage rings & map overlays** | Add geographic context and control what is visible around your operating area. |
+| **Saved locations & Smart Bookmark Labels** | Jump back to useful places with compact labels that retain access to their full names. |
+| **Contextual Command Menus** | Open item-specific actions with a desktop right-click or supported touch long-press. |
+| **Game Guide** | Open the official TKB MissionChief guide in a new tab directly beside **Menu**, keeping the game open. |
 
 ## Operations with a plan
 
@@ -59,7 +102,60 @@ Select **All dispatch centres**, a named centre or Unassigned. Choose the curren
 
 Select hospitals and a **target level from 1 to 30**. The tool uses the game's direct target-level purchase rather than buying each intermediate level separately. Review your current balance, estimated costs and results; maximum-level completion is checked against the hospital record.
 
+### Recruitment, courses and building management
+
+| Feature | What it brings to your game |
+|---|---|
+| **Dispatch Recruitment** | Choose one or all dispatch centres, filter station types, then set the hiring phase and desired personnel for a reviewed selection of buildings. |
+| **Station Icon Copier** | Choose an owned station's custom icon and apply it to a reviewed subset of matching station types. Existing custom icons are protected by default. |
+| **Expansion & Upgrade Planner** | Inspect native Credit offers for building levels, bays and extensions, then prepare purchases within the selected scope and budget. |
+| **Alliance Courses** | Scan eligible academy courses and start ready courses through the game's native education controls, with sequential progress and results. |
+| **Alliance Member Manager** | Filter and sort members by role and activity, and explicitly load additional pages when needed. |
+| **Guided Operations** | Work through scope, configuration, review, execution and results. **Back to Operations** returns to tool selection without clearing selections or stopping an active task. |
+
 [Detailed setup and operating guidance →](docs/EXTENSION_GUIDE.md)
+
+## Finance and Discord
+
+**Read the numbers, investigate changes and share a report when you choose.**
+
+| Feature | What it brings to your game |
+|---|---|
+| **Financial intelligence** | Review income, spending, net position, reconciliation and variance using your in-game financial data. |
+| **Historical ledger archive** | Scan available ledger history on demand, retain it locally and continue supported interrupted scans. The available game history determines what can be reported. |
+| **Period comparisons** | Compare the selected reporting period with the preceding period where data and report settings allow. |
+| **Report styles** | Choose **Simple**, **Informative** or **The Wolf** financial reporting, depending on how much detail you want. |
+| **Optional Discord reports** | Prepare financial reports, transport-sweep reports or operational SITREPs. Review and confirm before sending to your configured webhook. |
+| **Payout presentations** | Add themed mission-completion banners, with optional sound and emergency-flash effects. |
+
+## Make it your workspace
+
+**A configurable command area, from the controls you pin to the way the game looks.**
+
+| Feature | What it brings to your game |
+|---|---|
+| **Personalisation Studio** | Manage appearance, layouts, controls, alerts and recovery from one place, with separate desktop, tablet and mobile preferences. |
+| **Themes & MissionChief reskinning** | Choose from eight interface themes, apply supported custom theme codes and extend styling across game windows, lists, forms and tables. Restore the native appearance when you prefer. |
+| **Resizable desktop workspace** | Move, resize or temporarily maximise the Toolkit panel, with saved geometry and keyboard resize controls. |
+| **Pinned commands & auto-hiding dock** | Keep chosen tools readily available and tuck the dock away when map space matters more. |
+| **Quick Wheel** | Configure touch-friendly shortcuts for frequently used commands and locations. |
+| **Hotkey & Gesture Studio** | Remap keyboard commands and opt-in touch gestures, with duplicate-key checks and default restoration. |
+| **Economy Mode** | Reduce non-essential animation and effects while retaining operational features. |
+| **What's New & Feature Beacon** | Reopen release guidance and find newly introduced controls. |
+
+## Recovery and everyday control
+
+| Feature | What it brings to your game |
+|---|---|
+| **Operations Status Centre** | Inspect module health, freshness, workflow progress and Safe Mode status. |
+| **Toolkit Doctor** | Run user-triggered diagnostics and supported UI repair, with a privacy-conscious report for troubleshooting. |
+| **Toolkit Safe Mode** | Suspend optional modules while retaining access to settings and recovery, then restore your choices when leaving Safe Mode. |
+| **Settings import/export & snapshots** | Back up supported configuration and use local recovery snapshots. This is not automatic cross-device syncing. |
+| **One-Click Session Cleanup** | Preview and clear supported temporary Toolkit state while protecting durable settings, bookmarks, secrets and finance history. |
+| **Extension version & updates** | Check the installed extension version; public installation and browser-managed updates come through the Chrome Web Store. |
+
+**Explore further:** [Setup and operating guide](docs/EXTENSION_GUIDE.md) · [Feature reference](https://conroy1988.github.io/missionchief-toolkit-assets/features/) · [Extension release notes](extension/CHANGELOG.md)
+
 
 ## Get started
 

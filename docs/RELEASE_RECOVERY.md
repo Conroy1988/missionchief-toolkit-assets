@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Release Recovery and Failure Handling
 
 This guide describes how to recover the MissionChief Map Command Toolkit release pipeline without duplicate releases, repeated Discord announcements, silent version downgrades or inconsistent operational state.

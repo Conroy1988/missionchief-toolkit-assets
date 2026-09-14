@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Release Pipeline v4 — Maximum-Speed Verified Delivery
 
 Pipeline v4 builds one immutable release-ready candidate, resolves the exact successful head run, requires exactly one non-expired candidate artifact from that run, verifies its embedded PR head, PR number and repository tree against the exact current `main` commit, reuses it without rebuilding, verifies the live TKB Website assets, writes a private recovery backup, posts Discord only after both succeed, records timing telemetry, and dispatches GitHub Pages asynchronously.

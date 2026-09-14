@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "sourceSha256": "7491c531bffdeabed5061c26eeae2ce43af6186e56ca34281cbd9b65cfe2aabd",
+  "coverage": [
+    "blank/unrelated sidebar",
+    "stale markers",
+    "request failure and recovery",
+    "all 84 missions checked",
+    "eligible mission after previous cutoff",
+    "status-5 patient vehicle without duplicate green link",
+    "own-vehicle exclusion",
+    "AJAX first and full-page fallback"
+  ],
+  "liveAccountVerification": "pending user retest"
+}

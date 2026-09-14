@@ -1,66 +1,23 @@
-# MissionChief Map Command Toolkit Roadmap
+# Toolkit roadmap
 
-This roadmap separates verified infrastructure, active Toolkit development and repository-administration work that requires GitHub account controls.
+The supported product is now the Chrome Web Store extension. [Install and setup](README.md) · [Extension source](extension/README.md)
 
-## Completed foundation
+GitHub Issues are the current planning record. Use the existing type, priority and roadmap labels to describe actionable work; search for duplicates before creating an issue.
 
-- Canonical userscript source and byte-identical distribution generation
-- Release Readiness and production publication workflows
-- GitHub Release, TKB Website distribution, private migration backup and Discord coordination
-- Duplicate-announcement protection and partial release recovery
-- Reviewed rollback-candidate preparation
-- Performance regression budgets
-- Code-integrity and userscript-structure auditing
-- Public asset-health monitoring
-- Structured issue forms and managed labels
-- GitHub Pages documentation site
-- GitHub Actions supply-chain pinning, permission auditing and Dependabot
-- Cross-surface documentation contract and live Pages monitoring
-- Read-only release planning
+## Current extension foundations
 
-## Active Toolkit development
+- Recovered packaged baseline retained separately from maintained feature modules.
+- Home Response Builder with boundary selection, spacing, mapped-water checks and saved progress.
+- Home Response Unit Switcher with native Credit-shop discovery and recovery.
+- Direct target-level hospital upgrades.
+- Map, fleet, Operations and finance tools, plus optional confirmed Discord reports.
+- Extension and migration-notice test coverage.
 
-### Smart map presentation
+## Remaining release and migration work
 
-- Continue reducing bookmark footprint without damaging theme identity.
-- Extend intelligent label shortening and user overrides where real-world place names expose gaps.
-- Preserve Desktop, Tablet and iOS behaviour.
+- Confirm Google approval and public delivery for each submitted extension version.
+- Complete live replacement acceptance after the latest full-slot purchase fix.
+- Deploy and verify the final userscript migration notice through existing TKB update endpoints.
+- Keep public extension documentation and privacy disclosures aligned with packaged behaviour.
 
-### Operational intelligence
-
-- Refine Procurement Brain confidence and station-placement evidence as more bounded local history becomes available.
-- Extend Operational Timeline event coverage only where MissionChief already exposes authoritative state changes.
-- Continue Mission Age Watch, Critical View, Mission Inspector and transport-state refinement.
-- Expand live selector resilience when MissionChief changes markup.
-- Preserve deferred startup, bounded 30-day retention and on-demand interface construction without new polling.
-
-### Performance
-
-- Measure startup and first-interaction costs on large accounts.
-- Reduce unnecessary observers, selectors and eager controls.
-- Keep CI budgets calibrated to real regressions rather than normal feature growth.
-
-## Documentation and community
-
-- Capture real Desktop, Tablet and iOS screenshots.
-- Record short demonstrations for major workflows and themes.
-- Keep GitHub Discussions support routes and the public project roadmap aligned with repository configuration.
-- Add media to the generated Pages gallery using the documented capture manifest.
-
-## Repository architecture
-
-- Move generated release state away from protected source where practical.
-- Introduce a narrowly scoped GitHub App identity for release automation.
-- Rehearse the complete release and recovery pipeline under that identity.
-- Enable strict PR-only protection only after the rehearsal passes.
-
-## Optional administration
-
-- Configure a repository social-preview image.
-- Consider a custom documentation domain.
-- Delete obsolete merged branches after reviewing the generated branch-cleanup candidates.
-- Review Dependabot Action updates and upstream Node.js runtime migrations.
-
-## Decision rule
-
-Public Toolkit releases remain separate from repository-only infrastructure work. A repository improvement does not increase the Toolkit version unless the canonical userscript or user-facing distribution changes.
+Historical userscript release infrastructure is retained for provenance. It is not the extension publishing mechanism.

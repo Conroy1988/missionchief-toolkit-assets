@@ -9,7 +9,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a problem. Please check that Tampermonkey has installed the latest Toolkit version and reproduce the issue once after a hard refresh before submitting.
+        Thanks for reporting a problem. Please check that the Chrome Web Store extension is current and reproduce the issue once after a hard refresh before submitting.
 
         Do not include account passwords, webhook URLs, private tokens or other sensitive information.
 
@@ -17,8 +17,8 @@ body:
     id: toolkit-version
     attributes:
       label: Toolkit version
-      description: The version shown in Tampermonkey or the Toolkit interface.
-      placeholder: "4.11.2"
+      description: The extension version in your browser; include the bundled Toolkit version if shown.
+      placeholder: "Extension 1.2.5 / Toolkit 10.18.1"
     validations:
       required: true
 
@@ -27,8 +27,8 @@ body:
     attributes:
       label: Installation source
       options:
-        - TKB Website
-        - GitHub release archive
+        - Chrome Web Store
+        - Orion test ZIP or unpacked extension
         - Local or manually modified copy
         - Not sure
     validations:
@@ -38,15 +38,15 @@ body:
     id: browser
     attributes:
       label: Browser and version
-      placeholder: "Chrome 142, Firefox 140, Safari 18"
+      placeholder: "Chrome / Brave / Orion and version"
     validations:
       required: true
 
   - type: input
-    id: tampermonkey
+    id: extension-installation
     attributes:
-      label: Tampermonkey version
-      placeholder: "5.x"
+      label: Installation source
+      placeholder: "Chrome Web Store, Orion ZIP or unpacked build"
     validations:
       required: true
 
@@ -79,7 +79,7 @@ body:
         - Themes, map skins or visual presentation
         - Settings panel, import or export
         - Tablet or iOS layout
-        - TKB Website, GitHub or release infrastructure
+        - Chrome Web Store, GitHub or release infrastructure
         - Other or not sure
     validations:
       required: true

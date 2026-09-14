@@ -4,14 +4,14 @@ Security-sensitive reports should not be posted publicly when they include explo
 
 ## Supported version
 
-Only the latest verified MissionChief Map Command Toolkit release is actively supported. Older releases remain available for recovery and audit purposes, but security fixes are applied to the current release line.
+Only the current Chrome Web Store extension release is actively supported. The Tampermonkey/userscript edition is unsupported. Older releases remain available for recovery and audit purposes, but security fixes are applied to the current release line.
 
 ## Reporting a vulnerability
 
 Use GitHub's private vulnerability reporting feature when available. Include:
 
 - affected Toolkit version;
-- affected browser and userscript manager;
+- affected browser, extension version and installation source;
 - concise impact assessment;
 - reproducible steps or a minimal proof of concept;
 - whether credentials, private URLs, or user data are involved;
@@ -21,8 +21,8 @@ Do not include live credentials, webhook URLs, access tokens, private repository
 
 ## Response process
 
-A credible report will be triaged against the current canonical userscript and release pipeline. Confirmed issues may trigger a guarded hotfix, release recovery procedure, asset revocation, secret rotation, or an emergency rollback candidate. Public disclosure will follow remediation where practical.
+A credible report will be triaged against the current extension source and packaged behaviour. Confirmed issues may trigger a guarded hotfix, release recovery procedure, asset revocation, secret rotation, or an emergency rollback candidate. Public disclosure will follow remediation where practical.
 
 ## Release integrity
 
-Official releases are distributed through the verified TKB Website installer and automatic-update channel. GitHub Releases, the private migration archive, the authoritative release manifest and SHA-256 records provide the immutable verification trail. Do not trust userscript copies from unrelated mirrors.
+Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc). Source and test packages do not imply Store approval. Historical userscript releases and hashes remain available for provenance. All executable extension code is bundled locally.

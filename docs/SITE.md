@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # GitHub Pages documentation site
 
 The public MissionChief Map Command Toolkit site is generated from repository-controlled source data and deployed through GitHub Actions.

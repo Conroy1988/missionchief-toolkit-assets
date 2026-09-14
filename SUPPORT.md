@@ -1,21 +1,23 @@
 # Support
 
-## Installation and updates
+## Install and update
 
-Use the verified TKB Website installation link. The TKB Website is the sole supported install and automatic-update channel; the latest supported version and deployment health are published on the Toolkit status page.
+Use the [Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc). The Tampermonkey edition is unsupported: [migrate here](docs/MIGRATING_FROM_USERSCRIPT.md). Browser delivery follows Google approval; a pending build may not yet be available to install.
 
-## Bug and performance reports
+## Report a problem
 
-Use the repository's structured issue forms. Include the Toolkit version, browser, userscript manager, device mode, reproduction steps and console evidence where relevant.
+Use [the issue forms](https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new/choose). Include extension version, bundled Toolkit version if shown, browser/version, installation source, device, reproduction steps and exact error. For slow operations, include selected building/vehicle counts and stage timings. For interrupted purchases, include the visible saved-task status and redact private data.
 
-## Security-sensitive reports
+First check that only one Toolkit copy is enabled and fully reload MissionChief UK. Do not repeatedly restart an uncertain purchase; use Review & resume to verify saved progress.
 
-Do not post credentials, webhook URLs, private repository information or exploitable security details in a public issue. Follow `SECURITY.md`.
+## Private information
 
-## General questions and feature ideas
+Never publish passwords, cookies, access tokens or Discord webhook URLs. Follow [SECURITY.md](SECURITY.md) for sensitive reports. Game account details in screenshots should be redacted where unnecessary.
 
-Use the feature-request form until GitHub Discussions is enabled for the repository. Feature requests should describe the user problem, proposed workflow, affected operating modes and likely performance implications.
+## Feature requests
+
+Describe the problem, proposed workflow and affected devices. Existing game ownership, Credit costs and confirmations must remain clear.
 
 ## Scope
 
-Support covers the latest verified release. Historical releases are retained for audit and recovery but are not maintained as parallel supported versions.
+Support covers the Store extension. Explicitly label test ZIP and unpacked builds when reporting them. Historical userscripts and their release dashboards are retained as archives, not parallel supported editions.

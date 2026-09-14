@@ -1,4 +1,6 @@
-# Changelog
+# Historical userscript changelog
+
+The supported product is now the Chrome extension. Read the [extension changelog](extension/CHANGELOG.md) for current versions. The entries below preserve the retired userscript history.
 
 ## [10.18.1] - 2026-08-28
 

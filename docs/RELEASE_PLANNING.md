@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Release Planning Workflow
 
 `Prepare Release Plan` is a read-only operator aid. It never creates a tag, GitHub Release, TKB Website update, private backup or Discord announcement.

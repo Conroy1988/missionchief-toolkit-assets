@@ -1,0 +1,25 @@
+# Home Response Unit Switcher — 1.2.5 test
+
+Operations tool for replacing selected vehicle types in owned Home Response buildings (type 22). Dispatch selection starts with All dispatch centres, followed by alphabetically sorted owned centres and Unassigned. All includes unassigned homes. Vehicle names are not copied.
+
+Initial scan reads owned buildings and vehicles once. Source types come from that filtered fleet. Replacement choices use the existing verified UK Home Response catalogue; each selected building's shop is checked before removal. If a single-vehicle shop explicitly reports no free space and exposes no purchase link, the known vehicle catalogue supplies a labelled estimate. The user must acknowledge this before removal; the exact live Credit offer is required afterwards. Only FMS 2 vehicles are eligible. Unavailable vehicles are skipped.
+
+The tool discovers the exact native DELETE link and CSRF token from the selected vehicle's page. It rechecks ownership, source type, status, replacement price and building contents immediately before removal. Mutations are sequential. No removal route is synthesized from an unobserved control. Disabled offers and missing offers without an explicit capacity message block before removal. Identical repeated native offers are deduplicated; inconsistent prices block. Cost previews assume no refund. Replacements use game-assigned names; staffing/training is not modified.
+
+Account-scoped checkpoints persist intent before removal or purchase. Full vehicle catalogue reconciliation checks disappearance of the original ID and a single new ID of the selected type while retaining other existing vehicle IDs. Unknown outcomes never automatically replay. Known pre-request failures restore the retryable state. A removed slot remains resumable if its replacement purchase cannot proceed. A cross-tab Web Lock is shared with hospital upgrades. Closing and reopening preserves progress.
+
+Validation: 29 focused tests plus 82 existing checks, 111 total. Covers dispatch/source filtering, unavailable vehicles, account/price/storage failures, removal and purchase response loss, pause after removal, exact native control validation and reopening an outstanding plan. Packaged JavaScript syntax checked. No live deletion or replacement performed. First live acceptance should use one vehicle. Chrome Store submission is unchanged.
+
+Build with `python3 extension/build-switcher-test.py`. This composes the recovered release, Home Response Builder, hospital 1.1.3 fixes and this module without modifying the recovered baseline.
+
+## Preview performance
+Each preview creates a fresh account/building/fleet snapshot and indexes it by ID. Up to four shop reads run concurrently; duplicate buildings share a shop promise within that preview only. Vehicle removal page discovery is deferred to fresh pre-removal checks. Neither prepare nor remove uses the preview snapshot. Pause and errors stop scheduling work and drain active reads before releasing the UI lock. Tests verify one catalogue snapshot, bounded concurrency, cancellation/error drain, and account mismatch. Actual end-to-end speed remains unmeasured on the user’s connection.
+
+## Shop categories and recovery status
+Searches all loaded shop content, recognises both building-scoped native Credit route formats, and follows same-building native shop category query links when the selected offer is absent. Category links are read only; purchase URLs are taken from actual shop anchors. Stage-aware errors identify the affected building and whether removal or purchase is uncertain or replacement remains outstanding. The status column shows saved execution state instead of stale preview estimates. Live acceptance remains unverified.
+
+## Confirmed native query parameters
+The user supplied the exact Community First Responder Credit URL with `building=1865749&return_tab=ambulance`. Earlier lookup rejected every query string; this was the confirmed cause of missing valid Credit offers. The shared matcher now preserves these native parameters, validates building identity, rejects duplicate/unknown parameters and retains exact currency/type scope. Tests cover the supplied URL, all 14 catalogue vehicle types in both path forms, query ordering, HTML-escaped links, invalid scopes and the complete parse-to-purchase URL handoff. These are offline fixtures; not 14 live purchases. Home Response Builder already matches purchase pathnames while preserving native queries and did not have this rejection.
+
+## Disabled offers on full shops
+Capacity estimation now supports both absent links and visible disabled Credit links when a single-vehicle shop explicitly reports no free space. A disabled link must expose a valid consistent price; estimates never return a purchase URL. After removal an enabled live Credit offer is mandatory. Disabled offers without an explicit capacity message still block. Tests cover the disabled-to-enabled transition and persistent disablement preventing purchase. The user screenshot establishes a disabled offer, not its underlying reason; actual Upper Craigie restriction remains unverified.

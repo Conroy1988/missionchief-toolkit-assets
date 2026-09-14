@@ -1,0 +1,50 @@
+# MissionChief Map Command Toolkit — Privacy
+
+
+Extension 1.2.5. Updated 14 September 2026. Independent community software, not an official MissionChief product.
+
+
+## Purpose and information used
+
+
+The extension runs on MissionChief UK when you enable it. It reads the game page and same-origin game endpoints to provide map controls, mission information, vehicle and building tools, and administration workflows. This can include game user and alliance identifiers, mission locations, vehicles, buildings, personnel and in-game financial information. Game locations and game currency are not your device GPS location or real-world banking information. Actions you confirm are sent to MissionChief using your existing signed-in game session. The extension does not ask for your MissionChief password.
+
+
+## Storage and retention
+
+
+Ordinary toolkit preferences and supported cached game data are saved in this browser's extension-local storage, separated by MissionChief origin. Existing ordinary userscript settings may be copied once without overwriting the original. Settings are not synced by this extension across browsers or devices. Transient page data and scan logs can remain in memory until the page is closed. Bounded mission-read caches are held briefly in memory; public reference caches may be shared between tabs. Task checkpoints store a game-account scope, owning tab/document, status, timestamps and progress counts locally so interrupted tasks can be identified. The latest 20 previous runs are retained per origin/account in addition to current task checkpoints. Up to 25 named operation presets store only tool preferences per game account; no execution queue is stored in a preset. Setup completion is stored locally. Checkpoints and presets never cause automatic replay of game actions. Diagnostic export includes only allowlisted version, status and performance counters; it excludes account identifiers, URLs, mission data and settings. Stored extension data remains until removed or the extension is uninstalled. Exported settings and reports are files you choose to save and manage yourself. Removing the extension does not delete your original userscript settings or your MissionChief account data.
+
+
+## Home Response Builder data
+
+Builder plans, progress, selected game locations, building and vehicle references, dispatch-centre assignment and icon catalogue references are saved in MissionChief site-local browser storage, scoped to the verified game account. Icon catalogues also record the selected building type and remain until refreshed or that site's storage is cleared. Saved catalogues contain image references and counts rather than downloaded image bytes. Uninstalling the extension does not necessarily clear MissionChief site storage. Plans never resume purchases without user confirmation.
+
+## Hospital upgrades and vehicle replacement
+
+Account-scoped saved plans record selected building and vehicle IDs, target levels or types, confirmed Credit costs and verified progress in MissionChief site-local storage. Vehicle replacement can permanently remove a selected vehicle before buying its replacement. These operations require confirmation. Interrupted requests are checked before any repeat, and saved plans do not automatically resume. Uninstalling the extension does not necessarily clear the game's site storage; clearing site storage can remove recovery checkpoints.
+
+## Network requests and other providers
+
+
+MissionChief receives game reads and actions. Public guides and reference data may be downloaded from TKB Gaming and GitHub. GitHub-hosted theme images and audio, and MissionChief image assets hosted on Amazon S3, may be loaded by enabled features. Your selected game graphics or other configured asset URLs may also be requested by the page. Network providers receive ordinary connection information such as IP address and request metadata and may receive the page origin or referrer according to browser policy. Privileged cross-origin data requests made by the extension omit credentials. The native MissionChief page continues to make its own requests independently.
+
+
+City search and map-area selection send the entered place query or clicked map coordinates to OpenStreetMap's Nominatim service to obtain public geographic boundaries. These are user-selected game-planning locations, not device GPS readings. The preview map requests OpenStreetMap tiles for the viewed area. These providers receive normal network metadata. Search results are cached temporarily and requests are rate-limited. Coastline and major-lake geometry is bundled with the extension for local water checks; map attribution and geographic-data licences are included.
+
+## Limits and sharing
+
+
+The extension does not include advertising or developer analytics, sell user data, or send game records to a developer collection server. It does not read browsing history from unrelated websites. Discord is optional: the webhook URL stays in extension local storage and is excluded from game-page settings, backups and diagnostics. A prepared report (including an optional PNG chart) is stored locally for review and expires after 30 minutes. Discord receives the selected report only after you confirm sending. Connection checks contact Discord without posting a message. Forget destination removes the webhook and report. Private finance persistence and encrypted private imports remain unavailable. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
+
+
+## Your choices
+
+
+The toolkit is off by default. Enable it from the extension popup, disable individual features in the toolkit, or disable the extension and reload the game. Administrative actions affect the real game; review their existing confirmation screens. Uninstalling removes the extension's local settings. For questions or deletion requests concerning information you have voluntarily shared for support, contact the maintainer through the project issue tracker; do not post passwords or other secrets.
+
+
+## Limited use
+
+
+Information handled by the extension is used only to provide its stated MissionChief toolkit features and user-requested support. It is not used for advertising, credit decisions or unrelated profiling. This policy applies to the extension, not to independent services' own data handling.

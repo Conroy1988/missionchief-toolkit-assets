@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Connector-triggered guarded Toolkit release
 
 The existing owner issue-comment command remains supported. Routine releases may also be started without owner interaction by pushing one exact command file to `automation/releases`.

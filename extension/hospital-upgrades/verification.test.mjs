@@ -1,7 +1,7 @@
 import {execFileSync} from 'node:child_process';
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
 function fixture({afterLevel=30,readError=false,scopeError=false}={}){
- const source=execFileSync('python3',['-c','import sys,zipfile;sys.stdout.buffer.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]))',new URL('../../.dev/MissionChief-Toolkit-Extension-1.1.3-test.zip',import.meta.url).pathname,'features/administration.js'],{encoding:'utf8',maxBuffer:10000000});
+ const source=execFileSync('python3',['-c','import sys,zipfile;sys.stdout.buffer.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]))',new URL('../../.dev/MissionChief-Toolkit-Extension-1.2.5.zip',import.meta.url).pathname,'features/administration.js'],{encoding:'utf8',maxBuffer:10000000});
  const start=source.indexOf('"applyExpansionPlannerOperation":')+'"applyExpansionPlannerOperation":'.length;
  const end=source.indexOf(',\n"startExpansionPlanner":',start);
  assert.ok(start>30&&end>start);

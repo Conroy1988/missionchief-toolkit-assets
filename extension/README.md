@@ -22,8 +22,8 @@ From the repository root, with Python 3 and Node.js installed:
 
 ```sh
 npm ci --prefix extension/home-response
-node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs
 python3 extension/prepare-current-release.py
+node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs
 ```
 
 Output: `.dev/MissionChief-Toolkit-Extension-1.2.5.zip`. Load an unpacked test build from `.dev/home-response-extension` only for development. Do not enable it alongside the Store edition or a legacy Toolkit script.

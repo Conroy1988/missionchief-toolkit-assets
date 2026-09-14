@@ -20,14 +20,14 @@ jobs:
           persist-credentials: false
       - name: Install test dependencies
         run: npm ci --prefix extension/home-response
-      - name: Check extension and migration behaviour
-        run: node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs legacy/migration-notice.test.mjs
       - name: Build extension and final legacy notice
         run: |
           python3 extension/prepare-current-release.py
           python3 legacy/build-migration.py
           node --check .dev/legacy-migration/MissionChief_Map_Command_Toolkit.user.js
           python3 -m zipfile -t .dev/MissionChief-Toolkit-Extension-1.2.5.zip
+      - name: Check extension and migration behaviour
+        run: node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs legacy/migration-notice.test.mjs
       - name: Validate documentation
         run: |
           python3 .github/scripts/test_documentation_consistency.py

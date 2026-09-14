@@ -1,7 +1,8 @@
 name: Publish final userscript migration notice
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - legacy/publish-migration.py
       - .github/workflows/publish-legacy-migration.yml

@@ -116,7 +116,7 @@ def page_shell(*, data: dict, dashboard: dict, base_path: str, active: str, titl
   </main>
   <footer class="footer">
     <div class="container footer-inner">
-      <div><strong>{esc(project["name"])}</strong><br>Chrome Web Store distribution · Conroy1988 developer</div>
+      <div><strong>{esc(project["name"])}</strong><br>Chrome Web Store distribution · Conroy1988 developer<br><a href="{esc(base_path)}status/">Historical userscript baseline: {esc(version)}</a></div>
       <div class="footer-links">
         <a href="{esc(project["repository"])}">GitHub</a>
         <a href="{esc(project["issues"])}">Support</a>

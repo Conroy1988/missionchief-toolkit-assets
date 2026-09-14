@@ -1,7 +1,7 @@
 # MissionChief Map Command Toolkit — Privacy
 
 
-Extension 1.0.0. Updated 13 September 2026. Independent community software, not an official MissionChief product.
+Extension 1.2.5. Updated 14 September 2026. Independent community software, not an official MissionChief product.
 
 
 ## Purpose and information used
@@ -19,6 +19,10 @@ Ordinary toolkit preferences and supported cached game data are saved in this br
 ## Home Response Builder data
 
 Builder plans, progress, selected game locations, building and vehicle references, dispatch-centre assignment and icon catalogue references are saved in MissionChief site-local browser storage, scoped to the verified game account. Icon catalogues also record the selected building type and remain until refreshed or that site's storage is cleared. Saved catalogues contain image references and counts rather than downloaded image bytes. Uninstalling the extension does not necessarily clear MissionChief site storage. Plans never resume purchases without user confirmation.
+
+## Hospital upgrades and vehicle replacement
+
+Account-scoped saved plans record selected building and vehicle IDs, target levels or types, confirmed Credit costs and verified progress in MissionChief site-local storage. Vehicle replacement can permanently remove a selected vehicle before buying its replacement. These operations require confirmation. Interrupted requests are checked before any repeat, and saved plans do not automatically resume. Uninstalling the extension does not necessarily clear the game's site storage; clearing site storage can remove recovery checkpoints.
 
 ## Network requests and other providers
 

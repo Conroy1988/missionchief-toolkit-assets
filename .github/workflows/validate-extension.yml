@@ -1,0 +1,34 @@
+name: Extension Validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: extension-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  extension:
+    name: Extension and migration contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install test dependencies
+        run: npm ci --prefix extension/home-response
+      - name: Check extension and migration behaviour
+        run: node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs legacy/migration-notice.test.mjs
+      - name: Build extension and final legacy notice
+        run: |
+          python3 extension/prepare-current-release.py
+          python3 legacy/build-migration.py
+          node --check .dev/legacy-migration/MissionChief_Map_Command_Toolkit.user.js
+          python3 -m zipfile -t .dev/MissionChief-Toolkit-Extension-1.2.5.zip
+      - name: Validate documentation
+        run: |
+          python3 .github/scripts/test_documentation_consistency.py
+          python3 .github/scripts/build_pages_site.py --output .dev/extension-pages-preview

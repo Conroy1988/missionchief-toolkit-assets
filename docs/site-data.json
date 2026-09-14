@@ -3,12 +3,13 @@
     "name": "MissionChief Map Command Toolkit",
     "shortName": "Map Command Toolkit",
     "tagline": "Native map command, fleet identity, transport support and financial intelligence for MissionChief.",
-    "description": "A configurable userscript focused on native MissionChief map command, mission-age timers, vehicle identity, transport support, geographic utilities, financial reconciliation and responsive layouts.",
-    "author": "Conroy1988",
+    "description": "A Chrome extension for MissionChief UK: map intelligence, fleet visibility, Home Response operations, hospital upgrades and finance.",
+    "author": "MartyBlyth (developer); Conroy1988 (helper)",
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
     "releases": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases",
-    "pages": "https://conroy1988.github.io/missionchief-toolkit-assets/"
+    "pages": "https://conroy1988.github.io/missionchief-toolkit-assets/",
+    "store": "https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"
   },
   "navigation": [
     {
@@ -28,15 +29,66 @@
       "path": "docs/"
     },
     {
-      "label": "Changelog",
+      "label": "Legacy history",
       "path": "changelog/"
     },
     {
-      "label": "Status",
+      "label": "Legacy status",
       "path": "status/"
     }
   ],
   "featureCategories": [
+    {
+      "name": "Extension Operations",
+      "description": "Features included in the 1.2.5 submission. Store approval determines public availability.",
+      "features": [
+        {
+          "name": "Home Response Builder",
+          "summary": "Plan and construct Home Response coverage with saved progress.",
+          "details": [
+            "City search, city list, map boundary selection, drawn areas or radius",
+            "1, 3, 4, 6, 8 or 10-mile spacing; up to 1,000 proposals",
+            "Existing-building and mapped-water checks",
+            "Nearest named dispatch centre with distance acknowledgement",
+            "Cached icons by building type and stage timings"
+          ],
+          "visual": "home-response-builder",
+          "tags": [
+            "operations",
+            "extension"
+          ]
+        },
+        {
+          "name": "Home Response Unit Switcher",
+          "summary": "Replace selected Home Response vehicle types through native Credit offers.",
+          "details": [
+            "All dispatch centres, a named centre or Unassigned",
+            "Faster shared fleet checks and concurrent shop reads",
+            "Permanent removal requires confirmation; an empty slot can remain after a failed purchase",
+            "Saved progress and Review & resume; no automatic repeat of uncertain purchases"
+          ],
+          "visual": "home-response-unit-switcher",
+          "tags": [
+            "operations",
+            "extension"
+          ]
+        },
+        {
+          "name": "Hospital Upgrades",
+          "summary": "Choose a target hospital level and buy it directly.",
+          "details": [
+            "Select hospitals and target levels 1–30",
+            "Review current balance and estimated Credit cost",
+            "Direct native target-level action, followed by verification"
+          ],
+          "visual": "hospital-upgrades",
+          "tags": [
+            "operations",
+            "extension"
+          ]
+        }
+      ]
+    },
     {
       "name": "Mission command",
       "description": "Prioritise incidents, understand mission state and act without losing map context.",
@@ -263,28 +315,6 @@
       "name": "Map operations",
       "description": "Make the map faster to read, easier to navigate and more useful during busy sessions.",
       "features": [
-        {
-          "name": "Fast Map",
-          "summary": "Replaces connected Leaflet rendering with one validated OpenFreeMap/MapLibre WebGL canvas while preserving stable MissionChief marker pictures, vehicle routes, native filters and exact rollback.",
-          "details": [
-            "Session-only and off by default",
-            "Validated vector base style before activation",
-            "Zero connected Leaflet panes while active",
-            "Native building, mission and vehicle pictures",
-            "Last-ready picture retention during native icon refresh",
-            "Live red vehicle destination routes",
-            "Clustered buildings and alliance missions with incremental live point updates",
-            "Top-centre controls clear MissionChief's bottom UI",
-            "Exact native element, view and handler restoration on exit or failure"
-          ],
-          "visual": "fast-map",
-          "tags": [
-            "maplibre",
-            "performance",
-            "webgl",
-            "map"
-          ]
-        },
         {
           "name": "UK Building Filters",
           "summary": "Opens every active UK building type through MissionChief's own map-filter controls in a fixed popularity-led order.",
@@ -794,12 +824,10 @@
         },
         {
           "name": "Live Version Status",
-          "summary": "Shows LATEST or UPDATE as a single-line map control with manual rechecking.",
+          "summary": "Check the installed extension version against the Chrome Web Store.",
           "details": [
-            "Responsive placement",
-            "Successful cache and failure cooldown",
-            "Theme-resistant label",
-            "Direct update awareness"
+            "Store approval and browser delivery determine update availability",
+            "Historical userscript version numbers are separate"
           ],
           "visual": "version-status",
           "tags": [
@@ -978,8 +1006,8 @@
     },
     {
       "name": "iOS Mobile",
-      "summary": "Safe-area-aware Safari layout with mobile controls and viewport recovery.",
-      "bestFor": "MissionChief operation from iPhone with minimal map obstruction."
+      "summary": "Touch layout tested in Orion with ZIP builds. Ordinary iOS Safari cannot install this Chrome extension.",
+      "bestFor": "Compatible extension-capable iOS browsers; separate testing route"
     }
   ],
   "documentation": [
@@ -1005,7 +1033,7 @@
       "sections": [
         {
           "heading": "Install through TKB",
-          "body": "Install Tampermonkey or a compatible userscript manager, open the official TKB Toolkit page, review permissions and confirm installation. The TKB Website is the only supported installation and automatic-update channel."
+          "body": "Install from the Chrome Web Store, disable any duplicate Toolkit userscript, enable Toolkit from the extension popup and fully reload MissionChief UK. Export settings before removing an old installation."
         },
         {
           "heading": "First launch",
@@ -1153,7 +1181,7 @@
         "Reload MissionChief once",
         "Confirm the correct operating mode",
         "Check whether the toolbar is collapsed",
-        "Report browser, userscript manager and Toolkit versions"
+        "Report browser, extension and browser versions"
       ]
     },
     {
@@ -1184,7 +1212,7 @@
     {
       "level": "watch",
       "title": "MissionChief interface changes can affect selectors",
-      "body": "A live MissionChief markup change may require a userscript update even where static selector contracts remain green."
+      "body": "A live MissionChief markup change may require a extension update even where static selector contracts remain green."
     },
     {
       "level": "watch",

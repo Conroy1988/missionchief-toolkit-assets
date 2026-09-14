@@ -1,6 +1,19 @@
 MissionChief Map Command Toolkit brings map controls, mission insights, finance and practical administration tools together in a compact command workspace for MissionChief UK.
 
-NEW IN THE FULL 1.0 RELEASE — HOME RESPONSE BUILDER
+NEW IN 1.2.5
+HOME RESPONSE UNIT SWITCHER
+• Filter by All dispatch centres, a named centre or Unassigned; select individual or all eligible vehicles.
+• Replace a selected vehicle type with a supported Home Response unit using Credits and game-default names.
+• Fast previews reuse your fleet snapshot and check up to four shops concurrently.
+• Review permanent vehicle removal and replacement costs before confirming. A failed replacement purchase can leave an empty slot; saved progress supports Pause and Review & resume.
+• Native Credit links, shop categories and explicit full-slot estimates are checked; the live replacement offer must be enabled before purchase. Busy vehicles are skipped. Staffing and training are not supplied.
+
+HOSPITAL TARGET-LEVEL UPGRADES
+• Select individual or all eligible hospitals and a target level from 1–30, where offered by the game.
+• Purchase the target level directly, with current balance, cost preview and verified progress.
+• Resume saved work without automatically repeating uncertain purchases.
+
+HOME RESPONSE BUILDER
 • Choose a UK city using search or the city list, select its boundary directly on the map, draw an area, or use a centre and radius.
 • Plan up to 1,000 Home Responses with 1, 3, 4, 6, 8 or 10-mile minimum straight-line spacing.
 • Preview proposed locations and estimated Credit costs, account for existing Home Responses, and inspect spacing circles and exclusion counts.
@@ -26,7 +39,7 @@ Local settings, operation presets, import/export, task status and privacy-consci
 PLEASE NOTE
 This extension is for MissionChief UK. Building spacing is measured in straight-line miles, not driving distance or guaranteed response coverage. Check small waterways and road access visually. Home Response staffing and training are not supplied automatically. Confirmed operations spend in-game Credits and change your game account; keep the game tab open during a run.
 
-City and boundary lookups use OpenStreetMap Nominatim. Selected map areas request map tiles. Preferences, builder checkpoints and icon catalogue references are stored locally in your browser. Discord is optional and requires explicit send confirmation. See the included privacy details for data handling.
+City and boundary lookups use OpenStreetMap Nominatim. Selected map areas request map tiles. Preferences, builder and hospital checkpoints, vehicle replacement plans and icon catalogue references are stored locally in your browser. Discord is optional and requires explicit send confirmation. See the included privacy details for data handling.
 
 Independent community extension; not affiliated with or endorsed by MissionChief.
 Developer: MartyBlyth. Helper: Conroy1988.

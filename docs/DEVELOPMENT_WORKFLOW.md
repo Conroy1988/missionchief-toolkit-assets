@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Local-first Toolkit development
 
 The normal development loop does not use a pull request, GitHub Actions or the stable TKB distribution. GitHub remains the canonical review and publication boundary only after a candidate has been exercised locally.

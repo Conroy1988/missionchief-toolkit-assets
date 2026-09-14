@@ -24,6 +24,10 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or "node_modules" in path.parts or "release-bundle" in path.parts: continue
         if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
+        # This is the legacy v7 userscript retirement contract. Extension recovery
+        # files are immutable provenance, and the extension has its own tests.
+        relative = path.relative_to(ROOT)
+        if relative.parts[0] in {".dev", "extension"}: continue
         if "toolkit-current" in path.parts or "dist" in path.parts: continue
         if TOKEN in path.as_posix().lower(): tracked.append(path.as_posix())
         try: text=path.read_text(encoding="utf-8")

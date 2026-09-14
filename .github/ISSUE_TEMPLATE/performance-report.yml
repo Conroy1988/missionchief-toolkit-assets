@@ -11,13 +11,13 @@ body:
       value: |
         Use this form when MissionChief or the Toolkit becomes slow, freezes temporarily, or consumes excessive resources.
 
-        Before reporting, compare one clean load with the Toolkit enabled and one with only this userscript disabled. Do not include private tokens, webhook URLs or account credentials.
+        Before reporting, compare one clean load with the Toolkit enabled and one with only the Toolkit extension disabled. Do not include private tokens, webhook URLs or account credentials.
 
   - type: input
     id: toolkit-version
     attributes:
       label: Toolkit version
-      placeholder: "4.11.2"
+      placeholder: "Extension 1.2.5 / Toolkit 10.18.1"
     validations:
       required: true
 
@@ -30,10 +30,10 @@ body:
       required: true
 
   - type: input
-    id: tampermonkey
+    id: extension-installation
     attributes:
-      label: Tampermonkey version
-      placeholder: "5.x"
+      label: Installation source
+      placeholder: "Chrome Web Store, Orion ZIP or unpacked build"
     validations:
       required: true
 
@@ -169,7 +169,7 @@ body:
       options:
         - label: I tested the latest available Toolkit version.
           required: true
-        - label: I compared startup or responsiveness with only this userscript disabled.
+        - label: I compared startup or responsiveness with only the Toolkit extension disabled.
           required: true
         - label: I removed passwords, tokens, webhook URLs and other sensitive information.
           required: true

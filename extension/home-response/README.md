@@ -22,8 +22,8 @@ Run `npm ci --prefix extension/home-response`, then
 `node --test extension/home-response/*.test.mjs` and
 `python3 extension/build-recovered.py` from the repository root.
 The build verifies every recovered file hash before applying the new module.
-That command reproduces the 0.23.14 test package. For the full 1.0.0 store package,
-run `python3 extension/prepare-store-release.py`. Store listing copy lives in
+That command reproduces the 0.23.14 test package. For the current 1.2.5 Store package,
+run `python3 extension/prepare-current-release.py`. Store listing copy lives in
 `extension/store/`. Submission state must be checked in the publisher dashboard.
 
 ## Live validation notes (original test checklist)

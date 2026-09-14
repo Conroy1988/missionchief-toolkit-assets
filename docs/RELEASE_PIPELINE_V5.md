@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Release Pipeline v5 — Direct Atomic Hotfix Lane
 
 Pipeline v5 removes the remaining pre-merge construction bottleneck while preserving the verified Pipeline v4 publication path.

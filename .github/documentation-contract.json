@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -95,8 +95,7 @@
     "One-Click Session Cleanup"
   ],
   "installUrls": [
-    "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/",
-    "https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js"
+    "https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"
   ],
   "requiredFeatureNames": [
     "Mission Age map timers",
@@ -110,7 +109,6 @@
     "Alliance Credits",
     "Financial intelligence",
     "Payout presentations",
-    "Fast Map",
     "Economy Mode",
     "Desktop, Tablet and iOS Mobile Mode",
     "Toolkit Command Palette",
@@ -122,31 +120,21 @@
     "Hotkey & Gesture Studio",
     "Toolkit Safe Mode",
     "Unit Locator & Follow Mode",
-    "One-Click Session Cleanup"
+    "One-Click Session Cleanup",
+    "Home Response Builder",
+    "Home Response Unit Switcher",
+    "Hospital Upgrades"
   ],
   "publicDocumentation": {
     "readmeRequiredTokens": [
-      "The One We Knew Before",
-      "Patient Transport Sweep",
-      "Mission Value",
-      "Resource Gap",
-      "Operational Pressure Board",
-      "Operational SITREP",
-      "Fast Map",
-      "Economy Mode",
-      "saved Discord webhook",
-      "eight complete interface systems",
-      "The Godfather",
-      "Toolkit Command Palette",
-      "Personalisation Studio",
-      "What’s New & Feature Beacon",
-      "Contextual Command Menus",
-      "Complete MissionChief Reskinning",
-      "Smart Auto-Hiding Dock",
-      "Hotkey & Gesture Studio",
-      "Toolkit Safe Mode",
-      "Unit Locator & Follow Mode",
-      "One-Click Session Cleanup"
+      "Chrome Web Store",
+      "Home Response Builder",
+      "Home Response Unit Switcher",
+      "Hospital Upgrades",
+      "Tampermonkey",
+      "MartyBlyth",
+      "Conroy1988",
+      "Privacy"
     ],
     "readmeForbiddenTokens": [
       "Operational Window Suite",

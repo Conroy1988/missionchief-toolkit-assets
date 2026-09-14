@@ -1,70 +1,27 @@
 # Contributing
 
-The MissionChief Map Command Toolkit is maintained through reviewed, validated changes to the canonical userscript and its release infrastructure.
+Develop the **Chrome extension**. The userscript distribution is retired and retained for historical reference and migration delivery.
 
-## Before opening a change
+## Before changing code
 
-- Search existing issues and pull requests.
-- Use the structured issue forms for bugs, performance reports and feature proposals.
-- Keep public reports free of credentials, webhook URLs and private repository details.
-- Separate unrelated fixes into distinct changes where practical.
+Verify the current `main` branch and existing work. Use a feature branch and a pull request; respect branch protections, reviews and required checks. Keep unrelated work separate. Include the problem, resulting behaviour, tests and material limitations in the PR.
 
-## Roadmap and issue flow
+## Extension development
 
-- Use **Discussions → Feature ideas** for early concepts that still need community or design exploration.
-- Use **GitHub Issues** for confirmed bugs, improvements and actionable technical specifications.
-- Apply the `roadmap` label only to planned product or engineering work that belongs in the public development queue.
-- Keep labels orthogonal: roadmap labels show planned inclusion, type labels describe the work, and priority labels express urgency.
-- Do not duplicate scheduling state in a separate roadmap document or Project.
-- Link implementation pull requests to the relevant Issue so merged work automatically becomes part of the completed development record.
+Follow [extension/README.md](extension/README.md) for the baseline, maintained modules and build commands. Test changes to game actions against meaningful native-response fixtures, including failures after a successful action. Never count a test as proof of a live game purchase.
 
-## Development expectations
+Preserve account ownership checks, explicit confirmation, Credit-only purchase selection, saved progress and uncertain-request recovery. Avoid duplicate purchases, unbounded scans, unnecessary catalogue downloads and eager UI work. Keep desktop and touch layouts usable. Do not add remote executable code.
 
-- Preserve the existing Desktop, Tablet and iOS operating modes.
-- Preserve all supported themes unless a change explicitly targets them.
-- Avoid eager document-start work, broad DOM scans and unbounded observers.
-- Do not introduce duplicate interface IDs or shortcut conflicts.
-- Keep public asset paths stable or update the asset-health policy in the same change.
-- Update user-facing documentation and changelog data when behaviour changes.
+## Documentation and graphics
 
-## Routine delivery path
+The Chrome Web Store link is the installation authority. Distinguish submitted, approved and test versions. New feature claims must match the packaged extension. Artwork must be clearly distinguished from actual screenshots; do not use fabricated game screenshots or private account data. Credit MartyBlyth as developer and Conroy1988 as helper, preserving historical licence notices.
 
-Contained userscript changes should use the fastest safe route:
+## Legacy migration
 
-1. Create one owner-authored `feature/`, `fix/` or `chore/` branch from current `main`.
-2. Complete the source, generated distribution, changelog and focused contract in that branch.
-3. Generate the single candidate fingerprint and run the CI-equivalent local gate:
+See [legacy/README.md](legacy/README.md). Existing Tampermonkey update URLs must remain reachable to deliver the final notice. A prepared migration package is not a deployment. Do not run an old userscript release pipeline as if it publishes a Chrome extension.
 
-   ```bash
-   ./toolkit promote
-   ```
+Historical source and release workflow documents describe the retired distribution. They are retained for provenance, and are not the current installation instructions.
 
-4. Open one pull request.
-5. Allow the single-runner Toolkit Hotfix Gate to complete its path-aware checks.
-6. Merge the exact reviewed head and use the permanent guarded release command when a public version is required.
+## Security
 
-Do not create diagnostic pull requests or test-only commits when the required code and fixtures can be prepared and verified before the pull request is opened.
-
-## Reviewed development packages
-
-The owner-authorised development-package workflow remains available for large generated transformations, exact-source rewrites and changes that are safer to apply inside the repository runner. It is not the default route for small, contained edits.
-
-## Validation
-
-Pull requests use one path-aware Toolkit Hotfix Gate runner. Local promotion and CI invoke the same version-controlled candidate stages. Fingerprint, documentation, syntax and lightweight performance failures are evaluated before distribution generation, dependency installation and runtime contracts, then the immutable release candidate is uploaded from that same exact checkout. Exhaustive static, ESLint, deep-performance and repository-wide audits remain scheduled or manually dispatched instead of multiplying every pull request into parallel jobs. Do not bypass a failed check without identifying and correcting the underlying cause.
-
-## Releases
-
-Do not manually publish partial release state. Production releases use the reviewed release-readiness and release workflows, which coordinate GitHub Releases, TKB Website distribution, the private migration archive, authoritative `release-state` records and Discord announcements.
-
-## Pull-request content
-
-Describe:
-
-- the problem being solved;
-- the affected Toolkit area;
-- behaviour before and after;
-- desktop, tablet and iOS implications;
-- performance implications;
-- validation performed;
-- whether a public Toolkit version is required.
+Never commit credentials or real webhook URLs. Review [SECURITY.md](SECURITY.md) and redact reports. Use the issue templates for reproducible bugs, performance reports and feature requests.

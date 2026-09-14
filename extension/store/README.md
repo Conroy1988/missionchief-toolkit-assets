@@ -1,11 +1,7 @@
-# MissionChief Map Command Toolkit 1.0.0
+# Store submission material
 
-Full extension release built from the tested 0.23.14 functionality. Toolkit core 10.18.1.
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc). The current prepared submission is **1.2.5**; see [the receipt](SUBMISSION-1.2.5.md), [extension changelog](../CHANGELOG.md) and [build instructions](../README.md). Submission does not imply approval.
 
-Install or update through the Chrome Web Store, then reload MissionChief UK. Disable any duplicate Toolkit userscript or extension. Enable Toolkit from its popup and apply/reload.
+`listing-description.txt` contains the listing copy. `PRIVACY.md` is the repository privacy policy. Keep disclosures aligned with packaged behaviour. Do not replace a pending review merely to update repository artwork.
 
-For existing unpacked installations, replace the files in the same extension directory and reload that extension entry. Orion users can use the ZIP file directly. Export settings before removing or reinstalling an extension; store and unpacked installations have separate identities.
-
-See release-notes.html for features, help.html for setup and recovery, and privacy.html for data handling. Home Response Builder uses straight-line spacing, mapped-water exclusion, estimated Credit costs and confirmed sequential game actions. Check road access and crew/training requirements. Use Review & resume for interrupted plans.
-
-Developer: MartyBlyth. Helper: Conroy1988. Independent community software, not an official MissionChief product.
+Developer: MartyBlyth. Helper: Conroy1988.

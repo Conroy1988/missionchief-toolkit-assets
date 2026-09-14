@@ -1,3 +1,5 @@
+> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
+
 # Release Pipeline
 
 The MissionChief Map Command Toolkit uses GitHub as its canonical source and immutable package archive. The TKB Website is the sole supported public installation and automatic-update authority. Greasy Fork is fully retired and is not generated, published, verified, monitored or used for recovery.

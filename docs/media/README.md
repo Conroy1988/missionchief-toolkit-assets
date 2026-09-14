@@ -1,50 +1,14 @@
-# README media system
+# Repository imagery
 
-This directory contains the public visual assets used across the Toolkit repository and documentation.
+## Current extension identity
 
-## Current flagship suite
+| Asset | Dimensions | Use |
+|---|---|---|
+| `extension-command-cover.svg` | 1600 × 640 | Chrome extension cover and linked installation banner |
+| `extension-operations.svg` | 1600 × 460 | Home Response Builder, Unit Switcher and Hospital Upgrades |
 
-The `readme-v3-*` set is the active GitHub README system:
+Both are original, self-contained vector illustrations using the Toolkit's black, red and white identity. They contain no player data, people, external image requests or fabricated screenshots. Accessible alternative text lives in the README and SVG title/description. Keep text editable and check the rendered result before publishing changes.
 
-| Asset | Purpose |
-|---|---|
-| `readme-v3-command-system.svg` | Flagship command-centre hero joining incident, fleet, map, administration and finance. |
-| `readme-v3-operational-picture.svg` | Multi-agency UK operational picture and end-to-end command flow. |
-| `readme-v3-administration-command.svg` | Recruitment, academy courses and alliance transport administration. |
-| `readme-v3-command-surfaces.svg` | One coherent Toolkit layer across desktop, tablet and phone. |
-| `readme-v3-release-integrity.svg` | Canonical source, validation, publication and recovery chain. |
+## Historical imagery
 
-Each flagship asset is a self-contained 1600 × 700 SVG. The photographic scene is embedded as a compressed JPEG and all visible brand typography is deterministic SVG text, keeping the exact product name crisp and preventing generated lettering from entering the public artwork.
-
-The scenes were created specifically for this repository. They are conceptual—not screenshots or depictions of a real emergency operation—and contain no people, personal likenesses, player information, private data, official logos, version numbers or readable fictional interface data.
-
-## Historical suites
-
-- `readme-v2-*` contains the previous 1600 × 900 command-plate system.
-- `readme-hero-operations.webp`, `readme-field-command.webp` and `readme-control-room.webp` contain the original photographic suite.
-- The SVG command-board assets are retained for historical and downstream-reference compatibility.
-
-Do not remove a historical asset until repository search, GitHub Pages and release documentation confirm that nothing still references it.
-
-## Asset rules
-
-- Flagship README scenes must remain free of people and identifiable likenesses.
-- Never include player names, alliance data, addresses, credentials, tokens or live operational data.
-- Do not bake version numbers, publication dates or release-state claims into artwork.
-- All visible words must be composed deterministically after scene generation.
-- Preserve the 1600 × 700 flagship canvas and edge-safe title geometry.
-- Render every SVG at full size and at GitHub's approximate 838 px article width before publication.
-- Keep each self-contained asset below 2 MB and the full active suite proportionate to the page.
-- Provide descriptive alt text at every Markdown usage point.
-
-## Capture set
-
-For product screenshots and release evidence, capture each affected interface in:
-
-- Desktop mode
-- Tablet mode
-- iOS Mobile Mode
-- Both relevant base-game colour states where appearance changes
-- Reduced-motion or Economy Mode where behaviour or geometry differs
-
-Before capture, use fictitious data and inspect the frame for private information. A clean asset is part of the release contract, not a post-release tidy-up.
+The `readme-v3-*`, `readme-v2-*` and earlier photographic suites are retained for historical references. They do not represent the current extension UI or release pipeline. Do not relabel conceptual images as actual game screenshots.

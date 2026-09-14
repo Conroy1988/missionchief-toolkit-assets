@@ -17,7 +17,8 @@ literal less-than characters before entity decoding, preventing markup from bein
 parsed. The shared HTML encoder uses global regular expressions for all five
 text/quoted-attribute delimiters, making its encoding explicit to static analysis.
 The Layout Studio also encodes saved layout dimensions and control/group keys at
-the point of HTML interpolation, covering the remaining alert #28 settings path.
+the point of HTML interpolation, covering the layout branch of alert #28. The notification volume attribute is
+also escaped, covering the subsequent notification-panel path.
 The shared renderer still accepts intentional Toolkit markup; dynamic text must
 pass through the encoder before interpolation.
 

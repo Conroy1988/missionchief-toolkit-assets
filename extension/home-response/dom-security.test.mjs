@@ -6,7 +6,7 @@ import {JSDOM} from 'jsdom';
 
 const source = fs.readFileSync(new URL('../recovered-0.22.3/toolkit.js', import.meta.url), 'utf8');
 function helpers(window, extra = {}) {
-  const names = ['escapeHtml', 'decodeMissionTextEntities', 'setInnerHtmlIfChanged', 'layoutStudioMarkup'];
+  const names = ['escapeHtml', 'decodeMissionTextEntities', 'setInnerHtmlIfChanged', 'layoutStudioMarkup', 'notificationStudioMarkup'];
   const functions = names.map(name => {
     const start = source.indexOf('    function ' + name + '(');
     assert.ok(start >= 0);
@@ -84,5 +84,22 @@ test('Layout Studio renders malformed saved layout values as text, never attribu
   assert.equal(host.querySelector('[data-layout-panel-height]').value,'85');
   assert.ok(host.textContent.includes('Workspace height · 700px resized'));
   assert.equal(host.querySelector('[data-layout-position]').value,'bl');
+  dom.window.close();
+});
+
+
+test('Notification volume cannot inject attributes or elements through saved settings', () => {
+  const dom = new JSDOM('<!doctype html><body></body>');
+  const notifications = {volume:'0.5" onpointerover="alert(1)"><img src=x onerror=alert(1)>',events:{},enabled:true,preset:'standard'};
+  const h = helpers(dom.window, {state:{notifications},pageWindow:{},NOTIFICATION_PRESETS:{standard:{label:'Standard'}},NOTIFICATION_EVENT_META:{}});
+  const host = dom.window.document.createElement('div');
+  h.setInnerHtmlIfChanged(host,h.notificationStudioMarkup());
+  assert.equal(host.querySelector('img,[onpointerover],[onerror]'),null);
+  assert.equal(host.querySelector('[data-notification-setting="volume"]').getAttribute('value'),notifications.volume);
+  notifications.volume=0.65;
+  h.setInnerHtmlIfChanged(host,h.notificationStudioMarkup());
+  assert.equal(host.querySelector('[data-notification-setting="volume"]').value,'0.65');
+  assert.ok(host.textContent.includes('Master volume · 65%'));
+  assert.equal(host.querySelector('[data-notification-setting="preset"]').value,'standard');
   dom.window.close();
 });

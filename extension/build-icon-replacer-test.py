@@ -38,7 +38,11 @@ p=out/'release-notes.html';s=p.read_text();start=s.index('<main>');end=s.index('
 for name in ['popup.html','popup.css','popup.js']:
  shutil.copyfile(root/'popup'/name,out/name)
 archive=out.parent/'MissionChief-Toolkit-Extension-1.3.2-test.zip'
-with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
+temporary=archive.with_suffix('.tmp.zip')
+with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(out.rglob('*')):
   if p.is_file():z.write(p,p.relative_to(out))
+with zipfile.ZipFile(temporary) as z:
+ assert z.testzip() is None
+temporary.replace(archive)
 print(archive)

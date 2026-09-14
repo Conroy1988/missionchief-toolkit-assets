@@ -37,6 +37,9 @@
     ".github/workflows/pages-production-monitor.yml": [
       "issues"
     ],
+    ".github/workflows/publish-legacy-migration.yml": [
+      "contents"
+    ],
     ".github/workflows/release-recovery.yml": [
       "actions",
       "contents"

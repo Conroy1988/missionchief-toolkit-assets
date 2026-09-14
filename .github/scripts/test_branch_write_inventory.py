@@ -91,6 +91,10 @@ def main() -> int:
     canary_entry = inventory.get("developmentCanaryWriter") or {}
     maintenance_entries = inventory.get("branchMaintenanceWriters") or []
 
+    release_assets = workflow_set(inventory.get("releaseAssetOnlyWriters") or [])
+    if release_assets != {".github/workflows/publish-legacy-migration.yml"}:
+        fail("Unexpected release-asset-only writers")
+
     direct = workflow_set(direct_entries)
     orchestrators = workflow_set(orchestrator_entries)
     artifacts = workflow_set(artifact_entries)
@@ -128,7 +132,7 @@ def main() -> int:
     if maintenance_writers != expected_maintenance_writers:
         fail(f"Unexpected branch-maintenance writers: {sorted(maintenance_writers)}")
 
-    groups = [direct, orchestrators, artifacts, state_writers, maintenance_writers]
+    groups = [direct, orchestrators, artifacts, state_writers, maintenance_writers, release_assets]
     for index, left in enumerate(groups):
         for right in groups[index + 1 :]:
             if left & right:
@@ -140,7 +144,7 @@ def main() -> int:
         if "contents" in (permissions or [])
     }
     inventory_contents = set(inventory.get("contentsWriteAuthority") or [])
-    classified_contents = direct | orchestrators | state_writers | maintenance_writers
+    classified_contents = direct | orchestrators | state_writers | maintenance_writers | release_assets
     if approved_contents != inventory_contents:
         fail("Actions security contents-write authority differs from inventory")
     if classified_contents != inventory_contents:
@@ -162,7 +166,7 @@ def main() -> int:
             f"authority-only={sorted(inventory_contents - declared_contents)}"
         )
 
-    for workflow in sorted(direct | orchestrators | artifacts | state_writers | maintenance_writers):
+    for workflow in sorted(direct | orchestrators | artifacts | state_writers | maintenance_writers | release_assets):
         path = ROOT / workflow
         if not path.is_file():
             fail(f"Classified workflow is missing: {workflow}")
@@ -184,8 +188,19 @@ def main() -> int:
         )
     if direct - expected_public:
         fail(f"Direct writers missing from main push sources: {sorted(direct - expected_public)}")
-    if (orchestrators | artifacts | state_writers) & discovered_main:
+    if (orchestrators | artifacts | state_writers | release_assets) & discovered_main:
         fail("Non-main workflow classes must not mutate public main")
+
+    for entry in inventory["releaseAssetOnlyWriters"]:
+        if entry.get("mainMutationAllowed") is not False or entry.get("forcePushAllowed") is not False:
+            fail("Release asset publication must not mutate main or force-push")
+        workflow = (ROOT / entry["workflow"]).read_text(encoding="utf-8")
+        helper = (ROOT / entry["helper"]).read_text(encoding="utf-8")
+        require(workflow, ["branches:\n      - main", "if: github.ref == 'refs/heads/main'", "persist-credentials: false", "python3 legacy/publish-migration.py"], entry["workflow"])
+        require(helper, ["'GITHUB_REF') != 'refs/heads/main'", "'--draft'", "'--draft=false'", "Live endpoint digest mismatch", "Release asset verification failed"], entry["helper"])
+        forbid(helper, ["'push'", "'update-ref'", "'--force'", "'--method', 'DELETE'"], entry["helper"])
+        if contains_main_ref_mutation(helper):
+            fail("Release asset helper must not mutate main")
 
     for entry in orchestrator_entries:
         workflow = str(entry["workflow"])

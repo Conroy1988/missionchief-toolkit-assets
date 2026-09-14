@@ -1,6 +1,6 @@
 # Final userscript migration update
 
-**Prepared; not yet verified on TKB's live update endpoints.** GitHub publication alone does not deliver this notice to existing installations.
+The final notice is published by [Publish final userscript migration notice](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/publish-legacy-migration.yml). Its delivery evidence records whether TKB's live update endpoints serve the exact published files; installed-browser acceptance is recorded separately.
 
 ## Build
 
@@ -18,7 +18,7 @@ Existing installations record these endpoints:
 - Download: `https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/update/`
 - Historical installer: `https://tkb-gaming.scot/mission-chief-scripts/map-command-toolkit/install/MissionChief_Map_Command_Toolkit.user.js`
 
-Publish the matching metadata and complete update payload atomically through the website's authorised deployment system. Check the live version first: if a newer userscript exists, choose a version greater than that version and rebuild. Preserve endpoint content types and serve JavaScript, not a redirect to an HTML Store page. Invalidate relevant caches and verify the delivered body hash against `migration-manifest.json`.
+TKB's existing PHP gateways serve assets from the latest GitHub release. The main-only publication job checks the live version, prepares all assets in a draft release, verifies their hashes, then publishes the complete release. It verifies the metadata, update and installer response hashes and saves `delivery-verification.json` in its run artifacts. It refuses to supersede an unexpected version or overwrite conflicting assets. No website deployment is required.
 
 Test an actual existing Tampermonkey installation: check for updates, accept if prompted, reload the game, confirm the notice/links and verify settings export still works. Verify snoozing, narrow screens and disabling only the old Toolkit script. Users who disabled automatic updates must check manually.
 

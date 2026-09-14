@@ -10,6 +10,8 @@ Each building is checked against its recorded identity and original pixels befor
 
 Operations rows use shared name, description and status columns, with descriptions below the title on narrow panels.
 
+The popup is simplified to the enable switch, apply/reload, Discord Support and a small Ko-fi link. It retains the reload checks for running tasks and unsaved settings. Old setup, statistics and task panels are removed.
+
 Build: `python3 extension/build-icon-replacer-test.py`.
 Test: `node --test extension/icon-replacer/*.test.mjs` after building.
 

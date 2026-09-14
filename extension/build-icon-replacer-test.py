@@ -1,5 +1,5 @@
 """Compose matching icon replacement over the maintained extension. No Store submission."""
-import json,pathlib,re,runpy,zipfile
+import json,pathlib,re,runpy,zipfile,shutil
 root=pathlib.Path(__file__).resolve().parent
 runpy.run_path(str(root/'prepare-current-release.py'))
 out=root.parent/'.dev/home-response-extension'
@@ -35,6 +35,8 @@ for name in ['popup.html','help.html','privacy.html','release-notes.html','READM
 p=out/'help.html';p.write_text(p.read_text().replace('<main>','<main><h2>Replace matching station icons</h2><p>In Operations, open Copy station icons, then Replace matching icons. Choose a building type and dispatch scope, scan custom icons, choose the original and replacement, and refresh the preview. Review the selected buildings before confirming. Saved progress supports Pause and Review &amp; resume. Default icons and unreadable images are excluded. An uncertain upload is verified without automatic replay.</p>',1))
 p=out/'privacy.html';p.write_text(p.read_text().replace('<main>','<main><h2>Matching icon replacement</h2><p>Account-scoped browser storage retains icon catalogue URLs, pixel fingerprints, building IDs and scope metadata, plus approved replacement progress. Image bytes are not stored in these checkpoints. Clearing MissionChief site storage removes this data.</p>',1))
 p=out/'release-notes.html';s=p.read_text();start=s.index('<main>');end=s.index('</main>',start);p.write_text(s[:start]+'<main><h1>1.3.0 test</h1><p>Replace a matching custom icon across reviewed buildings. Filter by type and dispatch centre, use a saved visual catalogue, preview matching buildings, confirm replacement and follow saved progress. Images are matched by pixel contents. Operations rows now share consistent name, description and status columns, with a stacked narrow layout. Live upload testing remains required.</p>'+s[end:])
+for name in ['popup.html','popup.css','popup.js']:
+ shutil.copyfile(root/'popup'/name,out/name)
 archive=out.parent/'MissionChief-Toolkit-Extension-1.3.0-test.zip'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(out.rglob('*')):

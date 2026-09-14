@@ -1,9 +1,18 @@
-"""Build an extension overlay without modifying the verified recovered baseline."""
+"""Build an extension overlay with explicitly verified security amendments to the recovered baseline."""
 import hashlib,json,pathlib,re,shutil,zipfile
 root=pathlib.Path(__file__).resolve().parent
 baseline=root/'recovered-0.22.3'
 for name,digest in json.loads((root/'recovery-sha256.json').read_text()).items():
- assert hashlib.sha256((baseline/name).read_bytes()).hexdigest()==digest,name
+ data=(baseline/name).read_bytes()
+ # Reverse only the explicitly recorded security amendments for provenance.
+ # The reconstructed bytes must still match the original release digest.
+ if name=='toolkit.js':
+  text=data.decode('utf-8')
+  for change in reversed(json.loads((root/'recovery-security-amendments.json').read_text())['changes']):
+   assert text.count(change['after'])==1,'Security amendment drift'
+   text=text.replace(change['after'],change['before'],1)
+  data=text.encode('utf-8')
+ assert hashlib.sha256(data).hexdigest()==digest,name
 out=root.parent/'.dev/home-response-extension'
 if out.exists():shutil.rmtree(out)
 shutil.copytree(baseline,out)

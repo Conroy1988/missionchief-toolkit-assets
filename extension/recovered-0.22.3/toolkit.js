@@ -4256,12 +4256,13 @@ try {
     }
 
     function escapeHtml(value) {
+        // Encode every HTML text/quoted-attribute delimiter before interpolation.
         return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     function allianceAwareHtml(value) {
@@ -4284,7 +4285,8 @@ try {
             // MissionChief can return captions as either &quot; or double-escaped
             // &amp;quot;. Decode a small bounded number of passes until stable.
         for (let pass = 0; pass < 3 && entityPattern.test(text); pass += 1) {
-            textarea.innerHTML = text;
+            // Keep literal markup inert, including a closing textarea tag.
+            textarea.innerHTML = text.replace(/</g, '&lt;');
             const decoded = textarea.value;
             if (decoded === text) break;
             text = decoded;

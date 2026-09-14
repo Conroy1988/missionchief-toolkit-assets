@@ -1,11 +1,29 @@
 # Extension source recovery
 
-The `recovered-0.22.3` directory is an exact extraction of the user-approved
-0.22.3 release ZIP. It is the readable packaged runtime, not a claim that the
+The `recovered-0.22.3` directory originated as an exact extraction of the user-approved
+0.22.3 release ZIP. It now includes the explicitly recorded security amendments below. It is the readable packaged runtime, not a claim that the
 lost compiler, original module sources or test suite have been recovered.
 
-Do not edit this baseline. New extension modules and a reproducible packaging
-step must overlay it. The canonical userscript is independent and unchanged.
+New extension features must overlay the baseline. The only direct amendments are
+security corrections recorded in `recovery-security-amendments.json`. The build
+reverses those exact corrections in memory and verifies the original SHA-256
+manifest before packaging the corrected code. All other bytes remain protected.
+The canonical userscript is independent and unchanged.
+
+## DOM text security amendments
+
+PR #786 identified CodeQL alerts #27 and #28. The caption decoder now encodes
+literal less-than characters before entity decoding, preventing markup from being
+parsed. The shared HTML encoder uses global regular expressions for all five
+text/quoted-attribute delimiters, making its encoding explicit to static analysis.
+The shared renderer still accepts intentional Toolkit markup; dynamic text must
+pass through the encoder before interpolation.
+
+The original toolkit is retained in Git at commit
+`31a09a45c6d3deeb3efdbe4f7ef6c7b3be2623f5`, blob
+`7d120ea967b616571ecabe0f298ba396a3c19db7`. The original
+`recovery-sha256.json` is unchanged. These are source corrections after the 1.2.5
+submission; they do not change the already uploaded Chrome Store package.
 
 0.22.3 was submitted to Chrome Web Store with automatic publication enabled.
 BUILD.json inside the archive predates submission; its status is historical.

@@ -1,0 +1,15 @@
+{
+  "originalCommit": "31a09a45c6d3deeb3efdbe4f7ef6c7b3be2623f5",
+  "originalBlob": "7d120ea967b616571ecabe0f298ba396a3c19db7",
+  "reason": "CodeQL DOM text reinterpretation alerts #27 and #28; preserve original recovery hashes through exact inverse verification",
+  "changes": [
+    {
+      "after": "    function escapeHtml(value) {\n        // Encode every HTML text/quoted-attribute delimiter before interpolation.\n        return String(value)\n        .replace(/&/g, '&amp;')\n        .replace(/</g, '&lt;')\n        .replace(/>/g, '&gt;')\n        .replace(/\"/g, '&quot;')\n        .replace(/'/g, '&#039;');\n    }\n\n",
+      "before": "    function escapeHtml(value) {\n        return String(value)\n        .replaceAll('&', '&amp;')\n        .replaceAll('<', '&lt;')\n        .replaceAll('>', '&gt;')\n        .replaceAll('\"', '&quot;')\n        .replaceAll(\"'\", '&#039;');\n    }\n\n"
+    },
+    {
+      "after": "            // Keep literal markup inert, including a closing textarea tag.\n            textarea.innerHTML = text.replace(/</g, '&lt;');",
+      "before": "            textarea.innerHTML = text;"
+    }
+  ]
+}

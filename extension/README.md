@@ -8,7 +8,7 @@ Extension **1.2.5**, bundled Toolkit **10.18.1**. This records the submitted pac
 
 | Path | Purpose |
 |---|---|
-| `recovered-0.22.3/` | Recovered packaged baseline; kept intact for provenance |
+| `recovered-0.22.3/` | Recovered baseline with recorded security amendments |
 | `home-response/` | Coverage planning, native actions, saved queues, geography and UI |
 | `hospital-upgrades/` | Direct target-level hospital upgrades |
 | `unit-switcher/` | Home Response vehicle replacement and native Credit-shop discovery |
@@ -28,7 +28,7 @@ node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.tes
 
 Output: `.dev/MissionChief-Toolkit-Extension-1.2.5.zip`. Load an unpacked test build from `.dev/home-response-extension` only for development. Do not enable it alongside the Store edition or a legacy Toolkit script.
 
-The package is composed from a recovered release rather than a clean original extension project. Maintain the baseline separately; changes belong in the feature modules and build scripts. Retain geographic data attribution and licence files. All executable code must remain packaged locally.
+The package is composed from a recovered release rather than a clean original extension project. Feature changes belong in the maintained modules and build scripts. The two recorded security amendments are verified against the original baseline hashes; see [recovery provenance](RECOVERY.md). Retain geographic data attribution and licence files. All executable code must remain packaged locally.
 
 111 automated tests passed for the 1.2.5 submission. User previews and removal were tested, but complete live replacement after the latest full-slot fix remains unverified. Tests are not evidence that an in-game purchase completed.
 

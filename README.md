@@ -99,7 +99,7 @@ The extension build currently composes the recovered release baseline with maint
 
 **[TKB MissionChief Game Guide](https://tkb-gaming.scot/games/missionchief/guides/)** · **[TKB Gaming](https://tkb-gaming.scot/)** · **[Discord](https://discord.gg/3ZdXhYjgDm)**
 
-**Developer: [MartyBlyth](https://github.com/MartyBlyth). Helper: [Conroy1988](https://github.com/Conroy1988).**
+**Developer: [Conroy1988](https://github.com/Conroy1988).**
 
 Independent community software; not an official MissionChief, SHPlay or XYRALITY product. Existing source licence notices remain applicable. The artwork above is original schematic branding, not a screenshot or a real emergency operation.
 

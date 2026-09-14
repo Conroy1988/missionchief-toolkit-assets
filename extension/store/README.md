@@ -4,4 +4,4 @@ Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/lmn
 
 `listing-description.txt` contains the listing copy. `PRIVACY.md` is the repository privacy policy. Keep disclosures aligned with packaged behaviour. Do not replace a pending review merely to update repository artwork.
 
-Developer: MartyBlyth. Helper: Conroy1988.
+Developer: Conroy1988.

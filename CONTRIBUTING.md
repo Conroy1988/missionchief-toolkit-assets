@@ -14,7 +14,7 @@ Preserve account ownership checks, explicit confirmation, Credit-only purchase s
 
 ## Documentation and graphics
 
-The Chrome Web Store link is the installation authority. Distinguish submitted, approved and test versions. New feature claims must match the packaged extension. Artwork must be clearly distinguished from actual screenshots; do not use fabricated game screenshots or private account data. Credit MartyBlyth as developer and Conroy1988 as helper, preserving historical licence notices.
+The Chrome Web Store link is the installation authority. Distinguish submitted, approved and test versions. New feature claims must match the packaged extension. Artwork must be clearly distinguished from actual screenshots; do not use fabricated game screenshots or private account data. Credit Conroy1988 as the sole Toolkit developer. Do not attribute Toolkit development or assistance to MartyBlyth. Preserve historical licence notices.
 
 ## Legacy migration
 

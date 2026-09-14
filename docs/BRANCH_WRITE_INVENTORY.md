@@ -130,3 +130,7 @@ The read-only `verify-shadow-branch-parity.yml` still validates both branch role
 - TKB Website remains the sole distribution authority throughout.
 
 Strict `main` protection is the remaining repository-setting action after the production cutover is verified.
+
+## Final legacy migration release assets
+
+`publish-legacy-migration.yml` invokes `legacy/publish-migration.py` only on main to publish the owner-authorized final Tampermonkey migration release. Its `contents: write` permission creates the release tag and assets; it does not push to main or any operational branch. Draft assets are verified before publication, and all three TKB update endpoints are checked afterward. No force-push or asset overwrite is permitted.

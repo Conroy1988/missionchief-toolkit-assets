@@ -42,4 +42,4 @@ This extension is for MissionChief UK. Building spacing is measured in straight-
 City and boundary lookups use OpenStreetMap Nominatim. Selected map areas request map tiles. Preferences, builder and hospital checkpoints, vehicle replacement plans and icon catalogue references are stored locally in your browser. Discord is optional and requires explicit send confirmation. See the included privacy details for data handling.
 
 Independent community extension; not affiliated with or endorsed by MissionChief.
-Developer: MartyBlyth. Helper: Conroy1988.
+Developer: Conroy1988.

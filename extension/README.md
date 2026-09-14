@@ -34,4 +34,4 @@ The package is composed from a recovered release rather than a clean original ex
 
 [Changelog](CHANGELOG.md) · [Privacy](store/PRIVACY.md) · [Submission receipt](store/SUBMISSION-1.2.5.md)
 
-Developer: MartyBlyth. Helper: Conroy1988.
+Developer: Conroy1988.

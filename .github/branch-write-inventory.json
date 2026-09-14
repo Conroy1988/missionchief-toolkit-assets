@@ -196,7 +196,17 @@
     ".github/workflows/auto-release-after-validation.yml",
     ".github/workflows/execute-audited-branch-cleanup.yml",
     ".github/workflows/owner-release-command.yml",
+    ".github/workflows/publish-legacy-migration.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml"
+  ],
+  "releaseAssetOnlyWriters": [
+    {
+      "workflow": ".github/workflows/publish-legacy-migration.yml",
+      "helper": "legacy/publish-migration.py",
+      "purpose": "Owner-authorized final userscript migration assets and live endpoint verification",
+      "mainMutationAllowed": false,
+      "forcePushAllowed": false
+    }
   ]
 }

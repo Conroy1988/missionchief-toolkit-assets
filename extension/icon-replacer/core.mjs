@@ -8,6 +8,11 @@ export const iconTarget = r => ({buildingId:r.id, name:r.caption, dispatchId:r.d
 export function sameIconTarget(record, item) {
   return ['buildingId','name','dispatchId','typeId','small','latitude','longitude'].every(k => iconTarget(record)[k] === item[k]);
 }
+// Preview reuses verified scan membership; execution still rechecks pixels before upload.
+export function previewIconMatches(group,records,type='',dispatch='') {
+  const current=new Map(iconScope(records,type,dispatch).map(r=>[String(r.id),r]));
+  return group.items.filter(item=>{const r=current.get(String(item.buildingId));return r?.hasCustomIcon&&r.customIconUrl&&sameIconTarget(r,item);}).map(item=>({...item,state:'pending',selected:true}));
+}
 export async function scanIcons(api, records, {progress=()=>{}, stopped=()=>false}={}) {
   const urls = new Map(), groups = new Map(), unavailable = [];
   for (const record of records) if (record.hasCustomIcon && record.customIconUrl) {

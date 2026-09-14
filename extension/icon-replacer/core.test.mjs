@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {iconKey,iconScope,iconTarget,scanIcons,runIconReplacement} from './core.mjs';
+import {iconKey,iconScope,iconTarget,scanIcons,runIconReplacement,previewIconMatches} from './core.mjs';
 const image=d=>({width:50,height:50,pixelDigest:d});
 const record=(id,url='old')=>({id,caption:`Station ${id}`,typeId:'4',dispatchId:'7',small:false,latitude:55,longitude:-3,hasCustomIcon:true,customIconUrl:url});
 function fixture(){
@@ -45,4 +45,9 @@ test('reports an active upload before completion without advancing verified prog
  await new Promise(r=>setTimeout(r,10));
  assert.deepEqual(stages.at(-1),['Uploading and verifying icon','Station 1']);assert.equal(f.job.items[0].state,'writing');assert.equal(updates,0);
  release();await run;assert.equal(f.job.state,'complete');
+});
+
+test('preview reuses scan membership and excludes removed or changed-scope buildings',()=>{
+ const original=[record(1),record(2),record(3)];const group={items:original.map(iconTarget)};const current=[original[0],{...original[1],dispatchId:'8'},record(4)];
+ assert.deepEqual(previewIconMatches(group,current,'4','7').map(i=>i.buildingId),[1]);
 });

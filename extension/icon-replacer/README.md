@@ -1,4 +1,4 @@
-# Matching icon replacement — 1.3.0 test
+# Matching icon replacement — 1.3.1 test
 
 Operations → Copy station icons → Replace matching icons.
 
@@ -15,5 +15,7 @@ The popup is simplified to the enable switch, apply/reload, Discord Support and 
 Build: `python3 extension/build-icon-replacer-test.py`.
 Test: `node --test extension/icon-replacer/*.test.mjs` after building.
 
-Output: `.dev/MissionChief-Toolkit-Extension-1.3.0-test.zip`.
+Output: `.dev/MissionChief-Toolkit-Extension-1.3.1-test.zip`.
 Live uploads and visual browser acceptance remain pending. The stable Store build script and previous submission are unchanged.
+
+Progress remains visible in a sticky, high-contrast panel with processed counts, percentage, current action/building and elapsed time. Stage messages appear before network requests complete; the verified count only advances after verification or an explicit skip.

@@ -21,6 +21,6 @@ test('visual picker previews and replaces only selected matches after confirmati
  $('[data-preview]').click();await tick();assert.equal(w.document.querySelectorAll('[data-results] input').length,2);assert.equal($('[data-results] b'),null);
  const selected=w.document.querySelectorAll('[data-results] input')[1];selected.checked=false;selected.dispatchEvent(new w.Event('change'));
  $('[data-run]').click();await tick();assert.deepEqual(writes,[]);
- confirmed=true;$('[data-run]').click();await tick();assert.deepEqual(writes,[1]);assert.match($('[data-status]').textContent,/complete/);
+ confirmed=true;$('[data-run]').click();await tick();assert.deepEqual(writes,[1]);assert.match($('[data-status]').textContent,/complete/);assert.equal($('[data-phase]').textContent,'Complete');assert.equal($('[data-count]').textContent,'1 / 1 · 100%');assert.equal($('[data-progress]').value,1);assert.equal($('.progress-panel').dataset.working,'false');
  dom.window.close();
 });

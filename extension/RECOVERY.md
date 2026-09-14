@@ -16,6 +16,8 @@ PR #786 identified CodeQL alerts #27 and #28. The caption decoder now encodes
 literal less-than characters before entity decoding, preventing markup from being
 parsed. The shared HTML encoder uses global regular expressions for all five
 text/quoted-attribute delimiters, making its encoding explicit to static analysis.
+The Layout Studio also encodes saved layout dimensions and control/group keys at
+the point of HTML interpolation, covering the remaining alert #28 settings path.
 The shared renderer still accepts intentional Toolkit markup; dynamic text must
 pass through the encoder before interpolation.
 

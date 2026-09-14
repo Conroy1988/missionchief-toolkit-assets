@@ -5,8 +5,8 @@ import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
 
 const source = fs.readFileSync(new URL('../recovered-0.22.3/toolkit.js', import.meta.url), 'utf8');
-function helpers(window) {
-  const names = ['escapeHtml', 'decodeMissionTextEntities', 'setInnerHtmlIfChanged'];
+function helpers(window, extra = {}) {
+  const names = ['escapeHtml', 'decodeMissionTextEntities', 'setInnerHtmlIfChanged', 'layoutStudioMarkup'];
   const functions = names.map(name => {
     const start = source.indexOf('    function ' + name + '(');
     assert.ok(start >= 0);
@@ -14,7 +14,7 @@ function helpers(window) {
     assert.ok(end > start);
     return source.slice(start, end);
   }).join('\n');
-  const context = {document: window.document};
+  const context = {document: window.document, ...extra};
   vm.createContext(context);
   vm.runInContext(functions, context);
   return context;
@@ -58,5 +58,31 @@ test('shared rendering keeps DOM text inert in text and quoted attributes and re
   assert.equal(host.firstElementChild, button);
   assert.equal(h.setInnerHtmlIfChanged(host, '<em>Updated</em>'), true);
   assert.equal(host.textContent, 'Updated');
+  dom.window.close();
+});
+
+test('Layout Studio renders malformed saved layout values as text, never attributes or elements', () => {
+  const dom = new JSDOM('<!doctype html><body></body>');
+  const payload = '\"><img src=x onerror=alert(1)><span data-injected="yes';
+  const preferences = {position:'bl', groupOrder:[payload], controlOrder:{[payload]:[payload]}, hiddenControls:[], panelWidth:payload, panelHeight:payload, panelHeightPx:payload};
+  const h = helpers(dom.window, {
+    state:{layoutBuilder:{layouts:{desktop:preferences}},commandBarPrimary:[]},
+    POSITIONS:{bl:{label:'Bottom left'}}, LAYOUT_DEVICE_KEYS:['desktop','tablet','mobile'],
+    LAYOUT_CONTROL_GROUPS:{[payload]:{label:'Map controls'}}, LAYOUT_CONTROL_LABELS:{[payload]:'Menu'},
+    COMMAND_BAR_CONTROL_KEYS:[payload], DESKTOP_WORKSPACE_MAX_WIDTH:1600
+  });
+  const host=dom.window.document.createElement('div');
+  h.setInnerHtmlIfChanged(host,h.layoutStudioMarkup('desktop'));
+  assert.equal(host.querySelector('img,script,svg,[data-injected],[onerror]'),null);
+  assert.equal(host.querySelector('[data-layout-value]').getAttribute('data-layout-value'),payload);
+  assert.equal(host.querySelector('[data-layout-panel-width]').getAttribute('value'),payload);
+  assert.ok(host.textContent.includes(payload));
+  preferences.groupOrder=[];
+  preferences.panelWidth=1000; preferences.panelHeight=85; preferences.panelHeightPx=700;
+  h.setInnerHtmlIfChanged(host,h.layoutStudioMarkup('desktop'));
+  assert.equal(host.querySelector('[data-layout-panel-width]').value,'1000');
+  assert.equal(host.querySelector('[data-layout-panel-height]').value,'85');
+  assert.ok(host.textContent.includes('Workspace height · 700px resized'));
+  assert.equal(host.querySelector('[data-layout-position]').value,'bl');
   dom.window.close();
 });

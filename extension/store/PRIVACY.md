@@ -1,7 +1,7 @@
 # MissionChief Map Command Toolkit — Privacy
 
 
-Extension 1.8.2. Updated 15 September 2026. Independent community software, not an official MissionChief product.
+Extension 2.0.0. Updated 17 September 2026. Independent community software, not an official MissionChief product.
 
 
 ## Purpose and information used
@@ -31,20 +31,24 @@ City search and map-area selection send the entered place query or clicked map c
 ## Limits and sharing
 
 
-The extension does not include advertising or developer analytics, sell user data, or upload game activity records for analytics. Optional account backup uploads the specific preferences and account identifiers described below. It does not read browsing history from unrelated websites. Discord is optional: the webhook URL stays in extension local storage and is excluded from game-page settings, backups and diagnostics. A prepared report (including an optional PNG chart) is stored locally for review and expires after 30 minutes. Discord receives the selected report only after you confirm sending. Connection checks contact Discord without posting a message. Forget destination removes the webhook and report. Private finance persistence and encrypted private imports remain unavailable. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
+The extension does not include advertising or developer analytics, sell user data, or upload game activity records for analytics. Optional account backup uploads the specific preferences and account identifiers described below. It does not read browsing history from unrelated websites. Discord reporting is optional. Your chosen webhook URL is kept in extension-private storage and, when signed in, stored separately in your Supabase account for cross-device reporting. It is excluded from game-page settings, ordinary preference exports and diagnostics. A prepared report (including an optional PNG chart) is stored locally and expires after 30 minutes. Clicking Post to Discord sends the selected report to the saved destination. Connection checks contact Discord without posting a message. Remove webhook in Account clears the destination locally and, when signed in and synchronisation succeeds, in the cloud account. Private finance persistence and encrypted private imports remain unavailable. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
 
 
 ## Optional Discord account and preference sync
 
 Account sign-in uses Discord OAuth through Supabase. Discord supplies account identity including an identifier, display name and email. Supabase processes authentication and stores your Discord-linked user identifier, MissionChief account identifier and allowlisted Toolkit preferences, including appearance, controls, filters, bookmarks, map profiles and tool preferences. The Toolkit project is hosted in London. Providers also receive ordinary connection metadata.
 
-Access and refresh tokens are stored in extension-origin IndexedDB, inaccessible to MissionChief page scripts. Database ownership policies restrict each backup to its authenticated owner. The extension does not upload MissionChief cookies, active operation queues, payment confirmations, Discord webhook secrets or financial archives as part of account sync.
+Access and refresh tokens are stored in extension-origin IndexedDB, inaccessible to MissionChief page scripts. Database ownership policies restrict each backup to its authenticated owner. The extension does not upload MissionChief cookies, active operation queues, payment confirmations or financial archives as part of preference sync. The optional Discord webhook secret and its label are stored separately under the authenticated account with owner-restricted access, and are restored across devices. The secret is not returned to MissionChief page scripts or included in ordinary settings exports.
 
 After opting in, edits save locally and then synchronise. An existing cloud backup is restored on sign-in; local recovery copies are retained before restores. Offline edits are retained and conflicting edits require your choice. Sign-out stops sync and retains device settings. Cloud backups remain until deletion is requested; uninstalling or signing out does not delete them. Request cloud account and backup deletion through the project issue tracker, without posting secrets; identity may need to be verified privately before deletion.
 
+## Enhanced game pages and local preferences
+
+Awards, Tasks and Events, player profiles, alliance chat, member lists and inbox views read content already shown by MissionChief to provide local search, filtering, summaries and layout controls. This may include player names, game account identifiers, public profile statistics and loaded game communications. Chat and inbox searches do not upload message text to the developer or search unrelated websites. Awards pins, panel visibility and release-note acknowledgements are saved locally. Panel preferences are scoped to the game profile where it can be identified. The dispatch dashboard reads game buildings, vehicles and reported staffing on request. These game snapshots are not uploaded as part of settings sync.
+
 ## Building and staff operations
 
-Building upgrades, expansions, instant completions and staff training can retain selected game staff/building IDs, names, course choices, currency quotes and verification checkpoints in account-scoped browser storage. Scanning does not purchase anything. Explicitly requested actions are sent to MissionChief, and uncertain paid requests are verified before any retry.
+Building upgrades, expansions, instant completions, vehicle purchasing, vehicle replacement and staff training can retain selected game staff/building IDs, names, course choices, currency quotes and verification checkpoints in account-scoped browser storage. Scanning does not purchase anything. Explicitly requested actions are sent to MissionChief, and uncertain paid requests are verified before any retry.
 
 ## Your choices
 

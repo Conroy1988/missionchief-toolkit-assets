@@ -32,6 +32,7 @@ jobs:
         run: node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs legacy/migration-notice.test.mjs
       - name: Validate documentation
         run: |
+          python3 .github/scripts/test_packaged_audio_contract.py
           python3 .github/scripts/test_documentation_consistency.py
           python3 .github/scripts/build_pages_site.py --output .dev/extension-pages-preview
       - name: Build and test matching icon replacement

@@ -15,5 +15,18 @@
   "canonicalSource": "src/MissionChief_Map_Command_Toolkit.user.js",
   "revision": "2026-07-26-v8-godfather",
   "schemaVersion": 1,
-  "stableRef": "main"
+  "stableRef": "main",
+  "packagedAudioPaths": {
+    "extension/current/payout-audio/badCompany.mp3": "1d8677f264bd11d976403226c815177b0d714b7622804f844aed4bf020ae7711",
+    "extension/current/payout-audio/biohazard.mp3": "11c21daea27b2f521582e40f8bd34c1a195032f1fcc0ff504b963894c5df6a04",
+    "extension/current/payout-audio/cyberpunk.mp3": "eea9110cbe2dd53d6a9c630618e246acd369099425b219ccf622bfc9edce2b6b",
+    "extension/current/payout-audio/factorio.mp3": "73d98ebb2f451262a17f693d1db039004063bfdcfb9b67feef82897a5405da31",
+    "extension/current/payout-audio/godfatherOffer.mp3": "0c9b53e09eea4e2acf07d15ef10af611716b81247bceec2c990369abe16905bc",
+    "extension/current/payout-audio/gta5.mp3": "5d12409225d2bb0331b771c440e25706b3790f6beaf4217715af66d18ab89b50",
+    "extension/current/payout-audio/hyruleQuest.mp3": "f8f6f366b856a68e2047fb7e37ab20d4f658049204dde93a300f3ca5cda2095f",
+    "extension/current/payout-audio/jamesBond.mp3": "cb39f1eae299fb7b701151bf517cf8d40f990dd21f14accf36841c5fb761297d",
+    "extension/current/payout-audio/scarface.mp3": "a93d728e0563e4576b94c3b9cb6ef81bb8ced616ef75646c6a276f42ac8d63aa",
+    "extension/current/payout-audio/viceCity.mp3": "5d929627907828eaa6adefc91a009d7a9a98bdeb104a87f5fcf65896b1e3854d",
+    "extension/current/payout-audio/wasteland.mp3": "860cf256dbf316a6b0122dbb2eeeb2bc042c5ee21e70293def5999ed7339bd1a"
+  }
 }

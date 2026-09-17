@@ -18,7 +18,7 @@ body:
     attributes:
       label: Toolkit version
       description: The extension version in your browser; include the bundled Toolkit version if shown.
-      placeholder: "Extension 1.2.5 / Toolkit 10.18.1"
+      placeholder: "Extension 2.0.0 / Chrome or Orion version"
     validations:
       required: true
 

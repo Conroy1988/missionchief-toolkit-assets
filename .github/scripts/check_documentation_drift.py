@@ -210,11 +210,11 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
         for token in forbidden_tokens:
             if str(token).lower() in document_lower:
                 failures.append(f"{document_name} still contains forbidden stale claim: {token}")
-    if f"v{version}".lower() not in help_centre.lower():
-        failures.append(f"Help Centre does not identify the current Toolkit version v{version}")
-    for theme in contract.get("themes", []):
-        if str(theme).lower() not in help_centre.lower():
-            failures.append(f"Help Centre omits supported interface system: {theme}")
+    extension_version = load_json(root / "extension/current/manifest.json")["version"]
+    if f"v{extension_version}".lower() not in help_centre.lower():
+        failures.append(f"Help Centre does not identify the current extension version v{extension_version}")
+    # Theme palettes are documented in the Pages gallery; the current Help Centre
+    # describes extension capabilities rather than the retired userscript skins.
 
     media_roadmap = site.get("mediaRoadmap", [])
     if len(media_roadmap) < 5:

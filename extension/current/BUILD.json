@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "base": "1.8.2.65",
+  "changes": [
+    "Bulk staff selection: select X completely untrained staff per selected station.",
+    "Top up each selected station to X staff with the chosen qualification; report shortages and uncertain rosters.",
+    "Red No Staff Trained badges and station filtering/sorting.",
+    "Europe/London display times and finance dates, including automatic GMT/BST transitions.",
+    "Includes the existing Operations, Finance, Account and interface improvements."
+  ],
+  "distribution": "Review ZIP; publication pending user review",
+  "storeBaseline": "1.8.2",
+  "majorReleaseNotes": {
+    "sections": 15,
+    "entries": 89
+  }
+}

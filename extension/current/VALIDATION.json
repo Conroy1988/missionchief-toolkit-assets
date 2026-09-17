@@ -1,0 +1,9 @@
+{
+  "version": "2.0.0",
+  "baseBuildAutomatedChecksPassed": 125,
+  "javascriptSyntaxChecks": 30,
+  "installedBrowserTest": "Not run",
+  "liveEnrolmentTest": "Not run",
+  "packageVerification": "All archive bytes compared against source",
+  "majorReleaseNotesChecksPassed": 6
+}

@@ -1,0 +1,114 @@
+MISSIONCHIEF MAP COMMAND TOOLKIT 2.0
+
+Plan your map, understand your incidents and manage your stations from one command workspace built for MissionChief UK. Version 2.0 brings the Toolkit's map, fleet, finance, staff and building tools together with expanded game dashboards, optional account sync and a redesigned black-and-red interface.
+
+Developed by Conroy1988. Independent community software; not affiliated with or endorsed by MissionChief.
+
+MAP & LOCATIONS
+• Control map visibility for your missions, alliance activity, vehicles and buildings.
+• Use the Buildings menu and compact top-bar toggles for Fire Stations, Ambulance Stations, Police Stations, Home Responses and Hospitals. Station groups include supported small variants.
+• Use map drawing and measurement tools, quick location jumps, labelled bookmarks and saved map profiles.
+• Search commands, missions, vehicles, buildings, places and settings from the command palette.
+• Adjust the command bar, dock position, density and layout for desktop or tablet use. Keyboard shortcuts and the Tablet Quick Wheel provide alternative controls.
+• Collapse Missions, Stations, Chat and Radio to reclaim screen space, then reopen them without losing their original window sizes.
+
+INCIDENTS & FLEET
+• Mission Intelligence presents mission requirements and response information alongside the game.
+• Operational Pressure and SITREP views help you review active incident workload and response priorities.
+• Resource Gap Finder supports fleet and resource planning using the available game data.
+• Unit Locator and Follow Mode help locate personal vehicles by name, ID, type, station or status.
+• Session performance and completion history help you review your activity.
+• Refresh Mission List updates missions and map markers without reloading the game. Optional five-second Auto Refresh works while the tab is visible and starts switched off.
+• Automatic loading of additional vehicles recognises the game's missing-vehicles control and is enabled by default unless you have saved a different preference.
+
+HOME RESPONSE BUILDER
+• Plan Home Response locations around existing buildings using a UK city boundary, an area selected on the map, a drawn boundary, or a centre and radius.
+• Choose minimum straight-line spacing of 1, 3, 4, 6, 8 or 10 miles, with a cap of up to 1,000 new buildings.
+• Preview proposed sites, existing-building exclusions, mapped water and estimated Credit costs before starting.
+• Review nearby dispatch centres in distance order with named map markers; the nearest centre is selected initially.
+• Choose a supported vehicle and an optional station icon. Scanned icon catalogues are remembered for reuse.
+• Build, equip and optionally copy icons as a saved sequence, with progress, pause and review/resume controls.
+• Unit Switcher replaces eligible vehicles in selected Home Responses with another supported type, using dispatch filters, cost review and saved progress.
+
+BUILDING LEVEL-UP, EXPANSIONS & ICONS
+• Building Level-Up scans eligible buildings by type and dispatch scope. Choose native target levels, pay with Credits or Coins, and hide buildings already at their maximum.
+• Select individual buildings or use Purchase Selected for reviewed upgrades.
+• Building Expansions finds stations missing a selected extension, explains exclusions and prerequisites, and supports reviewed purchases in the available game currency.
+• Complete Builder lists construction in progress with remaining time and available Coin completion offers. Select multiple entries and review the total for Purchase Selected.
+• Copy Station Icons applies an owned station's icon to eligible stations of the same type.
+• Switch Icon finds matching custom icons and replaces them across selected buildings. Preview reuses the scan, with pause and review/resume support.
+
+VEHICLE PURCHASER
+• Scan station types and dispatch centres for free bays and live vehicle-market offers.
+• Search stations, select individual stations or Select ALL Stations, and build a multi-station order.
+• Set quantities with 1, 5, 10, MAX or a custom amount; choose Credits or Coins and review combined costs.
+• Use the ambulance preset to fill spaces with ambulances while providing one Mass Casualty Equipment vehicle.
+• Where needed, that preset can build the Mass Casualty extension, complete construction with Coins and activate it. Required extension costs and Coin allowances are shown before the order starts.
+• Track purchases with progress, pause and resume controls; interrupted purchases are checked before continuing.
+
+STAFF TRAINING & RECRUITMENT
+• Filter stations by type, dispatch centre and name; scan rosters, expand staff lists and choose relevant training.
+• Select individuals or use quick untrained-staff batches. A selection counter shows classroom requirements in groups of ten.
+• Scan Own Academies, Alliance Academies or Combined. Own classrooms are prioritised in Combined mode; alliance allocations use existing matching courses. Ownership, capacity, shortfalls and paid-class costs are shown before enrolment.
+• Scan already trained refreshes qualification counts across all scanned stations and pages.
+• Red No Staff Trained badges, green trained counts and amber unknown/failed-scan states distinguish actual zero counts from missing information.
+• Already-qualified staff are labelled, shown in green and placed last; Hide Already Trained filters them from view.
+• Filter stations by qualification coverage, eligibility, active training or scan problems. Sort by name, trained count or percentage, eligible staff, total staff or staff in training.
+• Select all stations, matching stations or individual stations, then choose X completely untrained staff per station.
+• Top up each selected station to X staff with the chosen qualification. Existing qualifications are counted and only the shortfall is selected; shortages and uncertain stations are reported.
+• Bulk selection uses completely untrained staff only and refreshes rosters before selecting. Selection prepares a plan; it does not start a course.
+• Show In-Training reads current courses. Complete individual eligible classes or Complete ALL after reviewing the combined Coin cost and confirmation. Completion affects the entire class, including other participants.
+• Staff Recruitment sets hiring phases and desired personnel at selected stations. The separate Training Courses tool creates and shares mapped academy courses when your alliance role and buildings support it.
+
+PATIENT TRANSPORT SWEEPER
+• Find eligible alliance patient-transport requests and release them through a reviewed sweep. Your own vehicles and prisoner transports are excluded.
+• A maximum run limit of 1,000, progressive discovery and reuse of very recent unchanged results reduce repeated scanning. Full Rescan starts fresh.
+• Follow the current mission through a stable progress panel with elapsed time and checked/completed counts. Manual scroll position is preserved while results update.
+
+FINANCE & REPORTING
+• Review income, spending, net results, daily trends, category breakdowns and searchable transactions for selected periods.
+• Use game daily summaries and overview data, period comparisons, financial scorecards, aggregate audits and deeper ledger scans where the source data is available.
+• Review completion history and session performance alongside financial information.
+• Toolkit timestamps and timestamp-based reporting periods use Europe/London with automatic GMT/BST changes. Native daily game totals retain their UTC reporting boundaries and are labelled accordingly.
+• Post finance reports, transport-sweep summaries and operational briefings to a saved Discord destination when you choose.
+
+EMERGENCY PAYOUT FLASH
+• Customise payout celebrations in a visual studio with 16 banner styles, artwork previews and theme audio.
+• Choose Compact, Banner or Cinematic presentation; top, centre or bottom placement; and small, medium or large size.
+• Choose the banner and audio theme independently, or match them. Adjust volume, minimum payout, duration and payout-tier thresholds.
+• Control banner visibility, red/blue map glow, cinematic particles, tier intensity and static presentation separately.
+• Try Preview banner, Full-map test, Play Sound and Stop Preview. Replay recent payouts without changing earnings.
+• Rapid payouts are grouped while the current celebration finishes. Motion controls account for reduced-motion preferences and Economy behaviour.
+
+AWARDS, TASKS, PROFILES & COMMUNITY
+• Awards dashboard: collection overview, progress summaries, everyday targets, search, filters, sorting and locally pinned goals. Choose Showcase or Compact.
+• Tasks and Events dashboard: ready-to-claim counts, deadline highlights, search, filters and sorting by readiness, progress, deadline or Credit reward. Native claim controls remain available.
+• Player profiles: lifetime earnings, account age, lifetime daily average, Credit milestones, award search and tier counts. Search buildings already loaded on the profile map and open their markers.
+• Alliance chat: compact styling, search across loaded messages, announcement hide/show and a count of new messages received while chat is collapsed. Updated announcements reappear.
+• Alliance pages: resource shortcuts and filtering of loaded members by name or role.
+• Inbox: search conversations on the current page, retain selected messages in view and use clearer message/table styling.
+• Dispatch dashboard: load an on-demand snapshot to compare buildings, vehicles and reported staffing by dispatch centre; expand centres for building links and staffing targets.
+• Enhanced page dashboards retain native controls and provide an original-page option where available.
+
+ACCOUNT, SYNC & PERSONALISATION
+• Optional Discord sign-in saves supported Toolkit preferences across devices. Saved cloud settings load first on sign-in or reconnection.
+• Clear signed-out, connecting, signed-in and sync indicators, plus Time until sync, Syncing and Sync complete states.
+• Offline changes, conflict choices and recovery backups support settings restoration.
+• A browser-tab sign-in option is available alongside standard Discord sign-in for compatible browsers.
+• Account displays MissionChief UK building totals and game-reported mission capacity without requiring Discord login.
+• Manage one account-synced Toolkit Discord webhook for all supported reports. Save, replace, label, test or remove the destination. A connection test sends no message.
+• Adjust interface themes, skins, emergency-service styling, density, device layout, controls and Economy Mode. Settings backup/recovery and diagnostics are available.
+• Access the Game Guide, Discord Support and Ko-fi from the Toolkit. Version 2.0 includes a one-off comprehensive What's New overview, which can be reopened from the extension popup.
+
+YOU CONTROL GAME ACTIONS
+Ordinary tools do not require a Toolkit account or payment to the developer. MissionChief's own login, role, building, training and currency requirements still apply. Scans and previews do not purchase anything. Purchase and completion controls can spend Credits or Coins; Unit Switcher removes and replaces game vehicles. Review the displayed costs and selections. Saved jobs, progress panels and review/resume controls help recover interrupted operations; uncertain paid requests are checked before retrying. Keep the owning game tab open while an operation runs.
+
+GET STARTED
+Install the extension, sign into MissionChief UK, enable Toolkit in the extension popup and apply/reload the game. Disable the retired Toolkit userscript or duplicate Toolkit installations. Open Menu to access Map, Incidents, Fleet, Operations, Finance, Account and Settings. Discord sign-in is optional.
+
+PRIVACY
+The extension reads MissionChief game pages and endpoints for the features you use. Ordinary settings and operation checkpoints are stored locally. Optional account sync sends your Discord-linked identity, MissionChief account ID and selected preferences to Supabase; your chosen Discord webhook is stored separately for cross-device use. Game cookies, active jobs, payment confirmations and financial archives are not included in preference sync. Discord receives a report when you click Post to Discord. Optional map planning uses OpenStreetMap services, and enabled reference/media features may request public assets. No developer advertising or analytics is included. All executable extension code is packaged locally; downloaded resources are data and media.
+
+Guide: https://tkb-gaming.scot/games/missionchief/guides/
+Support: https://discord.gg/mXnTHuNfvu
+Project: https://github.com/Conroy1988/missionchief-toolkit-assets

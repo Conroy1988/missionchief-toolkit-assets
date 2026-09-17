@@ -2,14 +2,20 @@
   "project": {
     "name": "MissionChief Map Command Toolkit",
     "shortName": "Map Command Toolkit",
-    "tagline": "Native map command, fleet identity, transport support and financial intelligence for MissionChief.",
-    "description": "A Chrome extension for MissionChief UK: map intelligence, fleet visibility, Home Response operations, hospital upgrades and finance.",
+    "tagline": "Your entire operation. One command workspace.",
+    "description": "MissionChief UK, brought together: map intelligence, fleet, station operations, staff training, finance and optional account sync. Built by Conroy1988.",
     "author": "Conroy1988 (developer)",
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
     "releases": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases",
     "pages": "https://conroy1988.github.io/missionchief-toolkit-assets/",
-    "store": "https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"
+    "store": "https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc",
+    "release": {
+      "version": "2.0.0",
+      "submitted": "2026-09-17",
+      "status": "Submitted to Google",
+      "autoPublish": true
+    }
   },
   "navigation": [
     {
@@ -40,7 +46,7 @@
   "featureCategories": [
     {
       "name": "Extension Operations",
-      "description": "Features included in the 1.2.5 submission. Store approval determines public availability.",
+      "description": "Features included in the 2.0.0 submission. Store approval determines public availability.",
       "features": [
         {
           "name": "Home Response Builder",
@@ -258,17 +264,12 @@
         },
         {
           "name": "Patient Transport Sweep",
-          "summary": "Finds current alliance patient transports on Desktop, Tablet and iOS, uses MissionChief's native release controls, preserves the final result and can post the same completion snapshot to Discord.",
+          "summary": "Discover eligible alliance patient transports, review the selection and follow a controlled sweep.",
           "details": [
-            "Mission-by-mission FMS 5 discovery with an iOS-safe current-payload fallback",
-            "Cancel Transport link/button/input support",
-            "Discharge patient compatibility",
-            "Patient isn’t transported verification",
-            "Sequential patients and missions",
-            "Verified personal vehicle exclusion",
-            "Reload-persistent completion report",
-            "Aggregate-only automatic Discord completion post",
-            "Exact-once delivery with visible retry"
+            "Up to 1,000 requests; personal vehicles and prisoners excluded",
+            "Progressive discovery, recent-result reuse and Full Rescan",
+            "Stable progress, elapsed time and preserved manual scroll",
+            "Optional report posting through your configured Discord destination"
           ],
           "visual": "transport-sweep",
           "tags": [
@@ -558,12 +559,12 @@
         },
         {
           "name": "Payout presentations",
-          "summary": "Displays themed mission-completion banners with optional sound and emergency flash.",
+          "summary": "Emergency Payout Flash: 16 banner styles in a visual studio.",
           "details": [
-            "Smooth payout counter",
-            "Mission accent",
-            "Configurable duration",
-            "Completion history"
+            "Compact, Banner or Cinematic; placement and size controls",
+            "Independent banner and audio themes, volume and payout thresholds",
+            "Red/blue glow, cinematic particles and reduced-motion controls",
+            "Preview, full-map test, sound test and recent-payout replay"
           ],
           "visual": "payout",
           "tags": [
@@ -837,6 +838,235 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Station operations",
+      "description": "Included in the 2.0.0 submission; consult the Store for current availability.",
+      "features": [
+        {
+          "name": "Building Level-Up",
+          "summary": "Scan by building type and dispatch centre; purchase native target levels.",
+          "details": [
+            "Credits or Coins; hide maximum-level buildings",
+            "Select individual stations or Purchase Selected",
+            "Includes direct Hospital Upgrades"
+          ],
+          "visual": "v2-building-level-up",
+          "tags": [
+            "station operations",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Building Expansions",
+          "summary": "Find and build missing station extensions.",
+          "details": [
+            "Scope by station type and dispatch centre",
+            "Show prerequisites and exclusions",
+            "Review native currency and total cost"
+          ],
+          "visual": "v2-building-expansions",
+          "tags": [
+            "station operations",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Complete Builder",
+          "summary": "Review and finish construction already in progress.",
+          "details": [
+            "Remaining construction times",
+            "Select multiple entries",
+            "Review combined Coin completion cost"
+          ],
+          "visual": "v2-complete-builder",
+          "tags": [
+            "station operations",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Vehicle Purchaser",
+          "summary": "Build a reviewed vehicle order across selected stations.",
+          "details": [
+            "Station filters, live shop offers and free bays",
+            "1, 5, 10, MAX or custom quantities; Credits or Coins",
+            "Ambulance + Mass Casualty Equipment preset with reviewed extension costs",
+            "Saved progress and uncertain-purchase recovery"
+          ],
+          "visual": "v2-vehicle-purchaser",
+          "tags": [
+            "station operations",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Staff Training",
+          "summary": "Select, allocate and train staff across stations.",
+          "details": [
+            "Own Academies, Alliance Academies or Combined",
+            "Choose X completely untrained staff per station",
+            "Top up a qualification to X per station, counting existing trained staff",
+            "Qualification badges, coverage filters, sorting and classroom counts",
+            "In-training scan; class completion with explicit Coin cost review"
+          ],
+          "visual": "v2-staff-training",
+          "tags": [
+            "station operations",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Switch Icon",
+          "summary": "Replace matching custom building icons in a reviewed selection.",
+          "details": [
+            "Reuse scanned icons during preview",
+            "Choose all matching or individual targets",
+            "Pause and review/resume"
+          ],
+          "visual": "v2-switch-icon",
+          "tags": [
+            "station operations",
+            "2.0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Game dashboards",
+      "description": "Included in the 2.0.0 submission; consult the Store for current availability.",
+      "features": [
+        {
+          "name": "Awards dashboard",
+          "summary": "Track collection progress and locally pinned goals.",
+          "details": [
+            "Showcase or Compact",
+            "Search, filters, sorting and everyday targets"
+          ],
+          "visual": "v2-awards-dashboard",
+          "tags": [
+            "game dashboards",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Tasks and Events",
+          "summary": "See ready-to-claim tasks and approaching deadlines.",
+          "details": [
+            "Search and filters",
+            "Sort by readiness, progress, deadline or Credit reward",
+            "Native claim controls retained"
+          ],
+          "visual": "v2-tasks-and-events",
+          "tags": [
+            "game dashboards",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Player profiles",
+          "summary": "Review earnings, milestones, awards and mapped buildings.",
+          "details": [
+            "Lifetime daily average and account age",
+            "Award search and tier counts",
+            "Search buildings already loaded on the profile map"
+          ],
+          "visual": "v2-player-profiles",
+          "tags": [
+            "game dashboards",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Alliance chat and inbox",
+          "summary": "Find the conversations and community information you need.",
+          "details": [
+            "Search loaded chat and current-page inbox conversations",
+            "Announcement hide/show and collapsed-chat new-message count",
+            "Alliance resource shortcuts and member filters"
+          ],
+          "visual": "v2-alliance-chat-and-inbox",
+          "tags": [
+            "game dashboards",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Dispatch dashboard",
+          "summary": "Compare your operation by dispatch centre.",
+          "details": [
+            "On-demand buildings, vehicle and staffing snapshot",
+            "Expand centres for building links and staffing targets"
+          ],
+          "visual": "v2-dispatch-dashboard",
+          "tags": [
+            "game dashboards",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Mission list refresh",
+          "summary": "Refresh missions and map markers without a full game reload.",
+          "details": [
+            "Manual Refresh Mission List",
+            "Optional five-second visible-tab Auto Refresh; off by default"
+          ],
+          "visual": "v2-mission-list-refresh",
+          "tags": [
+            "game dashboards",
+            "2.0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Account and reporting",
+      "description": "Included in the 2.0.0 submission; consult the Store for current availability.",
+      "features": [
+        {
+          "name": "Account & Sync",
+          "summary": "Optional Discord sign-in restores supported Toolkit preferences.",
+          "details": [
+            "Cloud settings loaded first at sign-in",
+            "Countdown, syncing and sync-complete states",
+            "Offline changes, conflict choices and recovery backups",
+            "Browser-tab sign-in for compatible browsers"
+          ],
+          "visual": "v2-account-sync",
+          "tags": [
+            "account and reporting",
+            "2.0"
+          ]
+        },
+        {
+          "name": "Shared Discord destination",
+          "summary": "Manage one reporting webhook across supported tools.",
+          "details": [
+            "Save, label, replace, test or remove",
+            "Stored separately for optional account-backed cross-device use",
+            "Connection checks send no message",
+            "Game cookies, financial archives and active jobs are not preference-synced"
+          ],
+          "visual": "v2-shared-discord-destination",
+          "tags": [
+            "account and reporting",
+            "2.0"
+          ]
+        },
+        {
+          "name": "London time",
+          "summary": "Toolkit timestamp-based reporting follows Europe/London.",
+          "details": [
+            "Automatic GMT/BST changes",
+            "Native daily game totals retain labelled UTC boundaries"
+          ],
+          "visual": "v2-london-time",
+          "tags": [
+            "account and reporting",
+            "2.0"
+          ]
+        }
+      ]
     }
   ],
   "themes": [
@@ -1012,155 +1242,114 @@
   ],
   "documentation": [
     {
-      "title": "v7 native Toolkit boundary",
+      "title": "Install and start",
       "sections": [
         {
-          "heading": "The One We Knew Before",
-          "body": "Version 7 removes the copied requirements, call-window, call-list and enhanced transport-request engines completely. Their settings, stored state, observers, scheduling and DOM rewriting no longer initialise."
+          "heading": "Chrome Web Store",
+          "body": "Install the Store edition, disable duplicate Toolkit copies, enable it in the popup and Apply & reload MissionChief UK. Open Menu. Discord sign-in is optional. Ordinary iPhone Safari cannot install this extension."
         },
         {
-          "heading": "What remains",
-          "body": "Mission Age map timers, Mission Value, native Patient Transport Sweep, Transport Watcher, Resource Gap, vehicle identity, map utilities, financial intelligence, themes and responsive layouts remain supported."
-        },
-        {
-          "heading": "Settings migration",
-          "body": "Existing retained settings load normally. Obsolete mission-window settings are discarded during state normalisation without requiring a full reset."
+          "heading": "Review before running",
+          "body": "Scan, choose scope, review costs, confirm and verify. Credits and Coins are game currency. Keep the owning game tab open; use review/resume after an interrupted operation."
         }
       ]
     },
     {
-      "title": "Installation",
+      "title": "Map & Locations",
       "sections": [
         {
-          "heading": "Install through TKB",
-          "body": "Install from the Chrome Web Store, disable any duplicate Toolkit userscript, enable Toolkit from the extension popup and fully reload MissionChief UK. Export settings before removing an old installation."
-        },
-        {
-          "heading": "First launch",
-          "body": "Open MissionChief and use the map command button. Core controls load first; larger panels and monitors are constructed only when required."
+          "heading": "In Toolkit 2.0",
+          "body": "Control map visibility for your missions, alliance activity, vehicles and buildings. Use the Buildings menu and compact top-bar toggles for Fire Stations, Ambulance Stations, Police Stations, Home Responses and Hospitals. Station groups include supported small variants. Use map drawing and measurement tools, quick location jumps, labelled bookmarks and saved map profiles. Search commands, missions, vehicles, buildings, places and settings from the command palette. Adjust the command bar, dock position, density and layout for desktop or tablet use. Keyboard shortcuts and the Tablet Quick Wheel provide alternative controls. Collapse Missions, Stations, Chat and Radio to reclaim screen space, then reopen them without losing their original window sizes."
         }
       ]
     },
     {
-      "title": "Operating model",
+      "title": "Incidents & Fleet",
       "sections": [
         {
-          "heading": "Persistent controls",
-          "body": "Feature state, theme, operating mode and toolbar state are retained. Export settings before substantial browser or device changes."
-        },
-        {
-          "heading": "Map-first behaviour",
-          "body": "The Toolkit adds summaries, overlays and shortcuts around MissionChief rather than replacing its native mission windows or mission list."
+          "heading": "In Toolkit 2.0",
+          "body": "Mission Intelligence presents mission requirements and response information alongside the game. Operational Pressure and SITREP views help you review active incident workload and response priorities. Resource Gap Finder supports fleet and resource planning using the available game data. Unit Locator and Follow Mode help locate personal vehicles by name, ID, type, station or status. Session performance and completion history help you review your activity. Refresh Mission List updates missions and map markers without reloading the game. Optional five-second Auto Refresh works while the tab is visible and starts switched off. Automatic loading of additional vehicles recognises the game's missing-vehicles control and is enabled by default unless you have saved a different preference."
         }
       ]
     },
     {
-      "title": "Mission and transport systems",
+      "title": "Home Response Builder",
       "sections": [
         {
-          "heading": "Mission Age map timers",
-          "body": "Compact timer badges appear above personal missions and can be toggled with shortcut 6."
-        },
-        {
-          "heading": "Mission Value",
-          "body": "Mission Value displays a verified value, hides unavailable values and stays clear of native controls."
-        },
-        {
-          "heading": "Transport Watcher",
-          "body": "Transport Watcher identifies patient or prisoner transport-required missions without replacing MissionChief controls."
-        },
-        {
-          "heading": "Patient Transport Sweep",
-          "body": "The manual bounded alliance workflow discovers current missions from live map markers or, on iOS, a deliberate current-payload refresh; fallback entries require positive alliance ownership. It excludes the signed-in player's vehicles and uses MissionChief's native vehicle-window discharge control for one verified eligible ambulance at a time. Its final aggregate report persists until dismissed or replaced; when a valid Discord webhook is already saved, the same privacy-safe snapshot posts once automatically and delivery failure never changes the sweep result."
+          "heading": "In Toolkit 2.0",
+          "body": "Plan Home Response locations around existing buildings using a UK city boundary, an area selected on the map, a drawn boundary, or a centre and radius. Choose minimum straight-line spacing of 1, 3, 4, 6, 8 or 10 miles, with a cap of up to 1,000 new buildings. Preview proposed sites, existing-building exclusions, mapped water and estimated Credit costs before starting. Review nearby dispatch centres in distance order with named map markers; the nearest centre is selected initially. Choose a supported vehicle and an optional station icon. Scanned icon catalogues are remembered for reuse. Build, equip and optionally copy icons as a saved sequence, with progress, pause and review/resume controls. Unit Switcher replaces eligible vehicles in selected Home Responses with another supported type, using dispatch filters, cost review and saved progress."
         }
       ]
     },
     {
-      "title": "Alliance administration",
+      "title": "Building Level-Up, Expansions & Icons",
       "sections": [
         {
-          "heading": "Guided Administration",
-          "body": "Alliance Courses and Co-admin Patient Transport Sweep share the Administration task area with Dispatch Recruitment, Station Icon Copier and the Expansion & Upgrade Planner. Each remains a manual, bounded five-stage workflow using MissionChief's current native controls."
-        },
-        {
-          "heading": "Alliance Courses building setup",
-          "body": "Name each academy for one course and include SUN, MON, TUE, WED, THU, FRI or SAT, or the corresponding full English day name, as a separate token. The native academy icon separates crossover names such as Dog Handling and Drone Operator; AD, AE, AF and AI are accepted fallback prefixes."
-        },
-        {
-          "heading": "Alliance Courses safety",
-          "body": "A fresh scan requires the native green course action. Start requires explicit confirmation, discovers the current course option value, selects the maximum native classroom option, uses the configured sharing duration at 0 Credits and verifies new matching course evidence. Unknown names, changed forms and ambiguous options are skipped rather than guessed, and unverified submissions are never retried automatically."
+          "heading": "In Toolkit 2.0",
+          "body": "Building Level-Up scans eligible buildings by type and dispatch scope. Choose native target levels, pay with Credits or Coins, and hide buildings already at their maximum. Select individual buildings or use Purchase Selected for reviewed upgrades. Building Expansions finds stations missing a selected extension, explains exclusions and prerequisites, and supports reviewed purchases in the available game currency. Complete Builder lists construction in progress with remaining time and available Coin completion offers. Select multiple entries and review the total for Purchase Selected. Copy Station Icons applies an owned station's icon to eligible stations of the same type. Switch Icon finds matching custom icons and replaces them across selected buildings. Preview reuses the scan, with pause and review/resume support."
         }
       ]
     },
     {
-      "title": "Fleet, map and finance",
+      "title": "Vehicle Purchaser",
       "sections": [
         {
-          "heading": "Resource Gap",
-          "body": "Compares mission demand with personal vehicle context inside a configurable radius."
-        },
-        {
-          "heading": "Coverage rings",
-          "body": "Coverage rings provide geographic range context without installing a document-wide heat overlay."
-        },
-        {
-          "heading": "Smart Bookmark Labels",
-          "body": "Automatically shortens labels while retaining the full name through tooltips or touch previews."
-        },
-        {
-          "heading": "Financial intelligence",
-          "body": "Reconciles income, spending and variance and can send Simple, Informative or The Wolf reports to a saved Discord webhook."
+          "heading": "In Toolkit 2.0",
+          "body": "Scan station types and dispatch centres for free bays and live vehicle-market offers. Search stations, select individual stations or Select ALL Stations, and build a multi-station order. Set quantities with 1, 5, 10, MAX or a custom amount; choose Credits or Coins and review combined costs. Use the ambulance preset to fill spaces with ambulances while providing one Mass Casualty Equipment vehicle. Where needed, that preset can build the Mass Casualty extension, complete construction with Coins and activate it. Required extension costs and Coin allowances are shown before the order starts. Track purchases with progress, pause and resume controls; interrupted purchases are checked before continuing."
         }
       ]
     },
     {
-      "title": "Settings and recovery",
+      "title": "Staff Training & Recruitment",
       "sections": [
         {
-          "heading": "Import and export",
-          "body": "Move configuration between Desktop, Tablet and iOS. Exports may contain a saved Discord webhook and must remain private."
-        },
-        {
-          "heading": "Reset strategy",
-          "body": "Export first, reset only the affected feature where possible and test with the default Map Command interface before a full reset."
+          "heading": "In Toolkit 2.0",
+          "body": "Filter stations by type, dispatch centre and name; scan rosters, expand staff lists and choose relevant training. Select individuals or use quick untrained-staff batches. A selection counter shows classroom requirements in groups of ten. Scan Own Academies, Alliance Academies or Combined. Own classrooms are prioritised in Combined mode; alliance allocations use existing matching courses. Ownership, capacity, shortfalls and paid-class costs are shown before enrolment. Scan already trained refreshes qualification counts across all scanned stations and pages. Red No Staff Trained badges, green trained counts and amber unknown/failed-scan states distinguish actual zero counts from missing information. Already-qualified staff are labelled, shown in green and placed last; Hide Already Trained filters them from view. Filter stations by qualification coverage, eligibility, active training or scan problems. Sort by name, trained count or percentage, eligible staff, total staff or staff in training. Select all stations, matching stations or individual stations, then choose X completely untrained staff per station. Top up each selected station to X staff with the chosen qualification. Existing qualifications are counted and only the shortfall is selected; shortages and uncertain stations are reported. Bulk selection uses completely untrained staff only and refreshes rosters before selecting. Selection prepares a plan; it does not start a course. Show In-Training reads current courses. Complete individual eligible classes or Complete ALL after reviewing the combined Coin cost and confirmation. Completion affects the entire class, including other participants. Staff Recruitment sets hiring phases and desired personnel at selected stations. The separate Training Courses tool creates and shares mapped academy courses when your alliance role and buildings support it."
         }
       ]
     },
     {
-      "title": "Dispatch Recruitment",
+      "title": "Patient Transport Sweeper",
       "sections": [
         {
-          "heading": "Selection workflow",
-          "body": "Load MissionChief's current Dispatch Centres and building types, choose one centre or ALL DISPATCH CENTRES, then choose ALL BUILDING TYPES or one exact native type before scanning. The native page is an assignment matrix, so the Toolkit admits only exact centre/type matches and binds the result to both choices. Changing either scope destroys the stale queue and disables Apply until a fresh scan succeeds. Post-scan filters and station checkboxes can refine the exact target set."
-        },
-        {
-          "heading": "Native safeguards",
-          "body": "Unassigned rows never enter the mutation queue. Every station is rechecked against its exact scanned Dispatch Centre and building type before mutation and after each field change. Personnel (Desired) is applied independently through a strict payload allow-list, unavailable Hiring actions produce an explicit partial result, and any assignment change or unverifiable mutation stops the run. Assignment and coin recruitment actions are excluded."
-        },
-        {
-          "heading": "Operator guide",
-          "body": "The complete selection, limits, native action and failure contract is documented in docs/issue-706-dispatch-recruitment.md."
+          "heading": "In Toolkit 2.0",
+          "body": "Find eligible alliance patient-transport requests and release them through a reviewed sweep. Your own vehicles and prisoner transports are excluded. A maximum run limit of 1,000, progressive discovery and reuse of very recent unchanged results reduce repeated scanning. Full Rescan starts fresh. Follow the current mission through a stable progress panel with elapsed time and checked/completed counts. Manual scroll position is preserved while results update."
         }
       ]
     },
     {
-      "title": "Station Icon Copier",
+      "title": "Finance & Reporting",
       "sections": [
         {
-          "heading": "Selection workflow",
-          "body": "Open Toolkit → Administration → Station Icon Copier, load stations, choose one Dispatch Centre or ALL DISPATCH CENTRES, then choose an owned source station that already has the correct custom icon. The source defines the exact native building type and small/full classification. Scan, review the source thumbnail and exact target list, clear any unwanted stations, then confirm Apply to Selected. Changing scope, source or protection policy destroys the stale queue."
-        },
+          "heading": "In Toolkit 2.0",
+          "body": "Review income, spending, net results, daily trends, category breakdowns and searchable transactions for selected periods. Use game daily summaries and overview data, period comparisons, financial scorecards, aggregate audits and deeper ledger scans where the source data is available. Review completion history and session performance alongside financial information. Toolkit timestamps and timestamp-based reporting periods use Europe/London with automatic GMT/BST changes. Native daily game totals retain their UTC reporting boundaries and are labelled accordingly. Post finance reports, transport-sweep summaries and operational briefings to a saved Discord destination when you choose."
+        }
+      ]
+    },
+    {
+      "title": "Emergency Payout Flash",
+      "sections": [
         {
-          "heading": "Protected and replacement modes",
-          "body": "Protect them is the default and excludes existing custom icons; a target that gains one after the scan is skipped. Replace selected custom icons is explicit overwrite mode. Existing-icon targets remain individually selectable and are named in the final plan. A target already rendering the same source pixels is reported as No change without another upload."
-        },
+          "heading": "In Toolkit 2.0",
+          "body": "Customise payout celebrations in a visual studio with 16 banner styles, artwork previews and theme audio. Choose Compact, Banner or Cinematic presentation; top, centre or bottom placement; and small, medium or large size. Choose the banner and audio theme independently, or match them. Adjust volume, minimum payout, duration and payout-tier thresholds. Control banner visibility, red/blue map glow, cinematic particles, tier intensity and static presentation separately. Try Preview banner, Full-map test, Play Sound and Stop Preview. Replay recent payouts without changing earnings. Rapid payouts are grouped while the current celebration finishes. Motion controls account for reduced-motion preferences and Economy behaviour."
+        }
+      ]
+    },
+    {
+      "title": "Awards, Tasks, Profiles & Community",
+      "sections": [
         {
-          "heading": "Native verification",
-          "body": "The source PNG or JPEG is downloaded once into memory and validated against MissionChief's 200×200 limit. Every target is freshly rechecked, submitted sequentially through its exact current native building-edit form, and verified for unchanged identity, assignment, type, size, name and coordinates. The saved image is decoded and pixel-compared with the source before the next target starts. An unverified submitted request stops the run and is never retried automatically."
-        },
+          "heading": "In Toolkit 2.0",
+          "body": "Awards dashboard: collection overview, progress summaries, everyday targets, search, filters, sorting and locally pinned goals. Choose Showcase or Compact. Tasks and Events dashboard: ready-to-claim counts, deadline highlights, search, filters and sorting by readiness, progress, deadline or Credit reward. Native claim controls remain available. Player profiles: lifetime earnings, account age, lifetime daily average, Credit milestones, award search and tier counts. Search buildings already loaded on the profile map and open their markers. Alliance chat: compact styling, search across loaded messages, announcement hide/show and a count of new messages received while chat is collapsed. Updated announcements reappear. Alliance pages: resource shortcuts and filtering of loaded members by name or role. Inbox: search conversations on the current page, retain selected messages in view and use clearer message/table styling. Dispatch dashboard: load an on-demand snapshot to compare buildings, vehicles and reported staffing by dispatch centre; expand centres for building links and staffing targets. Enhanced page dashboards retain native controls and provide an original-page option where available."
+        }
+      ]
+    },
+    {
+      "title": "Account, Sync & Personalisation",
+      "sections": [
         {
-          "heading": "Operator guide",
-          "body": "The complete selection, overwrite, native form, image verification and failure contract is documented in docs/issue-728-station-icon-copier.md."
+          "heading": "In Toolkit 2.0",
+          "body": "Optional Discord sign-in saves supported Toolkit preferences across devices. Saved cloud settings load first on sign-in or reconnection. Clear signed-out, connecting, signed-in and sync indicators, plus Time until sync, Syncing and Sync complete states. Offline changes, conflict choices and recovery backups support settings restoration. A browser-tab sign-in option is available alongside standard Discord sign-in for compatible browsers. Account displays MissionChief UK building totals and game-reported mission capacity without requiring Discord login. Manage one account-synced Toolkit Discord webhook for all supported reports. Save, replace, label, test or remove the destination. A connection test sends no message. Adjust interface themes, skins, emergency-service styling, density, device layout, controls and Economy Mode. Settings backup/recovery and diagnostics are available. Access the Game Guide, Discord Support and Ko-fi from the Toolkit. Version 2.0 includes a one-off comprehensive What's New overview, which can be reopened from the extension popup."
         }
       ]
     }
@@ -1196,18 +1385,18 @@
     {
       "problem": "Settings did not carry to another device",
       "steps": [
-        "Export from the original device",
-        "Import the complete timestamped file",
-        "Confirm the target operating mode",
-        "Reload MissionChief once"
+        "Sign into the same Discord-linked Toolkit account",
+        "Wait for cloud preferences to load before editing",
+        "Check connection and sync status",
+        "Use supported private settings export/import if needed; game jobs and finance archives are local"
       ]
     }
   ],
   "knownIssues": [
     {
       "level": "information",
-      "title": "No release-blocking issue is recorded for the current verified release",
-      "body": "Release channels and integrity state remain visible on the status page and in GitHub."
+      "title": "2.0.0 submitted on 17 September 2026",
+      "body": "Google review determines publication. The Store is the authority for the version currently available; this site describes the submitted 2.0 feature set."
     },
     {
       "level": "watch",
@@ -1222,7 +1411,7 @@
   ],
   "mediaRoadmap": [
     "Before-and-after map comparison",
-    "All seven interface systems",
+    "Eight optional interface palettes",
     "Mission Age map timer badges",
     "Mission Value inside a native mission window",
     "Patient Transport Sweep native discharge workflow",

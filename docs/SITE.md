@@ -1,5 +1,3 @@
-> **Historical userscript infrastructure.** The supported product is now the [Chrome extension](../extension/README.md). Use its build and release guidance; this document is retained for provenance.
-
 # GitHub Pages documentation site
 
 The public MissionChief Map Command Toolkit site is generated from repository-controlled source data and deployed through GitHub Actions.
@@ -17,7 +15,7 @@ The site is deliberately separated into:
 | `docs/site-data.json` | Feature catalogue, themes, documentation chapters, shortcuts and troubleshooting |
 | `docs/site-assets/site.css` | Responsive visual system |
 | `docs/site-assets/site.js` | Navigation, filtering, date formatting and copy controls |
-| `status/release-dashboard.json` | Current version and verified release health |
+| `status/release-dashboard.json` | Historical userscript status, used only in archive views |
 | `.github/release-settings.json` | TKB distribution, statistics and recovery configuration |
 | `CHANGELOG.md` | Release history |
 | `README.md` | Primary GitHub landing page and installation summary |
@@ -28,7 +26,7 @@ The generated `_site/` directory is an Actions artifact. It is not committed to 
 
 ## Pages
 
-- Home and official TKB installation
+- Home and Chrome Web Store installation
 - Complete feature catalogue
 - Interface-theme and payout-presentation gallery
 - Documentation centre
@@ -54,7 +52,7 @@ A deployment occurs only from `main` or a manual workflow run.
 
 Edit the structured catalogue rather than generated HTML. The build script escapes user-facing source values and fails when required sections, release data, pages or internal targets are missing.
 
-Feature documentation should describe current public behaviour. The README, Help Centre and Pages catalogue form one public documentation contract and must be updated together when shared claims change. The retained `docs/greasyfork-description.md` is a static retirement notice only and is excluded from release documentation synchronization. Experimental ideas belong in issues or Discussions rather than the published catalogue.
+Feature documentation describes the submitted 2.0.0 payload; Store availability is explicitly separate. The README, Help Centre and Pages catalogue form one public documentation contract and must be updated together when shared claims change. The retained `docs/greasyfork-description.md` is a static retirement notice only and is excluded from release documentation synchronization. Experimental ideas belong in issues or Discussions rather than the published catalogue.
 
 ## Theme safety
 

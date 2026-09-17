@@ -1,0 +1,157 @@
+{
+  "manifest_version": 3,
+  "name": "MissionChief Map Command Toolkit",
+  "version": "2.0.0",
+  "version_name": "2.0.0",
+  "description": "Map controls, mission insights, finance and Home Response Builder for MissionChief UK. Independent community extension.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "storage",
+    "scripting",
+    "identity",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://missionchief.co.uk/*",
+    "https://*.missionchief.co.uk/*",
+    "https://raw.githubusercontent.com/*",
+    "https://tkb-gaming.scot/*",
+    "https://leitstellenspiel.s3.amazonaws.com/*",
+    "https://discord.com/api/*",
+    "https://lanhxfrlnvtcsfqkucac.supabase.co/*",
+    "https://kmcajnjdgofmdfhbmadcddhokbnigomb.chromiumapp.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Map Command Toolkit",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://missionchief.co.uk/*",
+        "https://*.missionchief.co.uk/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/*",
+        "https://*.missionchief.co.uk/*"
+      ],
+      "js": [
+        "notes.js",
+        "whats-new.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/auszeichnungen*",
+        "https://*.missionchief.co.uk/auszeichnungen*"
+      ],
+      "js": [
+        "awards.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/tasks/index*",
+        "https://*.missionchief.co.uk/tasks/index*"
+      ],
+      "js": [
+        "tasks.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/profile/*",
+        "https://*.missionchief.co.uk/profile/*"
+      ],
+      "js": [
+        "profile.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/",
+        "https://*.missionchief.co.uk/"
+      ],
+      "js": [
+        "chat.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/*",
+        "https://*.missionchief.co.uk/*"
+      ],
+      "js": [
+        "ui-upgrades.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://missionchief.co.uk/*",
+        "https://*.missionchief.co.uk/*"
+      ],
+      "js": [
+        "navbar.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "toolkit.css",
+        "workspace.css",
+        "operations.css",
+        "compatibility-probe.css",
+        "command-ui.css",
+        "finance-dashboard.css",
+        "surface-theme.css",
+        "payout-audio/*.mp3",
+        "payout-art/*"
+      ],
+      "matches": [
+        "https://missionchief.co.uk/*",
+        "https://*.missionchief.co.uk/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

@@ -16,8 +16,14 @@ Never publish passwords, cookies, access tokens or Discord webhook URLs. Follow 
 
 ## Feature requests
 
-Describe the problem, proposed workflow and affected devices. Existing game ownership, Credit costs and confirmations must remain clear.
+Describe the problem, proposed workflow and affected devices. Existing game ownership, Credit/Coin costs and confirmations must remain clear.
 
 ## Scope
 
 Support covers the Store extension. Explicitly label test ZIP and unpacked builds when reporting them. Historical userscripts and their release dashboards are retained as archives, not parallel supported editions.
+
+## Account and sync
+
+Check the Account connection and sync indicators, and use the same Discord-linked account on both devices. Only supported preferences and the separately saved reporting destination sync. Running jobs and financial archives stay local. Never include tokens or webhook URLs in a support report.
+
+[Discord support](https://discord.gg/mXnTHuNfvu) · [Complete 2.0 feature reference](docs/FEATURES-2.0.md)

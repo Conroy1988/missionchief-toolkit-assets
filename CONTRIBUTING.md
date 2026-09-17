@@ -8,9 +8,9 @@ Verify the current `main` branch and existing work. Use a feature branch and a p
 
 ## Extension development
 
-Follow [extension/README.md](extension/README.md) for the baseline, maintained modules and build commands. Test changes to game actions against meaningful native-response fixtures, including failures after a successful action. Never count a test as proof of a live game purchase.
+Follow [extension/README.md](extension/README.md) for the verified 2.0 snapshot, integrity inventory and build commands. Test changes to game actions against meaningful native-response fixtures, including failures after a successful action. Never count a test as proof of a live game purchase.
 
-Preserve account ownership checks, explicit confirmation, Credit-only purchase selection, saved progress and uncertain-request recovery. Avoid duplicate purchases, unbounded scans, unnecessary catalogue downloads and eager UI work. Keep desktop and touch layouts usable. Do not add remote executable code.
+Preserve account ownership checks, explicit confirmation, explicit Credit/Coin purchase selection, saved progress and uncertain-request recovery. Avoid duplicate purchases, unbounded scans, unnecessary catalogue downloads and eager UI work. Keep desktop and touch layouts usable. Do not add remote executable code.
 
 ## Documentation and graphics
 

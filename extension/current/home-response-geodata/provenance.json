@@ -1,0 +1,15 @@
+{
+  "source": "https://ftp.soest.hawaii.edu/gshhg/gshhg-shp-2.3.7.zip",
+  "version": "2.3.7",
+  "archiveSha256": "8dbbe7e071e77e9e75f2d639239099ebca8d5c16d6a07df8169729d49f15cf41",
+  "resolution": "full",
+  "bounds": [
+    -9,
+    49,
+    3,
+    61
+  ],
+  "inwardMarginDegrees": 0.0005,
+  "simplificationDegrees": 3e-05,
+  "limitations": "Historical shoreline dataset. Not all small ponds, narrow waterways or recent changes are mapped. Does not verify road access."
+}

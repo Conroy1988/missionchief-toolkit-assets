@@ -17,7 +17,7 @@ body:
     id: toolkit-version
     attributes:
       label: Toolkit version
-      placeholder: "Extension 1.2.5 / Toolkit 10.18.1"
+      placeholder: "Extension 2.0.0 / Chrome or Orion version"
     validations:
       required: true
 

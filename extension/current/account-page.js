@@ -1,0 +1,34 @@
+function toolkitSyncCountdown(s,now=Date.now()){if(!s?.signedIn)return 'Sign in to sync your settings';if(s.state==='syncing')return 'Syncing in progress…';if(['error','pending','conflict'].includes(s.state))return 'Sync needs attention · '+(s.message||'Open Account');if(s.state==='signing-in')return 'Connecting to Discord…';if(s.state==='synced'&&s.lastSynced&&now-s.lastSynced<4000)return '✓ Sync complete';if(!s.nextSyncAt)return 'Waiting for sync schedule…';const seconds=Math.max(0,Math.ceil((s.nextSyncAt-now)/1000));return seconds?'Time until sync · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0'):'Sync due · waiting for browser';}
+let webhookReadSequence=0;
+let countdownStatus=null;setInterval(()=>{const node=document.getElementById('sync-countdown');if(node)node.textContent=toolkitSyncCountdown(countdownStatus);},1000);
+const $=id=>document.getElementById(id);let working=false,refreshing=false;
+function progress(active){$("auth-progress").hidden=!active;$("connection-card").setAttribute("aria-busy",String(active));}
+async function call(op,extra={}){const r=await sendRuntimeMessage({op,...extra});if(!r?.ok)throw Error(op+': '+(r?.error||'The extension did not respond.'));return r.value;}
+async function refresh(){if(refreshing)return;refreshing=true;try{const s=await call('accountStatus');countdownStatus=s;$('status').textContent=s.message;
+const pending=s.state==='signing-in'||s.tabSignInPending;
+progress(pending||s.state==='syncing');
+$('connection-badge').textContent=pending?'Connecting to Discord…':s.signedIn?'✓ You are logged in':'You are not logged in';
+$('connection-card').className=pending?'connecting':s.signedIn?'connected':'disconnected';
+$('sync-state').textContent=pending?'Complete approval in the Discord window':!s.signedIn?'Settings saved on this device':({synced:'✓ Settings synced',syncing:'Syncing your settings…',queued:'Changes waiting to sync',conflict:'Choose which settings to keep','signing-in':'Connecting to Discord…'}[s.state]||'Sync needs attention');
+
+const options=$('sign-in-options');if(options.signedIn!==!!s.signedIn){options.open=!s.signedIn;options.signedIn=!!s.signedIn;}
+const build=document.getElementById('account-build');if(build)build.textContent='Account build 2.0.0 · Account service '+(s.accountBuild||'older build — reopen Account');const cancel=document.getElementById('tab-cancel');if(cancel)cancel.hidden=!s.tabSignInPending;$('recovery').hidden=!s.hasRecovery;$('conflict').hidden=s.state!=='conflict';$('name').textContent=s.signedIn?s.displayName:'Saved on this device';$('login').textContent=s.signedIn?'Reconnect Discord':'Sign in with Discord';$('sync').hidden=$('logout').hidden=!s.signedIn;$('time').textContent=s.lastSynced?'Last synced '+new Date(s.lastSynced).toLocaleString('en-GB', {timeZone:'Europe/London'}):'';if(!working&&!pending&&s.state!=='syncing')void refreshWebhook();}catch(e){$('status').textContent=e.message;$('connection-badge').textContent='Account check needs attention';$('sync-state').textContent='Connection status unavailable';}finally{refreshing=false;}}
+async function action(op){if(working)return;working=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);progress(true);$('status').textContent=['accountLogin','accountTabLogin'].includes(op)?'Opening Discord. Approve access there; this page updates automatically.':'Working…';$('connection-badge').textContent=['accountLogin','accountTabLogin'].includes(op)?'Connecting to Discord…':$('connection-badge').textContent;if(op==='accountSync')$('sync-state').textContent='Syncing your settings…';try{await call(op);await refresh();}catch(e){progress(false);$('status').textContent=e.message;$('connection-badge').textContent='Sign-in or sync needs attention';}finally{working=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);void refreshWebhook();}}
+$('keep').onclick=()=>action('accountKeepLocal');$('restore').onclick=()=>action('accountUseCloud');
+$('login').onclick=()=>action('accountLogin');$('sync').onclick=()=>action('accountSync');$('logout').onclick=()=>action('accountLogout');
+async function download(op){try{const data=await call(op);const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='Toolkit-settings-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){$('status').textContent=e.message;}};
+$('export').onclick=()=>download('accountExport');$('recovery').onclick=()=>download('accountRecoveryExport');
+if(new URLSearchParams(window.location?.search||'').has('finishing')){$('connection-badge').textContent='Finishing Discord sign-in…';$('name').textContent='Checking your Discord account';$('sync-state').textContent='Loading your saved settings…';$('status').textContent='This page will update automatically.';}
+void refresh();setInterval(()=>{void refresh();},1000);
+
+const tabLogin=document.getElementById('tab-login'),tabCancel=document.getElementById('tab-cancel');if(tabLogin)tabLogin.onclick=()=>action('accountTabLogin');if(tabCancel)tabCancel.onclick=()=>action('accountTabCancel');
+window.addEventListener('focus',()=>{if(!working)void call('accountTabCheck').then(refresh).catch(()=>{});});
+
+
+async function refreshWebhook(){if(working||countdownStatus?.state==='signing-in'||countdownStatus?.state==='syncing'||countdownStatus?.tabSignInPending)return;const sequence=++webhookReadSequence;try{const s=await call('accountWebhookStatus');if(sequence!==webhookReadSequence)return;$('webhook-state').textContent=s.configured?'Saved destination: '+s.label:'No webhook saved for this account.';if(document.activeElement!==$('webhook-label'))$('webhook-label').value=s.label||'';}catch(e){if(sequence===webhookReadSequence)$('webhook-state').textContent=e.message;}}
+for(const [id,op] of [['webhook-save','accountWebhookSave'],['webhook-test','accountWebhookTest'],['webhook-clear','accountWebhookClear']])$(id).onclick=async()=>{
+ if(working)return; if(op==='accountWebhookSave'&&!$('webhook-url').value.trim()){$('webhook-state').textContent='Paste a webhook URL to replace the saved destination.';return;}
+ working=true;const buttons=[...document.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+ try{const result=await call(op,{url:$('webhook-url').value.trim(),label:$('webhook-label').value});$('webhook-url').value='';await refreshWebhook();$('webhook-state').textContent=op==='accountWebhookTest'?'Connection checked. No message was sent.':op==='accountWebhookClear'?'Webhook removed.':'Webhook saved. All reporting tools now use this destination.';}
+ catch(e){$('webhook-state').textContent=e.message;}finally{working=false;buttons.forEach(b=>b.disabled=false);}
+};void refreshWebhook();window.addEventListener('focus',()=>{void refreshWebhook();});

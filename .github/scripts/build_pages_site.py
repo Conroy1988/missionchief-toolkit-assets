@@ -85,7 +85,9 @@ def page_shell(*, data: dict, dashboard: dict, base_path: str, active: str, titl
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#07111f">
+  <meta name="theme-color" content="#090b0c">
+  <link rel="icon" type="image/svg+xml" href="{esc(href(base_path, "assets/toolkit-mark.svg"))}">
+  <meta property="og:image" content="{esc(project["pages"].rstrip("/") + "/assets/extension-command-cover.svg")}">
   <meta name="description" content="{esc(description)}">
   <meta property="og:type" content="website">
   <meta property="og:title" content="{esc(title)}">
@@ -111,12 +113,12 @@ def page_shell(*, data: dict, dashboard: dict, base_path: str, active: str, titl
     </div>
   </header>
   <main id="content">
-    <div class="container"><div class="callout">The Toolkit is now a Chrome extension. The userscript edition is unsupported. <a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc">Install from the Chrome Web Store</a> · <a href="https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/docs/MIGRATING_FROM_USERSCRIPT.md">Migration guide</a>. Feature additions described here include the 1.2.5 submission; check the Store for availability.</div></div>
+    <div class="container"><div class="callout">The Toolkit is now a Chrome extension. The userscript edition is unsupported. <a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc">Install from the Chrome Web Store</a> · <a href="https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/docs/MIGRATING_FROM_USERSCRIPT.md">Migration guide</a>. Features documented here match 2.0.0, submitted on 17 September 2026. Check the Store for current availability.</div></div>
     {body}
   </main>
   <footer class="footer">
     <div class="container footer-inner">
-      <div><strong>{esc(project["name"])}</strong><br>Chrome Web Store distribution · Conroy1988 developer<br><a href="{esc(base_path)}status/">Historical userscript baseline: {esc(version)}</a></div>
+      <div><strong>{esc(project["name"])}</strong><br>Toolkit 2.0 · Chrome Web Store distribution · Conroy1988 developer<br><a href="{esc(base_path)}status/">Historical userscript baseline: {esc(version)}</a></div>
       <div class="footer-links">
         <a href="{esc(project["repository"])}">GitHub</a>
         <a href="{esc(project["issues"])}">Support</a>
@@ -204,9 +206,9 @@ def home_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     release = dashboard.get("latestRelease", {})
     assets = dashboard.get("assets", {})
     install = "https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"
-    product_url = settings.get("distribution", {}).get("productUrl", "#")
+    product_url = "https://tkb-gaming.scot/games/missionchief/guides/"
     featured = []
-    for category in data["featureCategories"][:4]:
+    for category in [data["featureCategories"][0], *data["featureCategories"][-3:]]:
         feature = category["features"][0]
         featured.append(
             f'<a class="card card-link" href="{esc(href(base_path, "features/"))}"><span class="eyebrow">{esc(category["name"])}</span><h3>{esc(feature["name"])}</h3><p>{esc(feature["summary"])}</p></a>'
@@ -223,24 +225,24 @@ def home_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     body = f'''
 <section class="hero">
   <div class="container">
-    <span class="eyebrow">MissionChief operational interface</span>
-    <h1>Command the map.<br>See what matters.</h1>
+    <img class="command-cover" src="{esc(href(base_path, "assets/extension-command-cover.svg"))}" alt="Map Command Toolkit 2.0 — your entire operation, one command workspace">
+    <span class="eyebrow">The 2.0 command workspace</span>
+    <h1>Build coverage.<br>Equip stations. Train teams.</h1>
     <p class="hero-copy">{esc(project["description"])}</p>
     <div class="actions">
       <a class="button primary" href="{esc(install)}">Install or update Toolkit</a>
-      <a class="button" href="{esc(product_url)}">View TKB product page</a>
+      <a class="button" href="{esc(product_url)}">MissionChief Game Guide</a>
       <a class="button" href="{esc(href(base_path, "docs/"))}">Open documentation</a>
     </div>
-    <div class="release-strip" aria-label="Current release status">
-      <div class="stat"><span class="stat-label">Public version</span><span class="stat-value"><a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc">See Chrome Store</a></span></div>
-      <div class="stat"><span class="stat-label">Release status</span><span class="stat-value">Google review required</span></div>
-      <div class="stat"><span class="stat-label">Hosted assets</span><span class="stat-value">{esc(assets.get("discoveredFiles", 0))} monitored</span></div>
-      <div class="stat"><span class="stat-label">Missing assets</span><span class="stat-value">{esc(assets.get("missingReferencedPaths", 0))}</span></div>
-      <div class="stat"><span class="stat-label">Last verified</span><span class="stat-value" data-iso-date="{esc(release.get("completedAt", dashboard.get("lastUpdated", "")))}">{esc(release.get("completedAt", dashboard.get("lastUpdated", "unknown")))}</span></div>
+    <div class="release-strip" aria-label="Release information">
+      <div class="stat"><span class="stat-label">Documented version</span><span class="stat-value">2.0.0</span></div>
+      <div class="stat"><span class="stat-label">Submission</span><span class="stat-value">17 September 2026</span></div>
+      <div class="stat"><span class="stat-label">Availability</span><span class="stat-value"><a href="{esc(install)}">Check Chrome Store</a></span></div>
+      <div class="stat"><span class="stat-label">Toolkit account</span><span class="stat-value">Optional</span></div>
     </div>
   </div>
 </section>
-<section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Operational systems</span><h2>One Toolkit, several command layers</h2></div><p>The interface remains map-first. Large systems are constructed on demand and can be enabled only when they are operationally useful.</p></div><div class="grid two">{''.join(featured)}</div><div class="actions"><a class="button" href="{esc(href(base_path, "features/"))}">Browse all features</a></div></div></section>
+<section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Operational systems</span><h2>Run the whole operation</h2></div><p>The interface remains map-first. Large systems are constructed on demand and can be enabled only when they are operationally useful.</p></div><div class="grid two">{''.join(featured)}</div><div class="actions"><a class="button" href="{esc(href(base_path, "features/"))}">Browse all features</a></div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Responsive operation</span><h2>Desktop, tablet and iOS</h2></div><p>Purpose-built layouts support large maps and touch screens. Mobile use requires a compatible extension-capable browser; ordinary iPhone Safari cannot install this extension.</p></div><div class="grid three">{modes}</div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Interface themes</span><h2>Distinct skins, consistent controls</h2></div><p>Theme styling changes the presentation layer without changing the underlying operational workflow.</p></div><div class="grid three">{''.join(theme_cards)}</div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Verified distribution</span><h2>Extension source to the Chrome Web Store</h2></div><p>Installations and updates now come from the Chrome Web Store. Source changes and test ZIPs do not imply Store approval. Historical userscript delivery records remain available as an archive.</p></div><div class="pipeline">{pipeline_html}</div><div class="actions"><a class="button" href="{esc(href(base_path, "status/"))}">View legacy release archive</a><a class="button" href="{esc(project["releases"])}">GitHub Releases</a></div></div></section>
@@ -271,7 +273,7 @@ def themes_page(data: dict, dashboard: dict, base_path: str) -> str:
 </article>''')
     payout = "".join(f'<span class="tag">{esc(name)}</span>' for name in data["payoutThemes"])
     roadmap = "".join(f'<div class="card"><h3>{esc(item)}</h3><p>Planned verified capture for the TKB product page, GitHub source archive and this documentation site.</p></div>' for item in data["mediaRoadmap"])
-    body = f'''<section class="page-hero"><div class="container"><span class="eyebrow">Visual gallery</span><h1>Eight interface identities. One control system.</h1><p>These live CSS previews show the design language of each full interface theme. These are schematic theme previews, not screenshots of the current extension.</p></div></section>
+    body = f'''<section class="page-hero"><div class="container"><span class="eyebrow">Visual gallery</span><h1>Black and red at the core. Make it yours.</h1><p>The Toolkit workspace uses charcoal surfaces, red accents and the two-bar mark. Optional game skins and payout artwork add a separate layer of personalisation. The previews below illustrate theme palettes; they are not game screenshots.</p></div></section>
 <section class="section compact"><div class="container"><div class="theme-grid">{''.join(theme_cards)}</div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Mission completion</span><h2>Payout presentation library</h2></div><p>Completion banners can use a separate presentation theme and optional hosted audio.</p></div><div class="card"><div class="tag-row">{payout}</div></div></div></section>
 <section class="section"><div class="container"><div class="section-heading"><div><span class="eyebrow">Media programme</span><h2>Screenshot and demonstration roadmap</h2></div><p>Captured media will be added without replacing stable public assets used by installed Toolkit versions.</p></div><div class="grid two">{roadmap}</div></div></section>'''
@@ -294,7 +296,7 @@ def docs_page(data: dict, dashboard: dict, settings: dict, base_path: str) -> st
     install = "https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"
     body = f'''<section class="page-hero"><div class="container"><span class="eyebrow">Documentation centre</span><h1>Install, operate and diagnose the Toolkit</h1><p>Start with the operating model, then use the feature guidance, confirmed shortcuts and troubleshooting paths below.</p><div class="actions"><a class="button primary" href="{esc(install)}">Install current release</a><a class="button" href="{esc(data["project"]["issues"])}">Open support form</a></div></div></section>
 <section class="section compact"><div class="container docs-layout"><aside class="docs-nav" aria-label="Documentation chapters">{''.join(nav)}<a href="#shortcuts">Keyboard shortcuts</a><a href="#troubleshooting">Troubleshooting</a><a href="#known-issues">Known issues</a></aside><div>{''.join(sections)}
-<section class="docs-block" id="shortcuts"><h2>Keyboard shortcuts</h2><p>Confirmed global shortcuts in the current Toolkit release. Inputs and editable fields remain protected from accidental activation.</p><div class="shortcut-grid">{shortcuts}</div></section>
+<section class="docs-block" id="shortcuts"><h2>Keyboard shortcuts</h2><p>Default Toolkit shortcuts; customised bindings may differ. Inputs and editable fields remain protected from accidental activation.</p><div class="shortcut-grid">{shortcuts}</div></section>
 <section class="docs-block" id="troubleshooting"><h2>Troubleshooting</h2><div class="grid">{trouble}</div><div class="callout">Performance reports should include the Toolkit version, browser, extension version, device, mission and vehicle scale, enabled features and <code>window.__MCMS_STARTUP_METRICS__</code>.</div></section>
 <section class="docs-block" id="known-issues"><h2>Known issues and operational notes</h2><div class="grid">{issues}</div></section>
 </div></div></section>'''

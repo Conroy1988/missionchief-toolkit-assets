@@ -1,202 +1,221 @@
-<p align="center"><a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"><img src="docs/media/extension-command-cover.svg" width="100%" alt="MissionChief Map Command Toolkit — map intelligence, operations and finance. Chrome extension. Black and red illustrated command map."></a></p>
+<p align="center"><a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"><img src="docs/media/extension-command-cover.svg" width="100%" alt="MissionChief Map Command Toolkit 2.0. Two red bars. One command workspace for map, incidents, fleet, operations and finance."></a></p>
 
 <h1 align="center">MissionChief Map Command Toolkit</h1>
-<p align="center"><strong>Your map. Your fleet. Your next move.</strong><br>A browser extension for MissionChief UK, with practical tools for running a growing operation.</p>
-<p align="center">
-<a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"><img src="https://img.shields.io/badge/INSTALL-Chrome_Web_Store-e33442?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white&amp;labelColor=13151a" alt="Install from Chrome Web Store"></a>
-<a href="docs/EXTENSION_GUIDE.md"><img src="https://img.shields.io/badge/READ-Setup_Guide-f2f3f5?style=for-the-badge&amp;labelColor=13151a" alt="Read the setup guide"></a>
-<a href="https://github.com/Conroy1988/missionchief-toolkit-assets/issues"><img src="https://img.shields.io/badge/GET-Support-8d98ac?style=for-the-badge&amp;labelColor=13151a" alt="Get support"></a>
-</p>
+<p align="center"><strong>Your entire operation. One command workspace.</strong><br>Build coverage. Equip stations. Train teams. Understand the numbers.</p>
+<p align="center"><a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"><img alt="Chrome Web Store" src="https://img.shields.io/badge/GET_TOOLKIT-Chrome_Web_Store-ed2727?style=for-the-badge&amp;labelColor=141719"></a> <a href="docs/EXTENSION_GUIDE.md"><img alt="Setup guide" src="https://img.shields.io/badge/START_HERE-Setup_Guide-41484c?style=for-the-badge&amp;labelColor=141719"></a> <a href="https://discord.gg/mXnTHuNfvu"><img alt="Discord support" src="https://img.shields.io/badge/NEED_HELP-Discord-41484c?style=for-the-badge&amp;labelColor=141719"></a></p>
 
-> [!IMPORTANT]
-> **The Toolkit is now a Chrome extension. The Tampermonkey/userscript edition is no longer supported.** Install through the **[Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc)**. Existing script users: **[follow the migration guide](docs/MIGRATING_FROM_USERSCRIPT.md)** before disabling the old copy.
+<p align="center"><a href="#the-20-workspace">Explore 2.0</a> · <a href="#complete-feature-reference">Every feature</a> · <a href="#get-started">Get started</a> · <a href="#privacy-and-account-sync">Privacy &amp; sync</a> · <a href="#source-and-release-integrity">Source</a></p>
 
-<p align="center"><a href="#built-for-your-operation">Features</a> · <a href="#mission-intelligence">Missions</a> · <a href="#fleet-and-transport">Fleet</a> · <a href="#operations-with-a-plan">Operations</a> · <a href="#finance-and-discord">Finance</a> · <a href="#make-it-your-workspace">Customisation</a> · <a href="#get-started">Get started</a> · <a href="#privacy-and-control">Privacy</a> · <a href="#source-and-releases">Source</a></p>
+> [!NOTE]
+> **2.0.0 was submitted to Google on 17 September 2026, with automatic publication after approval.** This is the submitted feature set; the [Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc) is the authority for the version currently available. [Release record](extension/store/SUBMISSION-2.0.0.md) · [Complete What's New](extension/CHANGELOG.md).
 
-## Built for your operation
+## The 2.0 workspace
 
-Bring map controls, mission information, fleet visibility, building workflows and finance into the game. Open **Menu** for the Toolkit and **Game Guide** for the official TKB MissionChief guide.
+Built for **MissionChief UK**, with the Toolkit's charcoal surfaces, red accents and signature two-bar mark. Ordinary tools are free and work without a Toolkit account. Optional Discord sign-in restores supported preferences between devices.
 
-| When you want to… | Open… |
+| Workspace | What you can do |
 |---|---|
-| **See what your operation is short of** | Operational Pressure Board, Resource Gap and Procurement Brain |
-| **Find a mission, vehicle or station quickly** | Command Palette, Unit Locator and saved locations |
-| **Build out an area** | Home Response Builder with coverage preview, vehicles and icons |
-| **Change your Home Response fleet** | Home Response Unit Switcher, filtered by dispatch centre |
-| **Handle repetitive building administration** | Hospital Upgrades, Dispatch Recruitment, Station Icon Copier and Expansion & Upgrade Planner |
-| **Understand where your Credits went** | Financial intelligence, historical ledger scans and report comparisons |
-| **Make the game fit how you play** | Personalisation Studio, layout controls, themes, hotkeys and Quick Wheel |
+| **Map & locations** | Filter stations, draw and measure, save places, manage layouts and find commands. |
+| **Incidents & fleet** | Inspect demand, locate units, review operational pressure and refresh missions. |
+| **Operations** | Build Home Responses, level up buildings, add expansions, buy vehicles, train staff and manage icons. |
+| **Finance** | Explore income, spending and comparisons; prepare Discord reports and customise payout celebrations. |
+| **Game dashboards** | Track awards, tasks, profiles, dispatch centres, chat and inbox information. |
+| **Account & settings** | Optional Discord sign-in, preference sync, a shared reporting destination and recovery tools. |
 
-**Install the version available in the Store.** The feature descriptions below include the **1.2.5 submission**; Google review and browser update delivery determine when that version becomes available to you. A source commit or test ZIP is not proof of Store approval.
+<p align="center"><img src="docs/media/extension-operations.svg" width="100%" alt="Operations: plan coverage, build and equip, train teams, review results. Scan, select, review costs, confirm and verify."></p>
 
-## Mission intelligence
+### Station management, at scale
 
-**Know what needs attention, what is already covered and where the next shortage is coming from.**
+**Vehicle Purchaser** builds reviewed orders across selected stations. **Staff Training** selects completely untrained staff per station or tops each station up to a chosen qualification target. **Building Level-Up**, **Building Expansions** and **Complete Builder** put scope, availability and game-currency costs in the same workflow.
 
-| Feature | What it brings to your game |
-|---|---|
-| **Operational Pressure Board** | Compare mission demand with your available fleet, identify competing demands for specialist units, and inspect patient and prisoner transport pressure. Focus, open or pin incidents from the board. Personal missions are included; joined alliance missions are optional. |
-| **Procurement Brain** | Review ranked acquisition, repositioning, recruitment and training recommendations based on current shortages and repeated local mission evidence. Recommendations show their supporting evidence; the tool does not purchase or dispatch for you. |
-| **Resource Gap** | Inspect mission requirements against your personal fleet within a chosen radius, with an optional map badge. |
-| **Mission Age map timers** | See how long personal missions have been waiting directly above their map markers. |
-| **Mission Value** | See available mission-value information inside opened mission windows. Unavailable values are left hidden. |
-| **Incident Command Wire** | Follow a prioritised incident feed. Incidents leave the attendance queue when one of your units is on scene and can return when the last one leaves. |
-| **Operational Timeline** | Enable a searchable local history of mission changes, responses, demand, stalls, recoveries and completions. Filter, export or clear it. Logging starts off. |
-| **Alliance Credits** | Inspect alliance mission values with eligibility-aware states and value filters. |
+Home Response Builder combines city boundaries, mapped-water checks, spacing, nearby dispatch centres, vehicles and icons. Home Response Unit Switcher changes the eligible Home Response fleet. Hospital Upgrades are included in Building Level-Up. Copy Station Icons and Switch Icon keep the map consistent.
 
-## Fleet and transport
+### A complete upgrade for existing users
 
-**Find the right unit and see what is keeping vehicles occupied.**
+Version 2.0 contains a one-off **89-entry What's New across 15 sections**, covering the changes since Store 1.8.2. The briefing opens once for the update and can be reopened from the extension popup. Timestamp-based reports use **Europe/London**, including GMT/BST; native daily game totals retain their labelled UTC boundaries.
 
-| Feature | What it brings to your game |
-|---|---|
-| **Vehicle Code Status** | View status-code descriptions and live fleet totals, including out-of-service vehicles. |
-| **Unit Locator & Follow Mode** | Search your vehicles by name, ID, type, station or status. Locate one on the map or deliberately follow its live marker, with a visible Stop control. |
-| **Transport Watcher** | Highlight missions still waiting for patient or prisoner transport, with map indicators and counts. |
-| **Patient Transport Sweep** | Scan eligible alliance patient transports, review the scope and use the game's native patient-release controls. Follow progress and retain the completion report for review. |
-| **Auto-load all vehicles** | Use the game's native vehicle-list batch control inside the active mission window to reveal additional vehicles. |
+## Complete feature reference
 
-## Map tools and navigation
+Expand a section for the full current offering. This reference matches the description submitted with 2.0.0.
 
-**Keep useful information on the map and reach the rest quickly.**
+<details>
+<summary><strong>Map &amp; Locations</strong></summary>
 
-| Feature | What it brings to your game |
-|---|---|
-| **UK Building Filters** | Access native building-type filters, with commonly used types placed first. |
-| **Command Palette** | Search Toolkit commands, settings, live missions, personal vehicles, buildings and saved locations from one place. |
-| **Drawing & Map Measure** | Measure distances in kilometres and add temporary lines, arrows, freehand sketches, shapes, zones, text and markers. |
-| **Coverage rings & map overlays** | Add geographic context and control what is visible around your operating area. |
-| **Saved locations & Smart Bookmark Labels** | Jump back to useful places with compact labels that retain access to their full names. |
-| **Contextual Command Menus** | Open item-specific actions with a desktop right-click or supported touch long-press. |
-| **Game Guide** | Open the official TKB MissionChief guide in a new tab directly beside **Menu**, keeping the game open. |
+- Control map visibility for your missions, alliance activity, vehicles and buildings.
+- Use the Buildings menu and compact top-bar toggles for Fire Stations, Ambulance Stations, Police Stations, Home Responses and Hospitals. Station groups include supported small variants.
+- Use map drawing and measurement tools, quick location jumps, labelled bookmarks and saved map profiles.
+- Search commands, missions, vehicles, buildings, places and settings from the command palette.
+- Adjust the command bar, dock position, density and layout for desktop or tablet use. Keyboard shortcuts and the Tablet Quick Wheel provide alternative controls.
+- Collapse Missions, Stations, Chat and Radio to reclaim screen space, then reopen them without losing their original window sizes.
 
-## Operations with a plan
+</details>
 
-<p align="center"><img src="docs/media/extension-operations.svg" width="100%" alt="Three Operations tools: Home Response Builder, Home Response Unit Switcher and Hospital Upgrades. Review the scope, confirm the cost and verify progress."></p>
+<details>
+<summary><strong>Incidents &amp; Fleet</strong></summary>
 
-### Home Response Builder
+- Mission Intelligence presents mission requirements and response information alongside the game.
+- Operational Pressure and SITREP views help you review active incident workload and response priorities.
+- Resource Gap Finder supports fleet and resource planning using the available game data.
+- Unit Locator and Follow Mode help locate personal vehicles by name, ID, type, station or status.
+- Session performance and completion history help you review your activity.
+- Refresh Mission List updates missions and map markers without reloading the game. Optional five-second Auto Refresh works while the tab is visible and starts switched off.
+- Automatic loading of additional vehicles recognises the game's missing-vehicles control and is enabled by default unless you have saved a different preference.
 
-Choose a city from search or the city list, select a boundary directly on the map, draw an area, or use a centre and radius.
+</details>
 
-- Set **1, 3, 4, 6, 8 or 10-mile spacing**, with up to **1,000 new locations**.
-- Preview coverage around existing Home Responses, with mapped sea and major-lake exclusions.
-- See named dispatch centres on the map. The nearest is selected automatically; acknowledge its distances before building.
-- Select an allowed vehicle and an icon from the saved catalogue. Scan a particular building type when refreshing icons.
-- Review estimated Credit costs, then follow saved progress through construction, vehicle purchase and optional icon copying.
+<details>
+<summary><strong>Home Response Builder</strong></summary>
 
-Spacing is straight-line distance. Small waterways, road access and staffing/training still need your review. A limit of 20 means at most 20 proposals, spread across the chosen area.
+- Plan Home Response locations around existing buildings using a UK city boundary, an area selected on the map, a drawn boundary, or a centre and radius.
+- Choose minimum straight-line spacing of 1, 3, 4, 6, 8 or 10 miles, with a cap of up to 1,000 new buildings.
+- Preview proposed sites, existing-building exclusions, mapped water and estimated Credit costs before starting.
+- Review nearby dispatch centres in distance order with named map markers; the nearest centre is selected initially.
+- Choose a supported vehicle and an optional station icon. Scanned icon catalogues are remembered for reuse.
+- Build, equip and optionally copy icons as a saved sequence, with progress, pause and review/resume controls.
+- Unit Switcher replaces eligible vehicles in selected Home Responses with another supported type, using dispatch filters, cost review and saved progress.
 
-### Home Response Unit Switcher
+</details>
 
-Select **All dispatch centres**, a named centre or Unassigned. Choose the current vehicle type and an allowed replacement, then select the vehicles to change.
+<details>
+<summary><strong>Building Level-Up, Expansions &amp; Icons</strong></summary>
 
-- Shared fleet checks and concurrent shop reads make previews faster.
-- Native **Credit** offers are checked across shop categories.
-- Full single-vehicle buildings may show a clearly labelled estimate before removal; an enabled purchase offer is required afterwards.
-- **Review & resume** checks saved progress before continuing an interrupted replacement.
+- Building Level-Up scans eligible buildings by type and dispatch scope. Choose native target levels, pay with Credits or Coins, and hide buildings already at their maximum.
+- Select individual buildings or use Purchase Selected for reviewed upgrades.
+- Building Expansions finds stations missing a selected extension, explains exclusions and prerequisites, and supports reviewed purchases in the available game currency.
+- Complete Builder lists construction in progress with remaining time and available Coin completion offers. Select multiple entries and review the total for Purchase Selected.
+- Copy Station Icons applies an owned station's icon to eligible stations of the same type.
+- Switch Icon finds matching custom icons and replaces them across selected buildings. Preview reuses the scan, with pause and review/resume support.
 
-> [!WARNING]
-> Replacement permanently removes the selected old vehicle. If the next purchase fails, that building can temporarily have an empty slot. New vehicles use game-default names; staff and training are not automatically supplied. Review the selected vehicles and costs before confirming.
+</details>
 
-### Hospital Upgrades
+<details>
+<summary><strong>Vehicle Purchaser</strong></summary>
 
-Select hospitals and a **target level from 1 to 30**. The tool uses the game's direct target-level purchase rather than buying each intermediate level separately. Review your current balance, estimated costs and results; maximum-level completion is checked against the hospital record.
+- Scan station types and dispatch centres for free bays and live vehicle-market offers.
+- Search stations, select individual stations or Select ALL Stations, and build a multi-station order.
+- Set quantities with 1, 5, 10, MAX or a custom amount; choose Credits or Coins and review combined costs.
+- Use the ambulance preset to fill spaces with ambulances while providing one Mass Casualty Equipment vehicle.
+- Where needed, that preset can build the Mass Casualty extension, complete construction with Coins and activate it. Required extension costs and Coin allowances are shown before the order starts.
+- Track purchases with progress, pause and resume controls; interrupted purchases are checked before continuing.
 
-### Recruitment, courses and building management
+</details>
 
-| Feature | What it brings to your game |
-|---|---|
-| **Dispatch Recruitment** | Choose one or all dispatch centres, filter station types, then set the hiring phase and desired personnel for a reviewed selection of buildings. |
-| **Station Icon Copier** | Choose an owned station's custom icon and apply it to a reviewed subset of matching station types. Existing custom icons are protected by default. |
-| **Expansion & Upgrade Planner** | Inspect native Credit offers for building levels, bays and extensions, then prepare purchases within the selected scope and budget. |
-| **Alliance Courses** | Scan eligible academy courses and start ready courses through the game's native education controls, with sequential progress and results. |
-| **Alliance Member Manager** | Filter and sort members by role and activity, and explicitly load additional pages when needed. |
-| **Guided Operations** | Work through scope, configuration, review, execution and results. **Back to Operations** returns to tool selection without clearing selections or stopping an active task. |
+<details>
+<summary><strong>Staff Training &amp; Recruitment</strong></summary>
 
-[Detailed setup and operating guidance →](docs/EXTENSION_GUIDE.md)
+- Filter stations by type, dispatch centre and name; scan rosters, expand staff lists and choose relevant training.
+- Select individuals or use quick untrained-staff batches. A selection counter shows classroom requirements in groups of ten.
+- Scan Own Academies, Alliance Academies or Combined. Own classrooms are prioritised in Combined mode; alliance allocations use existing matching courses. Ownership, capacity, shortfalls and paid-class costs are shown before enrolment.
+- Scan already trained refreshes qualification counts across all scanned stations and pages.
+- Red No Staff Trained badges, green trained counts and amber unknown/failed-scan states distinguish actual zero counts from missing information.
+- Already-qualified staff are labelled, shown in green and placed last; Hide Already Trained filters them from view.
+- Filter stations by qualification coverage, eligibility, active training or scan problems. Sort by name, trained count or percentage, eligible staff, total staff or staff in training.
+- Select all stations, matching stations or individual stations, then choose X completely untrained staff per station.
+- Top up each selected station to X staff with the chosen qualification. Existing qualifications are counted and only the shortfall is selected; shortages and uncertain stations are reported.
+- Bulk selection uses completely untrained staff only and refreshes rosters before selecting. Selection prepares a plan; it does not start a course.
+- Show In-Training reads current courses. Complete individual eligible classes or Complete ALL after reviewing the combined Coin cost and confirmation. Completion affects the entire class, including other participants.
+- Staff Recruitment sets hiring phases and desired personnel at selected stations. The separate Training Courses tool creates and shares mapped academy courses when your alliance role and buildings support it.
 
-## Finance and Discord
+</details>
 
-**Read the numbers, investigate changes and share a report when you choose.**
+<details>
+<summary><strong>Patient Transport Sweeper</strong></summary>
 
-| Feature | What it brings to your game |
-|---|---|
-| **Financial intelligence** | Review income, spending, net position, reconciliation and variance using your in-game financial data. |
-| **Historical ledger archive** | Scan available ledger history on demand, retain it locally and continue supported interrupted scans. The available game history determines what can be reported. |
-| **Period comparisons** | Compare the selected reporting period with the preceding period where data and report settings allow. |
-| **Report styles** | Choose **Simple**, **Informative** or **The Wolf** financial reporting, depending on how much detail you want. |
-| **Optional Discord reports** | Prepare financial reports, transport-sweep reports or operational SITREPs. Review and confirm before sending to your configured webhook. |
-| **Payout presentations** | Add themed mission-completion banners, with optional sound and emergency-flash effects. |
+- Find eligible alliance patient-transport requests and release them through a reviewed sweep. Your own vehicles and prisoner transports are excluded.
+- A maximum run limit of 1,000, progressive discovery and reuse of very recent unchanged results reduce repeated scanning. Full Rescan starts fresh.
+- Follow the current mission through a stable progress panel with elapsed time and checked/completed counts. Manual scroll position is preserved while results update.
 
-## Make it your workspace
+</details>
 
-**A configurable command area, from the controls you pin to the way the game looks.**
+<details>
+<summary><strong>Finance &amp; Reporting</strong></summary>
 
-| Feature | What it brings to your game |
-|---|---|
-| **Personalisation Studio** | Manage appearance, layouts, controls, alerts and recovery from one place, with separate desktop, tablet and mobile preferences. |
-| **Themes & MissionChief reskinning** | Choose from eight interface themes, apply supported custom theme codes and extend styling across game windows, lists, forms and tables. Restore the native appearance when you prefer. |
-| **Resizable desktop workspace** | Move, resize or temporarily maximise the Toolkit panel, with saved geometry and keyboard resize controls. |
-| **Pinned commands & auto-hiding dock** | Keep chosen tools readily available and tuck the dock away when map space matters more. |
-| **Quick Wheel** | Configure touch-friendly shortcuts for frequently used commands and locations. |
-| **Hotkey & Gesture Studio** | Remap keyboard commands and opt-in touch gestures, with duplicate-key checks and default restoration. |
-| **Economy Mode** | Reduce non-essential animation and effects while retaining operational features. |
-| **What's New & Feature Beacon** | Reopen release guidance and find newly introduced controls. |
+- Review income, spending, net results, daily trends, category breakdowns and searchable transactions for selected periods.
+- Use game daily summaries and overview data, period comparisons, financial scorecards, aggregate audits and deeper ledger scans where the source data is available.
+- Review completion history and session performance alongside financial information.
+- Toolkit timestamps and timestamp-based reporting periods use Europe/London with automatic GMT/BST changes. Native daily game totals retain their UTC reporting boundaries and are labelled accordingly.
+- Post finance reports, transport-sweep summaries and operational briefings to a saved Discord destination when you choose.
 
-## Recovery and everyday control
+</details>
 
-| Feature | What it brings to your game |
-|---|---|
-| **Operations Status Centre** | Inspect module health, freshness, workflow progress and Safe Mode status. |
-| **Toolkit Doctor** | Run user-triggered diagnostics and supported UI repair, with a privacy-conscious report for troubleshooting. |
-| **Toolkit Safe Mode** | Suspend optional modules while retaining access to settings and recovery, then restore your choices when leaving Safe Mode. |
-| **Settings import/export & snapshots** | Back up supported configuration and use local recovery snapshots. This is not automatic cross-device syncing. |
-| **One-Click Session Cleanup** | Preview and clear supported temporary Toolkit state while protecting durable settings, bookmarks, secrets and finance history. |
-| **Extension version & updates** | Check the installed extension version; public installation and browser-managed updates come through the Chrome Web Store. |
+<details>
+<summary><strong>Emergency Payout Flash</strong></summary>
 
-**Explore further:** [Setup and operating guide](docs/EXTENSION_GUIDE.md) · [Feature reference](https://conroy1988.github.io/missionchief-toolkit-assets/features/) · [Extension release notes](extension/CHANGELOG.md)
+- Customise payout celebrations in a visual studio with 16 banner styles, artwork previews and theme audio.
+- Choose Compact, Banner or Cinematic presentation; top, centre or bottom placement; and small, medium or large size.
+- Choose the banner and audio theme independently, or match them. Adjust volume, minimum payout, duration and payout-tier thresholds.
+- Control banner visibility, red/blue map glow, cinematic particles, tier intensity and static presentation separately.
+- Try Preview banner, Full-map test, Play Sound and Stop Preview. Replay recent payouts without changing earnings.
+- Rapid payouts are grouped while the current celebration finishes. Motion controls account for reduced-motion preferences and Economy behaviour.
 
+</details>
+
+<details>
+<summary><strong>Awards, Tasks, Profiles &amp; Community</strong></summary>
+
+- Awards dashboard: collection overview, progress summaries, everyday targets, search, filters, sorting and locally pinned goals. Choose Showcase or Compact.
+- Tasks and Events dashboard: ready-to-claim counts, deadline highlights, search, filters and sorting by readiness, progress, deadline or Credit reward. Native claim controls remain available.
+- Player profiles: lifetime earnings, account age, lifetime daily average, Credit milestones, award search and tier counts. Search buildings already loaded on the profile map and open their markers.
+- Alliance chat: compact styling, search across loaded messages, announcement hide/show and a count of new messages received while chat is collapsed. Updated announcements reappear.
+- Alliance pages: resource shortcuts and filtering of loaded members by name or role.
+- Inbox: search conversations on the current page, retain selected messages in view and use clearer message/table styling.
+- Dispatch dashboard: load an on-demand snapshot to compare buildings, vehicles and reported staffing by dispatch centre; expand centres for building links and staffing targets.
+- Enhanced page dashboards retain native controls and provide an original-page option where available.
+
+</details>
+
+<details>
+<summary><strong>Account, Sync &amp; Personalisation</strong></summary>
+
+- Optional Discord sign-in saves supported Toolkit preferences across devices. Saved cloud settings load first on sign-in or reconnection.
+- Clear signed-out, connecting, signed-in and sync indicators, plus Time until sync, Syncing and Sync complete states.
+- Offline changes, conflict choices and recovery backups support settings restoration.
+- A browser-tab sign-in option is available alongside standard Discord sign-in for compatible browsers.
+- Account displays MissionChief UK building totals and game-reported mission capacity without requiring Discord login.
+- Manage one account-synced Toolkit Discord webhook for all supported reports. Save, replace, label, test or remove the destination. A connection test sends no message.
+- Adjust interface themes, skins, emergency-service styling, density, device layout, controls and Economy Mode. Settings backup/recovery and diagnostics are available.
+- Access the Game Guide, Discord Support and Ko-fi from the Toolkit. Version 2.0 includes a one-off comprehensive What's New overview, which can be reopened from the extension popup.
+
+</details>
 
 ## Get started
 
-1. **[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc)** in a compatible browser.
-2. Disable any older **Toolkit** userscript or duplicate Toolkit extension. You can keep Tampermonkey for other scripts.
-3. Open the extension popup, enable the Toolkit and apply/reload.
-4. Fully reload **[MissionChief UK](https://www.missionchief.co.uk/)**, then open **Menu**.
+1. **[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc)** and sign into MissionChief UK.
+2. Disable duplicate Toolkit extensions or the old Toolkit Tampermonkey script.
+3. Enable Toolkit in the extension popup, then **Apply & reload**.
+4. Open **Menu** in the game. **Game Guide** sits beside it; **Account** is optional.
 
-**Already using Tampermonkey?** Export any settings you need before disabling the old copy. Ordinary settings may migrate, but complete transfers between userscript, unpacked and Store installations are not guaranteed. **[Migration steps →](docs/MIGRATING_FROM_USERSCRIPT.md)**
+The Tampermonkey edition is **no longer supported**. [Migration guide](docs/MIGRATING_FROM_USERSCRIPT.md) · [Full operating guide](docs/EXTENSION_GUIDE.md).
 
-**Mobile:** Orion on iOS has been used for testing ZIP builds. Browser extension support varies; ordinary iPhone Safari cannot install this Chrome extension. Test packages are for explicit testing, not the public release channel.
+**Mobile:** use an extension-capable browser. Orion on iOS has been used for testing; support depends on the browser. Ordinary iPhone Safari cannot install this Chrome extension. Never run two Toolkit copies together.
 
-## Privacy and control
+## Privacy and account sync
 
-- The Toolkit starts disabled until you enable it.
-- Settings, supported caches and saved task progress stay in browser storage; they are not synced across devices by the Toolkit.
-- Confirmed operations act on your signed-in MissionChief account and can spend Credits. Saved queues do not authorise automatic replay.
-- Discord reporting is optional and requires confirmation. Webhook credentials stay in extension storage.
-- City lookup and map tiles use OpenStreetMap services. Executable extension code is packaged locally.
+Settings and operation checkpoints are stored locally. Optional account sync sends your Discord-linked identity, MissionChief account ID and supported preferences to Supabase. A chosen reporting webhook is stored separately for cross-device use. **Game cookies, active jobs, payment confirmations and financial archives are excluded from preference sync.** A webhook connection check sends no message.
 
-Read the **[privacy policy](extension/store/PRIVACY.md)** for storage, requests, retention and provider details. Never put account credentials or webhook URLs in a public issue.
+Map planning can use OpenStreetMap services; enabled reference and media features may request public data and assets. Executable code is packaged locally. No developer advertising or analytics is included. [Read the privacy policy](extension/store/PRIVACY.md).
 
-## Source and releases
+**You control game actions.** Scanning and selection prepare a plan. Confirmed purchases and completion actions may spend Credits or Coins. Unit Switcher removes old vehicles; completing a training class affects everyone in it. Review the scope and cost, keep the owning game tab open, and use review/resume after interruptions.
 
-| Looking for | Location |
+## Source and release integrity
+
+| Looking for | Open |
 |---|---|
-| **Public installation and updates** | [Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc) |
-| **Extension source and build instructions** | [extension/](extension/README.md) |
-| **Release notes** | [Extension changelog](extension/CHANGELOG.md) |
-| **Bugs and performance reports** | [GitHub Issues](https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new/choose) · [Support](SUPPORT.md) |
-| **Legacy migration delivery** | [Migration package and deployment notes](legacy/README.md) |
-| **Historical userscript source** | [src/](src/) — retained for provenance and recovery; unsupported |
+| **Install / update** | [Chrome Web Store](https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc) |
+| **Exact submitted 2.0.0 files** | [extension/current/](extension/current/) |
+| **Build and verify** | [Extension development](extension/README.md) |
+| **All changes since Store 1.8.2** | [2.0 release notes](extension/CHANGELOG.md) |
+| **Submitted package fingerprint** | [2.0 submission record](extension/store/SUBMISSION-2.0.0.md) |
+| **Feature catalogue & guides** | [Documentation site](https://conroy1988.github.io/missionchief-toolkit-assets/) |
+| **Bugs, suggestions & troubleshooting** | [Issue forms](https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new/choose) · [Support](SUPPORT.md) |
+| **Retired userscript history** | [Legacy archive](legacy/README.md) |
 
-The extension build currently composes the recovered release baseline with maintained feature modules. **[Development instructions](CONTRIBUTING.md)** explain how to reproduce the package and run its checks. Historical GitHub userscript releases and release-state dashboards are archives; their version numbers do not describe the Chrome Store extension.
+The 2.0 source snapshot is checked against a **91-file SHA-256 inventory**. Packaging fails if a file is missing, added or changed. Old composition scripts and userscript releases remain historical; their version numbers are separate from the extension. [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md).
 
-## Community
+## Built by Conroy1988
 
-**[TKB MissionChief Game Guide](https://tkb-gaming.scot/games/missionchief/guides/)** · **[TKB Gaming](https://tkb-gaming.scot/)** · **[Discord](https://discord.gg/3ZdXhYjgDm)**
+**Developer: [Conroy1988](https://github.com/Conroy1988).** Sole creator and developer of the Toolkit.
 
-**Developer: [Conroy1988](https://github.com/Conroy1988).**
+[TKB Gaming](https://tkb-gaming.scot/) · [MissionChief Game Guide](https://tkb-gaming.scot/games/missionchief/guides/) · [Mission graphics pack](https://www.missionchief.co.uk/mission_graphics/539) · [Discord support](https://discord.gg/mXnTHuNfvu)
 
-Independent community software; not an official MissionChief, SHPlay or XYRALITY product. Existing source licence notices remain applicable. The artwork above is original schematic branding, not a screenshot or a real emergency operation.
-
-<p align="center"><a href="https://chromewebstore.google.com/detail/lmnojpchebgcochdfnfjmnficicnaaoc"><strong>GET THE TOOLKIT ON THE CHROME WEB STORE →</strong></a></p>
+Independent community software, not affiliated with MissionChief, SHPlay or XYRALITY. Existing source licence notices and third-party data attribution remain applicable. Repository artwork is original branding, not a game screenshot.

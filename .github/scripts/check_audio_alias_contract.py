@@ -89,6 +89,13 @@ def validate_repository(
         canonical_paths = {
             safe_relative_path(value) for value in contract.get("canonicalAudioPaths", [])
         }
+        packaged = {
+            safe_relative_path(path): digest
+            for path, digest in contract.get("packagedAudioPaths", {}).items()
+        }
+        if any(not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
+               for digest in packaged.values()):
+            raise ValueError("Packaged audio requires an exact SHA-256 for every path")
         alias_entries = contract.get("aliases", [])
         if not isinstance(alias_entries, list):
             raise ValueError("aliases must be an array")
@@ -132,7 +139,12 @@ def validate_repository(
         )
 
     actual_audio = discover_audio(root)
-    declared_audio = canonical_paths | set(aliases)
+    declared_audio = canonical_paths | set(aliases) | set(packaged)
+    for path, digest in sorted(packaged.items()):
+        if path not in actual_audio:
+            failures.append(failure("missing-packaged-audio", "Packaged audio is missing", path))
+        elif hashlib.sha256((root / path).read_bytes()).hexdigest() != digest:
+            failures.append(failure("packaged-audio-hash-mismatch", "Packaged audio differs from the submitted release", path))
     for path in sorted(canonical_paths - actual_audio):
         failures.append(failure("missing-canonical-audio", "Canonical audio file is missing", path))
     for path in sorted(set(aliases) - actual_audio):

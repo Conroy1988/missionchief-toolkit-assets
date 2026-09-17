@@ -1,37 +1,32 @@
-# Extension source
+# Extension source — 2.0.0
 
-The Chrome Web Store is the public distribution channel. Start with the [project README](../README.md) or [user guide](../docs/EXTENSION_GUIDE.md).
+[Project](../README.md) · [User guide](../docs/EXTENSION_GUIDE.md) · [Complete changes](CHANGELOG.md)
 
-## Current build
+`current/` contains **all 91 files from the 2.0.0 package submitted to Google on 17 September 2026**. The [submission record](store/SUBMISSION-2.0.0.md) distinguishes submitted and publicly available versions. Install public updates through the Chrome Web Store.
 
-Extension **1.2.5**, bundled Toolkit **10.18.1**. This records the submitted package, not a claim of Google approval.
+## Verify and build
+
+Requires Python 3. From the repository root:
+
+```sh
+python3 extension/prepare-current-release.py
+```
+
+The script verifies every file against `release-2.0.0.json`, including the exact path set, SHA-256 hashes, file count and manifest version. It fails on missing, unexpected or changed files. It then builds `.dev/MissionChief-Toolkit-Extension-2.0.0.zip`, reopens it and checks every payload again. ZIP metadata and compression may differ from the submitted archive; matching payload hashes are the source-equivalence check.
+
+For local development, load `extension/current/` as an unpacked extension. Disable the Store copy first. Do not ship a changed snapshot as 2.0.0: create a new version, review its inventory and validate the resulting package. Test builds stay out of GitHub releases.
+
+## Repository map
 
 | Path | Purpose |
 |---|---|
-| `recovered-0.22.3/` | Recovered baseline with recorded security amendments |
-| `home-response/` | Coverage planning, native actions, saved queues, geography and UI |
-| `hospital-upgrades/` | Direct target-level hospital upgrades |
-| `unit-switcher/` | Home Response vehicle replacement and native Credit-shop discovery |
-| `build-*-test.py` | Compose the baseline with maintained modules for testing |
-| `prepare-current-release.py` | Produce the stable 1.2.5 Store package |
-| `store/` | Listing text, privacy disclosure and submission records |
+| `current/` | Exact submitted extension, executable modules, UI, data, audio and artwork |
+| `release-2.0.0.json` | Authoritative file inventory and original archive fingerprint |
+| `prepare-current-release.py` | Current integrity gate and reproducible payload packaging |
+| `store/` | Listing, privacy policy and dated submission records |
+| `recovered-0.22.3/`, feature directories and `build-*-test.py` | Historical recovery and earlier implementation/test fixtures |
+| `prepare-legacy-1.2.5.py` | Historical 1.2.5 composition, retained for existing fixture tests only |
 
-## Build and test
+The submitted package is a verified recovered working build. It is not a promise that every module can be regenerated from the older composition pipeline. Packaged documentation and validation records are preserved exactly for provenance; this README and the 2.0 submission record describe the current release.
 
-From the repository root, with Python 3 and Node.js installed:
-
-```sh
-npm ci --prefix extension/home-response
-python3 extension/prepare-current-release.py
-node --test extension/home-response/*.test.mjs extension/hospital-upgrades/*.test.mjs extension/unit-switcher/*.test.mjs
-```
-
-Output: `.dev/MissionChief-Toolkit-Extension-1.2.5.zip`. Load an unpacked test build from `.dev/home-response-extension` only for development. Do not enable it alongside the Store edition or a legacy Toolkit script.
-
-The package is composed from a recovered release rather than a clean original extension project. Feature changes belong in the maintained modules and build scripts. The two recorded security amendments are verified against the original baseline hashes; see [recovery provenance](RECOVERY.md). Retain geographic data attribution and licence files. All executable code must remain packaged locally.
-
-111 automated tests passed for the 1.2.5 submission. User previews and removal were tested, but complete live replacement after the latest full-slot fix remains unverified. Tests are not evidence that an in-game purchase completed.
-
-[Changelog](CHANGELOG.md) · [Privacy](store/PRIVACY.md) · [Submission receipt](store/SUBMISSION-1.2.5.md)
-
-Developer: Conroy1988.
+Preserve geographic licences and original source notices. Executable code must remain packaged locally. Never commit real tokens or Discord webhook URLs. Developer: **Conroy1988**.

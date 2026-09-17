@@ -1,7 +1,7 @@
 """Compose matching icon replacement over the maintained extension. No Store submission."""
 import json,pathlib,re,runpy,zipfile,shutil
 root=pathlib.Path(__file__).resolve().parent
-runpy.run_path(str(root/'prepare-current-release.py'))
+runpy.run_path(str(root/'prepare-legacy-1.2.5.py'))
 out=root.parent/'.dev/home-response-extension'
 parts=[]
 for name in ['core.mjs','ui.mjs']:

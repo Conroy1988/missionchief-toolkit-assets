@@ -1,7 +1,7 @@
 # MissionChief Map Command Toolkit — Privacy
 
 
-Extension 2.0.0. Updated 17 September 2026. Independent community software, not an official MissionChief product.
+Extension 2.0.100. Updated 15 October 2026. Independent community software, not an official MissionChief product.
 
 
 ## Purpose and information used
@@ -31,7 +31,7 @@ City search and map-area selection send the entered place query or clicked map c
 ## Limits and sharing
 
 
-The extension does not include advertising or developer analytics, sell user data, or upload game activity records for analytics. Optional account backup uploads the specific preferences and account identifiers described below. It does not read browsing history from unrelated websites. Discord reporting is optional. Your chosen webhook URL is kept in extension-private storage and, when signed in, stored separately in your Supabase account for cross-device reporting. It is excluded from game-page settings, ordinary preference exports and diagnostics. A prepared report (including an optional PNG chart) is stored locally and expires after 30 minutes. Clicking Post to Discord sends the selected report to the saved destination. Connection checks contact Discord without posting a message. Remove webhook in Account clears the destination locally and, when signed in and synchronisation succeeds, in the cloud account. Private finance persistence and encrypted private imports remain unavailable. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
+The extension does not include advertising or developer analytics, sell user data, or upload game activity records for analytics. Optional account backup uploads the specific preferences and account identifiers described below. It does not read browsing history from unrelated websites. Discord reporting is optional. Your chosen webhook URL is kept in extension-private storage and, when signed in, stored separately in your Supabase account for cross-device reporting. It is excluded from game-page settings, ordinary preference exports and diagnostics. A prepared report (including an optional PNG chart) is stored locally and expires after 30 minutes. Clicking Post to Discord sends the selected report to the saved destination. If you separately enable Training Tracker alerts, Supabase sends verified training-completion summaries to this destination as described below. Connection checks contact Discord without posting a message. Remove webhook in Account clears the destination locally and, when signed in and synchronisation succeeds, in the cloud account. Private finance persistence and encrypted private imports remain unavailable. Downloaded resources are data, media and map assets, not remotely executed extension code. Support information is shared only when you deliberately send it; review and redact reports before posting publicly.
 
 
 ## Optional Discord account and preference sync
@@ -49,6 +49,12 @@ Awards, Tasks and Events, player profiles, alliance chat, member lists and inbox
 ## Building and staff operations
 
 Building upgrades, expansions, instant completions, vehicle purchasing, vehicle replacement and staff training can retain selected game staff/building IDs, names, course choices, currency quotes and verification checkpoints in account-scoped browser storage. Scanning does not purchase anything. Explicitly requested actions are sent to MissionChief, and uncertain paid requests are verified before any retry.
+
+## Optional training completion alerts
+
+Off by default. Enabling Discord training alerts saves a separate account-scoped preference in Supabase and enables periodic game reads while a game tab is visible. Supabase stores tracked course IDs and names, academy names and ownership type, qualification keys, your participating staff IDs, station IDs and names, and delivery status. Staff names, game credentials, Coin prices and payment checkpoints are not uploaded by this feature. These records allow another signed-in device to continue checking and suppress duplicate messages. Checks process bounded batches; large training queues may take multiple checks. Records older than 90 days are pruned when notification checks run, with a limit of 1,000 records per account. Turning alerts off stops new alerts; retained delivery history prevents duplicates.
+
+Discord receives the course and academy names, your participating staff count, game account ID and verification time. Training finished early using Coins is included once its qualification is verified. Courses still accepting enrolments may not expose participants; unavailable counts are labelled and cannot establish a completion alert. Pressing Send training report refreshes your courses and sends course and academy names, ownership types, your staff counts or their unavailable status, and expected finish times to the selected webhook, even when automatic alerts are off. Large reports are split into numbered messages. Uncertain deliveries are not automatically repeated. Disabling alerts, removing the webhook or signing out stops future checks or sends from this extension; an already-submitted message cannot be recalled.
 
 ## Your choices
 
